@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from zugzwang.api import deps
 from zugzwang.api.main import create_app
-from zugzwang.ui.types import (
+from zugzwang.api.types import (
     BoardStateFrame,
     ConfigTemplate,
     GameMeta,

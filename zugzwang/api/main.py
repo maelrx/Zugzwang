@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from zugzwang.api.routes import configs, env, jobs, runs
-from zugzwang.ui.services.paths import project_root
+from zugzwang.api.services.paths import project_root
 
 
 def create_app() -> FastAPI:
@@ -52,4 +52,3 @@ def _maybe_mount_frontend_dist(app: FastAPI) -> None:
 
 
 app = create_app()
-

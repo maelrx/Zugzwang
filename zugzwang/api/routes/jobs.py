@@ -9,7 +9,7 @@ from zugzwang.api import deps
 from zugzwang.api.schemas import CancelJobResponse, JobResponse, RunProgressResponse, StartEvalRequest, StartJobRequest
 from zugzwang.api.services import EvaluationService, RunService
 from zugzwang.api.sse import iter_job_log_events
-from zugzwang.ui.types import RunProgress
+from zugzwang.api.types import RunProgress
 
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])

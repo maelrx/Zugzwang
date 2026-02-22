@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from zugzwang.ui.services.evaluation_service import EvaluationService
-from zugzwang.ui.services.run_service import RunService
+from zugzwang.api.services.evaluation_service import EvaluationService
+from zugzwang.api.services.run_service import RunService
 
 
 ROOT = Path(__file__).resolve().parents[2]

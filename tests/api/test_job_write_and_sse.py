@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from zugzwang.api import deps
 from zugzwang.api.main import create_app
-from zugzwang.ui.types import CancelResult, JobHandle
+from zugzwang.api.types import CancelResult, JobHandle
 
 
 class FakeRunService:
@@ -144,4 +144,3 @@ def test_job_logs_unknown_job_returns_404(tmp_path: Path) -> None:
     client = _build_client(tmp_path)
     response = client.get("/api/jobs/missing/logs")
     assert response.status_code == 404
-

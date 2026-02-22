@@ -45,6 +45,11 @@ def _build_parser() -> argparse.ArgumentParser:
     ui_parser = subparsers.add_parser("ui")
     ui_parser.add_argument("--host", default="127.0.0.1")
     ui_parser.add_argument("--port", type=int, default=8501)
+
+    api_parser = subparsers.add_parser("api")
+    api_parser.add_argument("--host", default="127.0.0.1")
+    api_parser.add_argument("--port", type=int, default=8000)
+    api_parser.add_argument("--reload", action="store_true")
     return parser
 
 
@@ -112,6 +117,17 @@ def _ui_command(args: argparse.Namespace) -> int:
     return launch_ui(host=args.host, port=args.port)
 
 
+def _api_command(args: argparse.Namespace) -> int:
+    try:
+        import uvicorn
+    except ImportError:
+        print("FastAPI runtime is not installed. Install with: python -m pip install -e .[api]")
+        return 2
+
+    uvicorn.run("zugzwang.api.main:app", host=args.host, port=args.port, reload=args.reload)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -127,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
         return _evaluate_command(args)
     if args.command == "ui":
         return _ui_command(args)
+    if args.command == "api":
+        return _api_command(args)
 
     parser.print_help()
     return 1

@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1 and M2 completed)
+Status: in progress (M1, M2 and M3 completed)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -333,11 +333,11 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Start M3 now:
-1. Scaffold `zugzwang-ui/` with Vite + React + TypeScript.
-2. Add router/query/store base dependencies and app shell.
-3. Configure API proxy (`/api` -> `localhost:8000`) for local dev.
-4. Add minimal route skeleton pages matching architecture doc.
+Start M4 now:
+1. Add OpenAPI type generation workflow and scripts.
+2. Add typed `src/api/client.ts` fetch wrapper.
+3. Add TanStack Query hooks for jobs/runs/configs/env.
+4. Connect dashboard and run list pages to real API data.
 
 ## 9. Progress log
 
@@ -350,3 +350,8 @@ Start M3 now:
   - Added write routes for `run`, `play`, `evaluate`, and `cancel`.
   - Added SSE log streaming endpoint `GET /api/jobs/{job_id}/logs`.
   - Added API tests for write operations and SSE terminal events.
+- 2026-02-22: M3 implemented.
+  - Added `zugzwang-ui/` Vite + React + TypeScript frontend project.
+  - Added TanStack Router + TanStack Query providers and app shell.
+  - Added initial page skeletons: Dashboard, Run Lab, Jobs, Runs, Settings.
+  - Added Vite API proxy and Tailwind-based visual foundation.

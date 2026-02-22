@@ -9,11 +9,15 @@ class EnvironmentError(ValueError):
     """Raised when runtime environment requirements are not satisfied."""
 
 
-PROVIDER_ENV_KEYS = {
-    "zai": "ZAI_API_KEY",
-    "openai": "OPENAI_API_KEY",
-    "anthropic": "ANTHROPIC_API_KEY",
-    "google": "GOOGLE_API_KEY",
+PROVIDER_ENV_KEYS: dict[str, tuple[str, ...] | None] = {
+    "zai": ("ZAI_API_KEY",),
+    "openai": ("OPENAI_API_KEY",),
+    "anthropic": ("ANTHROPIC_API_KEY",),
+    "google": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
+    "deepseek": ("DEEPSEEK_API_KEY",),
+    "grok": ("XAI_API_KEY", "GROK_API_KEY"),
+    "kimi": ("MOONSHOT_API_KEY", "KIMI_API_KEY"),
+    "minimax": ("MINIMAX_API_KEY",),
     "mock": None,
 }
 
@@ -50,12 +54,13 @@ def validate_provider_secrets(config: dict[str, Any], env: dict[str, str] | None
         provider = str(player.get("provider", "")).lower()
         if provider not in PROVIDER_ENV_KEYS:
             raise EnvironmentError(f"Unknown provider '{provider}'")
-        key_name = PROVIDER_ENV_KEYS[provider]
-        if not key_name:
+        key_names = PROVIDER_ENV_KEYS[provider]
+        if key_names is None:
             continue
-        if not environment.get(key_name):
+        if not any(environment.get(key_name, "").strip() for key_name in key_names):
+            joined = " or ".join(key_names)
             raise EnvironmentError(
-                f"Missing provider secret: {key_name} (provider={provider})"
+                f"Missing provider secret: {joined} (provider={provider})"
             )
 
 

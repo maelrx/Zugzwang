@@ -88,7 +88,7 @@ Layer 7 — Analysis             Statistics, plots, reports, React dashboard
 zugzwang-engine/
 ├── zugzwang/
 │   ├── core/           # BoardManager, game loop, players, protocol
-│   ├── providers/      # Anthropic, OpenAI, Google, z.ai, mock
+│   ├── providers/      # z.ai, GPT, Claude, Gemini, Grok, DeepSeek, Kimi, MiniMax, mock
 │   ├── evaluation/     # Stockfish, move quality, Elo, metrics
 │   ├── strategy/       # Prompts, context assembler, few-shot, validator
 │   ├── knowledge/      # RAG: indexer, retriever, embeddings, vectordb
@@ -143,7 +143,7 @@ Copy `.env.example` to `.env` and fill in your API keys:
 
 ```bash
 cp .env.example .env
-# Edit .env and set ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.
+# Edit .env and set provider keys (e.g., ZAI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / MINIMAX_API_KEY)
 # For Stockfish: set STOCKFISH_PATH=/path/to/stockfish
 ```
 

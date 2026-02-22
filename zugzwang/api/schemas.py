@@ -24,6 +24,22 @@ class ConfigListResponse(ApiModel):
     ablations: list[ConfigTemplate] = Field(default_factory=list)
 
 
+class ModelOptionResponse(ApiModel):
+    id: str
+    label: str
+    recommended: bool = False
+
+
+class ModelProviderPresetResponse(ApiModel):
+    provider: str
+    provider_label: str
+    api_style: str
+    base_url: str
+    api_key_env: str
+    notes: str
+    models: list[ModelOptionResponse] = Field(default_factory=list)
+
+
 class ConfigValidateRequest(ApiModel):
     config_path: str
     overrides: list[str] = Field(default_factory=list)

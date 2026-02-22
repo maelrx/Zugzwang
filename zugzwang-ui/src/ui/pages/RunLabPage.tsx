@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "../../api/client";
-import { useConfigs, usePreviewConfig, useStartPlay, useStartRun, useValidateConfig } from "../../api/queries";
+import { useConfigs, useModelCatalog, usePreviewConfig, useStartPlay, useStartRun, useValidateConfig } from "../../api/queries";
 import { PageHeader } from "../components/PageHeader";
 
 export function RunLabPage() {
@@ -10,11 +10,14 @@ export function RunLabPage() {
   const previewMutation = usePreviewConfig();
   const startRunMutation = useStartRun();
   const startPlayMutation = useStartPlay();
+  const modelCatalogQuery = useModelCatalog();
   const navigate = useNavigate();
 
   const [selectedConfigPath, setSelectedConfigPath] = useState("");
   const [modelProfile, setModelProfile] = useState("");
   const [overridesText, setOverridesText] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
 
   const templates = useMemo(() => {
     const baselines = (configsQuery.data?.baselines ?? []).map((item) => ({ ...item, bucket: "Baselines" }));
@@ -25,10 +28,35 @@ export function RunLabPage() {
   const currentConfigPath = selectedConfigPath || templates[0]?.path || "";
   const parsedOverrides = useMemo(() => parseOverrides(overridesText), [overridesText]);
   const invalidOverrideLines = useMemo(() => parsedOverrides.filter((line) => !line.includes("=")), [parsedOverrides]);
+  const providerPresets = modelCatalogQuery.data ?? [];
+  const effectiveProvider = selectedProvider || providerPresets[0]?.provider || "";
+  const activePreset = useMemo(
+    () => providerPresets.find((preset) => preset.provider === effectiveProvider) ?? null,
+    [effectiveProvider, providerPresets],
+  );
+  const recommendedModel = activePreset?.models.find((model) => model.recommended)?.id || activePreset?.models[0]?.id || "";
+  const effectiveModel = selectedModel || recommendedModel;
 
   const baselineCount = configsQuery.data?.baselines?.length ?? 0;
   const ablationCount = configsQuery.data?.ablations?.length ?? 0;
   const isLaunching = startRunMutation.isPending || startPlayMutation.isPending;
+
+  useEffect(() => {
+    if (!selectedProvider && providerPresets[0]?.provider) {
+      setSelectedProvider(providerPresets[0].provider);
+    }
+  }, [providerPresets, selectedProvider]);
+
+  useEffect(() => {
+    if (!activePreset) {
+      setSelectedModel("");
+      return;
+    }
+    if (!activePreset.models.some((item) => item.id === selectedModel)) {
+      const next = activePreset.models.find((item) => item.recommended)?.id || activePreset.models[0]?.id || "";
+      setSelectedModel(next);
+    }
+  }, [activePreset, selectedModel]);
 
   return (
     <section>
@@ -52,6 +80,80 @@ export function RunLabPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <section className="rounded-xl border border-[#ded8cf] bg-[#f9f6ef] p-4">
             <h3 className="mb-3 text-sm font-semibold text-[#26404f]">Inputs</h3>
+
+            <div className="mb-3 rounded-lg border border-[#d7d0c2] bg-white p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#5f7481]">Quick Model Selector</p>
+
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <label className="text-xs text-[#516977]">
+                  Provider
+                  <select
+                    value={effectiveProvider}
+                    onChange={(event) => setSelectedProvider(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 text-sm text-[#2f4957]"
+                  >
+                    {providerPresets.map((preset) => (
+                      <option key={preset.provider} value={preset.provider}>
+                        {preset.provider_label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-[#516977]">
+                  Model
+                  <select
+                    value={effectiveModel}
+                    onChange={(event) => setSelectedModel(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 text-sm text-[#2f4957]"
+                    disabled={!activePreset}
+                  >
+                    {(activePreset?.models ?? []).map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.label}
+                        {model.recommended ? " (Recommended)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <button
+                type="button"
+                className="mt-2 rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-xs font-semibold text-[#edf8fd]"
+                disabled={!activePreset || !effectiveModel}
+                onClick={() => {
+                  if (!activePreset || !effectiveModel) {
+                    return;
+                  }
+                  const safeName = `${activePreset.provider}_${effectiveModel}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
+                  setOverridesText((prev) =>
+                    upsertOverrides(prev, {
+                      "players.black.type": "llm",
+                      "players.black.provider": activePreset.provider,
+                      "players.black.model": effectiveModel,
+                      "players.black.name": safeName,
+                    }),
+                  );
+                }}
+              >
+                Apply Preset to Overrides
+              </button>
+
+              {activePreset && (
+                <p className="mt-2 text-[11px] text-[#57707e]">
+                  API: {activePreset.api_style} | Base URL: {activePreset.base_url} | Secret: {activePreset.api_key_env}
+                </p>
+              )}
+
+              {activePreset?.notes && <p className="mt-1 text-[11px] text-[#57707e]">{activePreset.notes}</p>}
+
+              {modelCatalogQuery.isError && (
+                <p className="mt-2 rounded-md border border-[#cf8f8f] bg-[#fff2ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
+                  Failed to load `/api/configs/model-catalog`.
+                </p>
+              )}
+            </div>
 
             <label className="mb-3 block text-xs text-[#516977]">
               Config template
@@ -221,6 +323,37 @@ function parseOverrides(raw: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !line.startsWith("#"));
+}
+
+function upsertOverrides(existingRaw: string, updates: Record<string, string>): string {
+  const existingLines = parseOverrides(existingRaw);
+  const orderedKeys: string[] = [];
+  const map = new Map<string, string>();
+
+  for (const line of existingLines) {
+    if (!line.includes("=")) {
+      continue;
+    }
+    const idx = line.indexOf("=");
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (!key) {
+      continue;
+    }
+    if (!orderedKeys.includes(key)) {
+      orderedKeys.push(key);
+    }
+    map.set(key, value);
+  }
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (!orderedKeys.includes(key)) {
+      orderedKeys.push(key);
+    }
+    map.set(key, value);
+  }
+
+  return orderedKeys.map((key) => `${key}=${map.get(key) ?? ""}`).join("\n");
 }
 
 function extractErrorMessage(error: unknown): string {

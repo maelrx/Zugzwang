@@ -88,7 +88,7 @@ Camada 7 — Análise               Estatísticas, gráficos, relatórios, dashb
 zugzwang-engine/
 ├── zugzwang/
 │   ├── core/           # BoardManager, game loop, jogadores, protocolo
-│   ├── providers/      # Anthropic, OpenAI, Google, z.ai, mock
+│   ├── providers/      # z.ai, GPT, Claude, Gemini, Grok, DeepSeek, Kimi, MiniMax, mock
 │   ├── evaluation/     # Stockfish, qualidade de lances, Elo, métricas
 │   ├── strategy/       # Prompts, montador de contexto, few-shot, validador
 │   ├── knowledge/      # RAG: indexer, retriever, embeddings, vectordb
@@ -143,7 +143,7 @@ Copie `.env.example` para `.env` e preencha suas chaves de API:
 
 ```bash
 cp .env.example .env
-# Edite .env e defina ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.
+# Edite .env e defina as chaves de provider (ex.: ZAI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / MINIMAX_API_KEY)
 # Para Stockfish: defina STOCKFISH_PATH=/caminho/para/stockfish
 ```
 

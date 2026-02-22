@@ -34,7 +34,7 @@ describe("run detail missing artifacts", () => {
       },
     });
 
-    await router.navigate({ to: `/runs/${RUN_ID}` });
+    await router.navigate({ to: "/runs/$runId", params: { runId: RUN_ID } });
 
     render(
       <QueryClientProvider client={queryClient}>

@@ -52,6 +52,20 @@ describe("run lab launch flow", () => {
         });
       }
 
+      if (pathname === "/api/configs/model-catalog" && method === "GET") {
+        return jsonResponse([
+          {
+            provider: "zai",
+            provider_label: "z.ai (GLM)",
+            api_style: "openai_chat_completions",
+            base_url: "https://api.z.ai/api/coding/paas/v4",
+            api_key_env: "ZAI_API_KEY",
+            notes: "test preset",
+            models: [{ id: "glm-5", label: "GLM-5", recommended: true }],
+          },
+        ]);
+      }
+
       if (pathname === "/api/jobs/run" && method === "POST") {
         return jsonResponse({
           job_id: "job-run-1",

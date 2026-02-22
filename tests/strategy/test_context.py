@@ -77,3 +77,51 @@ def test_build_direct_prompt_includes_few_shot() -> None:
     prompt = build_direct_prompt(_game_state(), cfg)
     assert "Few-shot examples" in prompt
     assert "e2e4" in prompt
+
+
+def test_build_direct_prompt_includes_rag_block_when_enabled() -> None:
+    cfg = {
+        "board_format": "fen",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "rag": {
+            "enabled": True,
+            "max_chunks": 2,
+            "include_sources": {
+                "eco": True,
+                "lichess": False,
+                "endgames": False,
+            },
+        },
+        "validation": {"feedback_level": "rich"},
+    }
+
+    prompt = build_direct_prompt(_game_state(), cfg)
+    assert "Knowledge snippets (retrieved):" in prompt
+    assert "[eco/opening" in prompt
+
+
+def test_build_direct_prompt_can_compress_rag_block() -> None:
+    cfg = {
+        "board_format": "fen",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "rag": {
+            "enabled": True,
+            "max_chunks": 2,
+            "include_sources": {
+                "eco": True,
+                "lichess": True,
+                "endgames": True,
+            },
+        },
+        "context": {
+            "max_prompt_chars": 280,
+            "compression_order": ["rag"],
+        },
+        "validation": {"feedback_level": "rich"},
+    }
+
+    prompt = build_direct_prompt(_game_state(), cfg)
+    assert "Knowledge snippets (retrieved):" not in prompt
+    assert "Context compression: dropped rag." in prompt

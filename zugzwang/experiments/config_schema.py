@@ -35,6 +35,8 @@ ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}
 ALLOWED_TIMEOUT_POLICY_ACTIONS = {"stop_run"}
+ALLOWED_RAG_SOURCES = {"eco", "lichess", "endgames"}
+ALLOWED_MULTI_AGENT_MODES = {"capability_moa"}
 
 
 def _get_by_path(config: dict[str, Any], path: str) -> Any:
@@ -160,6 +162,121 @@ def _validate_timeout_policy(config: dict[str, Any]) -> None:
         raise ConfigValidationError(f"runtime.timeout_policy.action must be one of [{allowed}]")
 
 
+def _validate_strategy_rag(config: dict[str, Any]) -> None:
+    rag_cfg = config.get("strategy", {}).get("rag")
+    if rag_cfg is None:
+        return
+    if not isinstance(rag_cfg, dict):
+        raise ConfigValidationError("strategy.rag must be a mapping when provided")
+
+    enabled = rag_cfg.get("enabled", False)
+    if not isinstance(enabled, bool):
+        raise ConfigValidationError("strategy.rag.enabled must be a boolean")
+
+    max_chunks = rag_cfg.get("max_chunks", 3)
+    if not isinstance(max_chunks, int) or max_chunks <= 0:
+        raise ConfigValidationError("strategy.rag.max_chunks must be a positive int")
+
+    max_chars_per_chunk = rag_cfg.get("max_chars_per_chunk", 260)
+    if not isinstance(max_chars_per_chunk, int) or max_chars_per_chunk <= 0:
+        raise ConfigValidationError("strategy.rag.max_chars_per_chunk must be a positive int")
+
+    min_similarity = rag_cfg.get("min_similarity", 0.08)
+    if (
+        not isinstance(min_similarity, (int, float))
+        or min_similarity < 0
+        or min_similarity > 1
+    ):
+        raise ConfigValidationError("strategy.rag.min_similarity must be in [0, 1]")
+
+    enabled_sources = set(ALLOWED_RAG_SOURCES)
+
+    sources = rag_cfg.get("sources")
+    if sources is not None:
+        if not isinstance(sources, list):
+            raise ConfigValidationError("strategy.rag.sources must be a list when provided")
+        source_values: set[str] = set()
+        for item in sources:
+            if not isinstance(item, str):
+                raise ConfigValidationError("strategy.rag.sources entries must be strings")
+            key = item.strip().lower()
+            if key not in ALLOWED_RAG_SOURCES:
+                allowed = ", ".join(sorted(ALLOWED_RAG_SOURCES))
+                raise ConfigValidationError(f"strategy.rag.sources entries must be one of [{allowed}]")
+            source_values.add(key)
+        if source_values:
+            enabled_sources = source_values
+
+    include_sources = rag_cfg.get("include_sources")
+    if include_sources is not None:
+        if not isinstance(include_sources, dict):
+            raise ConfigValidationError("strategy.rag.include_sources must be a mapping when provided")
+        for source_name, enabled_flag in include_sources.items():
+            if not isinstance(source_name, str):
+                raise ConfigValidationError(
+                    "strategy.rag.include_sources keys must be source names"
+                )
+            key = source_name.strip().lower()
+            if key not in ALLOWED_RAG_SOURCES:
+                allowed = ", ".join(sorted(ALLOWED_RAG_SOURCES))
+                raise ConfigValidationError(
+                    f"strategy.rag.include_sources keys must be one of [{allowed}]"
+                )
+            if not isinstance(enabled_flag, bool):
+                raise ConfigValidationError(
+                    f"strategy.rag.include_sources.{key} must be boolean"
+                )
+            if enabled_flag:
+                enabled_sources.add(key)
+            else:
+                enabled_sources.discard(key)
+
+    if enabled and not enabled_sources:
+        raise ConfigValidationError(
+            "strategy.rag must enable at least one source when strategy.rag.enabled=true"
+        )
+
+
+def _validate_strategy_multi_agent(config: dict[str, Any]) -> None:
+    multi_agent_cfg = config.get("strategy", {}).get("multi_agent")
+    if multi_agent_cfg is None:
+        return
+    if not isinstance(multi_agent_cfg, dict):
+        raise ConfigValidationError("strategy.multi_agent must be a mapping when provided")
+
+    enabled = multi_agent_cfg.get("enabled", False)
+    if not isinstance(enabled, bool):
+        raise ConfigValidationError("strategy.multi_agent.enabled must be a boolean")
+
+    mode = multi_agent_cfg.get("mode", "capability_moa")
+    if not isinstance(mode, str) or mode.strip().lower() not in ALLOWED_MULTI_AGENT_MODES:
+        allowed = ", ".join(sorted(ALLOWED_MULTI_AGENT_MODES))
+        raise ConfigValidationError(f"strategy.multi_agent.mode must be one of [{allowed}]")
+
+    proposer_count = multi_agent_cfg.get("proposer_count", 2)
+    if not isinstance(proposer_count, int) or proposer_count <= 0:
+        raise ConfigValidationError("strategy.multi_agent.proposer_count must be a positive int")
+
+    include_legal = multi_agent_cfg.get("include_legal_moves_in_aggregator", True)
+    if not isinstance(include_legal, bool):
+        raise ConfigValidationError(
+            "strategy.multi_agent.include_legal_moves_in_aggregator must be a boolean"
+        )
+
+    proposer_roles = multi_agent_cfg.get("proposer_roles")
+    if proposer_roles is not None:
+        if not isinstance(proposer_roles, list):
+            raise ConfigValidationError("strategy.multi_agent.proposer_roles must be a list")
+        for role in proposer_roles:
+            if not isinstance(role, str) or not role.strip():
+                raise ConfigValidationError(
+                    "strategy.multi_agent.proposer_roles entries must be non-empty strings"
+                )
+
+    if enabled and proposer_count > 8:
+        raise ConfigValidationError("strategy.multi_agent.proposer_count must be <= 8")
+
+
 def validate_config(config: dict[str, Any]) -> None:
     if not isinstance(config, dict):
         raise ConfigValidationError("Resolved config must be a mapping")
@@ -220,3 +337,5 @@ def validate_config(config: dict[str, Any]) -> None:
     _validate_player_config(_get_by_path(config, "players"))
     _validate_evaluation_auto(config)
     _validate_timeout_policy(config)
+    _validate_strategy_rag(config)
+    _validate_strategy_multi_agent(config)

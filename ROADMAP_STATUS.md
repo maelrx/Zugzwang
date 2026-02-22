@@ -1,6 +1,6 @@
 # Zugzwang Engine Roadmap Status
 
-Last updated: 2026-02-22 (engine-phase6-guardrails update)
+Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
 
 ## Progress by phase
 
@@ -47,10 +47,54 @@ Last updated: 2026-02-22 (engine-phase6-guardrails update)
   - token-level budget enforcement (current implementation is char-budget compression)
 
 ## Phase 4: Knowledge / RAG
-- Status: not started (placeholders)
+- Status: partial (MVP)
+- Implemented:
+  - deterministic local retrieval core:
+    - `knowledge/embeddings.py` (sparse hashed embeddings)
+    - `knowledge/vectordb.py` (in-memory similarity search)
+    - `knowledge/indexer.py` (source registry and source toggles)
+    - `knowledge/retriever.py` (phase-aware retrieval with cache)
+  - initial data source adapters:
+    - `knowledge/sources/eco.py`
+    - `knowledge/sources/lichess.py`
+    - `knowledge/sources/endgames.py`
+  - strategy integration:
+    - `strategy.rag.*` config block
+    - retrieved snippets injected into direct prompt context
+    - prompt compression now supports `rag` block drop
+  - ablation starter config:
+    - `configs/ablations/rag_variants.yaml`
+  - tests:
+    - retrieval unit tests
+    - context integration tests for RAG inclusion/compression
+    - config validation tests for `strategy.rag.*`
+    - integration runner smoke with RAG enabled
+- Missing:
+  - external dataset ingestion pipelines (real ECO/Lichess corpora)
+  - optional positional reranker and vector backend pluggability (Chroma/Qdrant)
 
 ## Phase 5: Multi-agent
-- Status: not started (placeholders)
+- Status: partial (baseline)
+- Implemented:
+  - capability-MoA baseline orchestrator:
+    - proposer role sub-calls
+    - aggregator sub-call for final move choice
+    - legal fallback to proposer majority candidate when aggregator output is invalid
+  - config path:
+    - `strategy.multi_agent.enabled`
+    - `strategy.multi_agent.mode=capability_moa`
+    - `strategy.multi_agent.proposer_count`
+    - `strategy.multi_agent.proposer_roles`
+    - `strategy.multi_agent.include_legal_moves_in_aggregator`
+  - move-level trace persistence:
+    - `decision_mode`
+    - `agent_trace` (role, parse/legal, tokens, latency, cost, raw output)
+  - ablation starter config:
+    - `configs/ablations/moa_capability.yaml`
+- Missing:
+  - specialist-MoA and hybrid phase router
+  - explicit aggregator rationale fields
+  - cross-agent provider routing policies
 
 ## Phase 6: Experiment runner / scheduler
 - Status: partial
@@ -82,6 +126,26 @@ Last updated: 2026-02-22 (engine-phase6-guardrails update)
   - queue/scheduler controls beyond local single-user workflow
 
 ## Recent changes (this update)
+- Added retrieval observability:
+  - move-level retrieval metadata persisted in artifacts
+  - report metrics:
+    - `retrieval_hit_rate`
+    - `avg_retrieval_hits_per_move`
+    - `avg_retrieval_latency_ms`
+    - `retrieval_hit_rate_by_phase`
+- Added capability-MoA baseline:
+  - proposer+aggregator orchestration
+  - per-move `agent_trace` persistence
+  - `moa_move_share` experiment-level metric
+  - config validation + defaults + ablation config
+- Fixed experiment completion metric bug:
+  - `completion_rate` now calculated after valid/non-valid tally
+- Added Phase 4 RAG MVP:
+  - local, deterministic retrieval with phase-aware routing
+  - strategy-level RAG toggle (`strategy.rag.enabled`) with source-level controls
+  - direct prompt now supports retrieved knowledge snippets and `rag` compression
+  - baseline ablation config scaffold for RAG variants
+  - test coverage for retriever, config validation, prompt integration, and runner smoke
 - Added runtime timeout/completion guardrail:
   - `runtime.timeout_policy.enabled`
   - `runtime.timeout_policy.min_games_before_enforcement`
@@ -141,6 +205,6 @@ Last updated: 2026-02-22 (engine-phase6-guardrails update)
 - Added tests for pricing and budget stop behavior
 
 ## Next build targets (ordered)
-1. Phase 4 retrieval pipeline (RAG off/on toggleable path).
-2. Phase 5 capability-MoA baseline with explicit sub-call traces.
+1. Phase 4 retrieval usefulness analysis (retrieval quality/usefulness correlation in reports).
+2. Phase 5 specialist/hybrid MoA + aggregator rationale logging.
 3. Phase 6 queue scheduler + provider-aware throttling.

@@ -1,14 +1,35 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Any
 
 from zugzwang.core.models import GameState
+from zugzwang.knowledge.retriever import (
+    DEFAULT_MAX_CHARS_PER_CHUNK,
+    query as query_knowledge,
+)
 from zugzwang.strategy.few_shot import render_few_shot_block
 from zugzwang.strategy.formats import board_context_lines
 from zugzwang.strategy.phase import normalize_phase
 
 
-DEFAULT_COMPRESSION_ORDER = ["history", "legal_moves", "few_shot"]
+DEFAULT_COMPRESSION_ORDER = ["history", "rag", "legal_moves", "few_shot"]
+
+
+@dataclass(frozen=True)
+class PromptRetrievalTelemetry:
+    enabled: bool
+    hit_count: int
+    latency_ms: int
+    sources: list[str] = field(default_factory=list)
+    phase: str | None = None
+
+
+@dataclass(frozen=True)
+class PromptBuildResult:
+    prompt: str
+    dropped_blocks: list[str]
+    retrieval: PromptRetrievalTelemetry
 
 
 def build_direct_prompt(
@@ -16,6 +37,18 @@ def build_direct_prompt(
     strategy_config: dict[str, Any],
     retry_feedback: str | None = None,
 ) -> str:
+    return build_direct_prompt_with_metadata(
+        game_state=game_state,
+        strategy_config=strategy_config,
+        retry_feedback=retry_feedback,
+    ).prompt
+
+
+def build_direct_prompt_with_metadata(
+    game_state: GameState,
+    strategy_config: dict[str, Any],
+    retry_feedback: str | None = None,
+) -> PromptBuildResult:
     board_format = str(strategy_config.get("board_format", "fen"))
     include_legal = bool(strategy_config.get("provide_legal_moves", True))
     include_history = bool(strategy_config.get("provide_history", True))
@@ -37,6 +70,12 @@ def build_direct_prompt(
     few_shot = render_few_shot_block(strategy_config, phase=phase)
     if few_shot:
         optional_blocks["few_shot"] = few_shot
+
+    rag_cfg = strategy_config.get("rag", {})
+    rag_result = query_knowledge(game_state, rag_cfg)
+    rag_block = _render_rag_block(rag_result=rag_result, rag_cfg=rag_cfg)
+    if rag_block:
+        optional_blocks["rag"] = rag_block
 
     if include_history:
         tail = game_state.history_uci[-history_plies:] if history_plies > 0 else []
@@ -69,7 +108,18 @@ def build_direct_prompt(
     if max_prompt_chars is not None and len(prompt) > max_prompt_chars:
         prompt = _truncate_prompt(prompt, max_prompt_chars)
 
-    return prompt
+    retrieval_telemetry = PromptRetrievalTelemetry(
+        enabled=bool(isinstance(rag_cfg, dict) and rag_cfg.get("enabled", False)),
+        hit_count=len(getattr(rag_result, "chunks", [])),
+        latency_ms=int(getattr(rag_result, "latency_ms", 0)),
+        sources=list(getattr(rag_result, "sources", []) or []),
+        phase=phase,
+    )
+    return PromptBuildResult(
+        prompt=prompt,
+        dropped_blocks=dropped,
+        retrieval=retrieval_telemetry,
+    )
 
 
 def _compress_prompt(
@@ -104,7 +154,7 @@ def _compress_prompt(
 
 def _join_blocks(base_lines: list[str], optional_blocks: dict[str, str]) -> list[str]:
     output = list(base_lines)
-    for key in ("few_shot", "history", "legal_moves", "retry_feedback"):
+    for key in ("few_shot", "rag", "history", "legal_moves", "retry_feedback"):
         block = optional_blocks.get(key)
         if block:
             output.append(block)
@@ -143,7 +193,7 @@ def _read_compression_order(context_cfg: Any) -> list[str]:
         if not isinstance(item, str):
             continue
         key = item.strip().lower()
-        if key in {"few_shot", "history", "legal_moves", "retry_feedback"} and key not in normalized:
+        if key in {"few_shot", "rag", "history", "legal_moves", "retry_feedback"} and key not in normalized:
             normalized.append(key)
 
     if not normalized:
@@ -161,3 +211,30 @@ def _truncate_prompt(prompt: str, max_prompt_chars: int) -> str:
         return prompt[:max_prompt_chars]
     head = prompt[: max_prompt_chars - len(marker)].rstrip()
     return f"{head}{marker}"
+
+
+def _render_rag_block(rag_result: Any, rag_cfg: Any) -> str | None:
+    chunks = getattr(rag_result, "chunks", None)
+    if not isinstance(chunks, list) or not chunks:
+        return None
+    max_chars_per_chunk = _read_positive_int(rag_cfg, "max_chars_per_chunk")
+    if max_chars_per_chunk is None:
+        max_chars_per_chunk = DEFAULT_MAX_CHARS_PER_CHUNK
+
+    lines = ["Knowledge snippets (retrieved):"]
+    for index, chunk in enumerate(chunks, start=1):
+        payload = getattr(chunk, "chunk", None)
+        if payload is None:
+            continue
+        source = getattr(payload, "source", "unknown")
+        phase = getattr(payload, "phase", "unknown")
+        title = getattr(payload, "title", "Untitled")
+        content = str(getattr(payload, "content", "")).strip().replace("\n", " ")
+        if len(content) > max_chars_per_chunk:
+            content = f"{content[: max_chars_per_chunk - 3].rstrip()}..."
+        score = float(getattr(chunk, "score", 0.0))
+        lines.append(f"{index}. [{source}/{phase} score={score:.2f}] {title}: {content}")
+    if len(lines) <= 1:
+        return None
+    lines.append("Use snippets only as optional guidance. Return one legal UCI move.")
+    return "\n".join(lines)

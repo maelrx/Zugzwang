@@ -39,6 +39,13 @@ class MoveDecision:
     feedback_level: str = "rich"
     error: str | None = None
     cost_usd: float = 0.0
+    retrieval_enabled: bool = False
+    retrieval_hit_count: int = 0
+    retrieval_latency_ms: int = 0
+    retrieval_sources: list[str] = field(default_factory=list)
+    retrieval_phase: str | None = None
+    decision_mode: str = "single_agent"
+    agent_trace: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -123,6 +130,13 @@ class ExperimentReport:
     reliability_stop_reason: str | None = None
     provider_timeout_game_rate: float = 0.0
     nonvalid_game_rate: float = 0.0
+    retrieval_hit_rate: float = 0.0
+    avg_retrieval_hits_per_move: float = 0.0
+    avg_retrieval_latency_ms: float = 0.0
+    retrieval_hit_rate_by_phase: dict[str, float] = field(
+        default_factory=lambda: {"opening": 0.0, "middlegame": 0.0, "endgame": 0.0}
+    )
+    moa_move_share: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

@@ -21,6 +21,23 @@ strategy:
   provide_legal_moves: true
   provide_history: true
   history_plies: 8
+  rag:
+    enabled: false
+    max_chunks: 3
+    max_chars_per_chunk: 260
+    min_similarity: 0.08
+    include_sources:
+      eco: true
+      lichess: true
+      endgames: true
+  multi_agent:
+    enabled: false
+    mode: capability_moa
+    proposer_count: 2
+    proposer_roles:
+      - reasoning
+      - compliance
+    include_legal_moves_in_aggregator: true
   validation:
     feedback_level: rich
     move_retries: 3

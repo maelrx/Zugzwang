@@ -28,8 +28,6 @@ def summarize_experiment(
     wins = sum(1 for rec in records if rec.result == "1-0")
     losses = sum(1 for rec in records if rec.result == "0-1")
     draws = sum(1 for rec in records if rec.result == "1/2-1/2")
-    completion_rate = valid_games / scheduled_games if scheduled_games else 0.0
-    total_games = valid_games if valid_games else 1
 
     total_moves = sum(len(rec.moves) for rec in records)
     illegal_raw = sum(
@@ -45,6 +43,50 @@ def summarize_experiment(
         for rec_move in rec.moves
         if rec_move.move_decision.retry_count > 0 and rec_move.move_decision.is_legal
     )
+    retrieval_enabled_moves = sum(
+        1
+        for rec in records
+        for rec_move in rec.moves
+        if rec_move.move_decision.retrieval_enabled
+    )
+    retrieval_hit_moves = sum(
+        1
+        for rec in records
+        for rec_move in rec.moves
+        if rec_move.move_decision.retrieval_enabled
+        and rec_move.move_decision.retrieval_hit_count > 0
+    )
+    retrieval_hits_total = sum(
+        rec_move.move_decision.retrieval_hit_count
+        for rec in records
+        for rec_move in rec.moves
+        if rec_move.move_decision.retrieval_enabled
+    )
+    retrieval_latency_total = sum(
+        rec_move.move_decision.retrieval_latency_ms
+        for rec in records
+        for rec_move in rec.moves
+        if rec_move.move_decision.retrieval_enabled
+    )
+    retrieval_phase_totals = {"opening": 0, "middlegame": 0, "endgame": 0}
+    retrieval_phase_hits = {"opening": 0, "middlegame": 0, "endgame": 0}
+    for rec in records:
+        for rec_move in rec.moves:
+            decision = rec_move.move_decision
+            phase = (decision.retrieval_phase or "").strip().lower()
+            if phase not in retrieval_phase_totals:
+                continue
+            if not decision.retrieval_enabled:
+                continue
+            retrieval_phase_totals[phase] += 1
+            if decision.retrieval_hit_count > 0:
+                retrieval_phase_hits[phase] += 1
+    moa_moves = sum(
+        1
+        for rec in records
+        for rec_move in rec.moves
+        if rec_move.move_decision.decision_mode == "capability_moa"
+    )
     games_with_provider_timeout = 0
     for rec in records:
         if rec.termination in NON_VALID_TERMINATIONS:
@@ -53,6 +95,8 @@ def summarize_experiment(
             valid_games += 1
         if _record_has_provider_timeout(rec):
             games_with_provider_timeout += 1
+    completion_rate = valid_games / scheduled_games if scheduled_games else 0.0
+    total_games = valid_games if valid_games else 1
 
     token_total = sum(rec.token_usage["input"] + rec.token_usage["output"] for rec in records)
     cost_total = sum(rec.cost_usd for rec in records)
@@ -67,6 +111,24 @@ def summarize_experiment(
         budget_utilization = cost_total / budget_cap_usd
     provider_timeout_game_rate = (games_with_provider_timeout / total_records) if total_records else 0.0
     nonvalid_game_rate = (nonvalid_games / total_records) if total_records else 0.0
+    retrieval_hit_rate = (
+        retrieval_hit_moves / retrieval_enabled_moves if retrieval_enabled_moves else 0.0
+    )
+    avg_retrieval_hits_per_move = (
+        retrieval_hits_total / total_moves if total_moves else 0.0
+    )
+    avg_retrieval_latency_ms = (
+        retrieval_latency_total / retrieval_enabled_moves if retrieval_enabled_moves else 0.0
+    )
+    retrieval_hit_rate_by_phase = {
+        phase: (
+            retrieval_phase_hits[phase] / retrieval_phase_totals[phase]
+            if retrieval_phase_totals[phase]
+            else 0.0
+        )
+        for phase in ("opening", "middlegame", "endgame")
+    }
+    moa_move_share = (moa_moves / total_moves) if total_moves else 0.0
 
     return ExperimentReport(
         schema_version="1.0",
@@ -101,6 +163,11 @@ def summarize_experiment(
         reliability_stop_reason=reliability_stop_reason,
         provider_timeout_game_rate=provider_timeout_game_rate,
         nonvalid_game_rate=nonvalid_game_rate,
+        retrieval_hit_rate=retrieval_hit_rate,
+        avg_retrieval_hits_per_move=avg_retrieval_hits_per_move,
+        avg_retrieval_latency_ms=avg_retrieval_latency_ms,
+        retrieval_hit_rate_by_phase=retrieval_hit_rate_by_phase,
+        moa_move_share=moa_move_share,
     )
 
 

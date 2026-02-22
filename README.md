@@ -115,6 +115,62 @@ When enabled, the runner can stop a condition early if:
 - too many games include provider timeout errors, or
 - observed completion collapses below threshold.
 
+## RAG (Phase 4 MVP)
+
+RAG is now available as an optional strategy block with local, deterministic retrieval.
+
+- Sources currently included:
+  - `eco` (opening principles)
+  - `lichess` (tactical/positional heuristics)
+  - `endgames` (endgame principles)
+- Retrieval is phase-aware (`opening`, `middlegame`, `endgame`) and can be toggled per run with config only.
+- Retrieved snippets are injected into the direct prompt and obey prompt compression rules (`context.compression_order` can include `rag`).
+
+Example toggle via overrides:
+
+```bash
+zugzwang play --config configs/baselines/best_known_start.yaml \
+  --set strategy.rag.enabled=true \
+  --set strategy.rag.max_chunks=3 \
+  --set strategy.rag.include_sources.eco=true \
+  --set strategy.rag.include_sources.lichess=true \
+  --set strategy.rag.include_sources.endgames=true
+```
+
+RAG ablation starter config:
+
+- `configs/ablations/rag_variants.yaml`
+
+Retrieval telemetry is now persisted per move and summarized at run level:
+- move fields: `retrieval_enabled`, `retrieval_hit_count`, `retrieval_latency_ms`, `retrieval_sources`, `retrieval_phase`
+- report fields: `retrieval_hit_rate`, `avg_retrieval_hits_per_move`, `avg_retrieval_latency_ms`, `retrieval_hit_rate_by_phase`
+
+## Capability MoA (Phase 5 baseline)
+
+Initial capability-based multi-agent orchestration is now available in direct mode:
+
+- proposer sub-calls with role prompts (for example: `reasoning`, `compliance`)
+- one aggregator sub-call to select the final legal move
+- sub-call traces persisted per move in `agent_trace`
+- fallback policy: if aggregator output is invalid, use proposer majority candidate when legal
+
+Enable via config/overrides:
+
+```bash
+zugzwang play --config configs/baselines/best_known_start.yaml \
+  --set strategy.multi_agent.enabled=true \
+  --set strategy.multi_agent.mode=capability_moa \
+  --set strategy.multi_agent.proposer_count=2
+```
+
+MoA baseline config:
+
+- `configs/ablations/moa_capability.yaml`
+
+MoA telemetry:
+- move fields: `decision_mode` (`single_agent` or `capability_moa`) and `agent_trace`
+- report field: `moa_move_share`
+
 ## Stockfish Evaluation (Phase 2)
 
 - Evaluation command reads a completed run directory and creates `experiment_report_evaluated.json`.

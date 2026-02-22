@@ -9,9 +9,11 @@ from zugzwang.ui.types import (
     ConfigTemplate,
     GameMeta,
     GameRecordView,
+    ResolvedConfigPreview,
     RunMeta,
     RunProgress,
     RunSummary,
+    ValidationResult,
 )
 
 
@@ -21,6 +23,26 @@ class FakeConfigService:
             ConfigTemplate(name="best_known_start", path="configs/baselines/best_known_start.yaml", category="baselines"),
             ConfigTemplate(name="rag_variants", path="configs/ablations/rag_variants.yaml", category="ablations"),
         ]
+
+    def validate_config(self, config_path: str, overrides=None, model_profile: str | None = None) -> ValidationResult:
+        _ = (config_path, overrides, model_profile)
+        return ValidationResult(
+            ok=True,
+            message="Config is valid",
+            config_hash="cfg-hash-1",
+            resolved_config={"experiment": {"name": "best_known_start"}},
+        )
+
+    def resolve_config_preview(self, config_path: str, overrides=None, model_profile: str | None = None) -> ResolvedConfigPreview:
+        _ = (config_path, overrides, model_profile)
+        return ResolvedConfigPreview(
+            config_path="configs/baselines/best_known_start.yaml",
+            config_hash="cfg-hash-1",
+            run_id="best_known_start-20260222T100000Z-abcdef01",
+            scheduled_games=5,
+            estimated_total_cost_usd=0.42,
+            resolved_config={"experiment": {"name": "best_known_start"}},
+        )
 
 
 class FakeRunService:
@@ -154,6 +176,21 @@ def test_configs_route_groups_baselines_and_ablations() -> None:
     assert len(payload["ablations"]) == 1
     assert payload["baselines"][0]["name"] == "best_known_start"
 
+    validate_response = client.post(
+        "/api/configs/validate",
+        json={"config_path": "configs/baselines/best_known_start.yaml", "overrides": []},
+    )
+    assert validate_response.status_code == 200
+    assert validate_response.json()["ok"] is True
+    assert validate_response.json()["config_hash"] == "cfg-hash-1"
+
+    preview_response = client.post(
+        "/api/configs/preview",
+        json={"config_path": "configs/baselines/best_known_start.yaml", "overrides": []},
+    )
+    assert preview_response.status_code == 200
+    assert preview_response.json()["run_id"].startswith("best_known_start-")
+
 
 def test_jobs_routes_return_job_and_progress() -> None:
     client = _build_client()
@@ -214,4 +251,3 @@ def test_env_check_route_exposes_provider_statuses() -> None:
     assert response.status_code == 200
     providers = {item["provider"] for item in response.json()}
     assert {"zai", "openai", "anthropic", "google", "mock", "stockfish"}.issubset(providers)
-

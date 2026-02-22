@@ -379,3 +379,7 @@ Continue M6/M7:
   - Added log terminal component with stream filters and auto-scroll toggle.
   - Upgraded job detail page to use structured terminal rendering.
   - Added replay move-quality badges (`clean`, `recovered`, `illegal`, `parse-fail`).
+- 2026-02-22: M7 flow increment.
+  - Added backend config routes: `POST /api/configs/validate` and `POST /api/configs/preview`.
+  - Regenerated OpenAPI schema and updated frontend typed contracts.
+  - Replaced Run Lab placeholder with real launch flow (validate/preview/play/run + redirect to job detail).

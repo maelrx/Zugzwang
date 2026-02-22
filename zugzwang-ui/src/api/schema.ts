@@ -38,6 +38,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/configs/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Config */
+        post: operations["validate_config_api_configs_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/configs/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Config */
+        post: operations["preview_config_api_configs_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/env-check": {
         parameters: {
             query?: never;
@@ -351,6 +385,23 @@ export interface components {
             /** Ablations */
             ablations?: components["schemas"]["ConfigTemplate"][];
         };
+        /** ConfigPreviewResponse */
+        ConfigPreviewResponse: {
+            /** Config Path */
+            config_path: string;
+            /** Config Hash */
+            config_hash: string;
+            /** Run Id */
+            run_id: string;
+            /** Scheduled Games */
+            scheduled_games: number;
+            /** Estimated Total Cost Usd */
+            estimated_total_cost_usd?: number | null;
+            /** Resolved Config */
+            resolved_config: {
+                [key: string]: unknown;
+            };
+        };
         /** ConfigTemplate */
         ConfigTemplate: {
             /** Name */
@@ -359,6 +410,28 @@ export interface components {
             path: string;
             /** Category */
             category: string;
+        };
+        /** ConfigValidateRequest */
+        ConfigValidateRequest: {
+            /** Config Path */
+            config_path: string;
+            /** Overrides */
+            overrides?: string[];
+            /** Model Profile */
+            model_profile?: string | null;
+        };
+        /** ConfigValidateResponse */
+        ConfigValidateResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+            /** Config Hash */
+            config_hash?: string | null;
+            /** Resolved Config */
+            resolved_config?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** EnvCheckResponse */
         EnvCheckResponse: {
@@ -592,6 +665,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfigListResponse"];
+                };
+            };
+        };
+    };
+    validate_config_api_configs_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigValidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigValidateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_config_api_configs_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigValidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigPreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

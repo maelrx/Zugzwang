@@ -24,6 +24,28 @@ class ConfigListResponse(ApiModel):
     ablations: list[ConfigTemplate] = Field(default_factory=list)
 
 
+class ConfigValidateRequest(ApiModel):
+    config_path: str
+    overrides: list[str] = Field(default_factory=list)
+    model_profile: str | None = None
+
+
+class ConfigValidateResponse(ApiModel):
+    ok: bool
+    message: str
+    config_hash: str | None = None
+    resolved_config: dict[str, Any] | None = None
+
+
+class ConfigPreviewResponse(ApiModel):
+    config_path: str
+    config_hash: str
+    run_id: str
+    scheduled_games: int
+    estimated_total_cost_usd: float | None = None
+    resolved_config: dict[str, Any]
+
+
 class JobResponse(ApiModel):
     job_id: str
     job_type: JobType

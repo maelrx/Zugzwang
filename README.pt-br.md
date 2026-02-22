@@ -315,8 +315,6 @@ Tipos TypeScript gerados automaticamente do schema OpenAPI do FastAPI — nunca 
 npx openapi-typescript http://localhost:8000/openapi.json -o src/api/schema.ts
 ```
 
-Especificação completa de arquitetura: [`techdocs/FRONTEND_ARCHITECTURE.md`](../techdocs/FRONTEND_ARCHITECTURE.md)
-
 ---
 
 ## Artefatos de Execução

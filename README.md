@@ -325,8 +325,6 @@ TypeScript types are auto-generated from the FastAPI OpenAPI schema — never wr
 npx openapi-typescript http://localhost:8000/openapi.json -o src/api/schema.ts
 ```
 
-Full architecture spec: [`techdocs/FRONTEND_ARCHITECTURE.md`](../techdocs/FRONTEND_ARCHITECTURE.md)
-
 ---
 
 ## Run Artifacts

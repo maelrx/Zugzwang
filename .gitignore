@@ -9,3 +9,14 @@ data/vectordb/
 tools/stockfish/
 
 *.egg-info/
+
+# Frontend and E2E/QA artifacts
+**/node_modules/
+**/dist/
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/.tmp-qa/
+**/.tmp-visible/
+**/.tmp-playwright/
+**/coverage/

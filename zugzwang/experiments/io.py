@@ -49,6 +49,11 @@ def game_record_from_dict(payload: dict[str, Any]) -> GameRecord:
                 if isinstance(decision_payload.get("agent_trace"), list)
                 else []
             ),
+            aggregator_rationale=(
+                str(decision_payload.get("aggregator_rationale"))
+                if decision_payload.get("aggregator_rationale") is not None
+                else None
+            ),
         )
         moves.append(
             MoveRecord(

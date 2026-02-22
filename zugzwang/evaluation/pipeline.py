@@ -90,6 +90,7 @@ def evaluate_run_dir(
         acpl_by_phase=move_quality["acpl_by_phase"],
         blunder_rate=move_quality["blunder_rate"],
         best_move_agreement=move_quality["best_move_agreement"],
+        retrieval_usefulness=move_quality["retrieval_usefulness"],
     )
 
     output = enriched_report.to_dict()
@@ -105,6 +106,7 @@ def evaluate_run_dir(
         "opponent_elo": opponent_elo,
         "elo_color_correction": elo_color_correction,
         "evaluated_move_count": move_quality["evaluated_move_count"],
+        "retrieval_usefulness": move_quality["retrieval_usefulness"],
     }
 
     output_path = run_path / output_filename
@@ -119,6 +121,7 @@ def evaluate_run_dir(
         "best_move_agreement": move_quality["best_move_agreement"],
         "elo_estimate": elo_estimate,
         "elo_ci_95": elo_ci,
+        "retrieval_usefulness": move_quality["retrieval_usefulness"],
     }
 
 
@@ -137,6 +140,7 @@ def _evaluate_move_quality(
     best_count = 0
     by_phase_sum: dict[str, int] = {"opening": 0, "middlegame": 0, "endgame": 0}
     by_phase_count: dict[str, int] = {"opening": 0, "middlegame": 0, "endgame": 0}
+    move_rows: list[dict[str, Any]] = []
 
     for record in records:
         for move in record.moves:
@@ -158,8 +162,20 @@ def _evaluate_move_quality(
 
             if classification == "blunder":
                 blunders += 1
-            if move.move_decision.move_uci == evaluation.best_move_uci:
+            is_best = move.move_decision.move_uci == evaluation.best_move_uci
+            if is_best:
                 best_count += 1
+            move_rows.append(
+                {
+                    "cp_loss": cp_loss,
+                    "is_best": is_best,
+                    "is_blunder": classification == "blunder",
+                    "phase": phase,
+                    "retrieval_enabled": bool(move.move_decision.retrieval_enabled),
+                    "retrieval_hit": bool(move.move_decision.retrieval_hit_count > 0),
+                    "retrieval_hit_count": int(move.move_decision.retrieval_hit_count),
+                }
+            )
 
     acpl_by_phase: dict[str, float] = {}
     for phase in ("opening", "middlegame", "endgame"):
@@ -169,13 +185,86 @@ def _evaluate_move_quality(
     acpl_overall = (total_cp_loss / total_moves) if total_moves else 0.0
     blunder_rate = (blunders / total_moves) if total_moves else 0.0
     best_move_agreement = (best_count / total_moves) if total_moves else 0.0
+    retrieval_usefulness = _compute_retrieval_usefulness(move_rows)
     return {
         "acpl_overall": float(acpl_overall),
         "acpl_by_phase": acpl_by_phase,
         "blunder_rate": float(blunder_rate),
         "best_move_agreement": float(best_move_agreement),
         "evaluated_move_count": total_moves,
+        "retrieval_usefulness": retrieval_usefulness,
     }
+
+
+def _compute_retrieval_usefulness(move_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    retrieval_rows = [row for row in move_rows if row.get("retrieval_enabled")]
+    hit_rows = [row for row in retrieval_rows if row.get("retrieval_hit")]
+    no_hit_rows = [row for row in retrieval_rows if not row.get("retrieval_hit")]
+
+    def mean_cp(rows: list[dict[str, Any]]) -> float | None:
+        if not rows:
+            return None
+        return float(sum(int(row["cp_loss"]) for row in rows) / len(rows))
+
+    def rate(rows: list[dict[str, Any]], key: str) -> float | None:
+        if not rows:
+            return None
+        return float(sum(1 for row in rows if bool(row.get(key))) / len(rows))
+
+    acpl_hit = mean_cp(hit_rows)
+    acpl_no_hit = mean_cp(no_hit_rows)
+    acpl_delta = None
+    if acpl_hit is not None and acpl_no_hit is not None:
+        acpl_delta = float(acpl_hit - acpl_no_hit)
+
+    by_phase: dict[str, Any] = {}
+    for phase in ("opening", "middlegame", "endgame"):
+        phase_rows = [row for row in retrieval_rows if row.get("phase") == phase]
+        phase_hit_rows = [row for row in phase_rows if row.get("retrieval_hit")]
+        phase_no_hit_rows = [row for row in phase_rows if not row.get("retrieval_hit")]
+        phase_acpl_hit = mean_cp(phase_hit_rows)
+        phase_acpl_no_hit = mean_cp(phase_no_hit_rows)
+        phase_delta = None
+        if phase_acpl_hit is not None and phase_acpl_no_hit is not None:
+            phase_delta = float(phase_acpl_hit - phase_acpl_no_hit)
+        by_phase[phase] = {
+            "enabled_move_count": len(phase_rows),
+            "hit_move_count": len(phase_hit_rows),
+            "hit_rate": float(len(phase_hit_rows) / len(phase_rows)) if phase_rows else 0.0,
+            "acpl_with_hits": phase_acpl_hit,
+            "acpl_without_hits": phase_acpl_no_hit,
+            "acpl_delta_hit_minus_no_hit": phase_delta,
+        }
+
+    return {
+        "enabled_move_count": len(retrieval_rows),
+        "hit_move_count": len(hit_rows),
+        "hit_rate": float(len(hit_rows) / len(retrieval_rows)) if retrieval_rows else 0.0,
+        "acpl_with_hits": acpl_hit,
+        "acpl_without_hits": acpl_no_hit,
+        "acpl_delta_hit_minus_no_hit": acpl_delta,
+        "best_move_agreement_with_hits": rate(hit_rows, "is_best"),
+        "best_move_agreement_without_hits": rate(no_hit_rows, "is_best"),
+        "blunder_rate_with_hits": rate(hit_rows, "is_blunder"),
+        "blunder_rate_without_hits": rate(no_hit_rows, "is_blunder"),
+        "hit_count_cp_loss_pearson": _pearson_hit_count_cp_loss(retrieval_rows),
+        "by_phase": by_phase,
+    }
+
+
+def _pearson_hit_count_cp_loss(rows: list[dict[str, Any]]) -> float | None:
+    if len(rows) < 2:
+        return None
+    xs = [float(int(row["retrieval_hit_count"])) for row in rows]
+    ys = [float(int(row["cp_loss"])) for row in rows]
+    mean_x = sum(xs) / len(xs)
+    mean_y = sum(ys) / len(ys)
+    var_x = sum((value - mean_x) ** 2 for value in xs)
+    var_y = sum((value - mean_y) ** 2 for value in ys)
+    if var_x <= 0 or var_y <= 0:
+        return None
+    cov = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys, strict=False))
+    return float(cov / ((var_x**0.5) * (var_y**0.5)))
 
 
 def _phase_from_fen(fen: str) -> str:

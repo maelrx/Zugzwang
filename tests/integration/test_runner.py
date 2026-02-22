@@ -94,3 +94,4 @@ def test_mock_llm_direct_mode_with_capability_moa_enabled(tmp_path: Path) -> Non
     assert black_move["decision_mode"] == "capability_moa"
     assert black_move["provider_calls"] >= 3
     assert isinstance(black_move["agent_trace"], list)
+    assert isinstance(black_move.get("aggregator_rationale"), str)

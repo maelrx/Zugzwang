@@ -46,6 +46,7 @@ class MoveDecision:
     retrieval_phase: str | None = None
     decision_mode: str = "single_agent"
     agent_trace: list[dict[str, Any]] = field(default_factory=list)
+    aggregator_rationale: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -137,6 +138,7 @@ class ExperimentReport:
         default_factory=lambda: {"opening": 0.0, "middlegame": 0.0, "endgame": 0.0}
     )
     moa_move_share: float = 0.0
+    retrieval_usefulness: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

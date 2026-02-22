@@ -1,6 +1,6 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { useRunGames, useRunSummary } from "../../api/queries";
+import { useMemo, useState } from "react";
+import { useStartEvaluation, useRunGames, useRunSummary } from "../../api/queries";
 import { PageHeader } from "../components/PageHeader";
 
 export function RunDetailPage() {
@@ -9,9 +9,14 @@ export function RunDetailPage() {
 
   const summaryQuery = useRunSummary(runId);
   const gamesQuery = useRunGames(runId);
+  const startEval = useStartEvaluation();
+  const [playerColor, setPlayerColor] = useState<"white" | "black">("black");
+  const [opponentElo, setOpponentElo] = useState("");
+  const [lastEvalJobId, setLastEvalJobId] = useState<string | null>(null);
 
   const summary = summaryQuery.data;
   const games = gamesQuery.data ?? [];
+  const runDir = summary?.run_meta.run_dir ?? "";
   const report = summary?.report;
   const evaluated = asRecord(summary?.evaluated_report);
   const evaluatedMetrics = asRecord(evaluated.metrics);
@@ -76,6 +81,82 @@ export function RunDetailPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl border border-[#ddd5c8] bg-white/80 p-4">
+          <h3 className="text-sm font-semibold text-[#264351]">Run evaluation</h3>
+          <p className="mt-1 text-xs text-[#576d7a]">
+            Launches `POST /api/jobs/evaluate` and returns a trackable job in the Jobs monitor.
+          </p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-xs text-[#4f6773]">
+              Player color
+              <select
+                value={playerColor}
+                onChange={(event) => setPlayerColor(event.target.value as "white" | "black")}
+                className="mt-1 w-full rounded-md border border-[#d8d1c5] bg-[#f8f5ef] px-2 py-1.5 text-sm text-[#2b4552]"
+              >
+                <option value="white">white</option>
+                <option value="black">black</option>
+              </select>
+            </label>
+
+            <label className="text-xs text-[#4f6773]">
+              Opponent Elo (optional)
+              <input
+                value={opponentElo}
+                onChange={(event) => setOpponentElo(event.target.value)}
+                placeholder="e.g. 1000"
+                className="mt-1 w-full rounded-md border border-[#d8d1c5] bg-[#f8f5ef] px-2 py-1.5 text-sm text-[#2b4552]"
+              />
+            </label>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-sm font-semibold text-[#edf8fd]"
+              disabled={startEval.isPending || !runDir}
+              onClick={() => {
+                setLastEvalJobId(null);
+                const parsedElo = opponentElo.trim() ? Number(opponentElo) : null;
+                startEval.mutate(
+                  {
+                    run_dir: runDir,
+                    player_color: playerColor,
+                    opponent_elo: parsedElo !== null && Number.isFinite(parsedElo) ? parsedElo : null,
+                    output_filename: "experiment_report_evaluated.json",
+                  },
+                  {
+                    onSuccess: (job) => setLastEvalJobId(job.job_id),
+                  },
+                );
+              }}
+            >
+              {startEval.isPending ? "Starting..." : "Start evaluation"}
+            </button>
+
+            <Link to="/jobs" className="rounded-md border border-[#d8d1c5] bg-white px-3 py-1.5 text-sm text-[#334c59]">
+              Open jobs list
+            </Link>
+          </div>
+
+          {startEval.isError && (
+            <p className="mt-2 rounded-md border border-[#ce8d8d] bg-[#fff1ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
+              Failed to start evaluation job.
+            </p>
+          )}
+
+          {lastEvalJobId && (
+            <p className="mt-2 text-xs text-[#47606d]">
+              Evaluation started:
+              {" "}
+              <Link to="/jobs/$jobId" params={{ jobId: lastEvalJobId }} className="font-semibold text-[#1f637d] underline">
+                {lastEvalJobId}
+              </Link>
+            </p>
+          )}
+        </section>
+
         <details className="rounded-2xl border border-[#ddd5c8] bg-white/80 p-4" open>
           <summary className="cursor-pointer text-sm font-semibold text-[#264351]">Resolved config</summary>
           <pre className="mt-3 max-h-[260px] overflow-auto rounded-lg bg-[#f8f5ef] p-3 font-['IBM_Plex_Mono'] text-xs text-[#334b58]">

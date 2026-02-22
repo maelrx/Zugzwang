@@ -1,5 +1,5 @@
 import { useParams } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { useGame, useGameFrames } from "../../api/queries";
 import { PageHeader } from "../components/PageHeader";
@@ -13,6 +13,8 @@ export function ReplayPage() {
   const framesQuery = useGameFrames(runId, Number.isFinite(gameNumber) ? gameNumber : null);
   const frames = framesQuery.data ?? [];
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoplay, setIsAutoplay] = useState(false);
+  const [autoplayMs, setAutoplayMs] = useState(900);
 
   const safeIndex = Math.max(0, Math.min(currentIndex, Math.max(0, frames.length - 1)));
   const frame = frames[safeIndex];
@@ -37,6 +39,25 @@ export function ReplayPage() {
       };
     });
   }, [gameQuery.data?.moves]);
+
+  useEffect(() => {
+    if (!isAutoplay || frames.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCurrentIndex((prev) => {
+        const max = Math.max(0, frames.length - 1);
+        if (prev >= max) {
+          setIsAutoplay(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, autoplayMs);
+
+    return () => window.clearInterval(intervalId);
+  }, [autoplayMs, frames.length, isAutoplay]);
 
   return (
     <section>
@@ -74,7 +95,10 @@ export function ReplayPage() {
           <button
             type="button"
             className="rounded-md border border-[#d8d0c4] bg-white px-2 py-1 text-xs text-[#2a4452]"
-            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+            onClick={() => {
+              setIsAutoplay(false);
+              setCurrentIndex((prev) => Math.max(0, prev - 1));
+            }}
             disabled={safeIndex <= 0}
           >
             Prev
@@ -82,11 +106,48 @@ export function ReplayPage() {
           <button
             type="button"
             className="rounded-md border border-[#d8d0c4] bg-white px-2 py-1 text-xs text-[#2a4452]"
-            onClick={() => setCurrentIndex((prev) => Math.min(Math.max(0, frames.length - 1), prev + 1))}
+            onClick={() => {
+              setIsAutoplay(false);
+              setCurrentIndex((prev) => Math.min(Math.max(0, frames.length - 1), prev + 1));
+            }}
             disabled={safeIndex >= Math.max(0, frames.length - 1)}
           >
             Next
           </button>
+          <button
+            type="button"
+            className={[
+              "rounded-md border px-2 py-1 text-xs",
+              isAutoplay ? "border-[#1f637d] bg-[#1f637d] text-[#edf8fd]" : "border-[#d8d0c4] bg-white text-[#2a4452]",
+            ].join(" ")}
+            disabled={frames.length <= 1}
+            onClick={() => setIsAutoplay((prev) => !prev)}
+          >
+            {isAutoplay ? "Pause" : "Autoplay"}
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-[#d8d0c4] bg-white px-2 py-1 text-xs text-[#2a4452]"
+            onClick={() => {
+              setIsAutoplay(false);
+              setCurrentIndex(0);
+            }}
+            disabled={safeIndex === 0}
+          >
+            Reset
+          </button>
+          <label className="text-xs text-[#4f6471]">
+            speed
+            <select
+              value={autoplayMs}
+              onChange={(event) => setAutoplayMs(Number(event.target.value))}
+              className="ml-1 rounded-md border border-[#d8d0c4] bg-white px-1.5 py-0.5 text-xs text-[#2a4452]"
+            >
+              <option value={1200}>slow</option>
+              <option value={900}>normal</option>
+              <option value={600}>fast</option>
+            </select>
+          </label>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[440px_1fr]">

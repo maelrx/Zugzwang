@@ -4,6 +4,7 @@ import { DashboardPage } from "./ui/pages/DashboardPage";
 import { JobDetailPage } from "./ui/pages/JobDetailPage";
 import { JobsPage } from "./ui/pages/JobsPage";
 import { ReplayPage } from "./ui/pages/ReplayPage";
+import { RunComparePage } from "./ui/pages/RunComparePage";
 import { RunLabPage } from "./ui/pages/RunLabPage";
 import { RunDetailPage } from "./ui/pages/RunDetailPage";
 import { RunsPage } from "./ui/pages/RunsPage";
@@ -43,6 +44,12 @@ const runsRoute = createRoute({
   component: RunsPage,
 });
 
+const runCompareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/compare",
+  component: RunComparePage,
+});
+
 const runDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/$runId",
@@ -67,6 +74,7 @@ const routeTree = rootRoute.addChildren([
   jobsRoute,
   jobDetailRoute,
   runsRoute,
+  runCompareRoute,
   runDetailRoute,
   replayRoute,
   settingsRoute,

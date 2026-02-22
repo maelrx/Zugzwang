@@ -14,6 +14,15 @@ export function RunsPage() {
         subtitle="This page already reads `/api/runs`. Next step is adding detail tabs, replay routes, and comparison UI."
       />
 
+      <div className="mb-4">
+        <Link
+          to="/runs/compare"
+          className="inline-flex items-center rounded-lg border border-[#1e6079] bg-[#1e6079] px-3 py-2 text-sm font-semibold text-[#eef8fd]"
+        >
+          Open run comparison
+        </Link>
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-[#d9d1c4] bg-white/85 shadow-[0_10px_24px_rgba(16,32,41,0.08)]">
         <div className="grid grid-cols-[2.2fr_1.2fr_1fr_1fr] border-b border-[#e2ddd2] bg-[#f5f2ea] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#5e7382]">
           <span>Run ID</span>

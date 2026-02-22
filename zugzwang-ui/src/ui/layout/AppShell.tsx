@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Compass, FlaskConical, Home, ListTree, Settings, TableProperties } from "lucide-react";
+import { Compass, FlaskConical, Home, ListTree, Settings, SplitSquareHorizontal, TableProperties } from "lucide-react";
 import { type ComponentType } from "react";
 
 type NavItem = {
@@ -13,6 +13,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Run Lab", to: "/run-lab", icon: FlaskConical },
   { label: "Jobs", to: "/jobs", icon: ListTree },
   { label: "Runs", to: "/runs", icon: TableProperties },
+  { label: "Compare", to: "/runs/compare", icon: SplitSquareHorizontal },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
 

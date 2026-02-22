@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1, M2, M3 and M4 completed)
+Status: in progress (M1, M2, M3, M4 completed; M5 partial)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -24,8 +24,11 @@ Keep engine layers unchanged and preserve artifact reproducibility.
   - `zugzwang/ui/pages/*`
   - `zugzwang/ui/services/*`
 - CLI still exposes `zugzwang ui` in `zugzwang/cli.py`
-- No `zugzwang/api/` package exists yet
-- No `zugzwang-ui/` frontend folder exists yet
+- FastAPI adapter exists:
+  - `zugzwang/api/*` with runs/jobs/configs/env routes
+  - CLI command: `zugzwang api`
+- React frontend exists:
+  - `zugzwang-ui/*` with router/query shell and typed API layer
 - Existing UI service logic already encapsulates key operations:
   - config preview/validation
   - run/play/evaluate job starts
@@ -333,11 +336,11 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Start M5 now:
-1. Implement run detail routes and game-replay route tree.
-2. Add board component integration for replay frames.
-3. Add jobs detail page with SSE terminal stream.
-4. Add initial run-level comparison and artifact tabs.
+Finish M5 + start M6:
+1. Add run comparison page and baseline artifact tabs.
+2. Add chess board renderer (`react-chessboard`) in replay page.
+3. Add per-ply metrics panel with move-level telemetry.
+4. Expand job detail UX (pause auto-scroll, stream filters).
 
 ## 9. Progress log
 
@@ -359,3 +362,8 @@ Start M5 now:
   - Added OpenAPI type generation workflow and generated schema file.
   - Added typed API client and query/mutation hooks.
   - Connected Dashboard, Run Lab, Jobs, Runs and Settings to live API reads.
+- 2026-02-22: M5 partial implemented.
+  - Added dynamic route tree for job detail, run detail and replay.
+  - Added `/jobs/$jobId` page with live SSE log stream.
+  - Added `/runs/$runId` page with metrics, artifacts and game navigation.
+  - Added `/runs/$runId/replay/$gameNumber` replay scaffold with ply slider.

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../client";
-import type { RunListItem, RunSummaryResponse } from "../types";
+import type { BoardFrameResponse, GameDetailResponse, GameListItem, RunListItem, RunSummaryResponse } from "../types";
 
 type RunsFilters = {
   q?: string;
@@ -35,3 +35,29 @@ export function useRunSummary(runId: string | null) {
   });
 }
 
+export function useRunGames(runId: string | null) {
+  return useQuery({
+    queryKey: ["run-games", runId] as const,
+    queryFn: () => apiRequest<GameListItem[]>(`/api/runs/${runId}/games`),
+    enabled: Boolean(runId),
+    staleTime: 60_000,
+  });
+}
+
+export function useGame(runId: string | null, gameNumber: number | null) {
+  return useQuery({
+    queryKey: ["game", runId, gameNumber] as const,
+    queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runId}/games/${gameNumber}`),
+    enabled: Boolean(runId) && gameNumber !== null,
+    staleTime: 60_000,
+  });
+}
+
+export function useGameFrames(runId: string | null, gameNumber: number | null) {
+  return useQuery({
+    queryKey: ["game-frames", runId, gameNumber] as const,
+    queryFn: () => apiRequest<BoardFrameResponse[]>(`/api/runs/${runId}/games/${gameNumber}/frames`),
+    enabled: Boolean(runId) && gameNumber !== null,
+    staleTime: Infinity,
+  });
+}

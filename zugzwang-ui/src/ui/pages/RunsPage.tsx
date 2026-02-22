@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useRuns } from "../../api/queries";
 import { PageHeader } from "../components/PageHeader";
 
@@ -34,7 +35,13 @@ export function RunsPage() {
             key={run.run_id}
             className="grid grid-cols-[2.2fr_1.2fr_1fr_1fr] items-center border-b border-[#f0ece2] px-4 py-3 text-sm text-[#27404f]"
           >
-            <span className="truncate font-medium">{run.run_id}</span>
+            <Link
+              to="/runs/$runId"
+              params={{ runId: run.run_id }}
+              className="truncate font-medium text-[#1d5d77] hover:underline"
+            >
+              {run.run_id}
+            </Link>
             <span className="truncate text-xs text-[#5d7280]">{run.config_hash ?? "--"}</span>
             <span>{run.report_exists ? "yes" : "no"}</span>
             <span>{run.evaluated_report_exists ? "yes" : "no"}</span>

@@ -1,8 +1,11 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { AppShell } from "./ui/layout/AppShell";
 import { DashboardPage } from "./ui/pages/DashboardPage";
+import { JobDetailPage } from "./ui/pages/JobDetailPage";
 import { JobsPage } from "./ui/pages/JobsPage";
+import { ReplayPage } from "./ui/pages/ReplayPage";
 import { RunLabPage } from "./ui/pages/RunLabPage";
+import { RunDetailPage } from "./ui/pages/RunDetailPage";
 import { RunsPage } from "./ui/pages/RunsPage";
 import { SettingsPage } from "./ui/pages/SettingsPage";
 
@@ -28,10 +31,28 @@ const jobsRoute = createRoute({
   component: JobsPage,
 });
 
+const jobDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/jobs/$jobId",
+  component: JobDetailPage,
+});
+
 const runsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs",
   component: RunsPage,
+});
+
+const runDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/$runId",
+  component: RunDetailPage,
+});
+
+const replayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/$runId/replay/$gameNumber",
+  component: ReplayPage,
 });
 
 const settingsRoute = createRoute({
@@ -40,7 +61,16 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
-const routeTree = rootRoute.addChildren([dashboardRoute, runLabRoute, jobsRoute, runsRoute, settingsRoute]);
+const routeTree = rootRoute.addChildren([
+  dashboardRoute,
+  runLabRoute,
+  jobsRoute,
+  jobDetailRoute,
+  runsRoute,
+  runDetailRoute,
+  replayRoute,
+  settingsRoute,
+]);
 
 export const router = createRouter({
   routeTree,
@@ -53,4 +83,3 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
-

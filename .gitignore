@@ -19,4 +19,5 @@ tools/stockfish/
 **/.tmp-qa/
 **/.tmp-visible/
 **/.tmp-playwright/
+**/.playwright-cli/
 **/coverage/

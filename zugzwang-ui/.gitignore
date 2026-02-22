@@ -17,6 +17,7 @@ blob-report
 .tmp-qa
 .tmp-visible
 .tmp-playwright
+.playwright-cli
 coverage
 
 # Editor directories and files

@@ -77,3 +77,4 @@ def test_evaluation_service_job_completes_when_stockfish_available(tmp_path: Pat
     result = eval_service.get_evaluation_result(eval_handle.job_id)
     assert result.output_report is not None
     assert Path(result.output_report).exists()
+

@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 
 from zugzwang.infra.ids import timestamp_utc
-from zugzwang.ui.services.job_runtime import refresh_job
-from zugzwang.ui.state.job_store import create_job, get_job, update_job
-from zugzwang.ui.types import JobHandle
+from zugzwang.api.services.job_runtime import refresh_job
+from zugzwang.api.state.job_store import create_job, get_job, update_job
+from zugzwang.api.types import JobHandle
 
 
 def test_job_store_create_and_update(tmp_path: Path) -> None:
@@ -65,3 +65,4 @@ def test_refresh_job_reads_exit_payload_and_marks_completed(tmp_path: Path) -> N
     assert refreshed["status"] == "completed"
     assert refreshed["run_id"] == "sample-run-id"
     assert refreshed["run_dir"] == "results/runs/sample-run-id"
+

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from zugzwang.ui.services.replay_service import ReplayService
-from zugzwang.ui.types import GameRecordView
+from zugzwang.api.services.replay_service import ReplayService
+from zugzwang.api.types import GameRecordView
 
 
 def _sample_game() -> GameRecordView:
@@ -73,3 +73,4 @@ def test_frame_metrics_returns_move_level_metrics() -> None:
     assert metrics.tokens_output == 25
     assert metrics.retry_count == 1
     assert metrics.provider_model == "glm-5"
+

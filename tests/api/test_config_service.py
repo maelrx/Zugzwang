@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from zugzwang.ui.services.config_service import ConfigService
+from zugzwang.api.services.config_service import ConfigService
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,3 +33,4 @@ def test_resolve_preview_includes_run_metadata() -> None:
     assert preview.run_id.startswith("best_known_start-")
     assert preview.scheduled_games >= 1
     assert len(preview.config_hash) == 64
+

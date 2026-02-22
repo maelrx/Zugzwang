@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1-M4 completed; M5-M7 advanced; M8 parity/polish in progress)
+Status: completed (M1-M9 implemented)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -19,17 +19,15 @@ Keep engine layers unchanged and preserve artifact reproducibility.
 
 ## 2. Current baseline (confirmed in codebase)
 
-- Streamlit UI exists and is operational:
-  - `zugzwang/ui/app.py`
-  - `zugzwang/ui/pages/*`
-  - `zugzwang/ui/services/*`
-- CLI still exposes `zugzwang ui` in `zugzwang/cli.py`
-- FastAPI adapter exists:
+- Streamlit UI package has been removed (`M9` completed):
+  - `zugzwang/ui/*` no longer exists
+  - CLI no longer exposes `zugzwang ui`
+- FastAPI adapter is the active backend UI surface:
   - `zugzwang/api/*` with runs/jobs/configs/env routes
   - CLI command: `zugzwang api`
-- React frontend exists:
+- React frontend is the active UI:
   - `zugzwang-ui/*` with router/query shell and typed API layer
-- Existing UI service logic already encapsulates key operations:
+- Service logic is centralized under `zugzwang/api/services/*`:
   - config preview/validation
   - run/play/evaluate job starts
   - artifact loading
@@ -336,11 +334,10 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Continue M8/M9 prep:
-1. Add richer comparison visuals (ACPL and move-quality chart overlays).
-2. Add evaluated-report focused widgets on run detail and compare routes.
-3. Add frontend smoke coverage for dashboard/run-detail/replay/job-monitor flow.
-4. Plan M9 removal PR (streamlit deprecation + docs/startup cleanup).
+Roadmap closure:
+1. M8 parity and analytics coverage completed.
+2. M9 streamlit deprecation and cleanup completed.
+3. Active follow-up now belongs to regular backlog (scheduler, deeper analysis plots, MoA trace UX).
 
 ## 9. Progress log
 
@@ -408,3 +405,10 @@ Continue M8/M9 prep:
   - Mocked API contracts in-test to validate route rendering and page integration without backend dependency.
   - Added `npm run test` and `npm run test:watch` scripts for frontend test execution.
   - Re-validated locally with `typecheck`, `lint`, `test`, `build`, and API-backed `smoke` flow.
+- 2026-02-22: M9 streamlit deprecation completed.
+  - Migrated API runtime services/types/state to `zugzwang/api/*` (`services`, `types`, `state/job_store`) removing backend dependency on `zugzwang/ui`.
+  - Removed Streamlit package and command surface (`zugzwang/ui/*` removed, `zugzwang ui` removed from CLI).
+  - Updated `zugzwang/analysis/dashboard.py` to launch FastAPI stack instead of Streamlit.
+  - Removed `ui` optional dependency group from `pyproject.toml`.
+  - Migrated tests from `tests/ui` into API/backend-oriented locations and renamed integration test file to `test_api_services.py`.
+  - Updated README startup/docs wording to reflect FastAPI + React as the single supported UI path.

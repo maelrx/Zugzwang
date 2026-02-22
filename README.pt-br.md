@@ -276,7 +276,7 @@ zugzwang play --config configs/baselines/best_known_start_zai_glm5.yaml
 
 ### Frontend — FastAPI + React (Fase 7 — Em desenvolvimento)
 
-O protótipo Streamlit está sendo substituído por uma arquitetura adequada: um servidor **FastAPI** sobre os services Python existentes, e um frontend **Vite + React + TypeScript** em `zugzwang-ui/`.
+A arquitetura atual usa um servidor **FastAPI** sobre os services Python existentes e um frontend **Vite + React + TypeScript** em `zugzwang-ui/`.
 
 Iniciar o servidor de API:
 
@@ -377,7 +377,7 @@ O design experimental é estruturado para maximizar o sinal científico por real
 | Fase 6 — Experiment Runner | 🔄 Parcial | Batch + resume + budget; queue scheduler pendente |
 | Fase 7 — Análise | 🔄 Parcial | FastAPI + React dashboard em desenvolvimento |
 
-**Próximos alvos:** Frontend FastAPI + React (substituindo Streamlit), MoA especialista/híbrido, scheduler com fila, visualizações comparativas.
+**Próximos alvos:** MoA especialista/híbrido, scheduler com fila, visualizações comparativas e export de análise.
 
 ---
 

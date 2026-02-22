@@ -1,6 +1,6 @@
 # Zugzwang Engine Roadmap Status
 
-Last updated: 2026-02-22 (engine-phase5-modes-routing update)
+Last updated: 2026-02-22 (frontend migration M1-M9 completed)
 
 ## Progress by phase
 
@@ -120,15 +120,19 @@ Last updated: 2026-02-22 (engine-phase5-modes-routing update)
 ## Phase 7: Analysis & reporting
 - Status: partial
 - Implemented:
-  - Streamlit GUI shell (`zugzwang ui`) with pages:
-    - Home
+  - FastAPI backend for analysis and operations:
+    - read routes for env/runs/artifacts/replay/evaluation summaries
+    - write routes for run launch, evaluate launch, cancel and log streaming (SSE)
+  - React + TypeScript frontend shell (`zugzwang-ui/`) with routed pages:
+    - Dashboard
     - Run Lab
     - Job Monitor
-    - Run Explorer
+    - Run Explorer + Run Detail
     - Game Replay
-    - Evaluation
-  - Local subprocess job orchestration + persisted UI job tracking in `results/ui_jobs/jobs.jsonl`
-  - Future hooks placeholders for Strategy/RAG/MoA/Scheduler/Research Dashboard tabs
+    - Compare
+    - Settings
+  - Local subprocess job orchestration + persisted job tracking in `results/ui_jobs/jobs.jsonl`
+  - Static serving integration: `zugzwang api` serves built frontend in production mode
 - Missing:
   - richer comparative visualizations and publication export pipelines
   - queue/scheduler controls beyond local single-user workflow
@@ -214,9 +218,11 @@ Last updated: 2026-02-22 (engine-phase5-modes-routing update)
   - phase-aware few-shot blocks
   - feedback-level-aware retry messages
 - Added tests for strategy modules and runner auto-evaluation integration.
-- Added Streamlit GUI V1 (Ops + Replay) and `zugzwang ui` command.
-- Added UI application services for config/run/evaluation/artifact/replay flows.
-- Added local UI job lifecycle tracking (`queued/running/completed/failed/canceled`) with log tailing and cancel.
+- Added frontend migration completion (M1-M9):
+  - FastAPI + React architecture active as default GUI stack.
+  - API services decoupled from legacy `zugzwang.ui` package.
+  - legacy Streamlit package and `zugzwang ui` command removed.
+  - tests migrated from `tests/ui` to API/backend-focused locations.
 - Added phase-2 evaluator pipeline with Stockfish and Elo MLE.
 - Added `evaluate` CLI command for post-run evaluation artifacts.
 - Added z.ai provider integration for GLM-5 (`/chat/completions`)

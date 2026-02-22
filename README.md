@@ -96,7 +96,7 @@ zugzwang-engine/
 │   ├── agents/         # Capability MoA, tactical, positional, endgame, critic
 │   ├── experiments/    # Runner, scheduler, tracker, resume
 │   ├── analysis/       # Statistics, plots, reports
-│   └── api/            # FastAPI layer (replaces Streamlit)
+│   └── api/            # FastAPI layer for UI/backend integration
 ├── zugzwang-ui/        # Vite + React + TypeScript frontend
 ├── configs/
 │   ├── defaults.yaml
@@ -284,9 +284,9 @@ zugzwang env-check --config configs/baselines/best_known_start_zai_glm5.yaml
 zugzwang play --config configs/baselines/best_known_start_zai_glm5.yaml
 ```
 
-### Frontend — FastAPI + React (Phase 7 — In Progress)
+### Frontend - FastAPI + React
 
-The Streamlit prototype is being replaced by a proper split architecture: a **FastAPI** API server over the existing Python services, and a **Vite + React + TypeScript** frontend in `zugzwang-ui/`.
+The project uses a split architecture: a **FastAPI** API server over Python services and a **Vite + React + TypeScript** frontend in `zugzwang-ui/`.
 
 Start the API server:
 
@@ -363,7 +363,7 @@ Each `GameRecord` includes: move sequence, retry metadata, token usage, per-move
 | Phase 6 — Experiment Runner | 🔄 Partial | Batch + resume + budget; queue scheduler pending |
 | Phase 7 — Analysis | 🔄 Partial | FastAPI + React dashboard in progress |
 
-**Next targets:** FastAPI + React frontend (replacing Streamlit), specialist/hybrid MoA, queue scheduler, comparative visualizations.
+**Next targets:** specialist/hybrid MoA, queue scheduler, comparative visualizations.
 
 ---
 
@@ -424,3 +424,4 @@ MIT. See [LICENSE](LICENSE).
 <div align="center">
 <sub>Built with rigor, curiosity, and a deep respect for the game.</sub>
 </div>
+

@@ -9,6 +9,7 @@ import { RunLabPage } from "./ui/pages/RunLabPage";
 import { RunDetailPage } from "./ui/pages/RunDetailPage";
 import { RunsPage } from "./ui/pages/RunsPage";
 import { SettingsPage } from "./ui/pages/SettingsPage";
+import { RouterErrorFallback } from "./ui/components/RouterErrorFallback";
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -84,6 +85,7 @@ export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
   defaultPendingComponent: () => <p className="p-6 text-sm text-slate-600">Loading page...</p>,
+  defaultErrorComponent: RouterErrorFallback,
 });
 
 declare module "@tanstack/react-router" {

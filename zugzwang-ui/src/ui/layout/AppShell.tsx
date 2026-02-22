@@ -57,7 +57,7 @@ export function AppShell() {
 
           <div className="mt-7 rounded-xl border border-[#d7d0c2] bg-white/70 p-3 text-xs text-[#4f5f69]">
             <p className="font-semibold text-[#213745]">Current milestone</p>
-            <p className="mt-1">M3: frontend scaffold and route shell</p>
+            <p className="mt-1">M8: parity and UX polish</p>
           </div>
         </aside>
 

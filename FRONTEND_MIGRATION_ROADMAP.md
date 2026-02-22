@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1-M4 completed; M5/M6 continuing)
+Status: in progress (M1-M4 completed; M5-M7 advanced; M8 parity/polish in progress)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -336,11 +336,11 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Continue M6/M7:
-1. Add richer phase/move quality overlays in replay.
-2. Expand job detail UX (pause auto-scroll, stream filters).
-3. Add run-lab launch flow integration and redirects.
-4. Add deeper comparison charts (ACPL/move-quality distributions).
+Continue M8/M9 prep:
+1. Add richer comparison visuals (ACPL and move-quality chart overlays).
+2. Add evaluated-report focused widgets on run detail and compare routes.
+3. Add frontend smoke coverage for dashboard/run-detail/replay/job-monitor flow.
+4. Plan M9 removal PR (streamlit deprecation + docs/startup cleanup).
 
 ## 9. Progress log
 
@@ -383,3 +383,10 @@ Continue M6/M7:
   - Added backend config routes: `POST /api/configs/validate` and `POST /api/configs/preview`.
   - Regenerated OpenAPI schema and updated frontend typed contracts.
   - Replaced Run Lab placeholder with real launch flow (validate/preview/play/run + redirect to job detail).
+- 2026-02-22: M8 parity/polish increment.
+  - Added shared run/evaluation metric extraction utility with compatibility for flat and nested evaluated-report schemas.
+  - Upgraded Dashboard with real KPIs (completion, spend, ACPL, evaluated runs) and recent runs operational table.
+  - Upgraded Runs page with search and evaluated-only filters plus created-at visibility.
+  - Upgraded Run Detail with evaluated-report status/metrics panel, budget-stop signal, and improved evaluation launch validation.
+  - Upgraded Run Compare with robust metrics parsing and per-metric delta badges (`A better` / `B better`).
+  - Added router-level error fallback component and polished Settings readiness summary with missing-provider hints.

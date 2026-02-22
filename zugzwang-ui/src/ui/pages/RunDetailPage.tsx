@@ -2,6 +2,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStartEvaluation, useRunGames, useRunSummary } from "../../api/queries";
 import { PageHeader } from "../components/PageHeader";
+import { extractRunMetrics, formatCi, formatDecimal, formatInteger, formatRate, formatUsd } from "../lib/runMetrics";
 
 export function RunDetailPage() {
   const params = useParams({ strict: false }) as { runId: string };
@@ -17,21 +18,32 @@ export function RunDetailPage() {
   const summary = summaryQuery.data;
   const games = gamesQuery.data ?? [];
   const runDir = summary?.run_meta.run_dir ?? "";
-  const report = summary?.report;
-  const evaluated = asRecord(summary?.evaluated_report);
-  const evaluatedMetrics = asRecord(evaluated.metrics);
-  const evaluatedElo = asRecord(evaluated.elo_estimate);
+  const report = asRecord(summary?.report);
+  const evaluatedReport = asRecord(summary?.evaluated_report);
+  const evaluationMeta = asRecord(evaluatedReport.evaluation);
+  const stockfishMeta = asRecord(evaluationMeta.stockfish);
 
-  const metrics = useMemo(
-    () => ({
-      targetGames: asText(report?.num_games_target),
-      validGames: asText(report?.num_games_valid),
-      totalCost: asCost(report?.total_cost_usd),
-      completionRate: asPercent(report?.completion_rate),
-      acpl: asText(evaluatedMetrics.acpl_overall),
-      elo: asText(evaluatedElo.elo_mle),
-    }),
-    [evaluatedElo.elo_mle, evaluatedMetrics.acpl_overall, report?.completion_rate, report?.num_games_target, report?.num_games_valid, report?.total_cost_usd],
+  const metrics = useMemo(() => extractRunMetrics(summary), [summary]);
+  const hasEvaluatedReport = Boolean(summary?.run_meta.evaluated_report_exists && Object.keys(evaluatedReport).length > 0);
+  const hasBudgetStop = metrics.stoppedDueToBudget === true;
+
+  const opponentEloText = opponentElo.trim();
+  const parsedOpponentElo = opponentEloText.length > 0 ? Number(opponentEloText) : null;
+  const invalidOpponentElo = opponentEloText.length > 0 && !Number.isFinite(parsedOpponentElo);
+
+  const metricCards = useMemo(
+    () => [
+      { label: "Target games", value: formatInteger(metrics.targetGames) },
+      { label: "Valid games", value: formatInteger(metrics.validGames) },
+      { label: "Completion rate", value: formatRate(metrics.completionRate) },
+      { label: "Total cost (USD)", value: formatUsd(metrics.totalCostUsd) },
+      { label: "ACPL", value: formatDecimal(metrics.acplOverall, 1) },
+      { label: "Blunder rate", value: formatRate(metrics.blunderRate) },
+      { label: "Best move agreement", value: formatRate(metrics.bestMoveAgreement) },
+      { label: "Elo MLE", value: formatDecimal(metrics.eloMle, 1) },
+      { label: "Elo CI 95%", value: formatCi(metrics.eloCiLower, metrics.eloCiUpper) },
+    ],
+    [metrics],
   );
 
   return (
@@ -39,12 +51,9 @@ export function RunDetailPage() {
       <PageHeader eyebrow="Run Detail" title={runId} subtitle="Overview of artifacts, reports and recorded games for this run." />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricTile label="Target games" value={metrics.targetGames} />
-        <MetricTile label="Valid games" value={metrics.validGames} />
-        <MetricTile label="Total cost (USD)" value={metrics.totalCost} />
-        <MetricTile label="Completion rate" value={metrics.completionRate} />
-        <MetricTile label="ACPL" value={metrics.acpl} />
-        <MetricTile label="Elo MLE" value={metrics.elo} />
+        {metricCards.map((card) => (
+          <MetricTile key={card.label} label={card.label} value={card.value} />
+        ))}
       </div>
 
       {(summaryQuery.isLoading || gamesQuery.isLoading) && <p className="mb-3 text-sm text-[#506672]">Loading run artifacts...</p>}
@@ -52,6 +61,13 @@ export function RunDetailPage() {
       {(summaryQuery.isError || gamesQuery.isError) && (
         <p className="mb-3 rounded-lg border border-[#cf8f8f] bg-[#fff0ed] px-3 py-2 text-sm text-[#8a3434]">
           Failed to load run detail.
+        </p>
+      )}
+
+      {hasBudgetStop && (
+        <p className="mb-3 rounded-lg border border-[#d7b071] bg-[#fff3de] px-3 py-2 text-sm text-[#7d5618]">
+          Run stopped due to budget guardrail.
+          {metrics.budgetStopReason ? ` Reason: ${metrics.budgetStopReason}.` : ""}
         </p>
       )}
 
@@ -112,22 +128,21 @@ export function RunDetailPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-sm font-semibold text-[#edf8fd]"
-              disabled={startEval.isPending || !runDir}
-              onClick={() => {
-                setLastEvalJobId(null);
-                const parsedElo = opponentElo.trim() ? Number(opponentElo) : null;
-                startEval.mutate(
-                  {
-                    run_dir: runDir,
-                    player_color: playerColor,
-                    opponent_elo: parsedElo !== null && Number.isFinite(parsedElo) ? parsedElo : null,
-                    output_filename: "experiment_report_evaluated.json",
-                  },
-                  {
-                    onSuccess: (job) => setLastEvalJobId(job.job_id),
+              <button
+                type="button"
+                className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-sm font-semibold text-[#edf8fd]"
+                disabled={startEval.isPending || !runDir || invalidOpponentElo}
+                onClick={() => {
+                  setLastEvalJobId(null);
+                  startEval.mutate(
+                    {
+                      run_dir: runDir,
+                      player_color: playerColor,
+                      opponent_elo: parsedOpponentElo !== null && Number.isFinite(parsedOpponentElo) ? parsedOpponentElo : null,
+                      output_filename: "experiment_report_evaluated.json",
+                    },
+                    {
+                      onSuccess: (job) => setLastEvalJobId(job.job_id),
                   },
                 );
               }}
@@ -139,6 +154,12 @@ export function RunDetailPage() {
               Open jobs list
             </Link>
           </div>
+
+          {invalidOpponentElo && (
+            <p className="mt-2 rounded-md border border-[#cf8f8f] bg-[#fff1ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
+              Opponent Elo must be a valid number.
+            </p>
+          )}
 
           {startEval.isError && (
             <p className="mt-2 rounded-md border border-[#ce8d8d] bg-[#fff1ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
@@ -155,6 +176,28 @@ export function RunDetailPage() {
               </Link>
             </p>
           )}
+
+          <div className="mt-4 rounded-lg border border-[#ddd5c8] bg-[#f8f5ef] p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5f7482]">
+              Evaluation status: {hasEvaluatedReport ? "available" : "not generated yet"}
+            </p>
+            {hasEvaluatedReport ? (
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <MetricInline label="ACPL" value={formatDecimal(metrics.acplOverall, 1)} />
+                <MetricInline label="Blunder rate" value={formatRate(metrics.blunderRate)} />
+                <MetricInline label="Best move agreement" value={formatRate(metrics.bestMoveAgreement)} />
+                <MetricInline label="Elo MLE" value={formatDecimal(metrics.eloMle, 1)} />
+                <MetricInline label="Elo CI 95%" value={formatCi(metrics.eloCiLower, metrics.eloCiUpper)} />
+                <MetricInline label="Provider" value={stringValue(evaluationMeta.provider) ?? "--"} />
+                <MetricInline label="Player color" value={stringValue(evaluationMeta.player_color) ?? "--"} />
+                <MetricInline label="SF depth" value={stringValue(stockfishMeta.depth) ?? "--"} />
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-[#5f7482]">
+                Run has no `experiment_report_evaluated.json` yet. Start evaluation to produce ACPL/blunder/Elo metrics.
+              </p>
+            )}
+          </div>
         </section>
 
         <details className="rounded-2xl border border-[#ddd5c8] bg-white/80 p-4" open>
@@ -168,6 +211,13 @@ export function RunDetailPage() {
           <summary className="cursor-pointer text-sm font-semibold text-[#264351]">Experiment report</summary>
           <pre className="mt-3 max-h-[260px] overflow-auto rounded-lg bg-[#f8f5ef] p-3 font-['IBM_Plex_Mono'] text-xs text-[#334b58]">
             {toPrettyJson(report)}
+          </pre>
+        </details>
+
+        <details className="rounded-2xl border border-[#ddd5c8] bg-white/80 p-4" open={hasEvaluatedReport}>
+          <summary className="cursor-pointer text-sm font-semibold text-[#264351]">Evaluated report</summary>
+          <pre className="mt-3 max-h-[260px] overflow-auto rounded-lg bg-[#f8f5ef] p-3 font-['IBM_Plex_Mono'] text-xs text-[#334b58]">
+            {toPrettyJson(evaluatedReport)}
           </pre>
         </details>
       </div>
@@ -184,28 +234,13 @@ function MetricTile({ label, value }: { label: string; value: string }) {
   );
 }
 
-function asText(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "--";
-  }
-  if (typeof value === "number") {
-    return Number.isInteger(value) ? String(value) : value.toFixed(3);
-  }
-  return String(value);
-}
-
-function asCost(value: unknown): string {
-  if (typeof value !== "number") {
-    return "--";
-  }
-  return value.toFixed(4);
-}
-
-function asPercent(value: unknown): string {
-  if (typeof value !== "number") {
-    return "--";
-  }
-  return `${(value * 100).toFixed(1)}%`;
+function MetricInline({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-[#ddd5c8] bg-white px-2.5 py-2">
+      <p className="text-[10px] uppercase tracking-[0.14em] text-[#647987]">{label}</p>
+      <p className="mt-1 text-xs font-semibold text-[#24414f]">{value}</p>
+    </div>
+  );
 }
 
 function toPrettyJson(value: unknown): string {
@@ -224,4 +259,17 @@ function asRecord(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   return {};
+}
+
+function stringValue(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return null;
 }

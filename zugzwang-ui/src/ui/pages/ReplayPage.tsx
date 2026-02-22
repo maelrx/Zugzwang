@@ -4,6 +4,8 @@ import { Chessboard } from "react-chessboard";
 import { useGame, useGameFrames } from "../../api/queries";
 import { PageHeader } from "../components/PageHeader";
 
+const INITIAL_CHESS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 export function ReplayPage() {
   const params = useParams({ strict: false }) as { runId: string; gameNumber: string };
   const runId = params.runId;
@@ -170,7 +172,7 @@ export function ReplayPage() {
               <Chessboard
                 options={{
                   id: "zugzwang-replay",
-                  position: frame?.fen ?? "start",
+                  position: frame?.fen ?? INITIAL_CHESS_FEN,
                   boardOrientation: "white",
                   allowDragging: false,
                   allowDrawingArrows: true,

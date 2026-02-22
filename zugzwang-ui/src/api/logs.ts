@@ -36,6 +36,13 @@ export function useJobLogs(jobId: string | null): UseJobLogsResult {
       return;
     }
 
+    if (typeof EventSource === "undefined") {
+      dispatch({ type: "append", payload: { stream: "system", text: "EventSource is not available in this runtime." } });
+      dispatch({ type: "error", payload: "EventSource unavailable" });
+      dispatch({ type: "done" });
+      return;
+    }
+
     const url = `${base}/api/jobs/${jobId}/logs`;
     const source = new EventSource(url);
 

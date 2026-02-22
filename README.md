@@ -145,6 +145,14 @@ Retrieval telemetry is now persisted per move and summarized at run level:
 - move fields: `retrieval_enabled`, `retrieval_hit_count`, `retrieval_latency_ms`, `retrieval_sources`, `retrieval_phase`
 - report fields: `retrieval_hit_rate`, `avg_retrieval_hits_per_move`, `avg_retrieval_latency_ms`, `retrieval_hit_rate_by_phase`
 
+After running `evaluate`, the evaluated report now also includes retrieval usefulness analysis:
+- `retrieval_usefulness.hit_rate`
+- `retrieval_usefulness.acpl_with_hits` vs `retrieval_usefulness.acpl_without_hits`
+- `retrieval_usefulness.best_move_agreement_*`
+- `retrieval_usefulness.blunder_rate_*`
+- `retrieval_usefulness.hit_count_cp_loss_pearson`
+- phase breakdown in `retrieval_usefulness.by_phase`
+
 ## Capability MoA (Phase 5 baseline)
 
 Initial capability-based multi-agent orchestration is now available in direct mode:

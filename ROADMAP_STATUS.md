@@ -126,6 +126,12 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
   - queue/scheduler controls beyond local single-user workflow
 
 ## Recent changes (this update)
+- Added retrieval usefulness analysis in evaluated reports:
+  - hit vs no-hit ACPL delta
+  - best-move agreement split by retrieval hit
+  - blunder-rate split by retrieval hit
+  - hit-count vs centipawn-loss Pearson correlation
+  - per-phase usefulness breakdown
 - Added retrieval observability:
   - move-level retrieval metadata persisted in artifacts
   - report metrics:
@@ -205,6 +211,6 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
 - Added tests for pricing and budget stop behavior
 
 ## Next build targets (ordered)
-1. Phase 4 retrieval usefulness analysis (retrieval quality/usefulness correlation in reports).
-2. Phase 5 specialist/hybrid MoA + aggregator rationale logging.
-3. Phase 6 queue scheduler + provider-aware throttling.
+1. Phase 5 specialist/hybrid MoA + aggregator rationale logging.
+2. Phase 6 queue scheduler + provider-aware throttling.
+3. Phase 7 richer comparative analysis and publication exports.

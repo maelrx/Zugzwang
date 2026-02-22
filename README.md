@@ -284,6 +284,49 @@ zugzwang env-check --config configs/baselines/best_known_start_zai_glm5.yaml
 zugzwang play --config configs/baselines/best_known_start_zai_glm5.yaml
 ```
 
+### Frontend — FastAPI + React (Phase 7 — In Progress)
+
+The Streamlit prototype is being replaced by a proper split architecture: a **FastAPI** API server over the existing Python services, and a **Vite + React + TypeScript** frontend in `zugzwang-ui/`.
+
+Start the API server:
+
+```bash
+pip install -e .[api]
+zugzwang api                         # serves on localhost:8000
+zugzwang api --reload                # dev mode with auto-reload
+```
+
+In development, run the frontend separately:
+
+```bash
+cd zugzwang-ui && npm install && npm run dev   # Vite on localhost:5173
+```
+
+In production, `zugzwang api` serves the built frontend as static files — single process, single port.
+
+**Frontend pages:**
+
+| Page | Route | Description |
+|---|---|---|
+| Dashboard | `/` | Active jobs, recent runs, total spend |
+| Run Lab | `/run-lab` | Configure, validate, and launch experiments |
+| Job Monitor | `/jobs/:id` | Live log streaming (SSE), progress bar, cancel |
+| Run Explorer | `/runs` | Browse all runs, filter, sort |
+| Run Detail | `/runs/:id` | Metrics tabs, move quality, config, evaluate |
+| Game Replay | `/runs/:id/games/:n` | Board replay, per-ply metrics, MoA agent trace |
+| Compare | `/runs/compare` | Side-by-side run comparison with overlaid charts |
+| Settings | `/settings` | Provider env check status |
+
+**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard · Recharts
+
+TypeScript types are auto-generated from the FastAPI OpenAPI schema — never written by hand:
+
+```bash
+npx openapi-typescript http://localhost:8000/openapi.json -o src/api/schema.ts
+```
+
+Full architecture spec: [`techdocs/FRONTEND_ARCHITECTURE.md`](../techdocs/FRONTEND_ARCHITECTURE.md)
+
 ---
 
 ## Run Artifacts

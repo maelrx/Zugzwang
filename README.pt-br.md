@@ -71,7 +71,7 @@ Camada 3 — Estratégia            Biblioteca de prompts, montagem de contexto,
 Camada 4 — Conhecimento / RAG    Recuperação por fase: aberturas, táticas, finais
 Camada 5 — Multi-Agente          Capability-MoA, agentes especializados, roteador híbrido
 Camada 6 — Experiment Runner     Batch, resume, guardrails de budget, scheduling
-Camada 7 — Análise               Estatísticas, gráficos, relatórios, dashboard Streamlit
+Camada 7 — Análise               Estatísticas, gráficos, relatórios, dashboard React
 ```
 
 **Invariantes de design fundamentais:**
@@ -95,8 +95,9 @@ zugzwang-engine/
 │   │   └── sources/    #   ECO aberturas, heurísticas Lichess, finais
 │   ├── agents/         # Capability MoA, tático, posicional, final, crítico
 │   ├── experiments/    # Runner, scheduler, tracker, resume
-│   ├── analysis/       # Estatísticas, gráficos, relatórios, dashboard
-│   └── ui/             # GUI Streamlit
+│   ├── analysis/       # Estatísticas, gráficos, relatórios
+│   └── api/            # FastAPI layer (substitui o Streamlit)
+├── zugzwang-ui/        # Frontend Vite + React + TypeScript
 ├── configs/
 │   ├── defaults.yaml
 │   ├── baselines/      # benchmark_compat.yaml, best_known_start.yaml
@@ -132,8 +133,8 @@ zugzwang run --config configs/baselines/best_known_start.yaml
 # Avaliar qualidade dos lances com Stockfish
 zugzwang evaluate --run-dir results/runs/<run-id>
 
-# Abrir o dashboard Streamlit
-zugzwang ui
+# Iniciar o servidor de API
+zugzwang api
 ```
 
 ### Configuração do Ambiente
@@ -159,7 +160,7 @@ cp .env.example .env
 | `zugzwang play --config <path>` | Jogar uma única partida |
 | `zugzwang env-check --config <path>` | Validar credenciais de providers |
 | `zugzwang evaluate --run-dir <path>` | Avaliação Stockfish pós-execução |
-| `zugzwang ui` | Abrir dashboard Streamlit |
+| `zugzwang api` | Iniciar servidor de API (porta 8000) |
 
 ### Overrides via CLI
 
@@ -221,9 +222,12 @@ Fontes: princípios de aberturas ECO, heurísticas táticas/posicionais Lichess,
 
 Config de ablação RAG: `configs/ablations/rag_variants.yaml`
 
-### Capability MoA — Multi-Agente (Fase 5 — Disponível)
+### Multi-Agente — MoA (Fase 5 — Disponível)
 
-Orquestração Mixture-of-Agents onde modelos de forte raciocínio propõem lances e um modelo de forte seguimento de instruções agrega:
+Orquestração Mixture-of-Agents com três modos configuráveis:
+- `capability_moa`: proposers por perfil de capacidade (raciocínio/compliance/segurança)
+- `specialist_moa`: proposers especializados (tático/posicional/final)
+- `hybrid_phase_router`: roteamento de proposers por fase do jogo
 
 ```bash
 zugzwang play --config configs/baselines/best_known_start.yaml \
@@ -232,7 +236,10 @@ zugzwang play --config configs/baselines/best_known_start.yaml \
   --set strategy.multi_agent.proposer_count=2
 ```
 
-Config MoA: `configs/ablations/moa_capability.yaml`
+Configs de ablação disponíveis:
+- `configs/ablations/moa_capability.yaml`
+- `configs/ablations/moa_specialist.yaml`
+- `configs/ablations/moa_hybrid_phase.yaml`
 
 ### Guardrails de Budget e Confiabilidade
 
@@ -266,6 +273,49 @@ zugzwang play --config configs/baselines/best_known_start.yaml \
 zugzwang env-check --config configs/baselines/best_known_start_zai_glm5.yaml
 zugzwang play --config configs/baselines/best_known_start_zai_glm5.yaml
 ```
+
+### Frontend — FastAPI + React (Fase 7 — Em desenvolvimento)
+
+O protótipo Streamlit está sendo substituído por uma arquitetura adequada: um servidor **FastAPI** sobre os services Python existentes, e um frontend **Vite + React + TypeScript** em `zugzwang-ui/`.
+
+Iniciar o servidor de API:
+
+```bash
+pip install -e .[api]
+zugzwang api                         # serve na localhost:8000
+zugzwang api --reload                # modo dev com hot-reload
+```
+
+Em desenvolvimento, rodar o frontend separadamente:
+
+```bash
+cd zugzwang-ui && npm install && npm run dev   # Vite na localhost:5173
+```
+
+Em produção, `zugzwang api` serve o frontend compilado como arquivos estáticos — um processo, uma porta.
+
+**Páginas do frontend:**
+
+| Página | Rota | Descrição |
+|---|---|---|
+| Dashboard | `/` | Jobs ativos, runs recentes, gasto total |
+| Run Lab | `/run-lab` | Configurar, validar e lançar experimentos |
+| Job Monitor | `/jobs/:id` | Log em tempo real (SSE), barra de progresso, cancelar |
+| Run Explorer | `/runs` | Navegar todos os runs, filtrar, ordenar |
+| Run Detail | `/runs/:id` | Abas de métricas, qualidade de lances, config, evaluate |
+| Game Replay | `/runs/:id/games/:n` | Replay do tabuleiro, métricas por lance, trace MoA |
+| Comparação | `/runs/compare` | Comparação lado-a-lado com gráficos sobrepostos |
+| Settings | `/settings` | Status de env check por provider |
+
+**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard · Recharts
+
+Tipos TypeScript gerados automaticamente do schema OpenAPI do FastAPI — nunca escritos à mão:
+
+```bash
+npx openapi-typescript http://localhost:8000/openapi.json -o src/api/schema.ts
+```
+
+Especificação completa de arquitetura: [`techdocs/FRONTEND_ARCHITECTURE.md`](../techdocs/FRONTEND_ARCHITECTURE.md)
 
 ---
 
@@ -323,11 +373,11 @@ O design experimental é estruturado para maximizar o sinal científico por real
 | Fase 2 — Avaliação | ✅ Funcional | Scoring Stockfish, ACPL, Elo MLE, taxa de blunders |
 | Fase 3 — Estratégia | ✅ Funcional | Prompts, montagem de contexto, few-shot, validação |
 | Fase 4 — RAG | ✅ MVP | Recuperação local por fase, configs de ablação |
-| Fase 5 — Multi-Agente | 🔄 Baseline | Capability MoA disponível; agentes especialistas em desenvolvimento |
+| Fase 5 — Multi-Agente | 🔄 Baseline+ | Modos capability, specialist e hybrid phase-router MoA |
 | Fase 6 — Experiment Runner | 🔄 Parcial | Batch + resume + budget; queue scheduler pendente |
-| Fase 7 — Análise | 🔄 Parcial | GUI Streamlit; exports para publicação pendentes |
+| Fase 7 — Análise | 🔄 Parcial | FastAPI + React dashboard em desenvolvimento |
 
-**Próximos alvos:** MoA especialista/híbrido, scheduler com fila, visualizações comparativas.
+**Próximos alvos:** Frontend FastAPI + React (substituindo Streamlit), MoA especialista/híbrido, scheduler com fila, visualizações comparativas.
 
 ---
 
@@ -340,9 +390,9 @@ pip install -e .[dev]
 # Rodar todos os testes
 pytest -q
 
-# Instalar com dependências de UI
-pip install -e .[ui]
-zugzwang ui --host 127.0.0.1 --port 8501
+# Instalar com dependências de API
+pip install -e .[api]
+zugzwang api --host 127.0.0.1 --port 8000
 ```
 
 Os testes cobrem: legalidade do tabuleiro, hash de configuração, parsing de lances, políticas de retry, matemática do Elo, recuperação RAG, orquestração MoA, resume/dedup do runner, enforcement de budget.

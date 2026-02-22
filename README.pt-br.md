@@ -307,7 +307,7 @@ Em produção, `zugzwang api` serve o frontend compilado como arquivos estático
 | Comparação | `/runs/compare` | Comparação lado-a-lado com gráficos sobrepostos |
 | Settings | `/settings` | Status de env check por provider |
 
-**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard · Recharts
+**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard
 
 Tipos TypeScript gerados automaticamente do schema OpenAPI do FastAPI — nunca escritos à mão:
 

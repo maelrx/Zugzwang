@@ -317,7 +317,7 @@ In production, `zugzwang api` serves the built frontend as static files — sing
 | Compare | `/runs/compare` | Side-by-side run comparison with overlaid charts |
 | Settings | `/settings` | Provider env check status |
 
-**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard · Recharts
+**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard
 
 TypeScript types are auto-generated from the FastAPI OpenAPI schema — never written by hand:
 

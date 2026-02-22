@@ -402,3 +402,9 @@ Continue M8/M9 prep:
   - Added move-quality distribution diagnostics on Run Detail for single-run analysis.
   - Expanded `npm run smoke` to include Run Lab data paths (`/api/configs`, `POST /api/configs/validate`, `POST /api/configs/preview`).
   - Re-validated locally with `typecheck`, `lint`, `build`, and API-backed `smoke` flow.
+- 2026-02-22: M8 UI navigation smoke increment.
+  - Added Vitest + Testing Library setup for frontend route-level smoke coverage.
+  - Added `navigation.smoke.test.tsx` covering Dashboard -> Run Lab -> Jobs -> Runs -> Run Detail -> Replay -> Settings -> Compare.
+  - Mocked API contracts in-test to validate route rendering and page integration without backend dependency.
+  - Added `npm run test` and `npm run test:watch` scripts for frontend test execution.
+  - Re-validated locally with `typecheck`, `lint`, `test`, `build`, and API-backed `smoke` flow.

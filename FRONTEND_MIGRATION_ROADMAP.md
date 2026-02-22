@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1, M2, M3, M4 completed; M5 partial)
+Status: in progress (M1-M4 completed; M5 and M6 partial)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -336,11 +336,11 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Finish M5 + start M6:
+Continue M6:
 1. Add run comparison page and baseline artifact tabs.
-2. Add chess board renderer (`react-chessboard`) in replay page.
-3. Add per-ply metrics panel with move-level telemetry.
-4. Expand job detail UX (pause auto-scroll, stream filters).
+2. Expand replay with autoplay and richer phase/move quality overlays.
+3. Expand job detail UX (pause auto-scroll, stream filters).
+4. Add run evaluation launcher panel on run detail route.
 
 ## 9. Progress log
 
@@ -367,3 +367,7 @@ Finish M5 + start M6:
   - Added `/jobs/$jobId` page with live SSE log stream.
   - Added `/runs/$runId` page with metrics, artifacts and game navigation.
   - Added `/runs/$runId/replay/$gameNumber` replay scaffold with ply slider.
+- 2026-02-22: M6 partial implemented.
+  - Integrated `react-chessboard` board rendering in replay.
+  - Added last-move arrow rendering from UCI.
+  - Added per-ply telemetry panel (tokens, latency, retries, legality, cost, model).

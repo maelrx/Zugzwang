@@ -9,7 +9,6 @@ from zugzwang.experiments.runner import ExperimentRunner
 from zugzwang.infra.config import resolve_config
 from zugzwang.infra.env import load_dotenv, validate_environment
 from zugzwang.infra.logging import configure_logging
-from zugzwang.ui.launch import launch_ui
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -42,9 +41,10 @@ def _build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("--elo-color-correction", type=float, default=0.0)
     eval_parser.add_argument("--output-filename", default="experiment_report_evaluated.json")
 
-    ui_parser = subparsers.add_parser("ui")
-    ui_parser.add_argument("--host", default="127.0.0.1")
-    ui_parser.add_argument("--port", type=int, default=8501)
+    api_parser = subparsers.add_parser("api")
+    api_parser.add_argument("--host", default="127.0.0.1")
+    api_parser.add_argument("--port", type=int, default=8000)
+    api_parser.add_argument("--reload", action="store_true")
     return parser
 
 
@@ -108,8 +108,15 @@ def _evaluate_command(args: argparse.Namespace) -> int:
     return 0
 
 
-def _ui_command(args: argparse.Namespace) -> int:
-    return launch_ui(host=args.host, port=args.port)
+def _api_command(args: argparse.Namespace) -> int:
+    try:
+        import uvicorn
+    except ImportError:
+        print("FastAPI runtime is not installed. Install with: python -m pip install -e .[api]")
+        return 2
+
+    uvicorn.run("zugzwang.api.main:app", host=args.host, port=args.port, reload=args.reload)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -125,8 +132,8 @@ def main(argv: list[str] | None = None) -> int:
         return _env_check_command(args)
     if args.command == "evaluate":
         return _evaluate_command(args)
-    if args.command == "ui":
-        return _ui_command(args)
+    if args.command == "api":
+        return _api_command(args)
 
     parser.print_help()
     return 1

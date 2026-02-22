@@ -96,7 +96,7 @@ zugzwang-engine/
 │   ├── agents/         # Capability MoA, tactical, positional, endgame, critic
 │   ├── experiments/    # Runner, scheduler, tracker, resume
 │   ├── analysis/       # Statistics, plots, reports
-│   └── api/            # FastAPI layer (replaces Streamlit)
+│   └── api/            # FastAPI layer for UI/backend integration
 ├── zugzwang-ui/        # Vite + React + TypeScript frontend
 ├── configs/
 │   ├── defaults.yaml
@@ -284,9 +284,9 @@ zugzwang env-check --config configs/baselines/best_known_start_zai_glm5.yaml
 zugzwang play --config configs/baselines/best_known_start_zai_glm5.yaml
 ```
 
-### Frontend — FastAPI + React (Phase 7 — In Progress)
+### Frontend - FastAPI + React
 
-The Streamlit prototype is being replaced by a proper split architecture: a **FastAPI** API server over the existing Python services, and a **Vite + React + TypeScript** frontend in `zugzwang-ui/`.
+The project uses a split architecture: a **FastAPI** API server over Python services and a **Vite + React + TypeScript** frontend in `zugzwang-ui/`.
 
 Start the API server:
 
@@ -317,7 +317,7 @@ In production, `zugzwang api` serves the built frontend as static files — sing
 | Compare | `/runs/compare` | Side-by-side run comparison with overlaid charts |
 | Settings | `/settings` | Provider env check status |
 
-**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard · Recharts
+**Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard
 
 TypeScript types are auto-generated from the FastAPI OpenAPI schema — never written by hand:
 
@@ -363,7 +363,7 @@ Each `GameRecord` includes: move sequence, retry metadata, token usage, per-move
 | Phase 6 — Experiment Runner | 🔄 Partial | Batch + resume + budget; queue scheduler pending |
 | Phase 7 — Analysis | 🔄 Partial | FastAPI + React dashboard in progress |
 
-**Next targets:** FastAPI + React frontend (replacing Streamlit), specialist/hybrid MoA, queue scheduler, comparative visualizations.
+**Next targets:** specialist/hybrid MoA, queue scheduler, comparative visualizations.
 
 ---
 
@@ -389,7 +389,7 @@ Tests cover: board legality, config hashing, move parsing, retry policies, Elo m
 
 ### Primary References
 
-1. **Saplin, M. et al.** (2025). *LLM CHESS: Benchmarking Reasoning and Instruction-Following in LLMs through Chess.* NeurIPS FoRLM 2025. [arXiv:2512.01992](https://arxiv.org/abs/2512.01992) · [Code](https://github.com/maxim-saplin/llm_chess)
+1. **Kolasani, S., Saplin, M. et al.** (2025). *LLM CHESS: Benchmarking Reasoning and Instruction-Following in LLMs through Chess.* NeurIPS FoRLM 2025. [arXiv:2512.01992](https://arxiv.org/abs/2512.01992) · [Code](https://github.com/maxim-saplin/llm_chess)
 
 2. **Karvonen, A.** (2024). *Emergent World Models and Latent Variable Estimation in Chess-Playing Language Models.* COLM 2024. [arXiv:2403.15498](https://arxiv.org/abs/2403.15498)
 
@@ -399,7 +399,7 @@ Tests cover: board legality, config hashing, move parsing, retry policies, Elo m
 
 5. **Monroe, D. & Leela Chess Zero Team** (2024). *Mastering Chess with a Transformer Model.* [arXiv:2409.12272](https://arxiv.org/abs/2409.12272)
 
-6. **Ruoss, A. et al.** (2024). *Amortized Planning with Large-Scale Transformers: A Case Study on Chess.* NeurIPS 2024.
+6. **Ruoss, A. et al.** (2024). *Amortized Planning with Large-Scale Transformers: A Case Study on Chess.* NeurIPS 2024. [arXiv:2402.04494](https://arxiv.org/abs/2402.04494)
 
 7. **Anonymous** (2025). *Can Large Language Models Develop Strategic Reasoning? Post-training Insights from Learning Chess.* [arXiv:2507.00726](https://arxiv.org/abs/2507.00726)
 
@@ -424,3 +424,4 @@ MIT. See [LICENSE](LICENSE).
 <div align="center">
 <sub>Built with rigor, curiosity, and a deep respect for the game.</sub>
 </div>
+

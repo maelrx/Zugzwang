@@ -1,2 +1,14 @@
 experiment:
   name: moa_capability
+  target_valid_games: 2
+  max_games: 2
+
+strategy:
+  multi_agent:
+    enabled: true
+    mode: capability_moa
+    proposer_count: 2
+    proposer_roles:
+      - reasoning
+      - compliance
+    include_legal_moves_in_aggregator: true

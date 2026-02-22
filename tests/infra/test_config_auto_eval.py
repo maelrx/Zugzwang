@@ -58,3 +58,56 @@ def test_config_rejects_invalid_timeout_policy_rate() -> None:
             experiment_config_path=config_path,
             cli_overrides=["runtime.timeout_policy.max_provider_timeout_game_rate=1.5"],
         )
+
+
+def test_config_accepts_strategy_rag_block() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "strategy.rag.enabled=true",
+            "strategy.rag.max_chunks=2",
+            "strategy.rag.max_chars_per_chunk=180",
+            "strategy.rag.min_similarity=0.12",
+            "strategy.rag.include_sources.eco=true",
+            "strategy.rag.include_sources.lichess=false",
+            "strategy.rag.include_sources.endgames=true",
+        ],
+    )
+    rag = resolved["strategy"]["rag"]
+    assert rag["enabled"] is True
+    assert rag["max_chunks"] == 2
+
+
+def test_config_rejects_invalid_strategy_rag_source() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.rag.include_sources keys"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=["strategy.rag.include_sources.unknown=true"],
+        )
+
+
+def test_config_accepts_strategy_multi_agent_block() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "strategy.multi_agent.enabled=true",
+            "strategy.multi_agent.mode=capability_moa",
+            "strategy.multi_agent.proposer_count=2",
+            "strategy.multi_agent.include_legal_moves_in_aggregator=true",
+        ],
+    )
+    cfg = resolved["strategy"]["multi_agent"]
+    assert cfg["enabled"] is True
+    assert cfg["mode"] == "capability_moa"
+
+
+def test_config_rejects_invalid_strategy_multi_agent_mode() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.multi_agent.mode"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=["strategy.multi_agent.mode=specialist_moa"],
+        )

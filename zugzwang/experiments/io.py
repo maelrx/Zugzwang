@@ -26,6 +26,29 @@ def game_record_from_dict(payload: dict[str, Any]) -> GameRecord:
             feedback_level=str(decision_payload.get("feedback_level", "rich")),
             error=decision_payload.get("error"),
             cost_usd=float(decision_payload.get("cost_usd", 0.0)),
+            retrieval_enabled=bool(decision_payload.get("retrieval_enabled", False)),
+            retrieval_hit_count=int(decision_payload.get("retrieval_hit_count", 0)),
+            retrieval_latency_ms=int(decision_payload.get("retrieval_latency_ms", 0)),
+            retrieval_sources=(
+                [
+                    str(source)
+                    for source in decision_payload.get("retrieval_sources", [])
+                    if isinstance(source, str)
+                ]
+                if isinstance(decision_payload.get("retrieval_sources"), list)
+                else []
+            ),
+            retrieval_phase=(
+                str(decision_payload.get("retrieval_phase"))
+                if decision_payload.get("retrieval_phase") is not None
+                else None
+            ),
+            decision_mode=str(decision_payload.get("decision_mode", "single_agent")),
+            agent_trace=(
+                list(decision_payload.get("agent_trace", []))
+                if isinstance(decision_payload.get("agent_trace"), list)
+                else []
+            ),
         )
         moves.append(
             MoveRecord(

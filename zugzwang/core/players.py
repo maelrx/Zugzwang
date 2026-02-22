@@ -10,6 +10,7 @@ from typing import Any
 import chess
 import chess.engine
 
+from zugzwang.agents.capability_moa import CapabilityMoaOrchestrator
 from zugzwang.core.models import GameState, MoveDecision
 from zugzwang.core.protocol import (
     build_agentic_prompt,
@@ -22,7 +23,11 @@ from zugzwang.providers.base import (
     should_retry_provider_error,
 )
 from zugzwang.providers.registry import create_provider
-from zugzwang.strategy.context import build_direct_prompt
+from zugzwang.strategy.context import (
+    PromptBuildResult,
+    PromptRetrievalTelemetry,
+    build_direct_prompt_with_metadata,
+)
 from zugzwang.strategy.validator import build_retry_feedback, validate_move_response
 
 
@@ -97,13 +102,84 @@ class LLMPlayer(PlayerInterface):
         total_cost_usd = 0.0
         last_error: str | None = None
         retry_feedback: str | None = None
+        last_prompt_meta = PromptBuildResult(
+            prompt="",
+            dropped_blocks=[],
+            retrieval=PromptRetrievalTelemetry(
+                enabled=False,
+                hit_count=0,
+                latency_ms=0,
+                sources=[],
+                phase=game_state.phase,
+            ),
+        )
+        last_agent_trace: list[dict[str, Any]] = []
+        decision_mode = "single_agent"
 
         for retry in range(move_retries + 1):
-            prompt = build_direct_prompt(
+            prompt_meta = build_direct_prompt_with_metadata(
                 game_state,
                 self.strategy_config,
                 retry_feedback=retry_feedback if retry > 0 else None,
             )
+            prompt = prompt_meta.prompt
+            last_prompt_meta = prompt_meta
+
+            if self._is_capability_moa_enabled():
+                decision_mode = "capability_moa"
+                try:
+                    moa_result = self._run_capability_moa(
+                        prompt=prompt,
+                        legal_moves_uci=game_state.legal_moves_uci,
+                    )
+                except ProviderError as exc:
+                    last_error = _provider_error_code(exc)
+                    retry_feedback = "Provider call failed. Return exactly one legal UCI move."
+                    if not should_retry_provider_error(exc):
+                        break
+                    continue
+
+                provider_calls += moa_result.provider_calls
+                total_in += moa_result.tokens_input
+                total_out += moa_result.tokens_output
+                total_latency += moa_result.latency_ms
+                total_cost_usd += moa_result.cost_usd
+                last_response = moa_result.raw_response
+                last_agent_trace = [trace.to_dict() for trace in moa_result.traces]
+
+                if moa_result.parse_ok and moa_result.is_legal and moa_result.move_uci:
+                    return MoveDecision(
+                        move_uci=moa_result.move_uci,
+                        move_san="",
+                        raw_response=moa_result.raw_response,
+                        parse_ok=True,
+                        is_legal=True,
+                        retry_count=retry,
+                        tokens_input=total_in,
+                        tokens_output=total_out,
+                        latency_ms=total_latency,
+                        provider_model=moa_result.provider_model,
+                        provider_calls=provider_calls,
+                        feedback_level=feedback_level,
+                        cost_usd=total_cost_usd,
+                        retrieval_enabled=bool(prompt_meta.retrieval.enabled),
+                        retrieval_hit_count=int(prompt_meta.retrieval.hit_count),
+                        retrieval_latency_ms=int(prompt_meta.retrieval.latency_ms),
+                        retrieval_sources=list(prompt_meta.retrieval.sources),
+                        retrieval_phase=prompt_meta.retrieval.phase,
+                        decision_mode=decision_mode,
+                        agent_trace=last_agent_trace,
+                    )
+
+                last_error = moa_result.error or "moa_validation_failed"
+                validation = validate_move_response(last_response, game_state.legal_moves_uci)
+                retry_feedback = build_retry_feedback(
+                    validation=validation,
+                    feedback_level=feedback_level,
+                    legal_moves_uci=game_state.legal_moves_uci,
+                    phase=game_state.phase,
+                )
+                continue
 
             try:
                 response = self._call_provider([{"role": "user", "content": prompt}])
@@ -145,6 +221,12 @@ class LLMPlayer(PlayerInterface):
                 provider_calls=provider_calls,
                 feedback_level=feedback_level,
                 cost_usd=total_cost_usd,
+                retrieval_enabled=bool(prompt_meta.retrieval.enabled),
+                retrieval_hit_count=int(prompt_meta.retrieval.hit_count),
+                retrieval_latency_ms=int(prompt_meta.retrieval.latency_ms),
+                retrieval_sources=list(prompt_meta.retrieval.sources),
+                retrieval_phase=prompt_meta.retrieval.phase,
+                decision_mode=decision_mode,
             )
 
         fallback_move = self._rng.choice(game_state.legal_moves_uci)
@@ -163,6 +245,13 @@ class LLMPlayer(PlayerInterface):
             feedback_level=feedback_level,
             error=last_error or "fallback_random",
             cost_usd=total_cost_usd,
+            retrieval_enabled=bool(last_prompt_meta.retrieval.enabled),
+            retrieval_hit_count=int(last_prompt_meta.retrieval.hit_count),
+            retrieval_latency_ms=int(last_prompt_meta.retrieval.latency_ms),
+            retrieval_sources=list(last_prompt_meta.retrieval.sources),
+            retrieval_phase=last_prompt_meta.retrieval.phase,
+            decision_mode=decision_mode,
+            agent_trace=last_agent_trace,
         )
 
     def _choose_move_agentic(self, game_state: GameState) -> MoveDecision:
@@ -282,6 +371,55 @@ class LLMPlayer(PlayerInterface):
         if last_error is not None:
             raise last_error
         raise ProviderError("Unknown provider error")
+
+    def _is_capability_moa_enabled(self) -> bool:
+        multi_agent_cfg = self.strategy_config.get("multi_agent", {})
+        if not isinstance(multi_agent_cfg, dict):
+            return False
+        if not bool(multi_agent_cfg.get("enabled", False)):
+            return False
+        mode = str(multi_agent_cfg.get("mode", "capability_moa")).strip().lower()
+        return mode == "capability_moa"
+
+    def _run_capability_moa(
+        self,
+        *,
+        prompt: str,
+        legal_moves_uci: list[str],
+    ):
+        multi_agent_cfg = self.strategy_config.get("multi_agent", {})
+        if not isinstance(multi_agent_cfg, dict):
+            multi_agent_cfg = {}
+
+        proposer_count = _safe_positive_int(
+            multi_agent_cfg.get("proposer_count"),
+            default=2,
+        )
+        raw_roles = multi_agent_cfg.get("proposer_roles")
+        roles: list[str] = []
+        if isinstance(raw_roles, list):
+            for item in raw_roles:
+                if isinstance(item, str) and item.strip():
+                    roles.append(item.strip().lower())
+        if not roles:
+            roles = ["reasoning", "compliance", "safety"]
+        if proposer_count > len(roles):
+            roles = [*roles, *[roles[-1]] * (proposer_count - len(roles))]
+        proposer_roles = roles[:proposer_count]
+
+        include_legal_moves_in_aggregator = bool(
+            multi_agent_cfg.get("include_legal_moves_in_aggregator", True)
+        )
+        orchestrator = CapabilityMoaOrchestrator(
+            call_provider=self._call_provider,
+            model=self.model,
+        )
+        return orchestrator.decide(
+            base_prompt=prompt,
+            legal_moves_uci=legal_moves_uci,
+            proposer_roles=proposer_roles,
+            include_legal_moves_in_aggregator=include_legal_moves_in_aggregator,
+        )
 
 
 class EnginePlayer(RandomPlayer):
@@ -443,3 +581,19 @@ def build_player(
         category="invalid_request",
         retryable=False,
     )
+
+
+def _safe_positive_int(value: Any, default: int) -> int:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, int):
+        return value if value > 0 else default
+    if isinstance(value, float):
+        casted = int(value)
+        return casted if casted > 0 else default
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped.isdigit():
+            casted = int(stripped)
+            return casted if casted > 0 else default
+    return default

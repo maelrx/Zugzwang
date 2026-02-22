@@ -1,12 +1,12 @@
-﻿<div align="right">
+<div align="right">
 
-[ðŸ‡§ðŸ‡· Leia em PortuguÃªs](README.pt-br.md)
+[🇧🇷 Leia em Português](README.pt-br.md)
 
 </div>
 
 <div align="center">
 
-# â™Ÿ Zugzwang
+# ♟ Zugzwang
 
 **A reproducible research engine for pushing LLMs to their limits in chess**
 
@@ -15,7 +15,7 @@
 [![Status: Active Research](https://img.shields.io/badge/status-active%20research-orange.svg)]()
 [![Based on: LLM Chess](https://img.shields.io/badge/based%20on-LLM%20Chess%20arXiv%3A2512.01992-blueviolet)](https://arxiv.org/abs/2512.01992)
 
-*"Zugzwang" â€” the chess position where every move you make worsens your situation. We use this as a crucible: can LLMs reason their way out?*
+*"Zugzwang" — the chess position where every move you make worsens your situation. We use this as a crucible: can LLMs reason their way out?*
 
 </div>
 
@@ -23,17 +23,17 @@
 
 ## What is Zugzwang?
 
-Zugzwang is a **modular, reproducible research platform** for studying how far Large Language Models can be pushed in chess using only prompt engineering, RAG, few-shot learning, chain-of-thought, tool-use, and multi-agent orchestration â€” **no fine-tuning**.
+Zugzwang is a **modular, reproducible research platform** for studying how far Large Language Models can be pushed in chess using only prompt engineering, RAG, few-shot learning, chain-of-thought, tool-use, and multi-agent orchestration — **no fine-tuning**.
 
 Chess is used not as the end goal, but as a **microscope**. The structured, verifiable nature of chess makes it an ideal domain for rigorously measuring the gap between raw LLM capability and augmented performance, move by move.
 
-This project extends and builds upon the [LLM Chess benchmark](https://github.com/maxim-saplin/llm_chess) (Saplin et al., NeurIPS FoRLM 2025, [arXiv:2512.01992](https://arxiv.org/abs/2512.01992)) â€” the definitive framework for evaluating LLMs through chess play â€” by systematically exploring the techniques that paper identified as gaps: structured prompting, few-shot calibration, retrieval-augmented generation, and mixture-of-agents orchestration.
+This project extends and builds upon the [LLM Chess benchmark](https://github.com/maxim-saplin/llm_chess) (Saplin et al., NeurIPS FoRLM 2025, [arXiv:2512.01992](https://arxiv.org/abs/2512.01992)) — the definitive framework for evaluating LLMs through chess play — by systematically exploring the techniques that paper identified as gaps: structured prompting, few-shot calibration, retrieval-augmented generation, and mixture-of-agents orchestration.
 
 ---
 
 ## The Research Question
 
-> *Using only LLM manipulation techniques â€” system prompts, RAG, few-shot, chain-of-thought, tool-use, multi-agent orchestration â€” and without fine-tuning any model, how far can a general-purpose LLM be pushed in chess?*
+> *Using only LLM manipulation techniques — system prompts, RAG, few-shot, chain-of-thought, tool-use, multi-agent orchestration — and without fine-tuning any model, how far can a general-purpose LLM be pushed in chess?*
 
 ---
 
@@ -41,11 +41,11 @@ This project extends and builds upon the [LLM Chess benchmark](https://github.co
 
 The LLM Chess paper (Saplin et al., 2025) established that:
 
-- Most LLMs cannot beat a **random player** â€” they fail at instruction-following, not chess per se
+- Most LLMs cannot beat a **random player** — they fail at instruction-following, not chess per se
 - Only reasoning-enhanced models (o3, o4-mini, Grok 3 Mini) reliably win against random play
-- The best model tested (o3 low) reaches only **Elo ~758** against a calibrated engine â€” barely above the average chess.com player
+- The best model tested (o3 low) reaches only **Elo ~758** against a calibrated engine — barely above the average chess.com player
 - **FEN format outperforms Unicode boards** by up to +21.7 pp for some models
-- Providing **move history reduces blunders** dramatically (11.2% â†’ 1.6% for o4-mini)
+- Providing **move history reduces blunders** dramatically (11.2% → 1.6% for o4-mini)
 - **Mixture-of-Agents** combining strong-reasoning + strong-instruction-following models can double win rates and achieve 100% game completion
 
 However, that benchmark used a simple, generic prompt with no few-shot examples, no RAG, no structured chain-of-thought, and no feedback-rich retry loop. Zugzwang is built to fill those gaps, rigorously and reproducibly.
@@ -64,14 +64,14 @@ Additional foundations:
 Zugzwang is built in seven progressive layers, each independently testable:
 
 ```
-Layer 0 â€” Infrastructure      Config loading, secret management, env validation
-Layer 1 â€” Core Game Engine     BoardManager, game loop, LLM/Random/Engine players
-Layer 2 â€” Evaluation           Stockfish scoring, move quality, Elo MLE estimation
-Layer 3 â€” Strategy             Prompt library, context assembly, few-shot, validation
-Layer 4 â€” Knowledge / RAG      Phase-aware retrieval: openings, tactics, endgames
-Layer 5 â€” Multi-Agent          Capability-MoA, specialist agents, hybrid phase router
-Layer 6 â€” Experiment Runner    Batch execution, resume, budget guardrails, scheduling
-Layer 7 â€” Analysis             Statistics, plots, reports, Streamlit dashboard
+Layer 0 — Infrastructure      Config loading, secret management, env validation
+Layer 1 — Core Game Engine     BoardManager, game loop, LLM/Random/Engine players
+Layer 2 — Evaluation           Stockfish scoring, move quality, Elo MLE estimation
+Layer 3 — Strategy             Prompt library, context assembly, few-shot, validation
+Layer 4 — Knowledge / RAG      Phase-aware retrieval: openings, tactics, endgames
+Layer 5 — Multi-Agent          Capability-MoA, specialist agents, hybrid phase router
+Layer 6 — Experiment Runner    Batch execution, resume, budget guardrails, scheduling
+Layer 7 — Analysis             Statistics, plots, reports, React dashboard
 ```
 
 **Key design invariants:**
@@ -86,25 +86,26 @@ Layer 7 â€” Analysis             Statistics, plots, reports, Streamlit dash
 
 ```
 zugzwang-engine/
-â”œâ”€â”€ zugzwang/
-â”‚   â”œâ”€â”€ core/           # BoardManager, game loop, players, protocol
-â”‚   â”œâ”€â”€ providers/      # Anthropic, OpenAI, Google, z.ai, mock
-â”‚   â”œâ”€â”€ evaluation/     # Stockfish, move quality, Elo, metrics
-â”‚   â”œâ”€â”€ strategy/       # Prompts, context assembler, few-shot, validator
-â”‚   â”œâ”€â”€ knowledge/      # RAG: indexer, retriever, embeddings, vectordb
-â”‚   â”‚   â””â”€â”€ sources/    #   ECO openings, Lichess heuristics, endgames
-â”‚   â”œâ”€â”€ agents/         # Capability MoA, tactical, positional, endgame, critic
-â”‚   â”œâ”€â”€ experiments/    # Runner, scheduler, tracker, resume
-â”‚   â”œâ”€â”€ analysis/       # Statistics, plots, reports, dashboard
-â”‚   â””â”€â”€ ui/             # Streamlit GUI
-â”œâ”€â”€ configs/
-â”‚   â”œâ”€â”€ defaults.yaml
-â”‚   â”œâ”€â”€ baselines/      # benchmark_compat.yaml, best_known_start.yaml
-â”‚   â”œâ”€â”€ ablations/      # Experiment condition configs
-â”‚   â””â”€â”€ models/         # Per-model overrides
-â”œâ”€â”€ data/               # ECO, puzzles, annotated games, vectordb (gitignored)
-â”œâ”€â”€ results/            # Run artifacts and reports (gitignored)
-â””â”€â”€ tests/
+├── zugzwang/
+│   ├── core/           # BoardManager, game loop, players, protocol
+│   ├── providers/      # Anthropic, OpenAI, Google, z.ai, mock
+│   ├── evaluation/     # Stockfish, move quality, Elo, metrics
+│   ├── strategy/       # Prompts, context assembler, few-shot, validator
+│   ├── knowledge/      # RAG: indexer, retriever, embeddings, vectordb
+│   │   └── sources/    #   ECO openings, Lichess heuristics, endgames
+│   ├── agents/         # Capability MoA, tactical, positional, endgame, critic
+│   ├── experiments/    # Runner, scheduler, tracker, resume
+│   ├── analysis/       # Statistics, plots, reports
+│   └── api/            # FastAPI layer (replaces Streamlit)
+├── zugzwang-ui/        # Vite + React + TypeScript frontend
+├── configs/
+│   ├── defaults.yaml
+│   ├── baselines/      # benchmark_compat.yaml, best_known_start.yaml
+│   ├── ablations/      # Experiment condition configs
+│   └── models/         # Per-model overrides
+├── data/               # ECO, puzzles, annotated games, vectordb (gitignored)
+├── results/            # Run artifacts and reports (gitignored)
+└── tests/
 ```
 
 ---
@@ -132,8 +133,8 @@ zugzwang run --config configs/baselines/best_known_start.yaml
 # Evaluate move quality with Stockfish
 zugzwang evaluate --run-dir results/runs/<run-id>
 
-# Launch the Streamlit GUI
-zugzwang ui
+# Start the API server
+zugzwang api
 ```
 
 ### Environment Setup
@@ -159,7 +160,7 @@ cp .env.example .env
 | `zugzwang play --config <path>` | Play a single game interactively |
 | `zugzwang env-check --config <path>` | Validate provider credentials |
 | `zugzwang evaluate --run-dir <path>` | Post-run Stockfish evaluation |
-| `zugzwang ui` | Launch Streamlit dashboard |
+| `zugzwang api` | Start the API server (port 8000) |
 
 ### Config Overrides
 
@@ -204,7 +205,7 @@ strategy:
     feedback_level: rich     # minimal | moderate | rich
 ```
 
-### RAG (Phase 4 â€” Available)
+### RAG (Phase 4 — Available)
 
 Phase-aware knowledge retrieval from local deterministic sources:
 
@@ -221,7 +222,7 @@ Sources: ECO opening principles, Lichess tactical/positional heuristics, endgame
 
 RAG ablation config: `configs/ablations/rag_variants.yaml`
 
-### Multi-Agent Modes (Phase 5 - Available Baselines)
+### Multi-Agent Modes (Phase 5 — Available)
 
 Mixture-of-Agents orchestration currently supports three config-level modes:
 - `capability_moa`: capability-style proposers (e.g. reasoning/compliance/safety)
@@ -291,15 +292,15 @@ Each run creates a directory in `results/runs/<run-id>/`:
 
 ```
 results/runs/<run-id>/
-â”œâ”€â”€ resolved_config.yaml         # Full merged config
-â”œâ”€â”€ config_hash.txt              # Deterministic config fingerprint
-â”œâ”€â”€ _run.json                    # Run metadata (secrets redacted)
-â”œâ”€â”€ games/
-â”‚   â”œâ”€â”€ game_0001.json           # Per-game artifact with full move trace
-â”‚   â”œâ”€â”€ game_0002.json
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ experiment_report.json       # Aggregated metrics
-â””â”€â”€ experiment_report_evaluated.json  # Move quality + Elo (after evaluate)
+├── resolved_config.yaml         # Full merged config
+├── config_hash.txt              # Deterministic config fingerprint
+├── _run.json                    # Run metadata (secrets redacted)
+├── games/
+│   ├── game_0001.json           # Per-game artifact with full move trace
+│   ├── game_0002.json
+│   └── ...
+├── experiment_report.json       # Aggregated metrics
+└── experiment_report_evaluated.json  # Move quality + Elo (after evaluate)
 ```
 
 Each `GameRecord` includes: move sequence, retry metadata, token usage, per-move latency, cost, termination reason, and RAG/MoA traces when enabled.
@@ -310,16 +311,16 @@ Each `GameRecord` includes: move sequence, retry metadata, token usage, per-move
 
 | Phase | Status | What it enables |
 |---|---|---|
-| Phase 0 â€” Bootstrap | âœ… Done | Reproducible config, CLI, env validation |
-| Phase 1 â€” Core Engine | âœ… Done | Legal games, all player types, protocol modes |
-| Phase 2 â€” Evaluation | âœ… Functional | Stockfish scoring, ACPL, Elo MLE, blunder rate |
-| Phase 3 â€” Strategy | âœ… Functional | Prompts, context assembly, few-shot, validation |
-| Phase 4 â€” RAG | âœ… MVP | Phase-aware local retrieval, ablation configs |
-| Phase 5 â€” Multi-Agent | ðŸ”„ Baseline+ | Capability, specialist, and hybrid phase-router MoA modes |
-| Phase 6 â€” Experiment Runner | ðŸ”„ Partial | Batch + resume + budget; queue scheduler pending |
-| Phase 7 â€” Analysis | ðŸ”„ Partial | Streamlit GUI; publication exports pending |
+| Phase 0 — Bootstrap | ✅ Done | Reproducible config, CLI, env validation |
+| Phase 1 — Core Engine | ✅ Done | Legal games, all player types, protocol modes |
+| Phase 2 — Evaluation | ✅ Functional | Stockfish scoring, ACPL, Elo MLE, blunder rate |
+| Phase 3 — Strategy | ✅ Functional | Prompts, context assembly, few-shot, validation |
+| Phase 4 — RAG | ✅ MVP | Phase-aware local retrieval, ablation configs |
+| Phase 5 — Multi-Agent | 🔄 Baseline+ | Capability, specialist, and hybrid phase-router MoA modes |
+| Phase 6 — Experiment Runner | 🔄 Partial | Batch + resume + budget; queue scheduler pending |
+| Phase 7 — Analysis | 🔄 Partial | FastAPI + React dashboard in progress |
 
-**Next targets:** deeper specialist behaviors, multi-provider role fan-out, queue scheduler, comparative visualizations.
+**Next targets:** FastAPI + React frontend (replacing Streamlit), specialist/hybrid MoA, queue scheduler, comparative visualizations.
 
 ---
 
@@ -332,9 +333,9 @@ pip install -e .[dev]
 # Run all tests
 pytest -q
 
-# Run with UI dependencies
-pip install -e .[ui]
-zugzwang ui --host 127.0.0.1 --port 8501
+# Install with API dependencies
+pip install -e .[api]
+zugzwang api --host 127.0.0.1 --port 8000
 ```
 
 Tests cover: board legality, config hashing, move parsing, retry policies, Elo math, RAG retrieval, MoA orchestration, runner resume/dedup, budget enforcement.
@@ -345,7 +346,7 @@ Tests cover: board legality, config hashing, move parsing, retry policies, Elo m
 
 ### Primary References
 
-1. **Saplin, M. et al.** (2025). *LLM CHESS: Benchmarking Reasoning and Instruction-Following in LLMs through Chess.* NeurIPS FoRLM 2025. [arXiv:2512.01992](https://arxiv.org/abs/2512.01992) Â· [Code](https://github.com/maxim-saplin/llm_chess)
+1. **Saplin, M. et al.** (2025). *LLM CHESS: Benchmarking Reasoning and Instruction-Following in LLMs through Chess.* NeurIPS FoRLM 2025. [arXiv:2512.01992](https://arxiv.org/abs/2512.01992) · [Code](https://github.com/maxim-saplin/llm_chess)
 
 2. **Karvonen, A.** (2024). *Emergent World Models and Latent Variable Estimation in Chess-Playing Language Models.* COLM 2024. [arXiv:2403.15498](https://arxiv.org/abs/2403.15498)
 
@@ -380,4 +381,3 @@ MIT. See [LICENSE](LICENSE).
 <div align="center">
 <sub>Built with rigor, curiosity, and a deep respect for the game.</sub>
 </div>
-

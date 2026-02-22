@@ -3,6 +3,7 @@ import { AppShell } from "./ui/layout/AppShell";
 import { DashboardPage } from "./ui/pages/DashboardPage";
 import { JobDetailPage } from "./ui/pages/JobDetailPage";
 import { JobsPage } from "./ui/pages/JobsPage";
+import { QuickPlayPage } from "./ui/pages/QuickPlayPage";
 import { ReplayPage } from "./ui/pages/ReplayPage";
 import { RunComparePage } from "./ui/pages/RunComparePage";
 import { RunLabPage } from "./ui/pages/RunLabPage";
@@ -19,6 +20,24 @@ const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: DashboardPage,
+});
+
+const commandCenterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard",
+  component: DashboardPage,
+});
+
+const quickPlayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/quick-play",
+  component: QuickPlayPage,
+});
+
+const labRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/lab",
+  component: RunLabPage,
 });
 
 const runLabRoute = createRoute({
@@ -51,6 +70,12 @@ const runCompareRoute = createRoute({
   component: RunComparePage,
 });
 
+const compareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/compare",
+  component: RunComparePage,
+});
+
 const runDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/$runId",
@@ -63,6 +88,12 @@ const replayRoute = createRoute({
   component: ReplayPage,
 });
 
+const replayGameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/$runId/game/$gameNumber",
+  component: ReplayPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
@@ -71,13 +102,18 @@ const settingsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
+  commandCenterRoute,
+  quickPlayRoute,
+  labRoute,
   runLabRoute,
   jobsRoute,
   jobDetailRoute,
   runsRoute,
+  compareRoute,
   runCompareRoute,
   runDetailRoute,
   replayRoute,
+  replayGameRoute,
   settingsRoute,
 ]);
 

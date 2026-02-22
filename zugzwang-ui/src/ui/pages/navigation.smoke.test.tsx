@@ -241,11 +241,11 @@ describe("navigation smoke", () => {
 
     await screen.findByRole("heading", { name: "Research Operations Dashboard" });
 
-    await user.click(screen.getByRole("link", { name: "Run Lab" }));
+    await user.click(screen.getByRole("link", { name: "Experiment Lab" }));
     await screen.findByRole("heading", { name: "Experiment Launch Workbench" });
 
-    await user.click(screen.getByRole("link", { name: "Jobs" }));
-    await screen.findByRole("heading", { name: "Execution Monitor" });
+    await user.click(screen.getByRole("link", { name: "Quick Play" }));
+    await screen.findByRole("heading", { name: "Quick Play" });
 
     await user.click(screen.getByRole("link", { name: "Runs" }));
     await screen.findByRole("heading", { name: "Run Explorer" });

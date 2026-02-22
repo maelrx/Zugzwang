@@ -1,11 +1,15 @@
 experiment:
-  name: moa_hybrid_phase
+  name: moa_specialist
   target_valid_games: 2
   max_games: 2
 
 strategy:
   multi_agent:
     enabled: true
-    mode: hybrid_phase_router
+    mode: specialist_moa
     proposer_count: 3
+    proposer_roles:
+      - tactical
+      - positional
+      - endgame
     include_legal_moves_in_aggregator: true

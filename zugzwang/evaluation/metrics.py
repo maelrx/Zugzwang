@@ -85,7 +85,8 @@ def summarize_experiment(
         1
         for rec in records
         for rec_move in rec.moves
-        if rec_move.move_decision.decision_mode == "capability_moa"
+        if rec_move.move_decision.decision_mode
+        in {"capability_moa", "specialist_moa", "hybrid_phase_router"}
     )
     games_with_provider_timeout = 0
     for rec in records:

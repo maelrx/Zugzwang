@@ -95,3 +95,49 @@ def test_mock_llm_direct_mode_with_capability_moa_enabled(tmp_path: Path) -> Non
     assert black_move["provider_calls"] >= 3
     assert isinstance(black_move["agent_trace"], list)
     assert isinstance(black_move.get("aggregator_rationale"), str)
+
+
+def test_mock_llm_direct_mode_with_specialist_moa_enabled(tmp_path: Path) -> None:
+    payload = _run_once(
+        "best_known_start.yaml",
+        tmp_path,
+        extra_overrides=[
+            "strategy.multi_agent.enabled=true",
+            "strategy.multi_agent.mode=specialist_moa",
+            "strategy.multi_agent.proposer_count=3",
+        ],
+    )
+    run_dir = Path(payload["run_dir"])
+    game_data = json.loads((run_dir / "games" / "game_0001.json").read_text(encoding="utf-8"))
+    black_move = next(
+        move["move_decision"]
+        for move in game_data["moves"]
+        if move.get("color") == "black"
+    )
+    roles = [entry["role"] for entry in black_move["agent_trace"]]
+    assert payload["games_written"] == 1
+    assert black_move["decision_mode"] == "specialist_moa"
+    assert "aggregator" in roles
+
+
+def test_mock_llm_direct_mode_with_hybrid_phase_router_enabled(tmp_path: Path) -> None:
+    payload = _run_once(
+        "best_known_start.yaml",
+        tmp_path,
+        extra_overrides=[
+            "strategy.multi_agent.enabled=true",
+            "strategy.multi_agent.mode=hybrid_phase_router",
+            "strategy.multi_agent.proposer_count=2",
+        ],
+    )
+    run_dir = Path(payload["run_dir"])
+    game_data = json.loads((run_dir / "games" / "game_0001.json").read_text(encoding="utf-8"))
+    black_move = next(
+        move["move_decision"]
+        for move in game_data["moves"]
+        if move.get("color") == "black"
+    )
+    roles = [entry["role"] for entry in black_move["agent_trace"]]
+    assert payload["games_written"] == 1
+    assert black_move["decision_mode"] == "hybrid_phase_router"
+    assert roles[-1] == "aggregator"

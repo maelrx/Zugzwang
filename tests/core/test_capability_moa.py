@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from zugzwang.agents.capability_moa import CapabilityMoaOrchestrator
 from zugzwang.core.board import BoardManager
@@ -29,10 +29,29 @@ class _SequenceProvider:
         )
 
 
+@dataclass
+class _CaptureProvider:
+    calls: int = 0
+    models: list[str] = field(default_factory=list)
+
+    def complete(self, messages, model_config):  # type: ignore[no-untyped-def]
+        self.calls += 1
+        model = str(model_config.get("model", "capture"))
+        self.models.append(model)
+        return ProviderResponse(
+            text="e2e4",
+            model=model,
+            input_tokens=5,
+            output_tokens=1,
+            latency_ms=2,
+            cost_usd=0.0,
+        )
+
+
 def test_capability_moa_aggregator_move_is_used() -> None:
     provider = _SequenceProvider(responses=["e2e4", "d2d4", "e2e4"])
     orchestrator = CapabilityMoaOrchestrator(
-        call_provider=lambda messages: provider.complete(messages, {"model": "seq"}),
+        call_provider=lambda messages, role: provider.complete(messages, {"model": "seq"}),
         model="seq",
     )
     result = orchestrator.decide(
@@ -52,7 +71,7 @@ def test_capability_moa_aggregator_move_is_used() -> None:
 def test_capability_moa_falls_back_to_proposer_majority() -> None:
     provider = _SequenceProvider(responses=["e2e4", "e2e4", "bad_output"])
     orchestrator = CapabilityMoaOrchestrator(
-        call_provider=lambda messages: provider.complete(messages, {"model": "seq"}),
+        call_provider=lambda messages, role: provider.complete(messages, {"model": "seq"}),
         model="seq",
     )
     result = orchestrator.decide(
@@ -108,3 +127,133 @@ def test_llm_player_uses_capability_moa_when_enabled() -> None:
     assert decision.provider_calls == 3
     assert len(decision.agent_trace) == 3
     assert decision.aggregator_rationale is not None
+
+
+def test_llm_player_uses_specialist_moa_mode() -> None:
+    board = BoardManager()
+    state = board.game_state([])
+    strategy = {
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": True,
+        "history_plies": 8,
+        "rag": {"enabled": False},
+        "multi_agent": {
+            "enabled": True,
+            "mode": "specialist_moa",
+            "proposer_count": 3,
+            "proposer_roles": ["tactical", "positional", "endgame"],
+        },
+        "validation": {
+            "feedback_level": "rich",
+            "move_retries": 1,
+            "provider_retries": 0,
+            "provider_backoff_seconds": 0.0,
+            "max_agentic_turns": 6,
+        },
+    }
+    player = LLMPlayer(
+        name="llm",
+        provider=MockProvider(),
+        model="mock-1",
+        model_config={},
+        protocol_mode="direct",
+        strategy_config=strategy,
+        rng=random.Random(9),
+    )
+
+    decision = player.choose_move(state)
+    assert decision.parse_ok is True
+    assert decision.is_legal is True
+    assert decision.decision_mode == "specialist_moa"
+    roles = [entry["role"] for entry in decision.agent_trace]
+    assert roles[:3] == ["tactical", "positional", "endgame"]
+    assert roles[-1] == "aggregator"
+
+
+def test_llm_player_uses_hybrid_phase_router_defaults() -> None:
+    board = BoardManager()
+    state = board.game_state([])
+    strategy = {
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": True,
+        "history_plies": 8,
+        "rag": {"enabled": False},
+        "multi_agent": {
+            "enabled": True,
+            "mode": "hybrid_phase_router",
+            "proposer_count": 2,
+        },
+        "validation": {
+            "feedback_level": "rich",
+            "move_retries": 1,
+            "provider_retries": 0,
+            "provider_backoff_seconds": 0.0,
+            "max_agentic_turns": 6,
+        },
+    }
+    player = LLMPlayer(
+        name="llm",
+        provider=MockProvider(),
+        model="mock-1",
+        model_config={},
+        protocol_mode="direct",
+        strategy_config=strategy,
+        rng=random.Random(10),
+    )
+
+    decision = player.choose_move(state)
+    assert decision.parse_ok is True
+    assert decision.is_legal is True
+    assert decision.decision_mode == "hybrid_phase_router"
+    roles = [entry["role"] for entry in decision.agent_trace]
+    # Opening defaults: positional + compliance.
+    assert roles[:2] == ["positional", "compliance"]
+    assert roles[-1] == "aggregator"
+
+
+def test_llm_player_multi_agent_role_model_overrides() -> None:
+    board = BoardManager()
+    state = board.game_state([])
+    provider = _CaptureProvider()
+    strategy = {
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": True,
+        "history_plies": 8,
+        "rag": {"enabled": False},
+        "multi_agent": {
+            "enabled": True,
+            "mode": "capability_moa",
+            "proposer_count": 2,
+            "proposer_roles": ["reasoning", "compliance"],
+            "provider_policy": "role_model_overrides",
+            "role_models": {
+                "reasoning": "model-reasoning",
+                "aggregator": "model-aggregator",
+            },
+        },
+        "validation": {
+            "feedback_level": "rich",
+            "move_retries": 1,
+            "provider_retries": 0,
+            "provider_backoff_seconds": 0.0,
+            "max_agentic_turns": 6,
+        },
+    }
+    player = LLMPlayer(
+        name="llm",
+        provider=provider,
+        model="base-model",
+        model_config={},
+        protocol_mode="direct",
+        strategy_config=strategy,
+        rng=random.Random(11),
+    )
+
+    decision = player.choose_move(state)
+    assert decision.parse_ok is True
+    assert decision.is_legal is True
+    assert decision.provider_calls == 3
+    assert provider.models == ["model-reasoning", "base-model", "model-aggregator"]

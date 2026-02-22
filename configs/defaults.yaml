@@ -34,10 +34,10 @@ strategy:
     enabled: false
     mode: capability_moa
     proposer_count: 2
-    proposer_roles:
-      - reasoning
-      - compliance
+    proposer_roles: []
     include_legal_moves_in_aggregator: true
+    provider_policy: shared_model
+    role_models: {}
   validation:
     feedback_level: rich
     move_retries: 3

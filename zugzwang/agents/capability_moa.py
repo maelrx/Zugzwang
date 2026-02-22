@@ -48,7 +48,7 @@ class CapabilityMoaOrchestrator:
     def __init__(
         self,
         *,
-        call_provider: Callable[[list[dict[str, str]]], ProviderResponse],
+        call_provider: Callable[[list[dict[str, str]], str], ProviderResponse],
         model: str,
     ) -> None:
         self._call_provider = call_provider
@@ -77,7 +77,8 @@ class CapabilityMoaOrchestrator:
 
         for role in proposer_roles:
             response = self._call_provider(
-                [{"role": "user", "content": _build_proposer_prompt(base_prompt, role)}]
+                [{"role": "user", "content": _build_proposer_prompt(base_prompt, role)}],
+                role,
             )
             totals["provider_calls"] += 1
             totals["tokens_input"] += response.input_tokens
@@ -111,7 +112,10 @@ class CapabilityMoaOrchestrator:
             legal_moves_uci=legal_moves_uci,
             include_legal_moves=include_legal_moves_in_aggregator,
         )
-        response = self._call_provider([{"role": "user", "content": aggregator_prompt}])
+        response = self._call_provider(
+            [{"role": "user", "content": aggregator_prompt}],
+            "aggregator",
+        )
         totals["provider_calls"] += 1
         totals["tokens_input"] += response.input_tokens
         totals["tokens_output"] += response.output_tokens

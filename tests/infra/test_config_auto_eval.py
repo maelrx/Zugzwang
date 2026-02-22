@@ -104,10 +104,51 @@ def test_config_accepts_strategy_multi_agent_block() -> None:
     assert cfg["mode"] == "capability_moa"
 
 
+def test_config_accepts_strategy_multi_agent_specialist_mode() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "strategy.multi_agent.enabled=true",
+            "strategy.multi_agent.mode=specialist_moa",
+            "strategy.multi_agent.proposer_count=3",
+        ],
+    )
+    cfg = resolved["strategy"]["multi_agent"]
+    assert cfg["mode"] == "specialist_moa"
+
+
+def test_config_accepts_strategy_multi_agent_hybrid_with_role_model_overrides() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "strategy.multi_agent.enabled=true",
+            "strategy.multi_agent.mode=hybrid_phase_router",
+            "strategy.multi_agent.provider_policy=role_model_overrides",
+            "strategy.multi_agent.role_models.tactical=mock-tactical",
+            "strategy.multi_agent.role_models.aggregator=mock-aggregator",
+        ],
+    )
+    cfg = resolved["strategy"]["multi_agent"]
+    assert cfg["mode"] == "hybrid_phase_router"
+    assert cfg["provider_policy"] == "role_model_overrides"
+    assert cfg["role_models"]["aggregator"] == "mock-aggregator"
+
+
 def test_config_rejects_invalid_strategy_multi_agent_mode() -> None:
     config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
     with pytest.raises(ValueError, match="strategy.multi_agent.mode"):
         resolve_config(
             experiment_config_path=config_path,
-            cli_overrides=["strategy.multi_agent.mode=specialist_moa"],
+            cli_overrides=["strategy.multi_agent.mode=unknown_mode"],
+        )
+
+
+def test_config_rejects_invalid_strategy_multi_agent_provider_policy() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.multi_agent.provider_policy"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=["strategy.multi_agent.provider_policy=invalid_policy"],
         )

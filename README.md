@@ -177,6 +177,7 @@ MoA baseline config:
 
 MoA telemetry:
 - move fields: `decision_mode` (`single_agent` or `capability_moa`) and `agent_trace`
+- move field: `aggregator_rationale` (selection rationale + proposer vote context)
 - report field: `moa_move_share`
 
 ## Stockfish Evaluation (Phase 2)

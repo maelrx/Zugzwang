@@ -46,6 +46,7 @@ class MoveDecision:
     retrieval_phase: str | None = None
     decision_mode: str = "single_agent"
     agent_trace: list[dict[str, Any]] = field(default_factory=list)
+    aggregator_rationale: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

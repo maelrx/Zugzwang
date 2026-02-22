@@ -45,6 +45,8 @@ def test_capability_moa_aggregator_move_is_used() -> None:
     assert result.move_uci == "e2e4"
     assert result.provider_calls == 3
     assert len(result.traces) == 3
+    assert result.aggregator_rationale is not None
+    assert "Aggregator output accepted" in result.aggregator_rationale
 
 
 def test_capability_moa_falls_back_to_proposer_majority() -> None:
@@ -62,6 +64,8 @@ def test_capability_moa_falls_back_to_proposer_majority() -> None:
     assert result.is_legal is True
     assert result.move_uci == "e2e4"
     assert result.error == "moa_aggregator_invalid_fallback_candidate"
+    assert result.aggregator_rationale is not None
+    assert "fallback used" in result.aggregator_rationale
 
 
 def test_llm_player_uses_capability_moa_when_enabled() -> None:
@@ -103,3 +107,4 @@ def test_llm_player_uses_capability_moa_when_enabled() -> None:
     assert decision.decision_mode == "capability_moa"
     assert decision.provider_calls == 3
     assert len(decision.agent_trace) == 3
+    assert decision.aggregator_rationale is not None

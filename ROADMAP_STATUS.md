@@ -93,7 +93,6 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
     - `configs/ablations/moa_capability.yaml`
 - Missing:
   - specialist-MoA and hybrid phase router
-  - explicit aggregator rationale fields
   - cross-agent provider routing policies
 
 ## Phase 6: Experiment runner / scheduler
@@ -126,6 +125,9 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
   - queue/scheduler controls beyond local single-user workflow
 
 ## Recent changes (this update)
+- Added Capability-MoA aggregator rationale logging:
+  - `aggregator_rationale` persisted in move artifacts
+  - rationale includes selection path and proposer vote context
 - Added retrieval usefulness analysis in evaluated reports:
   - hit vs no-hit ACPL delta
   - best-move agreement split by retrieval hit
@@ -211,6 +213,6 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
 - Added tests for pricing and budget stop behavior
 
 ## Next build targets (ordered)
-1. Phase 5 specialist/hybrid MoA + aggregator rationale logging.
+1. Phase 5 specialist/hybrid MoA with cross-agent routing policies.
 2. Phase 6 queue scheduler + provider-aware throttling.
 3. Phase 7 richer comparative analysis and publication exports.

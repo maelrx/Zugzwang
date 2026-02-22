@@ -114,6 +114,7 @@ class LLMPlayer(PlayerInterface):
             ),
         )
         last_agent_trace: list[dict[str, Any]] = []
+        last_aggregator_rationale: str | None = None
         decision_mode = "single_agent"
 
         for retry in range(move_retries + 1):
@@ -146,6 +147,7 @@ class LLMPlayer(PlayerInterface):
                 total_cost_usd += moa_result.cost_usd
                 last_response = moa_result.raw_response
                 last_agent_trace = [trace.to_dict() for trace in moa_result.traces]
+                last_aggregator_rationale = moa_result.aggregator_rationale
 
                 if moa_result.parse_ok and moa_result.is_legal and moa_result.move_uci:
                     return MoveDecision(
@@ -169,6 +171,7 @@ class LLMPlayer(PlayerInterface):
                         retrieval_phase=prompt_meta.retrieval.phase,
                         decision_mode=decision_mode,
                         agent_trace=last_agent_trace,
+                        aggregator_rationale=moa_result.aggregator_rationale,
                     )
 
                 last_error = moa_result.error or "moa_validation_failed"
@@ -252,6 +255,7 @@ class LLMPlayer(PlayerInterface):
             retrieval_phase=last_prompt_meta.retrieval.phase,
             decision_mode=decision_mode,
             agent_trace=last_agent_trace,
+            aggregator_rationale=last_aggregator_rationale,
         )
 
     def _choose_move_agentic(self, game_state: GameState) -> MoveDecision:

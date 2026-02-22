@@ -1,7 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { apiRequest } from "../../api/client";
+import { ApiError, apiRequest } from "../../api/client";
 import { useStartEvaluation, useRunGames, useRunSummary } from "../../api/queries";
 import type { GameDetailResponse, GameListItem } from "../../api/types";
 import { MoveQualityDistributionCard } from "../components/MoveQualityDistributionCard";
@@ -18,13 +18,14 @@ export function RunDetailPage() {
   const runId = params.runId;
 
   const summaryQuery = useRunSummary(runId);
-  const gamesQuery = useRunGames(runId);
+  const gamesQuery = useRunGames(runId, Boolean(summaryQuery.data));
   const startEval = useStartEvaluation();
   const [playerColor, setPlayerColor] = useState<"white" | "black">("black");
   const [opponentElo, setOpponentElo] = useState("");
   const [lastEvalJobId, setLastEvalJobId] = useState<string | null>(null);
 
   const summary = summaryQuery.data;
+  const summaryNotFound = isNotFoundError(summaryQuery.error);
   const games = gamesQuery.data ?? EMPTY_GAMES;
   const runDir = summary?.run_meta.run_dir ?? "";
   const report = asRecord(summary?.report);
@@ -76,6 +77,20 @@ export function RunDetailPage() {
     [metrics],
   );
 
+  if (summaryNotFound) {
+    return (
+      <section>
+        <PageHeader eyebrow="Run Detail" title={runId} subtitle="Overview of artifacts, reports and recorded games for this run." />
+        <p className="mb-3 rounded-lg border border-[#d7b071] bg-[#fff3de] px-3 py-2 text-sm text-[#7d5618]">
+          Artifacts for this run are not available yet. This usually happens when a job is canceled before the first files are written.
+        </p>
+        <Link to="/jobs" className="rounded-md border border-[#d8d1c5] bg-white px-3 py-1.5 text-sm text-[#334c59]">
+          Back to jobs
+        </Link>
+      </section>
+    );
+  }
+
   return (
     <section>
       <PageHeader eyebrow="Run Detail" title={runId} subtitle="Overview of artifacts, reports and recorded games for this run." />
@@ -88,7 +103,7 @@ export function RunDetailPage() {
 
       {(summaryQuery.isLoading || gamesQuery.isLoading) && <p className="mb-3 text-sm text-[#506672]">Loading run artifacts...</p>}
 
-      {(summaryQuery.isError || gamesQuery.isError) && (
+      {(summaryQuery.isError || gamesQuery.isError) && !summaryNotFound && (
         <p className="mb-3 rounded-lg border border-[#cf8f8f] bg-[#fff0ed] px-3 py-2 text-sm text-[#8a3434]">
           Failed to load run detail.
         </p>
@@ -285,6 +300,10 @@ export function RunDetailPage() {
       )}
     </section>
   );
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
 }
 
 function MetricTile({ label, value }: { label: string; value: string }) {

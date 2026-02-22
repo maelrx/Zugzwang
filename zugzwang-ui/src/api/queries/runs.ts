@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "../client";
+import { ApiError, apiRequest } from "../client";
 import type { BoardFrameResponse, GameDetailResponse, GameListItem, RunListItem, RunSummaryResponse } from "../types";
 
 type RunsFilters = {
@@ -32,15 +32,17 @@ export function useRunSummary(runId: string | null) {
     queryFn: () => apiRequest<RunSummaryResponse>(`/api/runs/${runId}`),
     enabled: Boolean(runId),
     staleTime: 30_000,
+    retry: shouldRetry,
   });
 }
 
-export function useRunGames(runId: string | null) {
+export function useRunGames(runId: string | null, enabled = true) {
   return useQuery({
     queryKey: ["run-games", runId] as const,
     queryFn: () => apiRequest<GameListItem[]>(`/api/runs/${runId}/games`),
-    enabled: Boolean(runId),
+    enabled: Boolean(runId) && enabled,
     staleTime: 60_000,
+    retry: shouldRetry,
   });
 }
 
@@ -50,6 +52,7 @@ export function useGame(runId: string | null, gameNumber: number | null) {
     queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runId}/games/${gameNumber}`),
     enabled: Boolean(runId) && gameNumber !== null,
     staleTime: 60_000,
+    retry: shouldRetry,
   });
 }
 
@@ -59,5 +62,13 @@ export function useGameFrames(runId: string | null, gameNumber: number | null) {
     queryFn: () => apiRequest<BoardFrameResponse[]>(`/api/runs/${runId}/games/${gameNumber}/frames`),
     enabled: Boolean(runId) && gameNumber !== null,
     staleTime: Infinity,
+    retry: shouldRetry,
   });
+}
+
+function shouldRetry(failureCount: number, error: unknown): boolean {
+  if (error instanceof ApiError && error.status === 404) {
+    return false;
+  }
+  return failureCount < 2;
 }

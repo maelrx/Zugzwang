@@ -36,7 +36,8 @@ ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}
 ALLOWED_TIMEOUT_POLICY_ACTIONS = {"stop_run"}
 ALLOWED_RAG_SOURCES = {"eco", "lichess", "endgames"}
-ALLOWED_MULTI_AGENT_MODES = {"capability_moa"}
+ALLOWED_MULTI_AGENT_MODES = {"capability_moa", "specialist_moa", "hybrid_phase_router"}
+ALLOWED_MULTI_AGENT_PROVIDER_POLICIES = {"shared_model", "role_model_overrides"}
 
 
 def _get_by_path(config: dict[str, Any], path: str) -> Any:
@@ -271,6 +272,30 @@ def _validate_strategy_multi_agent(config: dict[str, Any]) -> None:
             if not isinstance(role, str) or not role.strip():
                 raise ConfigValidationError(
                     "strategy.multi_agent.proposer_roles entries must be non-empty strings"
+                )
+
+    provider_policy = multi_agent_cfg.get("provider_policy", "shared_model")
+    if (
+        not isinstance(provider_policy, str)
+        or provider_policy.strip().lower() not in ALLOWED_MULTI_AGENT_PROVIDER_POLICIES
+    ):
+        allowed = ", ".join(sorted(ALLOWED_MULTI_AGENT_PROVIDER_POLICIES))
+        raise ConfigValidationError(
+            f"strategy.multi_agent.provider_policy must be one of [{allowed}]"
+        )
+
+    role_models = multi_agent_cfg.get("role_models")
+    if role_models is not None:
+        if not isinstance(role_models, dict):
+            raise ConfigValidationError("strategy.multi_agent.role_models must be a mapping")
+        for role, model in role_models.items():
+            if not isinstance(role, str) or not role.strip():
+                raise ConfigValidationError(
+                    "strategy.multi_agent.role_models keys must be non-empty strings"
+                )
+            if not isinstance(model, str) or not model.strip():
+                raise ConfigValidationError(
+                    "strategy.multi_agent.role_models values must be non-empty strings"
                 )
 
     if enabled and proposer_count > 8:

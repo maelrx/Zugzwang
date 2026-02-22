@@ -1,6 +1,6 @@
 # Zugzwang Engine Roadmap Status
 
-Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
+Last updated: 2026-02-22 (engine-phase5-modes-routing update)
 
 ## Progress by phase
 
@@ -76,24 +76,33 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
 ## Phase 5: Multi-agent
 - Status: partial (baseline)
 - Implemented:
-  - capability-MoA baseline orchestrator:
+  - capability/specialist/hybrid MoA baseline orchestrator:
     - proposer role sub-calls
     - aggregator sub-call for final move choice
     - legal fallback to proposer majority candidate when aggregator output is invalid
   - config path:
     - `strategy.multi_agent.enabled`
-    - `strategy.multi_agent.mode=capability_moa`
+    - `strategy.multi_agent.mode`:
+      - `capability_moa`
+      - `specialist_moa`
+      - `hybrid_phase_router`
     - `strategy.multi_agent.proposer_count`
     - `strategy.multi_agent.proposer_roles`
     - `strategy.multi_agent.include_legal_moves_in_aggregator`
+    - `strategy.multi_agent.provider_policy`:
+      - `shared_model`
+      - `role_model_overrides`
+    - `strategy.multi_agent.role_models.<role>=<model>`
   - move-level trace persistence:
     - `decision_mode`
     - `agent_trace` (role, parse/legal, tokens, latency, cost, raw output)
+    - `aggregator_rationale`
   - ablation starter config:
     - `configs/ablations/moa_capability.yaml`
+    - `configs/ablations/moa_specialist.yaml`
+    - `configs/ablations/moa_hybrid_phase.yaml`
 - Missing:
-  - specialist-MoA and hybrid phase router
-  - cross-agent provider routing policies
+  - multi-provider fan-out per role (today uses same provider with per-role model override)
 
 ## Phase 6: Experiment runner / scheduler
 - Status: partial
@@ -125,6 +134,15 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
   - queue/scheduler controls beyond local single-user workflow
 
 ## Recent changes (this update)
+- Added Phase 5 mode expansion and routing:
+  - new multi-agent modes: `specialist_moa`, `hybrid_phase_router`
+  - phase-aware proposer role routing for hybrid mode
+  - role-level model routing policy:
+    - `shared_model`
+    - `role_model_overrides`
+  - new ablation configs:
+    - `moa_specialist`
+    - `moa_hybrid_phase`
 - Added Capability-MoA aggregator rationale logging:
   - `aggregator_rationale` persisted in move artifacts
   - rationale includes selection path and proposer vote context
@@ -213,6 +231,6 @@ Last updated: 2026-02-22 (engine-phase4-telemetry-phase5-moa-baseline update)
 - Added tests for pricing and budget stop behavior
 
 ## Next build targets (ordered)
-1. Phase 5 specialist/hybrid MoA with cross-agent routing policies.
+1. Phase 5 multi-provider fan-out and deeper specialist behaviors.
 2. Phase 6 queue scheduler + provider-aware throttling.
 3. Phase 7 richer comparative analysis and publication exports.

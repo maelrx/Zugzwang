@@ -11,6 +11,12 @@ import chess
 import chess.engine
 
 from zugzwang.agents.capability_moa import CapabilityMoaOrchestrator
+from zugzwang.agents.router import (
+    normalize_multi_agent_mode,
+    normalize_provider_policy,
+    resolve_model_override_for_role,
+    resolve_proposer_roles,
+)
 from zugzwang.core.models import GameState, MoveDecision
 from zugzwang.core.protocol import (
     build_agentic_prompt,
@@ -126,10 +132,12 @@ class LLMPlayer(PlayerInterface):
             prompt = prompt_meta.prompt
             last_prompt_meta = prompt_meta
 
-            if self._is_capability_moa_enabled():
-                decision_mode = "capability_moa"
+            if self._is_multi_agent_enabled():
+                decision_mode = self._multi_agent_mode()
                 try:
-                    moa_result = self._run_capability_moa(
+                    moa_result = self._run_multi_agent(
+                        mode=decision_mode,
+                        phase=game_state.phase,
                         prompt=prompt,
                         legal_moves_uci=game_state.legal_moves_uci,
                     )
@@ -359,7 +367,16 @@ class LLMPlayer(PlayerInterface):
         )
 
     def _call_provider(self, messages: list[dict[str, str]]) -> ProviderResponse:
-        model_config = {"model": self.model}
+        return self._call_provider_with_model(messages=messages, model_override=None)
+
+    def _call_provider_with_model(
+        self,
+        *,
+        messages: list[dict[str, str]],
+        model_override: str | None,
+    ) -> ProviderResponse:
+        model_name = model_override if isinstance(model_override, str) and model_override.strip() else self.model
+        model_config = {"model": model_name}
         model_config.update(self.model_config)
         retries = int(self.strategy_config.get("validation", {}).get("provider_retries", 2))
         backoff_seconds = float(self.strategy_config.get("validation", {}).get("provider_backoff_seconds", 0.25))
@@ -376,18 +393,23 @@ class LLMPlayer(PlayerInterface):
             raise last_error
         raise ProviderError("Unknown provider error")
 
-    def _is_capability_moa_enabled(self) -> bool:
+    def _is_multi_agent_enabled(self) -> bool:
         multi_agent_cfg = self.strategy_config.get("multi_agent", {})
         if not isinstance(multi_agent_cfg, dict):
             return False
-        if not bool(multi_agent_cfg.get("enabled", False)):
-            return False
-        mode = str(multi_agent_cfg.get("mode", "capability_moa")).strip().lower()
-        return mode == "capability_moa"
+        return bool(multi_agent_cfg.get("enabled", False))
 
-    def _run_capability_moa(
+    def _multi_agent_mode(self) -> str:
+        multi_agent_cfg = self.strategy_config.get("multi_agent", {})
+        if not isinstance(multi_agent_cfg, dict):
+            return "capability_moa"
+        return normalize_multi_agent_mode(multi_agent_cfg.get("mode", "capability_moa"))
+
+    def _run_multi_agent(
         self,
         *,
+        mode: str,
+        phase: str,
         prompt: str,
         legal_moves_uci: list[str],
     ):
@@ -395,27 +417,54 @@ class LLMPlayer(PlayerInterface):
         if not isinstance(multi_agent_cfg, dict):
             multi_agent_cfg = {}
 
+        provider_policy = normalize_provider_policy(
+            multi_agent_cfg.get("provider_policy", "shared_model")
+        )
+        role_models_raw = multi_agent_cfg.get("role_models")
+        role_models: dict[str, str] | None = None
+        if isinstance(role_models_raw, dict):
+            normalized_role_models: dict[str, str] = {}
+            for raw_key, raw_value in role_models_raw.items():
+                if not isinstance(raw_key, str) or not isinstance(raw_value, str):
+                    continue
+                key = raw_key.strip().lower()
+                value = raw_value.strip()
+                if key and value:
+                    normalized_role_models[key] = value
+            role_models = normalized_role_models if normalized_role_models else None
+
         proposer_count = _safe_positive_int(
             multi_agent_cfg.get("proposer_count"),
             default=2,
         )
         raw_roles = multi_agent_cfg.get("proposer_roles")
-        roles: list[str] = []
+        configured_roles: list[str] | None = None
         if isinstance(raw_roles, list):
-            for item in raw_roles:
-                if isinstance(item, str) and item.strip():
-                    roles.append(item.strip().lower())
-        if not roles:
-            roles = ["reasoning", "compliance", "safety"]
-        if proposer_count > len(roles):
-            roles = [*roles, *[roles[-1]] * (proposer_count - len(roles))]
-        proposer_roles = roles[:proposer_count]
+            configured_roles = [str(item) for item in raw_roles]
+        proposer_roles = resolve_proposer_roles(
+            mode=mode,
+            phase=phase,
+            proposer_count=proposer_count,
+            configured_roles=configured_roles,
+        )
 
         include_legal_moves_in_aggregator = bool(
             multi_agent_cfg.get("include_legal_moves_in_aggregator", True)
         )
+
+        def call_provider(messages: list[dict[str, str]], role: str) -> ProviderResponse:
+            model_override = resolve_model_override_for_role(
+                role=role,
+                provider_policy=provider_policy,
+                role_models=role_models,
+            )
+            return self._call_provider_with_model(
+                messages=messages,
+                model_override=model_override,
+            )
+
         orchestrator = CapabilityMoaOrchestrator(
-            call_provider=self._call_provider,
+            call_provider=call_provider,
             model=self.model,
         )
         return orchestrator.decide(

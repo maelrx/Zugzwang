@@ -403,7 +403,7 @@ Os testes cobrem: legalidade do tabuleiro, hash de configuração, parsing de la
 
 ### Referências Primárias
 
-1. **Saplin, M. et al.** (2025). *LLM CHESS: Benchmarking Reasoning and Instruction-Following in LLMs through Chess.* NeurIPS FoRLM 2025. [arXiv:2512.01992](https://arxiv.org/abs/2512.01992) · [Código](https://github.com/maxim-saplin/llm_chess)
+1. **Kolasani, S., Saplin, M. et al.** (2025). *LLM CHESS: Benchmarking Reasoning and Instruction-Following in LLMs through Chess.* NeurIPS FoRLM 2025. [arXiv:2512.01992](https://arxiv.org/abs/2512.01992) · [Código](https://github.com/maxim-saplin/llm_chess)
 
 2. **Karvonen, A.** (2024). *Emergent World Models and Latent Variable Estimation in Chess-Playing Language Models.* COLM 2024. [arXiv:2403.15498](https://arxiv.org/abs/2403.15498)
 
@@ -413,7 +413,7 @@ Os testes cobrem: legalidade do tabuleiro, hash de configuração, parsing de la
 
 5. **Monroe, D. & Leela Chess Zero Team** (2024). *Mastering Chess with a Transformer Model.* [arXiv:2409.12272](https://arxiv.org/abs/2409.12272)
 
-6. **Ruoss, A. et al.** (2024). *Amortized Planning with Large-Scale Transformers: A Case Study on Chess.* NeurIPS 2024.
+6. **Ruoss, A. et al.** (2024). *Amortized Planning with Large-Scale Transformers: A Case Study on Chess.* NeurIPS 2024. [arXiv:2402.04494](https://arxiv.org/abs/2402.04494)
 
 7. **Anonymous** (2025). *Can Large Language Models Develop Strategic Reasoning? Post-training Insights from Learning Chess.* [arXiv:2507.00726](https://arxiv.org/abs/2507.00726)
 

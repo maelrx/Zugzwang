@@ -1,0 +1,6 @@
+experiment:
+  name: instruction_following_isolation
+
+strategy:
+  validation:
+    feedback_level: rich

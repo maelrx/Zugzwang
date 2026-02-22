@@ -1,0 +1,9 @@
+experiment:
+  name: replication_minimal
+  target_valid_games: 10
+
+protocol:
+  mode: agentic_compat
+
+runtime:
+  expected_completion_rate: 0.85

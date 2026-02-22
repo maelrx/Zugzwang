@@ -1,0 +1,11 @@
+.env
+.pytest_cache/
+__pycache__/
+*.pyc
+.tmp_play_output.json
+
+results/
+data/vectordb/
+tools/stockfish/
+
+*.egg-info/

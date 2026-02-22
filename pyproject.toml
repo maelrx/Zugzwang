@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zugzwang-engine"
+version = "0.1.0"
+description = "Reproducible chess-LLM experimentation engine"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "python-chess>=1.999",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+]
+ui = [
+  "streamlit>=1.40",
+  "plotly>=5.24",
+]
+
+[project.scripts]
+zugzwang = "zugzwang.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["zugzwang*"]
+exclude = ["zugzwang.zugzwang*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/core", "tests/infra", "tests/evaluation", "tests/integration", "tests/strategy", "tests/ui"]
+norecursedirs = ["tests/tests"]
+addopts = "-q"

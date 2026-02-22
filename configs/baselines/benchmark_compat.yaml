@@ -1,0 +1,47 @@
+experiment:
+  name: benchmark_compat
+  target_valid_games: 2
+  max_games: 2
+
+players:
+  white:
+    type: random
+    name: random_white
+  black:
+    type: llm
+    name: llm_black
+    provider: mock
+    model: mock-1
+
+protocol:
+  mode: agentic_compat
+
+strategy:
+  board_format: fen
+  provide_legal_moves: true
+  provide_history: true
+  history_plies: 8
+  validation:
+    feedback_level: moderate
+    move_retries: 3
+    provider_retries: 2
+    max_agentic_turns: 6
+
+evaluation:
+  stockfish:
+    depth: 12
+
+runtime:
+  seed: 42
+  max_plies: 200
+  timeout_seconds: 30
+  expected_completion_rate: 0.9
+  output_dir: results/runs
+
+budget:
+  max_total_usd: 5.0
+  estimated_avg_cost_per_game_usd: 0.0
+
+tracking:
+  persist_move_records: true
+  persist_game_records: true

@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1, M2 and M3 completed)
+Status: in progress (M1, M2, M3 and M4 completed)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -333,11 +333,11 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Start M4 now:
-1. Add OpenAPI type generation workflow and scripts.
-2. Add typed `src/api/client.ts` fetch wrapper.
-3. Add TanStack Query hooks for jobs/runs/configs/env.
-4. Connect dashboard and run list pages to real API data.
+Start M5 now:
+1. Implement run detail routes and game-replay route tree.
+2. Add board component integration for replay frames.
+3. Add jobs detail page with SSE terminal stream.
+4. Add initial run-level comparison and artifact tabs.
 
 ## 9. Progress log
 
@@ -355,3 +355,7 @@ Start M4 now:
   - Added TanStack Router + TanStack Query providers and app shell.
   - Added initial page skeletons: Dashboard, Run Lab, Jobs, Runs, Settings.
   - Added Vite API proxy and Tailwind-based visual foundation.
+- 2026-02-22: M4 implemented.
+  - Added OpenAPI type generation workflow and generated schema file.
+  - Added typed API client and query/mutation hooks.
+  - Connected Dashboard, Run Lab, Jobs, Runs and Settings to live API reads.

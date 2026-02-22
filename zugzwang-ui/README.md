@@ -27,5 +27,7 @@ python -m zugzwang.cli api --reload
 
 - `npm run dev`: start Vite dev server
 - `npm run build`: typecheck + production build
+- `npm run typecheck`: TypeScript checks only
 - `npm run lint`: lint frontend sources
 - `npm run preview`: preview production build
+- `npm run generate-types`: regenerate OpenAPI TS types (requires API running on port 8000)

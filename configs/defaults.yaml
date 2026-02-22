@@ -46,6 +46,12 @@ runtime:
   max_plies: 200
   timeout_seconds: 30
   expected_completion_rate: 1.0
+  timeout_policy:
+    enabled: false
+    min_games_before_enforcement: 5
+    max_provider_timeout_game_rate: 0.25
+    min_observed_completion_rate: 0.6
+    action: stop_run
   output_dir: results/runs
 
 budget:

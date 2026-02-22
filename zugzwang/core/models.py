@@ -119,6 +119,10 @@ class ExperimentReport:
     budget_utilization: float | None
     stopped_due_to_budget: bool
     budget_stop_reason: str | None
+    stopped_due_to_reliability: bool = False
+    reliability_stop_reason: str | None = None
+    provider_timeout_game_rate: float = 0.0
+    nonvalid_game_rate: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

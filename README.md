@@ -101,6 +101,20 @@ python -m zugzwang.cli evaluate --run-dir results/runs/<run-id> --player-color b
   - projected final spend exceeds cap (based on configured/observed average cost).
 - Optional config: `budget.estimated_avg_cost_per_game_usd` for stronger dry-run projection.
 
+## Timeout / Reliability Guardrail
+
+Optional runtime policy to stop unstable runs early:
+
+- `runtime.timeout_policy.enabled`
+- `runtime.timeout_policy.min_games_before_enforcement`
+- `runtime.timeout_policy.max_provider_timeout_game_rate`
+- `runtime.timeout_policy.min_observed_completion_rate`
+- `runtime.timeout_policy.action` (currently `stop_run`)
+
+When enabled, the runner can stop a condition early if:
+- too many games include provider timeout errors, or
+- observed completion collapses below threshold.
+
 ## Stockfish Evaluation (Phase 2)
 
 - Evaluation command reads a completed run directory and creates `experiment_report_evaluated.json`.

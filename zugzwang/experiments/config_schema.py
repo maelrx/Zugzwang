@@ -34,6 +34,7 @@ ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode"}
 ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}
+ALLOWED_TIMEOUT_POLICY_ACTIONS = {"stop_run"}
 
 
 def _get_by_path(config: dict[str, Any], path: str) -> Any:
@@ -116,6 +117,49 @@ def _validate_evaluation_auto(config: dict[str, Any]) -> None:
         raise ConfigValidationError("evaluation.auto.output_filename must be a non-empty string")
 
 
+def _validate_timeout_policy(config: dict[str, Any]) -> None:
+    timeout_policy = config.get("runtime", {}).get("timeout_policy")
+    if timeout_policy is None:
+        return
+    if not isinstance(timeout_policy, dict):
+        raise ConfigValidationError("runtime.timeout_policy must be a mapping when provided")
+
+    enabled = timeout_policy.get("enabled", False)
+    if not isinstance(enabled, bool):
+        raise ConfigValidationError("runtime.timeout_policy.enabled must be a boolean")
+
+    min_games = timeout_policy.get("min_games_before_enforcement", 5)
+    if not isinstance(min_games, int) or min_games <= 0:
+        raise ConfigValidationError(
+            "runtime.timeout_policy.min_games_before_enforcement must be a positive int"
+        )
+
+    max_timeout_rate = timeout_policy.get("max_provider_timeout_game_rate", 0.25)
+    if (
+        not isinstance(max_timeout_rate, (int, float))
+        or max_timeout_rate < 0
+        or max_timeout_rate > 1
+    ):
+        raise ConfigValidationError(
+            "runtime.timeout_policy.max_provider_timeout_game_rate must be in [0, 1]"
+        )
+
+    min_completion = timeout_policy.get("min_observed_completion_rate", 0.6)
+    if (
+        not isinstance(min_completion, (int, float))
+        or min_completion < 0
+        or min_completion > 1
+    ):
+        raise ConfigValidationError(
+            "runtime.timeout_policy.min_observed_completion_rate must be in [0, 1]"
+        )
+
+    action = timeout_policy.get("action", "stop_run")
+    if action not in ALLOWED_TIMEOUT_POLICY_ACTIONS:
+        allowed = ", ".join(sorted(ALLOWED_TIMEOUT_POLICY_ACTIONS))
+        raise ConfigValidationError(f"runtime.timeout_policy.action must be one of [{allowed}]")
+
+
 def validate_config(config: dict[str, Any]) -> None:
     if not isinstance(config, dict):
         raise ConfigValidationError("Resolved config must be a mapping")
@@ -175,3 +219,4 @@ def validate_config(config: dict[str, Any]) -> None:
 
     _validate_player_config(_get_by_path(config, "players"))
     _validate_evaluation_auto(config)
+    _validate_timeout_policy(config)

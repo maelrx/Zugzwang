@@ -1,6 +1,6 @@
 # Zugzwang Engine Roadmap Status
 
-Last updated: 2026-02-22 (engine-phase6-resume update)
+Last updated: 2026-02-22 (engine-phase6-guardrails update)
 
 ## Progress by phase
 
@@ -60,9 +60,10 @@ Last updated: 2026-02-22 (engine-phase6-resume update)
   - budget guardrail (hard stop + projected stop)
   - z.ai call-level cost estimation and run-level cost accounting
   - resume and dedup for interrupted runs (`--resume`, `--resume-run-id`)
+  - timeout/completion reliability guardrail (`runtime.timeout_policy.*`)
 - Missing:
   - queue scheduler
-  - timeout auto-mitigation policies
+  - provider-aware throttling/queue policies
 
 ## Phase 7: Analysis & reporting
 - Status: partial
@@ -81,6 +82,22 @@ Last updated: 2026-02-22 (engine-phase6-resume update)
   - queue/scheduler controls beyond local single-user workflow
 
 ## Recent changes (this update)
+- Added runtime timeout/completion guardrail:
+  - `runtime.timeout_policy.enabled`
+  - `runtime.timeout_policy.min_games_before_enforcement`
+  - `runtime.timeout_policy.max_provider_timeout_game_rate`
+  - `runtime.timeout_policy.min_observed_completion_rate`
+  - `runtime.timeout_policy.action=stop_run`
+- Runner now emits:
+  - `stopped_due_to_reliability`
+  - `reliability_stop_reason`
+  - `provider_timeout_game_rate`
+  - `nonvalid_game_rate`
+- Added report fields for reliability stop and rates.
+- Added tests covering:
+  - stop on provider-timeout rate collapse
+  - stop on observed completion collapse
+  - timeout policy config validation
 - Added phase-6 resume/dedup implementation:
   - auto-resume latest matching run by `experiment.name + config_hash`
   - explicit resume by `run_id`
@@ -124,6 +141,6 @@ Last updated: 2026-02-22 (engine-phase6-resume update)
 - Added tests for pricing and budget stop behavior
 
 ## Next build targets (ordered)
-1. Phase 6 timeout auto-mitigation policies (completion collapse + provider timeout handling).
-2. Phase 4 retrieval pipeline (RAG off/on toggleable path).
-3. Phase 5 capability-MoA baseline with explicit sub-call traces.
+1. Phase 4 retrieval pipeline (RAG off/on toggleable path).
+2. Phase 5 capability-MoA baseline with explicit sub-call traces.
+3. Phase 6 queue scheduler + provider-aware throttling.

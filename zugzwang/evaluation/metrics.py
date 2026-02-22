@@ -5,6 +5,8 @@ from typing import Iterable
 
 from zugzwang.core.models import ExperimentReport, GameRecord
 
+NON_VALID_TERMINATIONS = {"error", "timeout", "provider_failure"}
+
 
 def summarize_experiment(
     experiment_id: str,
@@ -15,9 +17,13 @@ def summarize_experiment(
     budget_cap_usd: float | None = None,
     stopped_due_to_budget: bool = False,
     budget_stop_reason: str | None = None,
+    stopped_due_to_reliability: bool = False,
+    reliability_stop_reason: str | None = None,
 ) -> ExperimentReport:
     records = list(game_records)
-    valid_games = len(records)
+    total_records = len(records)
+    valid_games = 0
+    nonvalid_games = 0
 
     wins = sum(1 for rec in records if rec.result == "1-0")
     losses = sum(1 for rec in records if rec.result == "0-1")
@@ -39,6 +45,14 @@ def summarize_experiment(
         for rec_move in rec.moves
         if rec_move.move_decision.retry_count > 0 and rec_move.move_decision.is_legal
     )
+    games_with_provider_timeout = 0
+    for rec in records:
+        if rec.termination in NON_VALID_TERMINATIONS:
+            nonvalid_games += 1
+        else:
+            valid_games += 1
+        if _record_has_provider_timeout(rec):
+            games_with_provider_timeout += 1
 
     token_total = sum(rec.token_usage["input"] + rec.token_usage["output"] for rec in records)
     cost_total = sum(rec.cost_usd for rec in records)
@@ -47,10 +61,12 @@ def summarize_experiment(
     ]
     p95_latency = _p95(latencies_ms)
     timeout_games = sum(1 for rec in records if rec.termination == "timeout")
-    timeout_rate = (timeout_games / valid_games) if valid_games else 0.0
+    timeout_rate = (timeout_games / total_records) if total_records else 0.0
     budget_utilization = None
     if budget_cap_usd is not None and budget_cap_usd > 0:
         budget_utilization = cost_total / budget_cap_usd
+    provider_timeout_game_rate = (games_with_provider_timeout / total_records) if total_records else 0.0
+    nonvalid_game_rate = (nonvalid_games / total_records) if total_records else 0.0
 
     return ExperimentReport(
         schema_version="1.0",
@@ -81,6 +97,10 @@ def summarize_experiment(
         budget_utilization=budget_utilization,
         stopped_due_to_budget=stopped_due_to_budget,
         budget_stop_reason=budget_stop_reason,
+        stopped_due_to_reliability=stopped_due_to_reliability,
+        reliability_stop_reason=reliability_stop_reason,
+        provider_timeout_game_rate=provider_timeout_game_rate,
+        nonvalid_game_rate=nonvalid_game_rate,
     )
 
 
@@ -93,3 +113,11 @@ def _p95(values: list[int]) -> float:
     idx = math.ceil(0.95 * len(sorted_values)) - 1
     idx = max(0, min(idx, len(sorted_values) - 1))
     return float(sorted_values[idx])
+
+
+def _record_has_provider_timeout(record: GameRecord) -> bool:
+    for move in record.moves:
+        error = move.move_decision.error
+        if isinstance(error, str) and error.startswith("provider_timeout"):
+            return True
+    return False

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from zugzwang.core.game import play_game
+from zugzwang.core.models import GameRecord
 from zugzwang.core.players import build_player
 from zugzwang.evaluation.pipeline import evaluate_run_dir
 from zugzwang.evaluation.metrics import summarize_experiment
@@ -25,6 +26,8 @@ from zugzwang.infra.config import resolve_with_hash
 from zugzwang.infra.env import PROVIDER_ENV_KEYS, validate_environment
 from zugzwang.infra.ids import game_seed, make_run_id, timestamp_utc
 
+NON_VALID_TERMINATIONS = {"error", "timeout", "provider_failure"}
+
 
 @dataclass
 class PreparedRun:
@@ -33,6 +36,15 @@ class PreparedRun:
     run_id: str
     scheduled_games: int
     estimated_total_cost_usd: float | None
+
+
+@dataclass
+class TimeoutPolicy:
+    enabled: bool
+    min_games_before_enforcement: int
+    max_provider_timeout_game_rate: float
+    min_observed_completion_rate: float
+    action: str
 
 
 class ExperimentRunner:
@@ -137,12 +149,15 @@ class ExperimentRunner:
         strategy_cfg = config["strategy"]
         budget_cap_usd = float(config["budget"]["max_total_usd"])
         estimated_avg_cost = float(config["budget"].get("estimated_avg_cost_per_game_usd", 0.0))
+        timeout_policy = _timeout_policy_from_config(config)
 
         records = list(resume_state.existing_records)
         valid_games = count_valid_games(records)
         total_cost_usd = float(sum(record.cost_usd for record in records))
         stopped_due_to_budget = False
         budget_stop_reason: str | None = None
+        stopped_due_to_reliability = False
+        reliability_stop_reason: str | None = None
 
         for game_number in range(resume_state.next_game_number, prepared.scheduled_games + 1):
             if valid_games >= target_valid:
@@ -184,8 +199,19 @@ class ExperimentRunner:
             records.append(record)
             total_cost_usd += record.cost_usd
 
-            if record.termination not in {"error", "timeout", "provider_failure"}:
+            if record.termination not in NON_VALID_TERMINATIONS:
                 valid_games += 1
+            if _should_stop_for_reliability(
+                records=records,
+                valid_games=valid_games,
+                timeout_policy=timeout_policy,
+            ):
+                stopped_due_to_reliability = True
+                if _provider_timeout_game_rate(records) > timeout_policy.max_provider_timeout_game_rate:
+                    reliability_stop_reason = "provider_timeout_rate_exceeded"
+                else:
+                    reliability_stop_reason = "completion_rate_below_threshold"
+                break
             if valid_games >= target_valid:
                 break
 
@@ -198,6 +224,8 @@ class ExperimentRunner:
             budget_cap_usd=budget_cap_usd,
             stopped_due_to_budget=stopped_due_to_budget,
             budget_stop_reason=budget_stop_reason,
+            stopped_due_to_reliability=stopped_due_to_reliability,
+            reliability_stop_reason=reliability_stop_reason,
         )
         write_experiment_report(run_dir, report)
         evaluation_summary = self._maybe_auto_evaluate(
@@ -219,6 +247,10 @@ class ExperimentRunner:
             "budget_cap_usd": budget_cap_usd,
             "stopped_due_to_budget": stopped_due_to_budget,
             "budget_stop_reason": budget_stop_reason,
+            "stopped_due_to_reliability": stopped_due_to_reliability,
+            "reliability_stop_reason": reliability_stop_reason,
+            "provider_timeout_game_rate": report.provider_timeout_game_rate,
+            "nonvalid_game_rate": report.nonvalid_game_rate,
             "evaluation": evaluation_summary,
         }
 
@@ -251,6 +283,9 @@ class ExperimentRunner:
                 "resumed": resumed,
                 "existing_games_loaded": existing_games,
                 "existing_valid_games": existing_valid_games,
+            },
+            "runtime_guardrails": {
+                "timeout_policy": prepared.config.get("runtime", {}).get("timeout_policy", {}),
             },
             "required_env_vars": self._required_env_vars(prepared.config),
             "resolved_config": prepared.config,
@@ -322,3 +357,58 @@ class ExperimentRunner:
             "output_report": payload.get("output_report"),
             "payload": payload,
         }
+
+
+def _timeout_policy_from_config(config: dict[str, Any]) -> TimeoutPolicy:
+    runtime_cfg = config.get("runtime", {})
+    timeout_policy_cfg = runtime_cfg.get("timeout_policy", {})
+    if not isinstance(timeout_policy_cfg, dict):
+        timeout_policy_cfg = {}
+    return TimeoutPolicy(
+        enabled=bool(timeout_policy_cfg.get("enabled", False)),
+        min_games_before_enforcement=int(timeout_policy_cfg.get("min_games_before_enforcement", 5)),
+        max_provider_timeout_game_rate=float(
+            timeout_policy_cfg.get("max_provider_timeout_game_rate", 0.25)
+        ),
+        min_observed_completion_rate=float(
+            timeout_policy_cfg.get("min_observed_completion_rate", 0.6)
+        ),
+        action=str(timeout_policy_cfg.get("action", "stop_run")),
+    )
+
+
+def _should_stop_for_reliability(
+    records: list[GameRecord],
+    valid_games: int,
+    timeout_policy: TimeoutPolicy,
+) -> bool:
+    if not timeout_policy.enabled:
+        return False
+    if timeout_policy.action != "stop_run":
+        return False
+    if len(records) < timeout_policy.min_games_before_enforcement:
+        return False
+
+    timeout_rate = _provider_timeout_game_rate(records)
+    if timeout_rate > timeout_policy.max_provider_timeout_game_rate:
+        return True
+
+    observed_completion_rate = (valid_games / len(records)) if records else 0.0
+    if observed_completion_rate < timeout_policy.min_observed_completion_rate:
+        return True
+    return False
+
+
+def _provider_timeout_game_rate(records: list[GameRecord]) -> float:
+    if not records:
+        return 0.0
+    timeout_games = sum(1 for record in records if _record_has_provider_timeout(record))
+    return timeout_games / len(records)
+
+
+def _record_has_provider_timeout(record: GameRecord) -> bool:
+    for move in record.moves:
+        error = move.move_decision.error
+        if isinstance(error, str) and error.startswith("provider_timeout"):
+            return True
+    return False

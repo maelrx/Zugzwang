@@ -11,6 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
+test-results
+playwright-report
+blob-report
+.tmp-qa
+.tmp-visible
+.tmp-playwright
+.playwright-cli
+coverage
 
 # Editor directories and files
 .vscode/*

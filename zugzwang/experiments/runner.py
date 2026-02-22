@@ -300,9 +300,9 @@ class ExperimentRunner:
             if not isinstance(player, dict) or player.get("type") != "llm":
                 continue
             provider = str(player.get("provider", "")).lower()
-            env_key = PROVIDER_ENV_KEYS.get(provider)
-            if env_key:
-                values.add(env_key)
+            env_keys = PROVIDER_ENV_KEYS.get(provider)
+            if env_keys:
+                values.update(env_keys)
         return sorted(values)
 
     def _maybe_auto_evaluate(

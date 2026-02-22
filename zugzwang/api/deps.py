@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from zugzwang.api.services import ArtifactService, ConfigService, EvaluationService, ReplayService, RunService
+from zugzwang.api.services import (
+    ArtifactService,
+    ConfigService,
+    EvaluationService,
+    ModelCatalogService,
+    ReplayService,
+    RunService,
+)
 
 
 @lru_cache(maxsize=1)
@@ -28,4 +35,9 @@ def get_replay_service() -> ReplayService:
 @lru_cache(maxsize=1)
 def get_evaluation_service() -> EvaluationService:
     return EvaluationService()
+
+
+@lru_cache(maxsize=1)
+def get_model_catalog_service() -> ModelCatalogService:
+    return ModelCatalogService()
 

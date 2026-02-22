@@ -15,3 +15,19 @@ export type RunProgressResponse = components["schemas"]["RunProgressResponse"];
 export type RunSummaryResponse = components["schemas"]["RunSummaryResponse"];
 export type StartEvalRequest = components["schemas"]["StartEvalRequest"];
 export type StartJobRequest = components["schemas"]["StartJobRequest"];
+
+export type ModelOptionResponse = {
+  id: string;
+  label: string;
+  recommended?: boolean;
+};
+
+export type ModelProviderPresetResponse = {
+  provider: string;
+  provider_label: string;
+  api_style: string;
+  base_url: string;
+  api_key_env: string;
+  notes: string;
+  models: ModelOptionResponse[];
+};

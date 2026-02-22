@@ -13,6 +13,7 @@ from zugzwang.api.types import GameMeta, GameRecordView, RunMeta, RunSummary
 
 
 RUN_TS_PATTERN = re.compile(r"-(\d{8}T\d{6}Z)-")
+RUN_ID_PATTERN = re.compile(r"^(?P<experiment>.+)-(?P<stamp>\d{8}T\d{6}Z)-(?P<short_hash>[0-9a-fA-F]{8,64})$")
 
 
 class ArtifactService:
@@ -120,9 +121,44 @@ class ArtifactService:
         candidate = self.root / path
         if candidate.exists():
             return candidate
+        alias = self._resolve_run_alias(path.name)
+        if alias is not None:
+            return alias
         if path.exists():
             return path
         raise FileNotFoundError(f"Run directory not found: {run_dir}")
+
+    def _resolve_run_alias(self, run_id: str) -> Path | None:
+        parsed_requested = _parse_run_id(run_id)
+        if parsed_requested is None or not self.root.exists():
+            return None
+
+        req_experiment, req_stamp, req_short_hash = parsed_requested
+        req_dt = _parse_run_stamp(req_stamp)
+
+        candidates: list[tuple[float, float, Path]] = []
+        for run_dir in self.root.iterdir():
+            if not run_dir.is_dir():
+                continue
+            parsed = _parse_run_id(run_dir.name)
+            if parsed is None:
+                continue
+            experiment, stamp, short_hash = parsed
+            if experiment != req_experiment or short_hash.lower() != req_short_hash.lower():
+                continue
+
+            candidate_dt = _parse_run_stamp(stamp)
+            if req_dt and candidate_dt:
+                delta = abs((candidate_dt - req_dt).total_seconds())
+            else:
+                delta = float("inf")
+            # Tie-break on most recent mtime so we prefer the freshest matching run.
+            candidates.append((delta, -run_dir.stat().st_mtime, run_dir))
+
+        if not candidates:
+            return None
+        candidates.sort(key=lambda item: (item[0], item[1]))
+        return candidates[0][2]
 
     def _build_run_meta(self, run_dir: Path) -> RunMeta:
         run_id = run_dir.name
@@ -156,6 +192,24 @@ def _extract_timestamp(run_id: str) -> str | None:
     except ValueError:
         return None
     return parsed.isoformat().replace("+00:00", "Z")
+
+
+def _parse_run_id(run_id: str) -> tuple[str, str, str] | None:
+    match = RUN_ID_PATTERN.match(run_id)
+    if not match:
+        return None
+    return (
+        match.group("experiment"),
+        match.group("stamp"),
+        match.group("short_hash"),
+    )
+
+
+def _parse_run_stamp(stamp: str) -> datetime | None:
+    try:
+        return datetime.strptime(stamp, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+    except ValueError:
+        return None
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:

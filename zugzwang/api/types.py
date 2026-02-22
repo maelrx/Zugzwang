@@ -16,6 +16,24 @@ class ConfigTemplate:
 
 
 @dataclass
+class ModelOption:
+    id: str
+    label: str
+    recommended: bool = False
+
+
+@dataclass
+class ModelProviderPreset:
+    provider: str
+    provider_label: str
+    api_style: str
+    base_url: str
+    api_key_env: str
+    notes: str
+    models: list[ModelOption]
+
+
+@dataclass
 class ValidationResult:
     ok: bool
     message: str

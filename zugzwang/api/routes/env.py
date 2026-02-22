@@ -15,8 +15,8 @@ router = APIRouter(prefix="/env-check", tags=["env"])
 def env_check() -> list[EnvCheckResponse]:
     load_dotenv()
     checks: list[EnvCheckResponse] = []
-    for provider, key_name in PROVIDER_ENV_KEYS.items():
-        if key_name is None:
+    for provider, key_names in PROVIDER_ENV_KEYS.items():
+        if key_names is None:
             checks.append(
                 EnvCheckResponse(
                     provider=provider,
@@ -26,12 +26,14 @@ def env_check() -> list[EnvCheckResponse]:
             )
             continue
 
-        present = bool(os.environ.get(key_name, "").strip())
+        present_key = next((key for key in key_names if os.environ.get(key, "").strip()), None)
+        present = present_key is not None
+        key_hint = " | ".join(key_names)
         checks.append(
             EnvCheckResponse(
                 provider=provider,
                 ok=present,
-                message=f"{key_name} {'set' if present else 'missing'}",
+                message=f"{present_key or key_hint} {'set' if present else 'missing'}",
             )
         )
 

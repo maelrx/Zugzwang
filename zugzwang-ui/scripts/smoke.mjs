@@ -17,6 +17,30 @@ async function main() {
   assert(Array.isArray(jobs), "Expected /api/jobs to return an array");
   console.log(`[smoke] jobs ok (${jobs.length} jobs)`);
 
+  const configs = await apiGet("/api/configs");
+  assert(configs && typeof configs === "object", "Expected /api/configs to return an object");
+  const baselines = Array.isArray(configs.baselines) ? configs.baselines : [];
+  const ablations = Array.isArray(configs.ablations) ? configs.ablations : [];
+  console.log(`[smoke] configs ok (${baselines.length} baselines / ${ablations.length} ablations)`);
+
+  const firstTemplate = [...baselines, ...ablations][0];
+  if (firstTemplate && typeof firstTemplate.path === "string" && firstTemplate.path.length > 0) {
+    const payload = {
+      config_path: firstTemplate.path,
+      overrides: [],
+      model_profile: null,
+    };
+    const validation = await apiPost("/api/configs/validate", payload);
+    assert(validation && typeof validation.ok === "boolean", "Expected validate response shape");
+    console.log(`[smoke] config validate ok (${validation.ok ? "ok" : "invalid"})`);
+
+    const preview = await apiPost("/api/configs/preview", payload);
+    assert(preview && typeof preview.run_id === "string", "Expected preview response with run_id");
+    console.log(`[smoke] config preview ok (${preview.run_id})`);
+  } else {
+    console.log("[smoke] no config templates found, skipping validate/preview checks");
+  }
+
   if (runs.length === 0) {
     console.log("[smoke] no runs found, skipping run-detail/replay checks");
     return;
@@ -51,12 +75,21 @@ async function main() {
 }
 
 async function apiGet(path) {
+  return apiRequest(path, "GET");
+}
+
+async function apiPost(path, body) {
+  return apiRequest(path, "POST", body);
+}
+
+async function apiRequest(path, method, body) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(`${API_BASE}${path}`, {
-      method: "GET",
+      method,
       headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
     const text = await response.text();

@@ -1,8 +1,15 @@
+import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { useRunSummary, useRuns } from "../../api/queries";
+import { apiRequest } from "../../api/client";
+import { useRunGames, useRunSummary, useRuns } from "../../api/queries";
+import type { GameDetailResponse } from "../../api/types";
+import { MoveQualityDistributionCompareCard } from "../components/MoveQualityDistributionCompareCard";
 import { PhaseMetricCompareCard } from "../components/PhaseMetricCompareCard";
 import { PageHeader } from "../components/PageHeader";
+import { aggregateMoveQuality } from "../lib/moveQuality";
 import { extractRunMetrics, formatDecimal, formatInteger, formatRate, formatUsd } from "../lib/runMetrics";
+
+const MAX_QUALITY_GAMES_SAMPLE = 20;
 
 export function RunComparePage() {
   const runsQuery = useRuns();
@@ -12,9 +19,53 @@ export function RunComparePage() {
 
   const summaryA = useRunSummary(runA || null);
   const summaryB = useRunSummary(runB || null);
+  const runAGamesQuery = useRunGames(runA || null);
+  const runBGamesQuery = useRunGames(runB || null);
 
   const metricsA = useMemo(() => extractRunMetrics(summaryA.data), [summaryA.data]);
   const metricsB = useMemo(() => extractRunMetrics(summaryB.data), [summaryB.data]);
+  const runAGames = useMemo(() => (runAGamesQuery.data ?? []).slice(0, MAX_QUALITY_GAMES_SAMPLE), [runAGamesQuery.data]);
+  const runBGames = useMemo(() => (runBGamesQuery.data ?? []).slice(0, MAX_QUALITY_GAMES_SAMPLE), [runBGamesQuery.data]);
+
+  const runADetailQueries = useQueries({
+    queries: runAGames.map((game) => ({
+      queryKey: ["run-compare-game-detail", runA, game.game_number] as const,
+      queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runA}/games/${game.game_number}`),
+      enabled: runA.length > 0,
+      staleTime: Infinity,
+    })),
+  });
+
+  const runBDetailQueries = useQueries({
+    queries: runBGames.map((game) => ({
+      queryKey: ["run-compare-game-detail", runB, game.game_number] as const,
+      queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runB}/games/${game.game_number}`),
+      enabled: runB.length > 0,
+      staleTime: Infinity,
+    })),
+  });
+
+  const runADetails = useMemo(
+    () => runADetailQueries.map((query) => query.data).filter((item): item is GameDetailResponse => Boolean(item)),
+    [runADetailQueries],
+  );
+  const runBDetails = useMemo(
+    () => runBDetailQueries.map((query) => query.data).filter((item): item is GameDetailResponse => Boolean(item)),
+    [runBDetailQueries],
+  );
+
+  const qualityA = useMemo(() => aggregateMoveQuality(runADetails), [runADetails]);
+  const qualityB = useMemo(() => aggregateMoveQuality(runBDetails), [runBDetails]);
+  const qualityLoading =
+    runAGamesQuery.isLoading ||
+    runBGamesQuery.isLoading ||
+    runADetailQueries.some((query) => query.isLoading) ||
+    runBDetailQueries.some((query) => query.isLoading);
+  const qualityError =
+    runAGamesQuery.isError ||
+    runBGamesQuery.isError ||
+    runADetailQueries.some((query) => query.isError) ||
+    runBDetailQueries.some((query) => query.isError);
 
   const rows = useMemo(
     () => [
@@ -147,6 +198,12 @@ export function RunComparePage() {
         </p>
       )}
 
+      {qualityError && bothRunsSelected && (
+        <p className="mb-3 rounded-lg border border-[#cf8f8f] bg-[#fff2ef] px-3 py-2 text-sm text-[#8a3434]">
+          Failed to load game details for move-quality comparison.
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-2xl border border-[#d9d1c4] bg-white/85">
         <div className="grid grid-cols-[1.4fr_1fr_1fr_1.2fr] border-b border-[#e6dfd3] bg-[#f4f1ea] px-4 py-2 text-xs uppercase tracking-[0.14em] text-[#627786]">
           <span>Metric</span>
@@ -187,7 +244,21 @@ export function RunComparePage() {
             rightValues={metricsB.retrievalHitRateByPhase}
             format="percent"
           />
+          <MoveQualityDistributionCompareCard
+            title="Move-quality distribution"
+            description={`Computed from sampled game moves (up to ${MAX_QUALITY_GAMES_SAMPLE} games per run).`}
+            leftLabel="Run A"
+            rightLabel="Run B"
+            leftCounts={qualityA}
+            rightCounts={qualityB}
+          />
         </div>
+      )}
+
+      {qualityLoading && bothRunsSelected && (
+        <p className="mt-3 rounded-lg border border-[#cfd7dc] bg-[#f3f7fa] px-3 py-2 text-sm text-[#48616f]">
+          Loading move-quality distribution from sampled games...
+        </p>
       )}
     </section>
   );

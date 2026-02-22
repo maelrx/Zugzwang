@@ -1,9 +1,17 @@
+import { useQueries } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { apiRequest } from "../../api/client";
 import { useStartEvaluation, useRunGames, useRunSummary } from "../../api/queries";
+import type { GameDetailResponse, GameListItem } from "../../api/types";
+import { MoveQualityDistributionCard } from "../components/MoveQualityDistributionCard";
 import { PhaseMetricCard } from "../components/PhaseMetricCard";
 import { PageHeader } from "../components/PageHeader";
+import { aggregateMoveQuality } from "../lib/moveQuality";
 import { extractRunMetrics, formatCi, formatDecimal, formatInteger, formatRate, formatUsd } from "../lib/runMetrics";
+
+const MAX_QUALITY_GAMES_SAMPLE = 20;
+const EMPTY_GAMES: GameListItem[] = [];
 
 export function RunDetailPage() {
   const params = useParams({ strict: false }) as { runId: string };
@@ -17,7 +25,7 @@ export function RunDetailPage() {
   const [lastEvalJobId, setLastEvalJobId] = useState<string | null>(null);
 
   const summary = summaryQuery.data;
-  const games = gamesQuery.data ?? [];
+  const games = gamesQuery.data ?? EMPTY_GAMES;
   const runDir = summary?.run_meta.run_dir ?? "";
   const report = asRecord(summary?.report);
   const evaluatedReport = asRecord(summary?.evaluated_report);
@@ -27,6 +35,24 @@ export function RunDetailPage() {
   const metrics = useMemo(() => extractRunMetrics(summary), [summary]);
   const hasEvaluatedReport = Boolean(summary?.run_meta.evaluated_report_exists && Object.keys(evaluatedReport).length > 0);
   const hasBudgetStop = metrics.stoppedDueToBudget === true;
+  const sampledGames = useMemo(() => games.slice(0, MAX_QUALITY_GAMES_SAMPLE), [games]);
+
+  const gameDetailQueries = useQueries({
+    queries: sampledGames.map((game) => ({
+      queryKey: ["run-detail-game-quality", runId, game.game_number] as const,
+      queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runId}/games/${game.game_number}`),
+      enabled: runId.length > 0,
+      staleTime: Infinity,
+    })),
+  });
+
+  const sampledGameDetails = useMemo(
+    () => gameDetailQueries.map((query) => query.data).filter((item): item is GameDetailResponse => Boolean(item)),
+    [gameDetailQueries],
+  );
+  const qualityCounts = useMemo(() => aggregateMoveQuality(sampledGameDetails), [sampledGameDetails]);
+  const qualityLoading = gameDetailQueries.some((query) => query.isLoading);
+  const qualityError = gameDetailQueries.some((query) => query.isError);
 
   const opponentEloText = opponentElo.trim();
   const parsedOpponentElo = opponentEloText.length > 0 ? Number(opponentEloText) : null;
@@ -55,7 +81,7 @@ export function RunDetailPage() {
       <PageHeader eyebrow="Run Detail" title={runId} subtitle="Overview of artifacts, reports and recorded games for this run." />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {metricCards.map((card) => (
+        {metricCards.map((card) => (
           <MetricTile key={card.label} label={card.label} value={card.value} />
         ))}
       </div>
@@ -65,6 +91,12 @@ export function RunDetailPage() {
       {(summaryQuery.isError || gamesQuery.isError) && (
         <p className="mb-3 rounded-lg border border-[#cf8f8f] bg-[#fff0ed] px-3 py-2 text-sm text-[#8a3434]">
           Failed to load run detail.
+        </p>
+      )}
+
+      {qualityError && (
+        <p className="mb-3 rounded-lg border border-[#cf8f8f] bg-[#fff0ed] px-3 py-2 text-sm text-[#8a3434]">
+          Failed to load sampled games for move-quality distribution.
         </p>
       )}
 
@@ -132,21 +164,21 @@ export function RunDetailPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-sm font-semibold text-[#edf8fd]"
-                disabled={startEval.isPending || !runDir || invalidOpponentElo}
-                onClick={() => {
-                  setLastEvalJobId(null);
-                  startEval.mutate(
-                    {
-                      run_dir: runDir,
-                      player_color: playerColor,
-                      opponent_elo: parsedOpponentElo !== null && Number.isFinite(parsedOpponentElo) ? parsedOpponentElo : null,
-                      output_filename: "experiment_report_evaluated.json",
-                    },
-                    {
-                      onSuccess: (job) => setLastEvalJobId(job.job_id),
+            <button
+              type="button"
+              className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-sm font-semibold text-[#edf8fd]"
+              disabled={startEval.isPending || !runDir || invalidOpponentElo}
+              onClick={() => {
+                setLastEvalJobId(null);
+                startEval.mutate(
+                  {
+                    run_dir: runDir,
+                    player_color: playerColor,
+                    opponent_elo: parsedOpponentElo !== null && Number.isFinite(parsedOpponentElo) ? parsedOpponentElo : null,
+                    output_filename: "experiment_report_evaluated.json",
+                  },
+                  {
+                    onSuccess: (job) => setLastEvalJobId(job.job_id),
                   },
                 );
               }}
@@ -239,7 +271,18 @@ export function RunDetailPage() {
           values={metrics.retrievalHitRateByPhase}
           format="percent"
         />
+        <MoveQualityDistributionCard
+          title="Move-quality distribution"
+          subtitle={`Computed from sampled game moves (up to ${MAX_QUALITY_GAMES_SAMPLE} games).`}
+          counts={qualityCounts}
+        />
       </div>
+
+      {qualityLoading && (
+        <p className="mt-3 rounded-lg border border-[#cfd7dc] bg-[#f3f7fa] px-3 py-2 text-sm text-[#48616f]">
+          Loading sampled games for move-quality distribution...
+        </p>
+      )}
     </section>
   );
 }

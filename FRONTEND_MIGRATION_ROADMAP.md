@@ -396,3 +396,9 @@ Continue M8/M9 prep:
   - Added phase metric cards on Run Detail for single-run diagnostics.
   - Added frontend data-flow smoke command `npm run smoke` (`env -> runs -> run summary -> games -> replay frames -> jobs`).
   - Validated locally with `typecheck`, `lint`, `build`, and `smoke` against a temporary `zugzwang api` process.
+- 2026-02-22: M8 analytics-depth increment.
+  - Added move-quality aggregation utility (`clean`, `recovered`, `illegal`, `parse-fail`) from real move decisions in game artifacts.
+  - Added move-quality distribution comparison card on Run Compare using sampled game details per run.
+  - Added move-quality distribution diagnostics on Run Detail for single-run analysis.
+  - Expanded `npm run smoke` to include Run Lab data paths (`/api/configs`, `POST /api/configs/validate`, `POST /api/configs/preview`).
+  - Re-validated locally with `typecheck`, `lint`, `build`, and API-backed `smoke` flow.

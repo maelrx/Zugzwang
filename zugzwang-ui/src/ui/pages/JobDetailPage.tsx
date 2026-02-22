@@ -1,7 +1,7 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { useMemo } from "react";
 import { useJobLogs } from "../../api/logs";
 import { useCancelJob, useJob, useJobProgress } from "../../api/queries";
+import { LogTerminal } from "../components/LogTerminal";
 import { PageHeader } from "../components/PageHeader";
 
 export function JobDetailPage() {
@@ -17,7 +17,6 @@ export function JobDetailPage() {
   const progress = progressQuery.data;
 
   const canCancel = job?.status === "running" || job?.status === "queued";
-  const logText = useMemo(() => logs.lines.map((line) => `[${line.stream}] ${line.text}`).join("\n"), [logs.lines]);
 
   return (
     <section>
@@ -71,15 +70,7 @@ export function JobDetailPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-[#d9d1c5] bg-[#1b2329]">
-        <div className="flex items-center justify-between border-b border-[#29343c] px-4 py-2 text-xs uppercase tracking-[0.14em] text-[#a6bac7]">
-          <span>Live log stream</span>
-          <span>{logs.done ? "done" : "streaming"}</span>
-        </div>
-        <pre className="max-h-[420px] overflow-auto px-4 py-3 font-['IBM_Plex_Mono'] text-xs leading-relaxed text-[#d7e2ea]">
-          {logText || "No logs yet."}
-        </pre>
-      </div>
+      <LogTerminal lines={logs.lines} done={logs.done} />
     </section>
   );
 }
@@ -92,4 +83,3 @@ function StatTile({ label, value }: { label: string; value: string }) {
     </article>
   );
 }
-

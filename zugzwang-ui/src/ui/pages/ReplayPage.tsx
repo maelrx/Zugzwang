@@ -23,6 +23,7 @@ export function ReplayPage() {
     () => extractMoveMetricsForPly(gameQuery.data?.moves ?? [], selectedPly),
     [gameQuery.data?.moves, selectedPly],
   );
+  const selectedQuality = useMemo(() => classifyMoveQuality(selectedMoveMetrics), [selectedMoveMetrics]);
   const lastMoveArrow = useMemo(() => buildMoveArrow(frame?.move_uci), [frame?.move_uci]);
 
   const moveLabels = useMemo(() => {
@@ -32,10 +33,23 @@ export function ReplayPage() {
       const decision = asRecord(move.move_decision);
       const san = typeof decision.move_san === "string" ? decision.move_san : null;
       const uci = typeof decision.move_uci === "string" ? decision.move_uci : null;
+      const metrics: MoveMetrics = {
+        tokensInput: asNumber(decision.tokens_input),
+        tokensOutput: asNumber(decision.tokens_output),
+        latencyMs: asNumber(decision.latency_ms),
+        retryCount: asNumber(decision.retry_count),
+        parseOk: asBoolean(decision.parse_ok),
+        isLegal: asBoolean(decision.is_legal),
+        costUsd: asNumber(decision.cost_usd),
+        providerModel: typeof decision.provider_model === "string" ? decision.provider_model : "",
+      };
+      const quality = classifyMoveQuality(metrics);
       return {
         key: `${idx}-${move.ply_number ?? idx + 1}`,
         ply: Number(move.ply_number ?? idx + 1),
         label: san || uci || "(unknown)",
+        retryCount: metrics.retryCount,
+        quality,
       };
     });
   }, [gameQuery.data?.moves]);
@@ -174,6 +188,9 @@ export function ReplayPage() {
             <p className="mt-2 text-sm text-[#284150]">FEN: {frame?.fen ?? "--"}</p>
             <p className="mt-1 text-sm text-[#284150]">SAN: {frame?.move_san ?? "--"}</p>
             <p className="mt-1 text-sm text-[#284150]">UCI: {frame?.move_uci ?? "--"}</p>
+            <div className="mt-2">
+              <span className={qualityBadgeClassName(selectedQuality.tone)}>{selectedQuality.label}</span>
+            </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <MetricChip label="Tokens in" value={asText(selectedMoveMetrics.tokensInput)} />
               <MetricChip label="Tokens out" value={asText(selectedMoveMetrics.tokensOutput)} />
@@ -207,7 +224,13 @@ export function ReplayPage() {
               ].join(" ")}
               onClick={() => setCurrentIndex(index + 1)}
             >
-              {item.ply}. {item.label}
+              <p className="font-semibold">
+                {item.ply}. {item.label}
+              </p>
+              <p className="mt-1 inline-flex items-center gap-2">
+                <span className={qualityBadgeClassName(item.quality.tone)}>{item.quality.label}</span>
+                <span className="text-[10px] opacity-80">retries: {item.retryCount}</span>
+              </p>
             </button>
           ))}
         </div>
@@ -250,6 +273,11 @@ type MoveMetrics = {
   providerModel: string;
 };
 
+type MoveQuality = {
+  label: string;
+  tone: "good" | "warn" | "bad" | "neutral";
+};
+
 function extractMoveMetricsForPly(moves: Record<string, unknown>[], ply: number): MoveMetrics {
   if (ply <= 0) {
     return emptyMoveMetrics();
@@ -286,6 +314,19 @@ function emptyMoveMetrics(): MoveMetrics {
   };
 }
 
+function classifyMoveQuality(metrics: MoveMetrics): MoveQuality {
+  if (!metrics.parseOk) {
+    return { label: "parse-fail", tone: "bad" };
+  }
+  if (!metrics.isLegal) {
+    return { label: "illegal", tone: "warn" };
+  }
+  if (metrics.retryCount > 0) {
+    return { label: "recovered", tone: "warn" };
+  }
+  return { label: "clean", tone: "good" };
+}
+
 function asNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -316,6 +357,19 @@ function MetricChip({ label, value }: { label: string; value: string }) {
       <p className="mt-1 truncate text-xs font-semibold text-[#2b4552]">{value}</p>
     </div>
   );
+}
+
+function qualityBadgeClassName(tone: MoveQuality["tone"]): string {
+  if (tone === "good") {
+    return "inline-flex rounded-full border border-[#6cc09a] bg-[#e2f7ec] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1f6a49]";
+  }
+  if (tone === "warn") {
+    return "inline-flex rounded-full border border-[#d7b071] bg-[#fff3de] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#865d1a]";
+  }
+  if (tone === "bad") {
+    return "inline-flex rounded-full border border-[#d29292] bg-[#ffe8e8] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8d3131]";
+  }
+  return "inline-flex rounded-full border border-[#b0bec7] bg-[#eef3f6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#3f5663]";
 }
 
 function asText(value: number): string {

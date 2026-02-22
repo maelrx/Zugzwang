@@ -375,3 +375,7 @@ Continue M6/M7:
   - Added replay autoplay controls (pause/resume/reset/speed).
   - Added run evaluation launcher on run detail (starts evaluate jobs).
   - Added run comparison route/page (`/runs/compare`) with side-by-side metrics.
+- 2026-02-22: M6/M7 UX increment.
+  - Added log terminal component with stream filters and auto-scroll toggle.
+  - Upgraded job detail page to use structured terminal rendering.
+  - Added replay move-quality badges (`clean`, `recovered`, `illegal`, `parse-fail`).

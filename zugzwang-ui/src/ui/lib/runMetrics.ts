@@ -1,6 +1,10 @@
 import type { JobResponse, RunSummaryResponse } from "../../api/types";
 
 type UnknownRecord = Record<string, unknown>;
+export type PhaseKey = "opening" | "middlegame" | "endgame";
+const PHASES: PhaseKey[] = ["opening", "middlegame", "endgame"];
+
+export type PhaseMetrics = Record<PhaseKey, number | null>;
 
 export type RunMetrics = {
   targetGames: number | null;
@@ -15,6 +19,11 @@ export type RunMetrics = {
   eloCiUpper: number | null;
   stoppedDueToBudget: boolean | null;
   budgetStopReason: string | null;
+  avgTokensPerMove: number | null;
+  p95MoveLatencyMs: number | null;
+  retrievalHitRate: number | null;
+  acplByPhase: PhaseMetrics;
+  retrievalHitRateByPhase: PhaseMetrics;
 };
 
 export type DashboardKpis = {
@@ -34,12 +43,21 @@ export function extractRunMetrics(summary: RunSummaryResponse | null | undefined
   const evaluatedMetrics = asRecord(evaluatedRoot.metrics);
   const evaluatedElo = asRecord(evaluatedRoot.elo_estimate);
   const reportElo = asRecord(report.elo_estimate);
+  const rootRetrievalUsefulness = asRecord(evaluatedRoot.retrieval_usefulness);
+  const rootRetrievalByPhase = asRecord(rootRetrievalUsefulness.by_phase);
+  const evaluationMeta = asRecord(evaluatedRoot.evaluation);
+  const evalRetrievalUsefulness = asRecord(evaluationMeta.retrieval_usefulness);
+  const evalRetrievalByPhase = asRecord(evalRetrievalUsefulness.by_phase);
 
   const targetGames = firstNumber(report.num_games_target, evaluatedRoot.num_games_target);
   const validGames = firstNumber(report.num_games_valid, evaluatedRoot.num_games_valid);
 
   const eloCiFromRoot = maybeNumberTuple(evaluatedRoot.elo_ci_95);
   const eloCiFromNested = maybeNumberTuple(evaluatedElo.elo_ci_95);
+  const acplByPhase = phaseValues(firstRecord(report.acpl_by_phase, evaluatedRoot.acpl_by_phase));
+  const retrievalByPhaseTopLevel = phaseValues(firstRecord(report.retrieval_hit_rate_by_phase, evaluatedRoot.retrieval_hit_rate_by_phase));
+  const retrievalByPhaseEvalRoot = phaseValuesFromNested(rootRetrievalByPhase, "hit_rate");
+  const retrievalByPhaseEvaluation = phaseValuesFromNested(evalRetrievalByPhase, "hit_rate");
 
   return {
     targetGames,
@@ -73,6 +91,11 @@ export function extractRunMetrics(summary: RunSummaryResponse | null | undefined
     ),
     stoppedDueToBudget: firstBoolean(report.stopped_due_to_budget, evaluatedRoot.stopped_due_to_budget),
     budgetStopReason: firstString(report.budget_stop_reason, evaluatedRoot.budget_stop_reason),
+    avgTokensPerMove: firstNumber(evaluatedRoot.avg_tokens_per_move, report.avg_tokens_per_move),
+    p95MoveLatencyMs: firstNumber(evaluatedRoot.p95_move_latency_ms, report.p95_move_latency_ms),
+    retrievalHitRate: firstNumber(evaluatedRoot.retrieval_hit_rate, report.retrieval_hit_rate),
+    acplByPhase,
+    retrievalHitRateByPhase: mergePhaseValues(retrievalByPhaseTopLevel, retrievalByPhaseEvalRoot, retrievalByPhaseEvaluation),
   };
 }
 
@@ -137,6 +160,10 @@ export function formatCi(lower: number | null | undefined, upper: number | null 
   return `[${lower.toFixed(1)}, ${upper.toFixed(1)}]`;
 }
 
+export function phaseEntries(values: PhaseMetrics): Array<{ phase: PhaseKey; value: number | null }> {
+  return PHASES.map((phase) => ({ phase, value: values[phase] }));
+}
+
 function sumNumbers(values: Array<number | null>): number {
   return values.reduce<number>((acc, value) => acc + (typeof value === "number" ? value : 0), 0);
 }
@@ -144,6 +171,15 @@ function sumNumbers(values: Array<number | null>): number {
 function asRecord(value: unknown): UnknownRecord {
   if (value && typeof value === "object") {
     return value as UnknownRecord;
+  }
+  return {};
+}
+
+function firstRecord(...values: unknown[]): UnknownRecord {
+  for (const value of values) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as UnknownRecord;
+    }
   }
   return {};
 }
@@ -181,6 +217,44 @@ function maybeNumberTuple(value: unknown): [number | null, number | null] {
     return [null, null];
   }
   return [toNumber(value[0]), toNumber(value[1])];
+}
+
+function phaseValues(source: UnknownRecord): PhaseMetrics {
+  return {
+    opening: toNumber(source.opening),
+    middlegame: toNumber(source.middlegame),
+    endgame: toNumber(source.endgame),
+  };
+}
+
+function phaseValuesFromNested(source: UnknownRecord, key: string): PhaseMetrics {
+  const opening = asRecord(source.opening);
+  const middlegame = asRecord(source.middlegame);
+  const endgame = asRecord(source.endgame);
+
+  return {
+    opening: toNumber(opening[key]),
+    middlegame: toNumber(middlegame[key]),
+    endgame: toNumber(endgame[key]),
+  };
+}
+
+function mergePhaseValues(...sources: PhaseMetrics[]): PhaseMetrics {
+  return {
+    opening: firstPhaseValue("opening", ...sources),
+    middlegame: firstPhaseValue("middlegame", ...sources),
+    endgame: firstPhaseValue("endgame", ...sources),
+  };
+}
+
+function firstPhaseValue(phase: PhaseKey, ...sources: PhaseMetrics[]): number | null {
+  for (const source of sources) {
+    const value = source[phase];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return null;
 }
 
 function toNumber(value: unknown): number | null {

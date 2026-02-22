@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useRunSummary, useRuns } from "../../api/queries";
+import { PhaseMetricCompareCard } from "../components/PhaseMetricCompareCard";
 import { PageHeader } from "../components/PageHeader";
 import { extractRunMetrics, formatDecimal, formatInteger, formatRate, formatUsd } from "../lib/runMetrics";
 
@@ -164,6 +165,30 @@ export function RunComparePage() {
           />
         ))}
       </div>
+
+      {bothRunsSelected && (
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <PhaseMetricCompareCard
+            title="ACPL by phase"
+            description="Lower is better. Bars are normalized to the max value across both runs."
+            leftLabel="Run A"
+            rightLabel="Run B"
+            leftValues={metricsA.acplByPhase}
+            rightValues={metricsB.acplByPhase}
+            format="decimal"
+            lowerIsBetter
+          />
+          <PhaseMetricCompareCard
+            title="Retrieval hit-rate by phase"
+            description="Higher is better. Shows retrieval coverage during opening/middlegame/endgame."
+            leftLabel="Run A"
+            rightLabel="Run B"
+            leftValues={metricsA.retrievalHitRateByPhase}
+            rightValues={metricsB.retrievalHitRateByPhase}
+            format="percent"
+          />
+        </div>
+      )}
     </section>
   );
 }

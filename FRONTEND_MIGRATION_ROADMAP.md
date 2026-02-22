@@ -390,3 +390,9 @@ Continue M8/M9 prep:
   - Upgraded Run Detail with evaluated-report status/metrics panel, budget-stop signal, and improved evaluation launch validation.
   - Upgraded Run Compare with robust metrics parsing and per-metric delta badges (`A better` / `B better`).
   - Added router-level error fallback component and polished Settings readiness summary with missing-provider hints.
+- 2026-02-22: M8 visualization/smoke increment.
+  - Extended shared metrics extraction with phase-level data (`acpl_by_phase`, retrieval hit-rate by phase) and latency/token KPIs.
+  - Added phase comparison cards on Run Compare (ACPL by phase + retrieval hit-rate by phase).
+  - Added phase metric cards on Run Detail for single-run diagnostics.
+  - Added frontend data-flow smoke command `npm run smoke` (`env -> runs -> run summary -> games -> replay frames -> jobs`).
+  - Validated locally with `typecheck`, `lint`, `build`, and `smoke` against a temporary `zugzwang api` process.

@@ -1,6 +1,7 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStartEvaluation, useRunGames, useRunSummary } from "../../api/queries";
+import { PhaseMetricCard } from "../components/PhaseMetricCard";
 import { PageHeader } from "../components/PageHeader";
 import { extractRunMetrics, formatCi, formatDecimal, formatInteger, formatRate, formatUsd } from "../lib/runMetrics";
 
@@ -42,6 +43,9 @@ export function RunDetailPage() {
       { label: "Best move agreement", value: formatRate(metrics.bestMoveAgreement) },
       { label: "Elo MLE", value: formatDecimal(metrics.eloMle, 1) },
       { label: "Elo CI 95%", value: formatCi(metrics.eloCiLower, metrics.eloCiUpper) },
+      { label: "Avg tokens / move", value: formatDecimal(metrics.avgTokensPerMove, 1) },
+      { label: "P95 latency ms", value: formatDecimal(metrics.p95MoveLatencyMs, 0) },
+      { label: "Retrieval hit-rate", value: formatRate(metrics.retrievalHitRate) },
     ],
     [metrics],
   );
@@ -51,7 +55,7 @@ export function RunDetailPage() {
       <PageHeader eyebrow="Run Detail" title={runId} subtitle="Overview of artifacts, reports and recorded games for this run." />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {metricCards.map((card) => (
+      {metricCards.map((card) => (
           <MetricTile key={card.label} label={card.label} value={card.value} />
         ))}
       </div>
@@ -220,6 +224,21 @@ export function RunDetailPage() {
             {toPrettyJson(evaluatedReport)}
           </pre>
         </details>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <PhaseMetricCard
+          title="ACPL by phase"
+          description="Lower is better. Useful to spot opening/middlegame/endgame weaknesses."
+          values={metrics.acplByPhase}
+          format="decimal"
+        />
+        <PhaseMetricCard
+          title="Retrieval hit-rate by phase"
+          description="Higher is better. Indicates whether RAG is actually being hit per phase."
+          values={metrics.retrievalHitRateByPhase}
+          format="percent"
+        />
       </div>
     </section>
   );

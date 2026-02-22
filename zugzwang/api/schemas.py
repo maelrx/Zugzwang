@@ -41,6 +41,25 @@ class JobResponse(ApiModel):
     exit_code: int | None = None
 
 
+class StartJobRequest(ApiModel):
+    config_path: str
+    model_profile: str | None = None
+    overrides: list[str] = Field(default_factory=list)
+
+
+class StartEvalRequest(ApiModel):
+    run_dir: str
+    player_color: Literal["white", "black"] = "black"
+    opponent_elo: float | None = None
+    output_filename: str = "experiment_report_evaluated.json"
+
+
+class CancelJobResponse(ApiModel):
+    ok: bool
+    message: str
+    status: JobStatus
+
+
 class RunProgressResponse(ApiModel):
     run_id: str | None
     status: JobStatus
@@ -99,4 +118,3 @@ class EnvCheckResponse(ApiModel):
     provider: str
     ok: bool
     message: str
-

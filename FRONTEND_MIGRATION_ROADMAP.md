@@ -1,6 +1,6 @@
 # Frontend Migration Roadmap (FastAPI + React)
 
-Status: in progress (M1 completed)
+Status: in progress (M1 and M2 completed)
 Owner: frontend migration track
 Branch: feat/frontend-fastapi-react-migration
 Source of truth docs:
@@ -333,11 +333,11 @@ Risk: over-large migration PRs
 
 ## 8. Ready-to-start next action
 
-Start M2 now:
-1. Add write routes for run/play/evaluate and cancel.
-2. Implement SSE log streaming endpoint (`/api/jobs/{job_id}/logs`).
-3. Add API integration tests for job lifecycle transitions.
-4. Keep existing subprocess/job-store runtime unchanged.
+Start M3 now:
+1. Scaffold `zugzwang-ui/` with Vite + React + TypeScript.
+2. Add router/query/store base dependencies and app shell.
+3. Configure API proxy (`/api` -> `localhost:8000`) for local dev.
+4. Add minimal route skeleton pages matching architecture doc.
 
 ## 9. Progress log
 
@@ -346,3 +346,7 @@ Start M2 now:
   - Added read-only routes for runs/jobs/configs/env.
   - Added `zugzwang api` CLI command.
   - Added optional dependency group `api` and API route tests.
+- 2026-02-22: M2 implemented.
+  - Added write routes for `run`, `play`, `evaluate`, and `cancel`.
+  - Added SSE log streaming endpoint `GET /api/jobs/{job_id}/logs`.
+  - Added API tests for write operations and SSE terminal events.

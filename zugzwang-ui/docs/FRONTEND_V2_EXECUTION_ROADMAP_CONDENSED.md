@@ -64,8 +64,8 @@ Primary routes:
 Compatibility redirects (introduced gradually):
 - `/` -> `/dashboard`
 - `/run-lab` -> `/lab`
-- `/jobs` -> `/dashboard` with active-jobs context
-- `/jobs/:jobId` -> `/dashboard` or dedicated observability context
+- `/jobs` -> `/dashboard/jobs`
+- `/jobs/:jobId` -> `/dashboard/jobs/:jobId`
 - `/runs/:runId/replay/:gameNumber` -> `/runs/:runId/game/:gameNumber`
 - `/runs/compare` -> `/compare`
 
@@ -231,8 +231,7 @@ Before closing each milestone:
 
 ## 10. Deviation Log
 
-1. `M9 (partial)`: legacy redirects activated for `/run-lab`, `/runs/compare`, and `/runs/:runId/replay/:gameNumber`.
-2. `M9 (deferred)`: `/jobs/:jobId` redirect remains deferred because the current Job Detail logs surface is still the primary observability view in this codebase.
+1. `M9 (complete)`: legacy redirects activated for `/run-lab`, `/runs/compare`, `/runs/:runId/replay/:gameNumber`, `/jobs`, and `/jobs/:jobId`.
 
 ## 11. Commit Convention
 

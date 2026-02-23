@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { router } from "../../router";
 
 const RUN_ID = "legacy-run-20260223T000000Z";
+const JOB_ID = "job-legacy-1";
 
 describe("legacy redirects", () => {
   beforeEach(() => {
@@ -17,7 +18,49 @@ describe("legacy redirects", () => {
       const method = (init?.method ?? "GET").toUpperCase();
 
       if (pathname === "/api/jobs" && method === "GET") {
-        return jsonResponse([]);
+        return jsonResponse([
+          {
+            job_id: JOB_ID,
+            job_type: "run",
+            status: "completed",
+            pid: null,
+            command: ["python", "-m", "zugzwang"],
+            created_at_utc: "2026-02-23T00:00:00Z",
+            updated_at_utc: "2026-02-23T00:00:10Z",
+            stdout_path: "logs/job-legacy-1.out",
+            stderr_path: "logs/job-legacy-1.err",
+            run_id: RUN_ID,
+            run_dir: `results/runs/${RUN_ID}`,
+          },
+        ]);
+      }
+
+      if (pathname === `/api/jobs/${JOB_ID}` && method === "GET") {
+        return jsonResponse({
+          job_id: JOB_ID,
+          job_type: "run",
+          status: "completed",
+          pid: null,
+          command: ["python", "-m", "zugzwang"],
+          created_at_utc: "2026-02-23T00:00:00Z",
+          updated_at_utc: "2026-02-23T00:00:10Z",
+          stdout_path: "logs/job-legacy-1.out",
+          stderr_path: "logs/job-legacy-1.err",
+          run_id: RUN_ID,
+          run_dir: `results/runs/${RUN_ID}`,
+        });
+      }
+
+      if (pathname === `/api/jobs/${JOB_ID}/progress` && method === "GET") {
+        return jsonResponse({
+          job_id: JOB_ID,
+          status: "completed",
+          games_written: 1,
+          games_target: 1,
+          latest_report: null,
+          finished_at_utc: "2026-02-23T00:00:10Z",
+          run_id: RUN_ID,
+        });
       }
 
       if (pathname === "/api/env-check" && method === "GET") {
@@ -161,6 +204,14 @@ describe("legacy redirects", () => {
     await router.navigate({ to: "/runs/compare" });
     await screen.findByRole("heading", { name: "Compare Workbench" });
     await waitFor(() => expect(window.location.pathname).toBe("/compare"));
+
+    await router.navigate({ to: "/jobs" });
+    await screen.findByRole("heading", { name: "Execution Monitor" });
+    await waitFor(() => expect(window.location.pathname).toBe("/dashboard/jobs"));
+
+    await router.navigate({ to: "/jobs/$jobId", params: { jobId: JOB_ID } });
+    await screen.findByRole("heading", { name: `Job ${JOB_ID}` });
+    await waitFor(() => expect(window.location.pathname).toBe(`/dashboard/jobs/${JOB_ID}`));
 
     await router.navigate({
       to: "/runs/$runId/replay/$gameNumber",

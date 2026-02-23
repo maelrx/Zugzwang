@@ -116,7 +116,7 @@ export function RunDetailPage() {
         <p className="mb-3 rounded-lg border border-[#d7b071] bg-[#fff3de] px-3 py-2 text-sm text-[#7d5618]">
           Artifacts for this run are not available yet. This usually happens when a job is canceled before the first files are written.
         </p>
-        <Link to="/jobs" className="rounded-md border border-[#d8d1c5] bg-white px-3 py-1.5 text-sm text-[#334c59]">
+        <Link to="/dashboard/jobs" className="rounded-md border border-[#d8d1c5] bg-white px-3 py-1.5 text-sm text-[#334c59]">
           Back to jobs
         </Link>
       </section>
@@ -206,7 +206,7 @@ export function RunDetailPage() {
         {lastRerunJobId ? (
           <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
             Re-run started:{" "}
-            <Link to="/jobs/$jobId" params={{ jobId: lastRerunJobId }} className="font-semibold text-[var(--color-primary-700)] underline">
+            <Link to="/dashboard/jobs/$jobId" params={{ jobId: lastRerunJobId }} className="font-semibold text-[var(--color-primary-700)] underline">
               {lastRerunJobId}
             </Link>
           </p>
@@ -215,7 +215,7 @@ export function RunDetailPage() {
         {lastEvalJobId ? (
           <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
             Evaluation job:{" "}
-            <Link to="/jobs/$jobId" params={{ jobId: lastEvalJobId }} className="font-semibold text-[var(--color-primary-700)] underline">
+            <Link to="/dashboard/jobs/$jobId" params={{ jobId: lastEvalJobId }} className="font-semibold text-[var(--color-primary-700)] underline">
               {lastEvalJobId}
             </Link>
           </p>
@@ -303,7 +303,7 @@ export function RunDetailPage() {
                 {startEval.isPending ? "Starting..." : "Evaluate Now"}
               </button>
 
-              <Link to="/jobs" className="rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-3 py-1.5 text-sm text-[var(--color-text-primary)]">
+              <Link to="/dashboard/jobs" className="rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-3 py-1.5 text-sm text-[var(--color-text-primary)]">
                 Open jobs list
               </Link>
             </div>

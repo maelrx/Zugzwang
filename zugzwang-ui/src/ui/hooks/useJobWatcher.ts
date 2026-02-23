@@ -54,7 +54,7 @@ function buildStartedToast(job: JobResponse) {
     title: "Job started",
     message: `${job.job_type} ${job.job_id} is now running.`,
     tone: "info" as const,
-    linkTo: `/jobs/${job.job_id}`,
+    linkTo: `/dashboard/jobs/${job.job_id}`,
     linkLabel: "Open job",
   };
 }
@@ -65,7 +65,7 @@ function buildTerminalToast(job: JobResponse) {
       title: "Evaluation complete",
       message: `${job.run_id ?? job.job_id} evaluation finished.`,
       tone: "success" as const,
-      linkTo: job.run_id ? `/runs/${job.run_id}?tab=overview` : `/jobs/${job.job_id}`,
+      linkTo: job.run_id ? `/runs/${job.run_id}?tab=overview` : `/dashboard/jobs/${job.job_id}`,
       linkLabel: job.run_id ? "Open run" : "Open job",
     };
   }
@@ -74,7 +74,7 @@ function buildTerminalToast(job: JobResponse) {
       title: "Job completed",
       message: `${job.job_type} ${job.job_id} finished successfully.`,
       tone: "success" as const,
-      linkTo: job.run_id ? `/runs/${job.run_id}` : `/jobs/${job.job_id}`,
+      linkTo: job.run_id ? `/runs/${job.run_id}` : `/dashboard/jobs/${job.job_id}`,
       linkLabel: job.run_id ? "Open run" : "Open job",
     };
   }
@@ -83,7 +83,7 @@ function buildTerminalToast(job: JobResponse) {
       title: "Job failed",
       message: `${job.job_type} ${job.job_id} failed. Check logs for details.`,
       tone: "error" as const,
-      linkTo: `/jobs/${job.job_id}`,
+      linkTo: `/dashboard/jobs/${job.job_id}`,
       linkLabel: "Open logs",
     };
   }
@@ -91,7 +91,7 @@ function buildTerminalToast(job: JobResponse) {
     title: "Job canceled",
     message: `${job.job_type} ${job.job_id} was canceled.`,
     tone: "warning" as const,
-    linkTo: `/jobs/${job.job_id}`,
+    linkTo: `/dashboard/jobs/${job.job_id}`,
     linkLabel: "Open job",
   };
 }

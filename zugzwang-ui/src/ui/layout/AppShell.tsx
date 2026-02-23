@@ -189,7 +189,7 @@ export function AppShell() {
                     return (
                       <Link
                         key={job.job_id}
-                        to="/jobs/$jobId"
+                        to="/dashboard/jobs/$jobId"
                         params={{ jobId: job.job_id }}
                         className="block rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-2.5 py-2 hover:border-[var(--color-border-strong)]"
                       >
@@ -235,7 +235,7 @@ export function AppShell() {
 
 function isActiveRoute(pathname: string, to: string): boolean {
   if (to === "/dashboard") {
-    return pathname === "/" || pathname === "/dashboard";
+    return pathname === "/" || pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   }
   if (to === "/compare") {
     return pathname === "/compare" || pathname === "/runs/compare";

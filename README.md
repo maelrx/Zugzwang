@@ -308,13 +308,13 @@ In production, `zugzwang api` serves the built frontend as static files — sing
 
 | Page | Route | Description |
 |---|---|---|
-| Dashboard | `/` | Active jobs, recent runs, total spend |
-| Run Lab | `/run-lab` | Configure, validate, and launch experiments |
-| Job Monitor | `/jobs/:id` | Live log streaming (SSE), progress bar, cancel |
+| Dashboard | `/dashboard` | Active jobs, recent runs, total spend |
+| Run Lab | `/lab` | Configure, validate, and launch experiments |
+| Job Monitor | `/dashboard/jobs/:id` | Live log streaming (SSE), progress bar, cancel |
 | Run Explorer | `/runs` | Browse all runs, filter, sort |
 | Run Detail | `/runs/:id` | Metrics tabs, move quality, config, evaluate |
-| Game Replay | `/runs/:id/games/:n` | Board replay, per-ply metrics, MoA agent trace |
-| Compare | `/runs/compare` | Side-by-side run comparison with overlaid charts |
+| Game Replay | `/runs/:id/game/:n` | Board replay, per-ply metrics, MoA agent trace |
+| Compare | `/compare` | Side-by-side run comparison with overlaid charts |
 | Settings | `/settings` | Provider env check status |
 
 **Stack:** FastAPI · Uvicorn · Vite · React 19 · TypeScript · TanStack Router · TanStack Query · Zustand · shadcn/ui · Tailwind · react-chessboard

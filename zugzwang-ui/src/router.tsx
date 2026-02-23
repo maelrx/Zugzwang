@@ -28,6 +28,18 @@ const commandCenterRoute = createRoute({
   component: DashboardPage,
 });
 
+const dashboardJobsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard/jobs",
+  component: JobsPage,
+});
+
+const dashboardJobDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard/jobs/$jobId",
+  component: JobDetailPage,
+});
+
 const quickPlayRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/quick-play",
@@ -51,13 +63,22 @@ const runLabRoute = createRoute({
 const jobsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/jobs",
-  component: JobsPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard/jobs" });
+  },
 });
 
 const jobDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/jobs/$jobId",
-  component: JobDetailPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/dashboard/jobs/$jobId",
+      params: {
+        jobId: params.jobId,
+      },
+    });
+  },
 });
 
 const runsRoute = createRoute({
@@ -115,6 +136,8 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   commandCenterRoute,
+  dashboardJobsRoute,
+  dashboardJobDetailRoute,
   quickPlayRoute,
   labRoute,
   runLabRoute,

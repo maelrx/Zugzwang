@@ -703,7 +703,7 @@ export function RunLabPage() {
                 }
                 startRunMutation.mutate(requestPayload, {
                   onSuccess: (job) => {
-                    navigate({ to: "/jobs/$jobId", params: { jobId: job.job_id } });
+                    navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.job_id } });
                   },
                 });
               }}
@@ -724,7 +724,7 @@ export function RunLabPage() {
                 }
                 startPlayMutation.mutate(requestPayload, {
                   onSuccess: (job) => {
-                    navigate({ to: "/jobs/$jobId", params: { jobId: job.job_id } });
+                    navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.job_id } });
                   },
                 });
               }}
@@ -733,7 +733,7 @@ export function RunLabPage() {
             </button>
 
             <Link
-              to="/jobs"
+              to="/dashboard/jobs"
               className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             >
               Open Jobs

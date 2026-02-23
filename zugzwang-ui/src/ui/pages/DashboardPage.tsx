@@ -134,7 +134,7 @@ export function DashboardPage() {
                   <ProgressBar value={gamesWritten} max={Math.max(1, gamesTarget || gamesWritten)} label={progressLabel} />
                   <div className="mt-2">
                     <Link
-                      to="/jobs/$jobId"
+                      to="/dashboard/jobs/$jobId"
                       params={{ jobId: job.job_id }}
                       className="text-xs font-semibold text-[var(--color-primary-700)] hover:underline"
                     >

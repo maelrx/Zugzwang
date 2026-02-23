@@ -55,7 +55,7 @@ export function JobDetailPage() {
           </Link>
         )}
 
-        <Link to="/jobs" className="rounded-lg border border-[#d5cdc0] bg-white px-3 py-2 text-sm font-medium text-[#314a58]">
+        <Link to="/dashboard/jobs" className="rounded-lg border border-[#d5cdc0] bg-white px-3 py-2 text-sm font-medium text-[#314a58]">
           Back to jobs
         </Link>
       </div>

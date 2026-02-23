@@ -54,6 +54,8 @@ export function RunLabPage() {
   const setStoredAdvancedOpen = useLabStore((state) => state.setAdvancedOpen);
 
   const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
+  const defaultProvider = usePreferencesStore((state) => state.defaultProvider);
+  const defaultModel = usePreferencesStore((state) => state.defaultModel);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
 
   const [templateSearch, setTemplateSearch] = useState("");
@@ -205,8 +207,9 @@ export function RunLabPage() {
     if (selectedProvider && providerPresets.some((preset) => preset.provider === selectedProvider)) {
       return;
     }
-    setSelectedProvider(providerPresets[0]?.provider ?? "");
-  }, [providerPresets, selectedProvider]);
+    const preferred = defaultProvider ? providerPresets.find((preset) => preset.provider === defaultProvider) : undefined;
+    setSelectedProvider(preferred?.provider ?? providerPresets[0]?.provider ?? "");
+  }, [defaultProvider, providerPresets, selectedProvider]);
 
   useEffect(() => {
     if (!activePreset) {
@@ -216,9 +219,10 @@ export function RunLabPage() {
     if (activePreset.models.some((item) => item.id === selectedModel)) {
       return;
     }
-    const fallback = activePreset.models.find((item) => item.recommended) ?? activePreset.models[0] ?? null;
+    const preferredModel = defaultModel ? activePreset.models.find((item) => item.id === defaultModel) : undefined;
+    const fallback = preferredModel ?? activePreset.models.find((item) => item.recommended) ?? activePreset.models[0] ?? null;
     setSelectedModel(fallback?.id ?? "");
-  }, [activePreset, selectedModel]);
+  }, [activePreset, defaultModel, selectedModel]);
 
   useEffect(() => {
     if (!envCheckQuery.isSuccess || !stockfishCheckKnown || stockfishAvailable) {

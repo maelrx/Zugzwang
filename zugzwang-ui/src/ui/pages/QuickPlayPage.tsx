@@ -30,9 +30,11 @@ export function QuickPlayPage() {
   const defaultProvider = usePreferencesStore((state) => state.defaultProvider);
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
   const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
+  const stockfishDepthPreference = usePreferencesStore((state) => state.stockfishDepth);
   const setDefaultProvider = usePreferencesStore((state) => state.setDefaultProvider);
   const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
+  const setStockfishDepthPreference = usePreferencesStore((state) => state.setStockfishDepth);
 
   const setLabTemplatePath = useLabStore((state) => state.setSelectedTemplatePath);
   const setLabProvider = useLabStore((state) => state.setSelectedProvider);
@@ -47,7 +49,7 @@ export function QuickPlayPage() {
   const [provideHistory, setProvideHistory] = useState(true);
   const [feedbackLevel, setFeedbackLevel] = useState<FeedbackLevel>("rich");
   const [opponentMode, setOpponentMode] = useState<OpponentMode>("random");
-  const [stockfishLevel, setStockfishLevel] = useState(8);
+  const [stockfishLevel, setStockfishLevel] = useState(stockfishDepthPreference);
   const [rawOverridesText, setRawOverridesText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(loadAdvancedOpen());
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState<boolean>(autoEvaluatePreference);
@@ -133,6 +135,16 @@ export function QuickPlayPage() {
       setAutoEvaluatePreference(false);
     }
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
+
+  useEffect(() => {
+    if (stockfishDepthPreference !== stockfishLevel) {
+      setStockfishLevel(stockfishDepthPreference);
+    }
+  }, [stockfishDepthPreference, stockfishLevel]);
+
+  useEffect(() => {
+    setStockfishDepthPreference(stockfishLevel);
+  }, [setStockfishDepthPreference, stockfishLevel]);
 
   const jobQuery = useJob(activeJobId);
   const progressQuery = useJobProgress(activeJobId);

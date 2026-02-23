@@ -7,6 +7,8 @@ export type ToastItem = {
   title: string;
   message: string;
   tone: ToastTone;
+  linkTo?: string;
+  linkLabel?: string;
   createdAt: number;
 };
 
@@ -33,4 +35,3 @@ export const useNotificationStore = create<NotificationsState>()((set) => ({
     })),
   clearToasts: () => set({ toasts: [] }),
 }));
-

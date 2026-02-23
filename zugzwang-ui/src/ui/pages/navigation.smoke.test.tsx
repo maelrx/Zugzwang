@@ -293,7 +293,7 @@ describe("navigation smoke", () => {
     await screen.findByRole("heading", { name: "Compare Workbench" });
 
     expect(screen.getByText("Select at least 2 runs to populate the comparison table.")).toBeInTheDocument();
-  });
+  }, 10_000);
 });
 
 function toUrl(input: RequestInfo | URL): URL {

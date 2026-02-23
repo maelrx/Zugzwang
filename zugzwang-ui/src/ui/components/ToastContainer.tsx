@@ -28,6 +28,11 @@ export function ToastContainer() {
             <div>
               <p className="text-sm font-semibold">{toast.title}</p>
               <p className="mt-0.5 text-xs opacity-90">{toast.message}</p>
+              {toast.linkTo ? (
+                <a href={toast.linkTo} className="mt-1 inline-flex text-xs font-semibold underline underline-offset-2">
+                  {toast.linkLabel ?? "Open"}
+                </a>
+              ) : null}
             </div>
             <button
               type="button"
@@ -55,4 +60,3 @@ function toneClassName(tone: ToastTone): string {
   }
   return "border-[var(--color-info-border)] bg-[var(--color-info-bg)] text-[var(--color-info-text)]";
 }
-

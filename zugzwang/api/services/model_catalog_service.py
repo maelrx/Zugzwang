@@ -102,9 +102,9 @@ class ModelCatalogService:
                 api_style="anthropic_messages",
                 base_url="https://api.kimi.com/coding/v1",
                 api_key_env="KIMI_CODE_API_KEY",
-                notes="Kimi Code membership endpoint (Anthropic Messages-compatible).",
+                notes="Kimi Code membership endpoint (Anthropic Messages-compatible). Powered by K2.5.",
                 models=[
-                    ModelOption(id="kimi-for-coding", label="Kimi For Coding", recommended=True),
+                    ModelOption(id="kimi-for-coding", label="Kimi For Coding (K2.5)", recommended=True),
                 ],
             ),
             ModelProviderPreset(

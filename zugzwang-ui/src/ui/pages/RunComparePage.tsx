@@ -1,5 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../api/client";
 import { useRuns } from "../../api/queries";
 import type { GameDetailResponse, GameListItem, RunSummaryResponse } from "../../api/types";
@@ -45,12 +45,14 @@ export function RunComparePage() {
     return storeSelectedRunIds.slice(0, MAX_SELECTED_RUNS);
   });
   const [visibleRunIds, setVisibleRunIds] = useState<string[]>([]);
+  const hydratedFromStoreRef = useRef(false);
 
   useEffect(() => {
-    if (selectedRunIds.length > 0) {
+    if (hydratedFromStoreRef.current) {
       return;
     }
-    if (storeSelectedRunIds.length > 0) {
+    hydratedFromStoreRef.current = true;
+    if (selectedRunIds.length === 0 && storeSelectedRunIds.length > 0) {
       setSelectedRunIds(storeSelectedRunIds.slice(0, MAX_SELECTED_RUNS));
     }
   }, [selectedRunIds.length, storeSelectedRunIds]);

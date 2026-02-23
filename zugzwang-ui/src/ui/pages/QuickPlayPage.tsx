@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { ApiError, apiRequest } from "../../api/client";
 import { useConfigs, useEnvCheck, useJob, useJobProgress, useModelCatalog, useRunSummary, useStartPlay } from "../../api/queries";
-import type { GameDetailResponse, GameListItem, StartJobRequest } from "../../api/types";
+import type { GameDetailResponse, GameListItem, JobResponse, StartJobRequest } from "../../api/types";
 import { useLabStore } from "../../stores/labStore";
 import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
@@ -15,6 +15,7 @@ import { extractRunMetrics, formatDecimal, formatRate, formatUsd } from "../lib/
 const FALLBACK_CONFIG_PATH = "configs/baselines/best_known_start.yaml";
 const ADVANCED_OPEN_SESSION_KEY = "zugzwang-quick-play-advanced-open";
 const DEFAULT_BOARD_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS = 4_000;
 
 type BoardFormat = "fen" | "pgn";
 type FeedbackLevel = "minimal" | "moderate" | "rich";
@@ -55,6 +56,7 @@ export function QuickPlayPage() {
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState<boolean>(autoEvaluatePreference);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [runArtifactsReadyAt, setRunArtifactsReadyAt] = useState<number | null>(null);
 
   const providerPresets = modelCatalogQuery.data ?? [];
   const envChecks = envCheckQuery.data ?? [];
@@ -158,7 +160,8 @@ export function QuickPlayPage() {
   const latestReport = asRecord(progressQuery.data?.latest_report);
   const isRunning = activeJobStatus === "running" || activeJobStatus === "queued";
   const isTerminal = isTerminalStatus(activeJobStatus);
-  const canQueryRunArtifacts = Boolean(runId) && (isTerminal || progressQuery.isSuccess);
+  const artifactsDelayElapsed = runArtifactsReadyAt === null || Date.now() >= runArtifactsReadyAt;
+  const canQueryRunArtifacts = Boolean(runId) && (isTerminal || (progressQuery.isSuccess && artifactsDelayElapsed));
 
   const gamesQuery = useQuery({
     queryKey: ["quick-play-games", runId] as const,
@@ -317,10 +320,7 @@ export function QuickPlayPage() {
                 });
 
                 startPlayMutation.mutate(payload, {
-                  onSuccess: (job) => {
-                    setActiveJobId(job.job_id);
-                    setActiveRunId(job.run_id ?? null);
-                  },
+                  onSuccess: handlePlayJobStarted,
                 });
               }}
               disabled={!canStartGame}
@@ -578,10 +578,7 @@ export function QuickPlayPage() {
                 });
 
                 startPlayMutation.mutate(payload, {
-                  onSuccess: (job) => {
-                    setActiveJobId(job.job_id);
-                    setActiveRunId(job.run_id ?? null);
-                  },
+                  onSuccess: handlePlayJobStarted,
                 });
               }}
               disabled={!canStartGame}
@@ -633,6 +630,12 @@ export function QuickPlayPage() {
       ) : null}
     </section>
   );
+
+  function handlePlayJobStarted(job: JobResponse): void {
+    setActiveJobId(job.job_id);
+    setActiveRunId(job.run_id ?? null);
+    setRunArtifactsReadyAt(Date.now() + RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS);
+  }
 }
 
 function buildPlayPayload(input: {

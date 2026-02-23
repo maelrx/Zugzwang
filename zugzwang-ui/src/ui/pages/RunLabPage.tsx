@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import {
   useConfigs,
@@ -184,6 +184,10 @@ export function RunLabPage() {
     }),
     [currentConfigPath, mergedOverrides, modelProfile],
   );
+  const requestPayloadSignature = useMemo(() => JSON.stringify(requestPayload), [requestPayload]);
+  const lastAutoCheckedSignatureRef = useRef<string | null>(null);
+  const triggerValidate = validateMutation.mutate;
+  const triggerPreview = previewMutation.mutate;
 
   const isLaunching = startRunMutation.isPending || startPlayMutation.isPending;
   const canAutoCheck =
@@ -256,14 +260,19 @@ export function RunLabPage() {
 
   useEffect(() => {
     if (!canAutoCheck) {
+      lastAutoCheckedSignatureRef.current = null;
+      return;
+    }
+    if (requestPayloadSignature === lastAutoCheckedSignatureRef.current) {
       return;
     }
     const timeout = window.setTimeout(() => {
-      validateMutation.mutate(requestPayload);
-      previewMutation.mutate(requestPayload);
+      lastAutoCheckedSignatureRef.current = requestPayloadSignature;
+      triggerValidate(requestPayload);
+      triggerPreview(requestPayload);
     }, AUTO_CHECK_DEBOUNCE_MS);
     return () => window.clearTimeout(timeout);
-  }, [canAutoCheck, previewMutation, requestPayload, validateMutation]);
+  }, [canAutoCheck, requestPayload, requestPayloadSignature, triggerPreview, triggerValidate]);
 
   const blockingErrors = useMemo(() => {
     const errors: string[] = [];
@@ -342,8 +351,8 @@ export function RunLabPage() {
         </span>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)]">
-        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Template Browser</p>
           <label className="mt-2 block text-xs text-[var(--color-text-secondary)]">
             Search templates
@@ -378,7 +387,7 @@ export function RunLabPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Config Builder</p>
@@ -389,7 +398,7 @@ export function RunLabPage() {
 
           <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Model</p>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Provider
                 <select
@@ -450,7 +459,7 @@ export function RunLabPage() {
           </div>
           <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Experiment</summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Target valid games
                 <input
@@ -477,7 +486,7 @@ export function RunLabPage() {
 
           <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Strategy</summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Board format
                 <select
@@ -504,7 +513,7 @@ export function RunLabPage() {
               </label>
             </div>
 
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
                 <input
                   type="checkbox"
@@ -530,7 +539,7 @@ export function RunLabPage() {
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
               Evaluation Settings
             </summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)] sm:col-span-2">
                 <input
                   type="checkbox"
@@ -614,7 +623,7 @@ export function RunLabPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Preview & Validation</p>
@@ -630,8 +639,9 @@ export function RunLabPage() {
                 if (!canAutoCheck) {
                   return;
                 }
-                validateMutation.mutate(requestPayload);
-                previewMutation.mutate(requestPayload);
+                lastAutoCheckedSignatureRef.current = requestPayloadSignature;
+                triggerValidate(requestPayload);
+                triggerPreview(requestPayload);
               }}
             >
               Refresh
@@ -682,7 +692,7 @@ export function RunLabPage() {
             </div>
           ) : null}
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <InfoChip label="Run ID" value={previewData?.run_id ?? "--"} />
             <InfoChip label="Config hash" value={previewData?.config_hash ?? validateMutation.data?.config_hash ?? "--"} />
             <InfoChip label="Scheduled games" value={previewData ? String(previewData.scheduled_games) : String(targetValidGames)} />
@@ -1058,3 +1068,4 @@ function toPrettyJson(value: unknown): string {
     return String(value);
   }
 }
+

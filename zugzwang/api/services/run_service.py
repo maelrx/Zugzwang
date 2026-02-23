@@ -66,6 +66,7 @@ class RunService:
             cmd.append("play")
         else:
             cmd.append("run")
+        cmd.extend(["--run-id", prepared.run_id])
         cmd.extend(["--config", config_arg])
 
         if resolved_profile is not None:

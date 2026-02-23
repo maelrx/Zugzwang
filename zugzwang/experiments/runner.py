@@ -55,12 +55,14 @@ class ExperimentRunner:
         overrides: list[str] | None = None,
         resume: bool = False,
         resume_run_id: str | None = None,
+        run_id: str | None = None,
     ) -> None:
         self.config_path = Path(config_path)
         self.model_profile_path = Path(model_profile_path) if model_profile_path else None
         self.overrides = overrides or []
         self.resume = resume
         self.resume_run_id = resume_run_id
+        self.run_id = run_id
 
     def prepare(self) -> PreparedRun:
         resolved, cfg_hash = resolve_with_hash(
@@ -69,7 +71,7 @@ class ExperimentRunner:
             cli_overrides=self.overrides,
         )
         experiment_name = resolved["experiment"]["name"]
-        run_id = make_run_id(experiment_name, cfg_hash)
+        run_id = self.run_id or make_run_id(experiment_name, cfg_hash)
         target_valid = int(resolved["experiment"]["target_valid_games"])
         expected_completion = float(resolved["runtime"].get("expected_completion_rate", 1.0))
         scheduled_games = math.ceil(target_valid / expected_completion)

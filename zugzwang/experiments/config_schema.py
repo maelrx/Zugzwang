@@ -30,7 +30,7 @@ REQUIRED_FIELDS = [
 ]
 
 ALLOWED_PROTOCOL_MODES = {"direct", "agentic_compat", "research_strict"}
-ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode"}
+ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode", "pgn"}
 ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}

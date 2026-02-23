@@ -46,12 +46,30 @@ def test_config_accepts_research_strict_protocol_mode() -> None:
     assert resolved["protocol"]["mode"] == "research_strict"
 
 
+def test_config_accepts_pgn_board_format() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=["strategy.board_format=pgn"],
+    )
+    assert resolved["strategy"]["board_format"] == "pgn"
+
+
 def test_config_rejects_invalid_evaluation_auto_player_color() -> None:
     config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
     with pytest.raises(ValueError, match="evaluation.auto.player_color"):
         resolve_config(
             experiment_config_path=config_path,
             cli_overrides=["evaluation.auto.player_color=green"],
+        )
+
+
+def test_config_rejects_invalid_board_format() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.board_format"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=["strategy.board_format=diagram"],
         )
 
 

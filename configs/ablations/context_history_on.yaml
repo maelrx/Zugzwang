@@ -1,0 +1,8 @@
+experiment:
+  name: context_history_on
+  target_valid_games: 2
+  max_games: 2
+
+strategy:
+  provide_history: true
+  history_plies: 8

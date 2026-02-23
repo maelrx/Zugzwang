@@ -27,8 +27,15 @@ const STOCKFISH_ELO_PRESETS = [
   2400,
   2600,
 ] as const;
+const BOARD_FORMAT_OPTIONS = [
+  { value: "fen", label: "FEN" },
+  { value: "ascii", label: "ASCII Board" },
+  { value: "unicode", label: "Unicode Board" },
+  { value: "combined", label: "Combined (FEN + Board)" },
+  { value: "pgn", label: "PGN" },
+] as const;
 
-type BoardFormat = "fen" | "pgn";
+type BoardFormat = (typeof BOARD_FORMAT_OPTIONS)[number]["value"];
 type FeedbackLevel = "minimal" | "moderate" | "rich";
 type OpponentMode = "random" | "stockfish" | "llm";
 
@@ -442,8 +449,11 @@ export function QuickPlayPage() {
                   onChange={(event) => setBoardFormat(event.target.value as BoardFormat)}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 >
-                  <option value="fen">FEN</option>
-                  <option value="pgn">PGN</option>
+                  {BOARD_FORMAT_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </label>
 

@@ -36,6 +36,33 @@ def test_build_direct_prompt_contains_core_blocks() -> None:
     assert "Previous moves (UCI" in prompt
 
 
+def test_build_direct_prompt_supports_pgn_board_format() -> None:
+    state = _game_state()
+    state.pgn = "1. e4 e5 2. Nf3 Nc6"
+    cfg = {
+        "board_format": "pgn",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    prompt = build_direct_prompt(state, cfg)
+    assert "PGN: 1. e4 e5 2. Nf3 Nc6" in prompt
+
+
+def test_build_direct_prompt_pgn_falls_back_to_fen_when_missing() -> None:
+    cfg = {
+        "board_format": "pgn",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    prompt = build_direct_prompt(_game_state(), cfg)
+    assert "PGN: (not available yet)" in prompt
+    assert "FEN:" in prompt
+
+
 def test_build_direct_prompt_applies_compression() -> None:
     cfg = {
         "board_format": "fen",

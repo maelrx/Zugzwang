@@ -22,9 +22,16 @@ const MIN_TARGET_GAMES = 1;
 const MAX_TARGET_GAMES = 500;
 const DEFAULT_TARGET_GAMES = 10;
 const STOCKFISH_ELO_PRESETS = [1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600] as const;
+const BOARD_FORMAT_OPTIONS = [
+  { value: "fen", label: "fen" },
+  { value: "ascii", label: "ascii" },
+  { value: "unicode", label: "unicode" },
+  { value: "combined", label: "combined" },
+  { value: "pgn", label: "pgn" },
+] as const;
 
 type TemplateBucket = "baselines" | "ablations" | "custom";
-type BoardFormat = "fen" | "pgn";
+type BoardFormat = (typeof BOARD_FORMAT_OPTIONS)[number]["value"];
 type FeedbackLevel = "minimal" | "moderate" | "rich";
 type OpponentMode = "template" | "random" | "stockfish" | "llm";
 
@@ -713,8 +720,11 @@ export function RunLabPage() {
                   onChange={(event) => setBoardFormat(event.target.value as BoardFormat)}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 >
-                  <option value="fen">fen</option>
-                  <option value="pgn">pgn</option>
+                  {BOARD_FORMAT_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </label>
 

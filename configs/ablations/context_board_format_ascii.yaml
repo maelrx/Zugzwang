@@ -1,0 +1,7 @@
+experiment:
+  name: context_board_format_ascii
+  target_valid_games: 2
+  max_games: 2
+
+strategy:
+  board_format: ascii

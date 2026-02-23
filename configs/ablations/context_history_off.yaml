@@ -1,0 +1,7 @@
+experiment:
+  name: context_history_off
+  target_valid_games: 2
+  max_games: 2
+
+strategy:
+  provide_history: false

@@ -75,7 +75,7 @@ def build_direct_prompt_with_metadata(
     base_lines = [
         f"Phase: {phase}",
         f"Side to move: {game_state.active_color}",
-        *board_context_lines(game_state.fen, board_format),
+        *board_context_lines(game_state.fen, board_format, game_state.pgn),
     ]
 
     optional_blocks: dict[str, str] = {}

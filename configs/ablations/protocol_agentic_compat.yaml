@@ -1,0 +1,7 @@
+experiment:
+  name: protocol_agentic_compat
+  target_valid_games: 2
+  max_games: 2
+
+protocol:
+  mode: agentic_compat

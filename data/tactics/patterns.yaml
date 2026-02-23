@@ -1,0 +1,82 @@
+- id: tact-fork-knight
+  theme: fork
+  title: Knight Fork Pattern
+  description: "Knights can attack two high-value targets at once, especially king and queen or king and rook."
+  principle: "Before quiet moves, check whether a knight jump creates a double attack."
+  example_fen: "r1bqk2r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4"
+  solution: "Qxf7#"
+  phase: middlegame
+  tags: [tactics, fork, forcing_moves]
+
+- id: tact-pin-bishop
+  theme: pin
+  title: Pin on a Central File
+  description: "Pinning a defender often increases tactical pressure and limits legal responses."
+  principle: "Identify aligned king-queen or king-rook lines and add pressure with pinned attackers."
+  example_fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4"
+  phase: middlegame
+  tags: [tactics, pin, development]
+
+- id: tact-skewer
+  theme: skewer
+  title: Skewer Against Back Piece
+  description: "A skewer attacks a valuable piece and wins the piece behind it after the first one moves."
+  principle: "Look for long-range pieces lined up on same file or diagonal."
+  phase: middlegame
+  tags: [tactics, skewer, long_range]
+
+- id: tact-discovered-attack
+  theme: discovered_attack
+  title: Discovered Attack Motif
+  description: "Moving a piece to reveal attack from bishop, rook, or queen can create immediate tactical wins."
+  principle: "When pieces are stacked on lines, evaluate candidate moves that uncover hidden pressure."
+  phase: middlegame
+  tags: [tactics, discovered_attack, initiative]
+
+- id: tact-deflection
+  theme: deflection
+  title: Deflection of Key Defender
+  description: "Forcing a defender away from a critical square often wins material or enables mate threats."
+  principle: "Find overloaded defenders and use forcing moves to pull them from duty."
+  phase: middlegame
+  tags: [tactics, deflection, overload]
+
+- id: tact-back-rank
+  theme: back_rank
+  title: Back-Rank Weakness
+  description: "Limited king luft and undeveloped defenders create recurring back-rank mating ideas."
+  principle: "Before trading rooks or queens, check if final position allows back-rank tactics."
+  phase: middlegame
+  tags: [tactics, back_rank, king_safety]
+
+- id: tact-remove-defender
+  theme: remove_defender
+  title: Remove the Defender
+  description: "Eliminating a defender can turn a guarded target into a tactical weakness."
+  principle: "Track defenders of critical squares and force exchanges that reduce protection."
+  phase: middlegame
+  tags: [tactics, remove_defender, calculation]
+
+- id: tact-clearance
+  theme: clearance
+  title: Clearance Sacrifice
+  description: "A temporary sacrifice can clear lines for stronger pieces to invade."
+  principle: "Consider material investment if it opens files, diagonals, or mating nets."
+  phase: middlegame
+  tags: [tactics, clearance, sacrifice]
+
+- id: tact-opening-dev-rule
+  theme: opening_discipline
+  title: Opening Tactical Hygiene
+  description: "Many opening blunders come from ignoring basic development and king safety principles."
+  principle: "Develop pieces, control the center, and avoid repeated piece moves without concrete gain."
+  phase: opening
+  tags: [opening, tactics, development]
+
+- id: tact-endgame-passed-pawn
+  theme: passed_pawn_tactics
+  title: Passed Pawn Tactics
+  description: "In simplified positions, tactical motifs often revolve around promotion races and king opposition."
+  principle: "Calculate forcing checks and queening threats before making king moves."
+  phase: endgame
+  tags: [endgame, tactics, passed_pawn]

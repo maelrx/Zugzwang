@@ -1,0 +1,64 @@
+- id: end-kpk-opposition
+  type: King and Pawn
+  material: KP vs K
+  principle: "Opposition and king activity decide many king-pawn endings."
+  technique: "Centralize the king first, then push the pawn when key squares are controlled."
+  example_fen: "8/8/4k3/8/2K1P3/8/8/8 w - - 0 1"
+  phase: endgame
+  tags: [endgame, kpk, opposition]
+
+- id: end-rook-behind-pawn
+  type: Rook Endgame
+  material: KR+P vs KR
+  principle: "Rooks belong behind passed pawns for both attack and defense."
+  technique: "Use checking distance and king cut-off to improve winning chances."
+  phase: endgame
+  tags: [endgame, rook_endgame, passed_pawn]
+
+- id: end-lucena
+  type: Rook Endgame
+  material: Lucena
+  principle: "Bridge-building converts many winning rook-and-pawn positions."
+  technique: "Shelter the king from checks while escorting the pawn."
+  phase: endgame
+  tags: [endgame, rook_endgame, lucena]
+
+- id: end-philidor
+  type: Rook Endgame
+  material: Philidor
+  principle: "The defensive side aims for active rook checks and third-rank setup."
+  technique: "Keep king from crossing and switch to rear checks at the right moment."
+  phase: endgame
+  tags: [endgame, rook_endgame, philidor]
+
+- id: end-king-activity
+  type: General
+  material: any
+  principle: "In endgames, king activity frequently outweighs extra pawn tempos."
+  technique: "Prioritize king centralization and opposition over passive waiting."
+  phase: endgame
+  tags: [endgame, king_activity]
+
+- id: end-minor-piece
+  type: Minor Piece Endgame
+  material: B+N and pawns
+  principle: "Piece coordination and pawn structure dominate outcomes in minor-piece endgames."
+  technique: "Create outposts and avoid locking your bishop behind own pawns."
+  phase: endgame
+  tags: [endgame, minor_pieces, coordination]
+
+- id: end-shouldering
+  type: King and Pawn
+  material: pawn race
+  principle: "Shouldering can force the opposing king away from key files."
+  technique: "Use king moves to block access before committing pawn pushes."
+  phase: endgame
+  tags: [endgame, kpk, king_technique]
+
+- id: end-zugzwang
+  type: General
+  material: reduced material
+  principle: "Tempo management is critical; wasted pawn moves can lose drawn positions."
+  technique: "Preserve waiting moves and avoid creating irreversible weaknesses."
+  phase: endgame
+  tags: [endgame, zugzwang, tempo]

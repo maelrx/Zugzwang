@@ -9,6 +9,8 @@ from zugzwang.experiments.runner import ExperimentRunner
 from zugzwang.infra.config import resolve_config
 from zugzwang.infra.env import load_dotenv, validate_environment
 from zugzwang.infra.logging import configure_logging
+from zugzwang.knowledge.indexer import build_index
+from zugzwang.knowledge.retriever import clear_caches as clear_retrieval_caches
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -42,6 +44,14 @@ def _build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("--opponent-elo", type=float)
     eval_parser.add_argument("--elo-color-correction", type=float, default=0.0)
     eval_parser.add_argument("--output-filename", default="experiment_report_evaluated.json")
+
+    index_parser = subparsers.add_parser("index-knowledge")
+    index_parser.add_argument(
+        "--sources",
+        nargs="*",
+        choices=["eco", "lichess", "endgames"],
+        default=["eco", "lichess", "endgames"],
+    )
 
     api_parser = subparsers.add_parser("api")
     api_parser.add_argument("--host", default="127.0.0.1")
@@ -123,6 +133,14 @@ def _api_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _index_knowledge_command(args: argparse.Namespace) -> int:
+    selected_sources = list(args.sources or [])
+    clear_retrieval_caches()
+    _, summary = build_index(selected_sources)
+    print(json.dumps(summary.to_dict(), indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -138,6 +156,8 @@ def main(argv: list[str] | None = None) -> int:
         return _evaluate_command(args)
     if args.command == "api":
         return _api_command(args)
+    if args.command == "index-knowledge":
+        return _index_knowledge_command(args)
 
     parser.print_help()
     return 1

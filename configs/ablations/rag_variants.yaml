@@ -1,7 +1,7 @@
 experiment:
   name: rag_variants
-  target_valid_games: 2
-  max_games: 2
+  target_valid_games: 4
+  max_games: 4
 
 strategy:
   rag:
@@ -9,6 +9,10 @@ strategy:
     max_chunks: 3
     max_chars_per_chunk: 220
     min_similarity: 0.08
+    sources:
+      - eco
+      - lichess
+      - endgames
     include_sources:
       eco: true
       lichess: true

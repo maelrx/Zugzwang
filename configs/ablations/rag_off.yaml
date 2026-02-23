@@ -1,0 +1,8 @@
+experiment:
+  name: rag_off
+  target_valid_games: 2
+  max_games: 2
+
+strategy:
+  rag:
+    enabled: false

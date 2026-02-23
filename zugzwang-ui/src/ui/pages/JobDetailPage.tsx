@@ -11,12 +11,12 @@ export function JobDetailPage() {
   const jobQuery = useJob(jobId);
   const progressQuery = useJobProgress(jobId);
   const cancelMutation = useCancelJob();
-  const logs = useJobLogs(jobId);
 
   const job = jobQuery.data;
   const progress = progressQuery.data;
 
   const canCancel = job?.status === "running" || job?.status === "queued";
+  const logs = useJobLogs(jobId, canCancel);
 
   return (
     <section>

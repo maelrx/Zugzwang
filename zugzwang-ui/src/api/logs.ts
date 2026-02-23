@@ -17,7 +17,7 @@ type DonePayload = {
 
 const MAX_LINES = 500;
 
-export function useJobLogs(jobId: string | null): UseJobLogsResult {
+export function useJobLogs(jobId: string | null, enabled = true): UseJobLogsResult {
   const [state, dispatch] = useReducer(logsReducer, {
     lines: [],
     done: false,
@@ -32,7 +32,8 @@ export function useJobLogs(jobId: string | null): UseJobLogsResult {
   useEffect(() => {
     dispatch({ type: "reset" });
 
-    if (!jobId) {
+    if (!jobId || !enabled) {
+      dispatch({ type: "done" });
       return;
     }
 
@@ -44,7 +45,23 @@ export function useJobLogs(jobId: string | null): UseJobLogsResult {
     }
 
     const url = `${base}/api/jobs/${jobId}/logs`;
-    const source = new EventSource(url);
+    let source: EventSource;
+    try {
+      source = new EventSource(url);
+    } catch (error) {
+      const message = toErrorMessage(error);
+      if (!isBenignStreamError(message)) {
+        dispatch({
+          type: "append",
+          payload: { stream: "system", text: message || "Unable to start log stream." },
+        });
+        dispatch({ type: "error", payload: "Log stream error" });
+      }
+      dispatch({ type: "done" });
+      return;
+    }
+
+    let isDisposed = false;
 
     source.addEventListener("stdout", (event) => {
       dispatch({ type: "append", payload: { stream: "stdout", text: event.data } });
@@ -53,6 +70,17 @@ export function useJobLogs(jobId: string | null): UseJobLogsResult {
       dispatch({ type: "append", payload: { stream: "stderr", text: event.data } });
     });
     source.addEventListener("error", (event) => {
+      if (isDisposed || source.readyState === EventSource.CLOSED) {
+        return;
+      }
+
+      const message = stringifyEventData(event);
+      if (isBenignStreamError(message)) {
+        dispatch({ type: "done" });
+        source.close();
+        return;
+      }
+
       dispatch({ type: "append", payload: { stream: "system", text: stringifyEventData(event) || "log stream error" } });
       dispatch({ type: "error", payload: "Log stream error" });
       source.close();
@@ -69,9 +97,10 @@ export function useJobLogs(jobId: string | null): UseJobLogsResult {
     });
 
     return () => {
+      isDisposed = true;
       source.close();
     };
-  }, [base, jobId]);
+  }, [base, enabled, jobId]);
 
   return state;
 }
@@ -93,6 +122,22 @@ function stringifyEventData(event: Event): string {
     return JSON.stringify(data);
   }
   return "";
+}
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error ?? "");
+}
+
+function isBenignStreamError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("ns_binding_aborted") ||
+    normalized.includes("interrupted while the page was loading") ||
+    normalized.includes("networkerror when attempting to fetch resource")
+  );
 }
 
 type LogsAction =

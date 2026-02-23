@@ -21,3 +21,9 @@ tools/stockfish/
 **/.tmp-playwright/
 **/.playwright-cli/
 **/coverage/
+
+# Local run artifacts
+output/
+
+# Local QA reports generated during exploratory runs
+zugzwang-ui/docs/FRONTEND_V2_QA_*.md

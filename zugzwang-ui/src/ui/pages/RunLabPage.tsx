@@ -20,6 +20,7 @@ const AUTO_CHECK_DEBOUNCE_MS = 500;
 const MIN_TARGET_GAMES = 1;
 const MAX_TARGET_GAMES = 500;
 const DEFAULT_TARGET_GAMES = 10;
+const STOCKFISH_ELO_PRESETS = [1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600] as const;
 
 type TemplateBucket = "baselines" | "ablations" | "custom";
 type BoardFormat = "fen" | "pgn";
@@ -75,8 +76,9 @@ export function RunLabPage() {
   const [opponentMode, setOpponentMode] = useState<OpponentMode>("template");
   const [opponentProvider, setOpponentProvider] = useState(storedProvider ?? defaultProvider ?? "");
   const [opponentModel, setOpponentModel] = useState(storedModel ?? defaultModel ?? "");
-  const [opponentStockfishLevel, setOpponentStockfishLevel] = useState(stockfishDepthPreference);
+  const [opponentStockfishElo, setOpponentStockfishElo] = useState(() => mapEvaluationDepthToDefaultElo(stockfishDepthPreference));
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState(autoEvaluatePreference);
+  const [evaluationDepth, setEvaluationDepth] = useState(stockfishDepthPreference);
   const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"white" | "black">("black");
   const [evaluationOpponentEloText, setEvaluationOpponentEloText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(storedAdvancedOpen);
@@ -161,7 +163,7 @@ export function RunLabPage() {
         opponentMode,
         opponentProvider,
         opponentModel,
-        opponentStockfishLevel,
+        opponentStockfishElo,
         targetValidGames,
         maxBudgetUsd: parsedMaxBudgetUsd,
         boardFormat,
@@ -169,6 +171,7 @@ export function RunLabPage() {
         provideHistory,
         feedbackLevel,
         autoEvaluateEnabled,
+        evaluationDepth,
         evaluationPlayerColor,
         evaluationOpponentElo: parsedOpponentElo,
       }),
@@ -182,12 +185,13 @@ export function RunLabPage() {
       opponentMode,
       opponentModel,
       opponentProvider,
-      opponentStockfishLevel,
+      opponentStockfishElo,
       provideHistory,
       provideLegalMoves,
       selectedModel,
       selectedProvider,
       targetValidGames,
+      evaluationDepth,
     ],
   );
 
@@ -284,10 +288,10 @@ export function RunLabPage() {
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
 
   useEffect(() => {
-    if (stockfishDepthPreference !== opponentStockfishLevel) {
-      setOpponentStockfishLevel(stockfishDepthPreference);
+    if (stockfishDepthPreference !== evaluationDepth) {
+      setEvaluationDepth(stockfishDepthPreference);
     }
-  }, [opponentStockfishLevel, stockfishDepthPreference]);
+  }, [evaluationDepth, stockfishDepthPreference]);
 
   useEffect(() => {
     setStoredTemplatePath(selectedConfigPath || null);
@@ -394,6 +398,10 @@ export function RunLabPage() {
   const previewData = previewMutation.data;
   const resolvedConfigPreview = previewData?.resolved_config ?? validateMutation.data?.resolved_config ?? null;
   const estimatedCostUsd = previewData?.estimated_total_cost_usd ?? null;
+  const stockfishPresetValue = useMemo(
+    () => (STOCKFISH_ELO_PRESETS.some((elo) => elo === opponentStockfishElo) ? String(opponentStockfishElo) : "custom"),
+    [opponentStockfishElo],
+  );
 
   const baselineCount = templates.filter((item) => item.bucket === "baselines").length;
   const ablationCount = templates.filter((item) => item.bucket === "ablations").length;
@@ -579,16 +587,42 @@ export function RunLabPage() {
               </label>
 
               <label className="text-xs text-[var(--color-text-secondary)]">
-                Stockfish depth
+                Stockfish ELO preset
+                <select
+                  value={stockfishPresetValue}
+                  onChange={(event) => {
+                    const raw = event.target.value;
+                    if (raw === "custom") {
+                      return;
+                    }
+                    const elo = Number.parseInt(raw, 10);
+                    if (!Number.isFinite(elo)) {
+                      return;
+                    }
+                    setOpponentStockfishElo(elo);
+                  }}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  {STOCKFISH_ELO_PRESETS.map((elo) => (
+                    <option key={`elo-${elo}`} value={String(elo)}>
+                      {elo}
+                    </option>
+                  ))}
+                  <option value="custom">Custom ELO</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Stockfish ELO (native UCI)
                 <input
                   type="number"
-                  min={1}
-                  max={20}
-                  value={opponentStockfishLevel}
+                  min={800}
+                  max={3000}
+                  value={opponentStockfishElo}
                   onChange={(event) => {
-                    const level = clampInt(event.target.value, 1, 20, 8);
-                    setOpponentStockfishLevel(level);
-                    setStockfishDepthPreference(level);
+                    const elo = clampInt(event.target.value, 800, 3000, 1600);
+                    setOpponentStockfishElo(elo);
                   }}
                   disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
@@ -740,6 +774,23 @@ export function RunLabPage() {
                   value={evaluationOpponentEloText}
                   onChange={(event) => setEvaluationOpponentEloText(event.target.value)}
                   placeholder="e.g. 1000"
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Evaluation depth (Stockfish)
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={evaluationDepth}
+                  onChange={(event) => {
+                    const depth = clampInt(event.target.value, 1, 30, 12);
+                    setEvaluationDepth(depth);
+                    setStockfishDepthPreference(depth);
+                  }}
+                  disabled={!stockfishAvailable || !autoEvaluateEnabled}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 />
               </label>
@@ -1030,7 +1081,7 @@ function buildStructuredOverrides(input: {
   opponentMode: OpponentMode;
   opponentProvider: string;
   opponentModel: string;
-  opponentStockfishLevel: number;
+  opponentStockfishElo: number;
   targetValidGames: number;
   maxBudgetUsd: number | null;
   boardFormat: BoardFormat;
@@ -1038,6 +1089,7 @@ function buildStructuredOverrides(input: {
   provideHistory: boolean;
   feedbackLevel: FeedbackLevel;
   autoEvaluateEnabled: boolean;
+  evaluationDepth: number;
   evaluationPlayerColor: "white" | "black";
   evaluationOpponentElo: number | null;
 }): string[] {
@@ -1059,7 +1111,8 @@ function buildStructuredOverrides(input: {
   } else if (input.opponentMode === "stockfish") {
     overrides.push("players.white.type=engine");
     overrides.push("players.white.name=stockfish_white");
-    overrides.push(`players.white.depth=${input.opponentStockfishLevel}`);
+    overrides.push("players.white.uci_limit_strength=true");
+    overrides.push(`players.white.uci_elo=${input.opponentStockfishElo}`);
   } else if (input.opponentMode === "llm") {
     overrides.push("players.white.type=llm");
     overrides.push(`players.white.provider=${input.opponentProvider}`);
@@ -1074,10 +1127,11 @@ function buildStructuredOverrides(input: {
   if (input.autoEvaluateEnabled) {
     overrides.push("evaluation.auto.enabled=true");
     overrides.push(`evaluation.auto.player_color=${input.evaluationPlayerColor}`);
+    overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
     if (input.evaluationOpponentElo !== null) {
       overrides.push(`evaluation.auto.opponent_elo=${input.evaluationOpponentElo}`);
     } else if (input.opponentMode === "stockfish") {
-      overrides.push(`evaluation.auto.opponent_elo=${mapStockfishLevelToElo(input.opponentStockfishLevel)}`);
+      overrides.push(`evaluation.auto.opponent_elo=${input.opponentStockfishElo}`);
     }
   } else {
     overrides.push("evaluation.auto.enabled=false");
@@ -1173,26 +1227,20 @@ function safeModelName(provider: string, model: string): string {
   return `${provider}_${model}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
-function mapStockfishLevelToElo(level: number): number {
-  if (level <= 2) {
-    return 600;
-  }
-  if (level <= 5) {
-    return 800;
-  }
-  if (level <= 8) {
-    return 1000;
-  }
-  if (level <= 11) {
+function mapEvaluationDepthToDefaultElo(depth: number): number {
+  if (depth <= 6) {
     return 1200;
   }
-  if (level <= 14) {
+  if (depth <= 10) {
     return 1600;
   }
-  if (level <= 17) {
+  if (depth <= 14) {
     return 2000;
   }
-  return 2500;
+  if (depth <= 18) {
+    return 2400;
+  }
+  return 2600;
 }
 
 function parseOptionalPositiveNumber(value: string): number | null {

@@ -485,6 +485,9 @@ class EnginePlayer(RandomPlayer):
         movetime_ms: int | None = None,
         threads: int = 1,
         hash_mb: int = 64,
+        uci_limit_strength: bool | None = None,
+        uci_elo: int | None = None,
+        skill_level: int | None = None,
     ) -> None:
         super().__init__(name=name, rng=rng)
         self.path = path or os.environ.get("STOCKFISH_PATH") or "stockfish"
@@ -492,6 +495,9 @@ class EnginePlayer(RandomPlayer):
         self.movetime_ms = movetime_ms
         self.threads = threads
         self.hash_mb = hash_mb
+        self.uci_limit_strength = uci_limit_strength
+        self.uci_elo = uci_elo
+        self.skill_level = skill_level
         self._engine: chess.engine.SimpleEngine | None = None
 
     def _ensure_engine(self) -> chess.engine.SimpleEngine:
@@ -512,17 +518,32 @@ class EnginePlayer(RandomPlayer):
                 retryable=False,
             ) from exc
 
-        try:
-            self._engine.configure({"Threads": self.threads, "Hash": self.hash_mb})
-        except chess.engine.EngineError:
-            # Keep running with engine defaults if one of these options is unsupported.
-            pass
+        self._try_configure({"Threads": self.threads, "Hash": self.hash_mb})
+
+        if self.uci_limit_strength is not None:
+            self._try_configure({"UCI_LimitStrength": self.uci_limit_strength})
+        if self.skill_level is not None:
+            self._try_configure({"Skill Level": self.skill_level})
+        if self.uci_elo is not None:
+            # UCI_Elo only has effect when limit strength is enabled.
+            if self.uci_limit_strength is not True:
+                self._try_configure({"UCI_LimitStrength": True})
+            self._try_configure({"UCI_Elo": self.uci_elo})
         return self._engine
 
     def _limit(self) -> chess.engine.Limit:
         if self.movetime_ms is not None:
             return chess.engine.Limit(time=max(0.001, self.movetime_ms / 1000))
         return chess.engine.Limit(depth=self.depth)
+
+    def _try_configure(self, options: dict[str, Any]) -> None:
+        if self._engine is None:
+            return
+        try:
+            self._engine.configure(options)
+        except chess.engine.EngineError:
+            # Keep running with engine defaults if one of these options is unsupported.
+            pass
 
     def close(self) -> None:
         if self._engine is None:
@@ -592,6 +613,8 @@ def build_player(
     if player_type == "random":
         return RandomPlayer(name=name, rng=rng)
     if player_type == "engine":
+        raw_uci_elo = player_config.get("uci_elo")
+        raw_skill_level = player_config.get("skill_level")
         return EnginePlayer(
             name=name,
             rng=rng,
@@ -604,6 +627,9 @@ def build_player(
             ),
             threads=int(player_config.get("threads", 1)),
             hash_mb=int(player_config.get("hash_mb", 64)),
+            uci_limit_strength=_safe_optional_bool(player_config.get("uci_limit_strength")),
+            uci_elo=_safe_optional_positive_int(raw_uci_elo),
+            skill_level=_safe_optional_bounded_int(raw_skill_level, minimum=0, maximum=20),
         )
     if player_type == "llm":
         provider_name = player_config.get("provider")
@@ -650,3 +676,55 @@ def _safe_positive_int(value: Any, default: int) -> int:
             casted = int(stripped)
             return casted if casted > 0 else default
     return default
+
+
+def _safe_optional_bool(value: Any) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    return None
+
+
+def _safe_optional_positive_int(value: Any) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    parsed: int | None = None
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, float):
+        parsed = int(value)
+    elif isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.isdigit():
+            parsed = int(stripped)
+    if parsed is None or parsed <= 0:
+        return None
+    return parsed
+
+
+def _safe_optional_bounded_int(value: Any, minimum: int, maximum: int) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    parsed: int | None = None
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, float):
+        parsed = int(value)
+    elif isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.lstrip("-").isdigit():
+            parsed = int(stripped)
+    if parsed is None:
+        return None
+    if parsed < minimum or parsed > maximum:
+        return None
+    return parsed

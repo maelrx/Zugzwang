@@ -212,7 +212,7 @@ export function SettingsPage() {
           </label>
 
           <label className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]">
-            Default depth
+            Default evaluation depth
             <input
               type="number"
               min={1}

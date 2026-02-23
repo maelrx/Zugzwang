@@ -259,12 +259,13 @@ runtime:
 
 ### Engine Player (UCI)
 
-Jogue contra o Stockfish com nível de habilidade configurável:
+Jogue contra o Stockfish com força nativa por Elo UCI:
 
 ```bash
 zugzwang play --config configs/baselines/best_known_start.yaml \
   --set players.white.type=engine \
-  --set players.white.depth=8
+  --set players.white.uci_limit_strength=true \
+  --set players.white.uci_elo=1600
 ```
 
 ### Integração z.ai / GLM-5
@@ -436,3 +437,4 @@ MIT. Veja [LICENSE](LICENSE).
 <div align="center">
 <sub>Construído com rigor, curiosidade e profundo respeito pelo jogo.</sub>
 </div>
+

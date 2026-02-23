@@ -221,6 +221,10 @@ describe("quick play flow", () => {
       expect(overrides).toContain("players.black.model=glm-5");
       expect(overrides).toContain("evaluation.auto.enabled=true");
       expect(overrides).toContain("players.white.type=engine");
+      expect(overrides).toContain("players.white.uci_limit_strength=true");
+      expect(overrides.some((entry: string) => entry.startsWith("players.white.uci_elo="))).toBe(true);
+      expect(overrides.some((entry: string) => entry.startsWith("players.white.depth="))).toBe(false);
+      expect(overrides.some((entry: string) => entry.startsWith("evaluation.stockfish.depth="))).toBe(true);
     });
 
     await waitFor(() => {

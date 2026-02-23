@@ -17,13 +17,14 @@ const ADVANCED_OPEN_SESSION_KEY = "zugzwang-quick-play-advanced-open";
 const DEFAULT_BOARD_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS = 4_000;
 const STOCKFISH_ELO_PRESETS = [
-  { elo: 600, depth: 2 },
-  { elo: 800, depth: 5 },
-  { elo: 1000, depth: 8 },
-  { elo: 1200, depth: 11 },
-  { elo: 1600, depth: 14 },
-  { elo: 2000, depth: 17 },
-  { elo: 2500, depth: 20 },
+  1200,
+  1400,
+  1600,
+  1800,
+  2000,
+  2200,
+  2400,
+  2600,
 ] as const;
 
 type BoardFormat = "fen" | "pgn";
@@ -61,7 +62,8 @@ export function QuickPlayPage() {
   const [opponentMode, setOpponentMode] = useState<OpponentMode>("random");
   const [opponentProvider, setOpponentProvider] = useState("");
   const [opponentModel, setOpponentModel] = useState("");
-  const [stockfishLevel, setStockfishLevel] = useState(stockfishDepthPreference);
+  const [stockfishOpponentElo, setStockfishOpponentElo] = useState(() => mapEvaluationDepthToDefaultElo(stockfishDepthPreference));
+  const [evaluationDepth, setEvaluationDepth] = useState(stockfishDepthPreference);
   const [rawOverridesText, setRawOverridesText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(loadAdvancedOpen());
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState<boolean>(autoEvaluatePreference);
@@ -196,7 +198,7 @@ export function QuickPlayPage() {
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
 
   useEffect(() => {
-    setStockfishLevel(stockfishDepthPreference);
+    setEvaluationDepth(stockfishDepthPreference);
   }, [stockfishDepthPreference]);
 
   const jobQuery = useJob(activeJobId);
@@ -308,9 +310,8 @@ export function QuickPlayPage() {
     runArtifactError ||
     extractError(summaryQuery.error);
   const stockfishPresetValue = useMemo(() => {
-    const preset = STOCKFISH_ELO_PRESETS.find((item) => item.depth === stockfishLevel);
-    return preset ? String(preset.elo) : "custom";
-  }, [stockfishLevel]);
+    return STOCKFISH_ELO_PRESETS.some((elo) => elo === stockfishOpponentElo) ? String(stockfishOpponentElo) : "custom";
+  }, [stockfishOpponentElo]);
 
   return (
     <section>
@@ -374,7 +375,8 @@ export function QuickPlayPage() {
                   opponentMode,
                   opponentLlmProvider: opponentProviderId,
                   opponentLlmModel: opponentModel,
-                  stockfishLevel,
+                  stockfishOpponentElo,
+                  evaluationDepth,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                 });
@@ -527,36 +529,33 @@ export function QuickPlayPage() {
                       return;
                     }
                     const elo = Number.parseInt(raw, 10);
-                    const preset = STOCKFISH_ELO_PRESETS.find((item) => item.elo === elo);
-                    if (!preset) {
+                    if (!Number.isFinite(elo)) {
                       return;
                     }
-                    setStockfishLevel(preset.depth);
-                    setStockfishDepthPreference(preset.depth);
+                    setStockfishOpponentElo(elo);
                   }}
                   disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 >
-                  {STOCKFISH_ELO_PRESETS.map((item) => (
-                    <option key={`elo-${item.elo}`} value={String(item.elo)}>
-                      {item.elo} (depth {item.depth})
+                  {STOCKFISH_ELO_PRESETS.map((elo) => (
+                    <option key={`elo-${elo}`} value={String(elo)}>
+                      {elo}
                     </option>
                   ))}
-                  <option value="custom">Custom depth</option>
+                  <option value="custom">Custom ELO</option>
                 </select>
               </label>
 
               <label className="text-xs text-[var(--color-text-secondary)]">
-                Stockfish level/depth
+                Stockfish ELO (native UCI)
                 <input
                   type="number"
-                  min={1}
-                  max={20}
-                  value={stockfishLevel}
+                  min={800}
+                  max={3000}
+                  value={stockfishOpponentElo}
                   onChange={(event) => {
-                    const level = clampInt(event.target.value, 1, 20, 8);
-                    setStockfishLevel(level);
-                    setStockfishDepthPreference(level);
+                    const elo = clampInt(event.target.value, 800, 3000, 1600);
+                    setStockfishOpponentElo(elo);
                   }}
                   disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
@@ -575,6 +574,23 @@ export function QuickPlayPage() {
                   className="h-4 w-4 rounded border-[var(--color-border-strong)]"
                 />
                 Auto-evaluate after play
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Evaluation depth (Stockfish)
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={evaluationDepth}
+                  onChange={(event) => {
+                    const depth = clampInt(event.target.value, 1, 30, 12);
+                    setEvaluationDepth(depth);
+                    setStockfishDepthPreference(depth);
+                  }}
+                  disabled={!stockfishAvailable || !autoEvaluateEnabled}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
               </label>
 
               <label className="text-xs text-[var(--color-text-secondary)] md:col-span-2">
@@ -719,7 +735,8 @@ export function QuickPlayPage() {
                   opponentMode,
                   opponentLlmProvider: opponentProviderId,
                   opponentLlmModel: opponentModel,
-                  stockfishLevel,
+                  stockfishOpponentElo,
+                  evaluationDepth,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                 });
@@ -748,7 +765,8 @@ export function QuickPlayPage() {
                   opponentMode,
                   opponentLlmProvider: opponentProviderId,
                   opponentLlmModel: opponentModel,
-                  stockfishLevel,
+                  stockfishOpponentElo,
+                  evaluationDepth,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                   includeSeedOverride: false,
@@ -798,7 +816,8 @@ function buildPlayPayload(input: {
   opponentMode: OpponentMode;
   opponentLlmProvider: string;
   opponentLlmModel: string;
-  stockfishLevel: number;
+  stockfishOpponentElo: number;
+  evaluationDepth: number;
   autoEvaluateEnabled: boolean;
   customOverrides: string[];
   includeSeedOverride?: boolean;
@@ -817,7 +836,8 @@ function buildPlayPayload(input: {
   if (input.opponentMode === "stockfish") {
     overrides.push("players.white.type=engine");
     overrides.push("players.white.name=stockfish_white");
-    overrides.push(`players.white.depth=${input.stockfishLevel}`);
+    overrides.push("players.white.uci_limit_strength=true");
+    overrides.push(`players.white.uci_elo=${input.stockfishOpponentElo}`);
   } else if (input.opponentMode === "llm") {
     overrides.push("players.white.type=llm");
     overrides.push(`players.white.provider=${input.opponentLlmProvider}`);
@@ -831,8 +851,9 @@ function buildPlayPayload(input: {
   if (input.autoEvaluateEnabled) {
     overrides.push("evaluation.auto.enabled=true");
     overrides.push("evaluation.auto.player_color=black");
+    overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
     if (input.opponentMode === "stockfish") {
-      overrides.push(`evaluation.auto.opponent_elo=${mapStockfishLevelToElo(input.stockfishLevel)}`);
+      overrides.push(`evaluation.auto.opponent_elo=${input.stockfishOpponentElo}`);
     }
   } else {
     overrides.push("evaluation.auto.enabled=false");
@@ -868,26 +889,20 @@ function safeModelName(provider: string, model: string): string {
   return `${provider}_${model}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
-function mapStockfishLevelToElo(level: number): number {
-  if (level <= 2) {
-    return 600;
-  }
-  if (level <= 5) {
-    return 800;
-  }
-  if (level <= 8) {
-    return 1000;
-  }
-  if (level <= 11) {
+function mapEvaluationDepthToDefaultElo(depth: number): number {
+  if (depth <= 6) {
     return 1200;
   }
-  if (level <= 14) {
+  if (depth <= 10) {
     return 1600;
   }
-  if (level <= 17) {
+  if (depth <= 14) {
     return 2000;
   }
-  return 2500;
+  if (depth <= 18) {
+    return 2400;
+  }
+  return 2600;
 }
 
 function buildMoveArrow(moveUci: string | null | undefined): { startSquare: string; endSquare: string; color: string } | null {

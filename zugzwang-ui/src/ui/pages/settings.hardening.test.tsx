@@ -148,7 +148,7 @@ describe("settings hardening", () => {
     await user.selectOptions(screen.getByLabelText("Default model"), "claude-opus");
     await user.click(screen.getByRole("checkbox", { name: "Notifications" }));
     await user.click(screen.getByRole("checkbox", { name: "Auto-evaluate by default" }));
-    const depthInput = screen.getByRole("spinbutton", { name: "Default depth" });
+    const depthInput = screen.getByRole("spinbutton", { name: "Default evaluation depth" });
     fireEvent.change(depthInput, { target: { value: "18" } });
 
     const rawPersisted = window.localStorage.getItem("zugzwang-preferences-v2");

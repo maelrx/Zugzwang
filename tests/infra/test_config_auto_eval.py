@@ -152,3 +152,32 @@ def test_config_rejects_invalid_strategy_multi_agent_provider_policy() -> None:
             experiment_config_path=config_path,
             cli_overrides=["strategy.multi_agent.provider_policy=invalid_policy"],
         )
+
+
+def test_config_accepts_engine_native_uci_elo() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "players.white.type=engine",
+            "players.white.uci_limit_strength=true",
+            "players.white.uci_elo=1200",
+        ],
+    )
+    white_player = resolved["players"]["white"]
+    assert white_player["type"] == "engine"
+    assert white_player["uci_limit_strength"] is True
+    assert white_player["uci_elo"] == 1200
+
+
+def test_config_rejects_engine_uci_elo_without_limit_strength() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="players.white.uci_limit_strength"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=[
+                "players.white.type=engine",
+                "players.white.uci_limit_strength=false",
+                "players.white.uci_elo=1200",
+            ],
+        )

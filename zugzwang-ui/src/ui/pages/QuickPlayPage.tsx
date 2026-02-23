@@ -63,22 +63,23 @@ export function QuickPlayPage() {
   const providerStatusMap = useMemo(() => {
     const map = new Map<string, boolean>();
     for (const item of envChecks) {
-      map.set(item.provider, item.ok);
+      map.set(normalizeProviderId(item.provider), item.ok);
     }
     return map;
   }, [envChecks]);
   const stockfishCheckKnown = useMemo(() => envChecks.some((item) => item.provider === "stockfish"), [envChecks]);
   const stockfishAvailable = providerStatusMap.get("stockfish") === true;
+  const selectedProviderId = normalizeProviderId(selectedProvider);
 
   const configuredProviders = useMemo(
-    () => providerPresets.filter((preset) => providerStatusMap.get(preset.provider) === true),
+    () => providerPresets.filter((preset) => providerStatusMap.get(normalizeProviderId(preset.provider)) === true),
     [providerPresets, providerStatusMap],
   );
   const hasConfiguredProvider = configuredProviders.length > 0;
-  const selectedProviderReady = providerStatusMap.get(selectedProvider) === true;
+  const selectedProviderReady = providerStatusMap.get(selectedProviderId) === true;
   const activePreset = useMemo(
-    () => providerPresets.find((preset) => preset.provider === selectedProvider) ?? null,
-    [providerPresets, selectedProvider],
+    () => providerPresets.find((preset) => normalizeProviderId(preset.provider) === selectedProviderId) ?? null,
+    [providerPresets, selectedProviderId],
   );
 
   useEffect(() => {
@@ -86,15 +87,23 @@ export function QuickPlayPage() {
       return;
     }
 
-    const selectedStillExists = providerPresets.some((preset) => preset.provider === selectedProvider);
-    if (selectedProvider && selectedStillExists) {
+    if (selectedProvider && selectedProvider !== selectedProviderId) {
+      setSelectedProvider(selectedProviderId);
       return;
     }
 
-    const byDefault = defaultProvider ? providerPresets.find((preset) => preset.provider === defaultProvider) : undefined;
+    const selectedStillExists = providerPresets.some((preset) => normalizeProviderId(preset.provider) === selectedProviderId);
+    if (selectedProviderId && selectedStillExists) {
+      return;
+    }
+
+    const defaultProviderId = normalizeProviderId(defaultProvider ?? "");
+    const byDefault = defaultProviderId
+      ? providerPresets.find((preset) => normalizeProviderId(preset.provider) === defaultProviderId)
+      : undefined;
     const preferredProvider = byDefault ?? configuredProviders[0] ?? providerPresets[0];
-    setSelectedProvider(preferredProvider?.provider ?? "");
-  }, [configuredProviders, defaultProvider, providerPresets, selectedProvider]);
+    setSelectedProvider(normalizeProviderId(preferredProvider?.provider ?? ""));
+  }, [configuredProviders, defaultProvider, providerPresets, selectedProvider, selectedProviderId]);
 
   useEffect(() => {
     if (!activePreset) {
@@ -113,10 +122,10 @@ export function QuickPlayPage() {
   }, [activePreset, defaultModel, selectedModel]);
 
   useEffect(() => {
-    if (selectedProvider) {
-      setDefaultProvider(selectedProvider);
+    if (selectedProviderId) {
+      setDefaultProvider(selectedProviderId);
     }
-  }, [selectedProvider, setDefaultProvider]);
+  }, [selectedProviderId, setDefaultProvider]);
 
   useEffect(() => {
     if (selectedModel) {
@@ -231,7 +240,7 @@ export function QuickPlayPage() {
   const totalTokens = (tokensInput ?? 0) + (tokensOutput ?? 0);
   const totalCost = numberValue(gameQuery.data?.total_cost_usd) ?? numberValue(latestReport.total_cost_usd);
   const canStartGame =
-    Boolean(selectedProvider) &&
+    Boolean(selectedProviderId) &&
     Boolean(selectedModel) &&
     selectedProviderReady &&
     invalidOverrideLines.length === 0 &&
@@ -268,15 +277,16 @@ export function QuickPlayPage() {
           <label className="text-xs text-[var(--color-text-secondary)]">
             Provider
             <select
-              value={selectedProvider}
-              onChange={(event) => setSelectedProvider(event.target.value)}
+              value={selectedProviderId}
+              onChange={(event) => setSelectedProvider(normalizeProviderId(event.target.value))}
               className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
               disabled={modelCatalogQuery.isLoading || providerPresets.length === 0}
             >
               {providerPresets.map((preset) => {
-                const providerReady = providerStatusMap.get(preset.provider) === true;
+                const providerId = normalizeProviderId(preset.provider);
+                const providerReady = providerStatusMap.get(providerId) === true;
                 return (
-                  <option key={preset.provider} value={preset.provider}>
+                  <option key={providerId} value={providerId}>
                     {preset.provider_label} {providerReady ? "(ready)" : "(missing key)"}
                   </option>
                 );
@@ -307,7 +317,7 @@ export function QuickPlayPage() {
               onClick={() => {
                 const payload = buildPlayPayload({
                   configPath: chosenConfigPath,
-                  provider: selectedProvider,
+                  provider: selectedProviderId,
                   model: selectedModel,
                   boardFormat,
                   provideLegalMoves,
@@ -565,7 +575,7 @@ export function QuickPlayPage() {
               onClick={() => {
                 const payload = buildPlayPayload({
                   configPath: chosenConfigPath,
-                  provider: selectedProvider,
+                  provider: selectedProviderId,
                   model: selectedModel,
                   boardFormat,
                   provideLegalMoves,
@@ -592,7 +602,7 @@ export function QuickPlayPage() {
               onClick={() => {
                 const labOverrides = buildPlayPayload({
                   configPath: chosenConfigPath,
-                  provider: selectedProvider,
+                  provider: selectedProviderId,
                   model: selectedModel,
                   boardFormat,
                   provideLegalMoves,
@@ -606,7 +616,7 @@ export function QuickPlayPage() {
                 }).overrides ?? [];
 
                 setLabTemplatePath(chosenConfigPath);
-                setLabProvider(selectedProvider || null);
+                setLabProvider(selectedProviderId || null);
                 setLabModel(selectedModel || null);
                 setLabOverrides(labOverrides.join("\n"));
                 setLabAdvancedOpen(true);
@@ -691,6 +701,14 @@ function buildPlayPayload(input: {
     model_profile: null,
     overrides: [...overrides, ...input.customOverrides],
   };
+}
+
+function normalizeProviderId(value: string | null | undefined): string {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "z.ai") {
+    return "zai";
+  }
+  return normalized;
 }
 
 function parseOverrides(raw: string): string[] {

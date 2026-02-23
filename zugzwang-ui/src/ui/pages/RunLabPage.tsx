@@ -14,6 +14,7 @@ import { useLabStore } from "../../stores/labStore";
 import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { resolveStockfishResources } from "../lib/stockfishHardware";
 import { formatUsd } from "../lib/runMetrics";
 
 const AUTO_CHECK_DEBOUNCE_MS = 500;
@@ -59,6 +60,9 @@ export function RunLabPage() {
   const defaultProvider = usePreferencesStore((state) => state.defaultProvider);
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
   const stockfishDepthPreference = usePreferencesStore((state) => state.stockfishDepth);
+  const stockfishResourceMode = usePreferencesStore((state) => state.stockfishResourceMode);
+  const stockfishThreadsPreference = usePreferencesStore((state) => state.stockfishThreads);
+  const stockfishHashPreference = usePreferencesStore((state) => state.stockfishHashMb);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
   const setStockfishDepthPreference = usePreferencesStore((state) => state.setStockfishDepth);
 
@@ -154,6 +158,15 @@ export function RunLabPage() {
   const invalidMaxBudgetUsd = maxBudgetUsdText.trim().length > 0 && parsedMaxBudgetUsd === null;
   const parsedOpponentElo = parseOptionalInteger(evaluationOpponentEloText);
   const invalidOpponentElo = evaluationOpponentEloText.trim().length > 0 && parsedOpponentElo === null;
+  const stockfishResources = useMemo(
+    () =>
+      resolveStockfishResources({
+        mode: stockfishResourceMode,
+        manualThreads: stockfishThreadsPreference,
+        manualHashMb: stockfishHashPreference,
+      }),
+    [stockfishHashPreference, stockfishResourceMode, stockfishThreadsPreference],
+  );
 
   const structuredOverrides = useMemo(
     () =>
@@ -172,6 +185,8 @@ export function RunLabPage() {
         feedbackLevel,
         autoEvaluateEnabled,
         evaluationDepth,
+        stockfishThreads: stockfishResources.threads,
+        stockfishHashMb: stockfishResources.hashMb,
         evaluationPlayerColor,
         evaluationOpponentElo: parsedOpponentElo,
       }),
@@ -190,6 +205,8 @@ export function RunLabPage() {
       provideLegalMoves,
       selectedModel,
       selectedProvider,
+      stockfishResources.hashMb,
+      stockfishResources.threads,
       targetValidGames,
       evaluationDepth,
     ],
@@ -1090,6 +1107,8 @@ function buildStructuredOverrides(input: {
   feedbackLevel: FeedbackLevel;
   autoEvaluateEnabled: boolean;
   evaluationDepth: number;
+  stockfishThreads: number;
+  stockfishHashMb: number;
   evaluationPlayerColor: "white" | "black";
   evaluationOpponentElo: number | null;
 }): string[] {
@@ -1113,6 +1132,8 @@ function buildStructuredOverrides(input: {
     overrides.push("players.white.name=stockfish_white");
     overrides.push("players.white.uci_limit_strength=true");
     overrides.push(`players.white.uci_elo=${input.opponentStockfishElo}`);
+    overrides.push(`players.white.threads=${input.stockfishThreads}`);
+    overrides.push(`players.white.hash_mb=${input.stockfishHashMb}`);
   } else if (input.opponentMode === "llm") {
     overrides.push("players.white.type=llm");
     overrides.push(`players.white.provider=${input.opponentProvider}`);
@@ -1128,6 +1149,8 @@ function buildStructuredOverrides(input: {
     overrides.push("evaluation.auto.enabled=true");
     overrides.push(`evaluation.auto.player_color=${input.evaluationPlayerColor}`);
     overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
+    overrides.push(`evaluation.stockfish.threads=${input.stockfishThreads}`);
+    overrides.push(`evaluation.stockfish.hash_mb=${input.stockfishHashMb}`);
     if (input.evaluationOpponentElo !== null) {
       overrides.push(`evaluation.auto.opponent_elo=${input.evaluationOpponentElo}`);
     } else if (input.opponentMode === "stockfish") {

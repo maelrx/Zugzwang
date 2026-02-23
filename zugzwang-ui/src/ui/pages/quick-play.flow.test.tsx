@@ -223,8 +223,12 @@ describe("quick play flow", () => {
       expect(overrides).toContain("players.white.type=engine");
       expect(overrides).toContain("players.white.uci_limit_strength=true");
       expect(overrides.some((entry: string) => entry.startsWith("players.white.uci_elo="))).toBe(true);
+      expect(overrides.some((entry: string) => entry.startsWith("players.white.threads="))).toBe(true);
+      expect(overrides.some((entry: string) => entry.startsWith("players.white.hash_mb="))).toBe(true);
       expect(overrides.some((entry: string) => entry.startsWith("players.white.depth="))).toBe(false);
       expect(overrides.some((entry: string) => entry.startsWith("evaluation.stockfish.depth="))).toBe(true);
+      expect(overrides.some((entry: string) => entry.startsWith("evaluation.stockfish.threads="))).toBe(true);
+      expect(overrides.some((entry: string) => entry.startsWith("evaluation.stockfish.hash_mb="))).toBe(true);
     });
 
     await waitFor(() => {

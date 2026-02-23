@@ -10,6 +10,7 @@ import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
 import { ProgressBar } from "../components/ProgressBar";
 import { StatusBadge } from "../components/StatusBadge";
+import { resolveStockfishResources } from "../lib/stockfishHardware";
 import { extractRunMetrics, formatDecimal, formatRate, formatUsd } from "../lib/runMetrics";
 
 const FALLBACK_CONFIG_PATH = "configs/baselines/best_known_start.yaml";
@@ -42,6 +43,9 @@ export function QuickPlayPage() {
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
   const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
   const stockfishDepthPreference = usePreferencesStore((state) => state.stockfishDepth);
+  const stockfishResourceMode = usePreferencesStore((state) => state.stockfishResourceMode);
+  const stockfishThreadsPreference = usePreferencesStore((state) => state.stockfishThreads);
+  const stockfishHashPreference = usePreferencesStore((state) => state.stockfishHashMb);
   const setDefaultProvider = usePreferencesStore((state) => state.setDefaultProvider);
   const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
@@ -255,6 +259,15 @@ export function QuickPlayPage() {
     () => parsedCustomOverrides.filter((line) => !line.includes("=")),
     [parsedCustomOverrides],
   );
+  const stockfishResources = useMemo(
+    () =>
+      resolveStockfishResources({
+        mode: stockfishResourceMode,
+        manualThreads: stockfishThreadsPreference,
+        manualHashMb: stockfishHashPreference,
+      }),
+    [stockfishHashPreference, stockfishResourceMode, stockfishThreadsPreference],
+  );
 
   const liveFrames = framesQuery.data ?? [];
   const latestFrame = liveFrames[liveFrames.length - 1];
@@ -377,6 +390,8 @@ export function QuickPlayPage() {
                   opponentLlmModel: opponentModel,
                   stockfishOpponentElo,
                   evaluationDepth,
+                  stockfishThreads: stockfishResources.threads,
+                  stockfishHashMb: stockfishResources.hashMb,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                 });
@@ -737,6 +752,8 @@ export function QuickPlayPage() {
                   opponentLlmModel: opponentModel,
                   stockfishOpponentElo,
                   evaluationDepth,
+                  stockfishThreads: stockfishResources.threads,
+                  stockfishHashMb: stockfishResources.hashMb,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                 });
@@ -767,6 +784,8 @@ export function QuickPlayPage() {
                   opponentLlmModel: opponentModel,
                   stockfishOpponentElo,
                   evaluationDepth,
+                  stockfishThreads: stockfishResources.threads,
+                  stockfishHashMb: stockfishResources.hashMb,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                   includeSeedOverride: false,
@@ -818,6 +837,8 @@ function buildPlayPayload(input: {
   opponentLlmModel: string;
   stockfishOpponentElo: number;
   evaluationDepth: number;
+  stockfishThreads: number;
+  stockfishHashMb: number;
   autoEvaluateEnabled: boolean;
   customOverrides: string[];
   includeSeedOverride?: boolean;
@@ -838,6 +859,8 @@ function buildPlayPayload(input: {
     overrides.push("players.white.name=stockfish_white");
     overrides.push("players.white.uci_limit_strength=true");
     overrides.push(`players.white.uci_elo=${input.stockfishOpponentElo}`);
+    overrides.push(`players.white.threads=${input.stockfishThreads}`);
+    overrides.push(`players.white.hash_mb=${input.stockfishHashMb}`);
   } else if (input.opponentMode === "llm") {
     overrides.push("players.white.type=llm");
     overrides.push(`players.white.provider=${input.opponentLlmProvider}`);
@@ -852,6 +875,8 @@ function buildPlayPayload(input: {
     overrides.push("evaluation.auto.enabled=true");
     overrides.push("evaluation.auto.player_color=black");
     overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
+    overrides.push(`evaluation.stockfish.threads=${input.stockfishThreads}`);
+    overrides.push(`evaluation.stockfish.hash_mb=${input.stockfishHashMb}`);
     if (input.opponentMode === "stockfish") {
       overrides.push(`evaluation.auto.opponent_elo=${input.stockfishOpponentElo}`);
     }

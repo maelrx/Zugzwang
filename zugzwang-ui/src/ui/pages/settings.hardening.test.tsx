@@ -150,16 +150,24 @@ describe("settings hardening", () => {
     await user.click(screen.getByRole("checkbox", { name: "Auto-evaluate by default" }));
     const depthInput = screen.getByRole("spinbutton", { name: "Default evaluation depth" });
     fireEvent.change(depthInput, { target: { value: "18" } });
+    await user.selectOptions(screen.getByLabelText("Engine resources mode"), "manual");
+    const threadsInput = screen.getByRole("spinbutton", { name: "Manual Stockfish threads" });
+    fireEvent.change(threadsInput, { target: { value: "6" } });
+    const hashInput = screen.getByRole("spinbutton", { name: "Manual Stockfish hash (MB)" });
+    fireEvent.change(hashInput, { target: { value: "768" } });
 
     const rawPersisted = window.localStorage.getItem("zugzwang-preferences-v2");
     expect(rawPersisted).not.toBeNull();
     const persisted = JSON.parse(rawPersisted ?? "{}");
-    expect(persisted.version).toBe(2);
+    expect(persisted.version).toBe(3);
     expect(persisted.state.defaultProvider).toBe("anthropic");
     expect(persisted.state.defaultModel).toBe("claude-opus");
     expect(persisted.state.notificationsEnabled).toBe(false);
     expect(persisted.state.autoEvaluate).toBe(false);
     expect(persisted.state.stockfishDepth).toBe(18);
+    expect(persisted.state.stockfishResourceMode).toBe("manual");
+    expect(persisted.state.stockfishThreads).toBe(6);
+    expect(persisted.state.stockfishHashMb).toBe(768);
   });
 });
 

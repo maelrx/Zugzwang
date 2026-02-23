@@ -8,6 +8,7 @@ from zugzwang.providers.deepseek import DeepSeekProvider
 from zugzwang.providers.google import GoogleProvider
 from zugzwang.providers.grok import GrokProvider
 from zugzwang.providers.kimi import KimiProvider
+from zugzwang.providers.kimicode import KimiCodeProvider
 from zugzwang.providers.minimax import MiniMaxProvider
 from zugzwang.providers.mock import MockProvider
 from zugzwang.providers.openai import OpenAIProvider
@@ -23,6 +24,7 @@ _PROVIDERS: dict[str, type[ProviderInterface]] = {
     "deepseek": DeepSeekProvider,
     "grok": GrokProvider,
     "kimi": KimiProvider,
+    "kimicode": KimiCodeProvider,
     "minimax": MiniMaxProvider,
 }
 

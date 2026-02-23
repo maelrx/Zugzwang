@@ -17,6 +17,7 @@ PROVIDER_ENV_KEYS: dict[str, tuple[str, ...] | None] = {
     "deepseek": ("DEEPSEEK_API_KEY",),
     "grok": ("XAI_API_KEY", "GROK_API_KEY"),
     "kimi": ("MOONSHOT_API_KEY", "KIMI_API_KEY"),
+    "kimicode": ("KIMI_CODE_API_KEY", "KIMI_API_KEY", "MOONSHOT_API_KEY"),
     "minimax": ("MINIMAX_API_KEY",),
     "mock": None,
 }

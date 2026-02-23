@@ -143,7 +143,7 @@ Copie `.env.example` para `.env` e preencha suas chaves de API:
 
 ```bash
 cp .env.example .env
-# Edite .env e defina as chaves de provider (ex.: ZAI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / MINIMAX_API_KEY)
+# Edite .env e defina as chaves de provider (ex.: ZAI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / KIMI_CODE_API_KEY / MINIMAX_API_KEY)
 # Para Stockfish: defina STOCKFISH_PATH=/caminho/para/stockfish
 ```
 

@@ -76,8 +76,37 @@ describe("navigation smoke", () => {
             config_hash: "abc123",
             report_exists: true,
             evaluated_report_exists: true,
+            inferred_model_label: "zai / glm-5",
+            inferred_eval_status: "evaluated",
+            num_games_valid: 1,
+            num_games_target: 1,
+            total_cost_usd: 0.03,
+            elo_estimate: 630.0,
           },
         ]);
+      }
+
+      if (pathname === "/api/dashboard/kpis") {
+        return jsonResponse({
+          total_runs: 1,
+          runs_with_reports: 1,
+          evaluated_runs: 1,
+          best_elo: 630.0,
+          avg_acpl: 20.0,
+          total_cost_usd: 0.03,
+          last_run_id: RUN_ID,
+          timeline: [
+            {
+              run_id: RUN_ID,
+              created_at_utc: "2026-02-22T00:00:00Z",
+              inferred_model_label: "zai / glm-5",
+              total_cost_usd: 0.03,
+              elo_estimate: 630.0,
+              acpl_overall: 20.0,
+              evaluated_report_exists: true,
+            },
+          ],
+        });
       }
 
       if (pathname === `/api/runs/${RUN_ID}`) {
@@ -239,7 +268,7 @@ describe("navigation smoke", () => {
 
     const user = userEvent.setup();
 
-    await screen.findByRole("heading", { name: "Research Operations Dashboard" });
+    await screen.findByRole("heading", { name: "Command Center" });
 
     await user.click(screen.getByRole("link", { name: "Experiment Lab" }));
     await screen.findByRole("heading", { name: "Experiment Launch Workbench" });

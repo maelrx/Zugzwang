@@ -1,8 +1,9 @@
 import { useQueries } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../api/client";
 import { useRunGames, useRunSummary, useRuns } from "../../api/queries";
 import type { GameDetailResponse } from "../../api/types";
+import { useCompareStore } from "../../stores/compareStore";
 import { MoveQualityDistributionCompareCard } from "../components/MoveQualityDistributionCompareCard";
 import { PhaseMetricCompareCard } from "../components/PhaseMetricCompareCard";
 import { PageHeader } from "../components/PageHeader";
@@ -14,8 +15,18 @@ const MAX_QUALITY_GAMES_SAMPLE = 20;
 export function RunComparePage() {
   const runsQuery = useRuns();
   const runs = runsQuery.data ?? [];
-  const [runA, setRunA] = useState("");
-  const [runB, setRunB] = useState("");
+  const selectedRunIds = useCompareStore((state) => state.selectedRunIds);
+  const [runA, setRunA] = useState(() => selectedRunIds[0] ?? "");
+  const [runB, setRunB] = useState(() => selectedRunIds[1] ?? "");
+
+  useEffect(() => {
+    if (!runA && selectedRunIds[0]) {
+      setRunA(selectedRunIds[0]);
+    }
+    if (!runB && selectedRunIds[1]) {
+      setRunB(selectedRunIds[1]);
+    }
+  }, [runA, runB, selectedRunIds]);
 
   const summaryA = useRunSummary(runA || null);
   const summaryB = useRunSummary(runB || null);

@@ -265,3 +265,46 @@ class AnalysisCompareResponse(ApiModel):
     confidence_note: str
     notes: list[str] = Field(default_factory=list)
     artifacts: AnalysisArtifactsResponse
+
+
+class SchedulerStepRequest(ApiModel):
+    step_id: str | None = None
+    config_path: str
+    mode: Literal["run", "play"] = "run"
+    model_profile: str | None = None
+    overrides: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)
+
+
+class SchedulerBatchCreateRequest(ApiModel):
+    steps: list[SchedulerStepRequest] = Field(default_factory=list)
+    fail_fast: bool = True
+    dry_run: bool = False
+    batch_id: str | None = None
+
+
+class SchedulerStepResponse(ApiModel):
+    step_id: str
+    config_path: str
+    mode: Literal["run", "play"]
+    model_profile: str | None = None
+    overrides: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)
+    status: Literal["pending", "running", "completed", "failed", "canceled", "skipped", "dry_run"]
+    message: str | None = None
+    job_id: str | None = None
+    run_id: str | None = None
+    run_dir: str | None = None
+    started_at_utc: str | None = None
+    finished_at_utc: str | None = None
+    preview: dict[str, Any] | None = None
+
+
+class SchedulerBatchResponse(ApiModel):
+    batch_id: str
+    status: Literal["queued", "running", "completed", "failed", "canceled", "dry_run"]
+    fail_fast: bool
+    dry_run: bool
+    created_at_utc: str
+    updated_at_utc: str
+    steps: list[SchedulerStepResponse] = Field(default_factory=list)

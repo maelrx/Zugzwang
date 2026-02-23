@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from zugzwang.api.routes import analysis, configs, dashboard, env, jobs, runs
+from zugzwang.api.routes import analysis, configs, dashboard, env, jobs, runs, scheduler
 from zugzwang.api.services.paths import project_root
 
 
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router, prefix="/api")
     app.include_router(runs.router, prefix="/api")
     app.include_router(analysis.router, prefix="/api")
+    app.include_router(scheduler.router, prefix="/api")
     _register_api_not_found_fallback(app)
 
     _maybe_mount_frontend_dist(app)

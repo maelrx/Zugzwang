@@ -9,6 +9,7 @@ from zugzwang.api.services import (
     ModelCatalogService,
     ReplayService,
     RunService,
+    SchedulerService,
 )
 
 
@@ -40,4 +41,9 @@ def get_evaluation_service() -> EvaluationService:
 @lru_cache(maxsize=1)
 def get_model_catalog_service() -> ModelCatalogService:
     return ModelCatalogService()
+
+
+@lru_cache(maxsize=1)
+def get_scheduler_service() -> SchedulerService:
+    return SchedulerService()
 

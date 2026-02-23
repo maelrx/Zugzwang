@@ -1,0 +1,35 @@
+experiment:
+  name: random_legal_baseline
+  target_valid_games: 100
+  max_games: 100
+
+players:
+  white:
+    type: random
+    name: random_white
+  black:
+    type: random
+    name: random_black
+
+protocol:
+  mode: direct
+
+evaluation:
+  auto:
+    enabled: true
+    player_color: auto
+    opponent_elo: null
+    elo_color_correction: 0.0
+    output_filename: experiment_report_evaluated.json
+    fail_on_error: false
+
+runtime:
+  seed: 42
+  max_plies: 200
+  timeout_seconds: 30
+  expected_completion_rate: 1.0
+  output_dir: results/runs
+
+budget:
+  max_total_usd: 1.0
+  estimated_avg_cost_per_game_usd: 0.0

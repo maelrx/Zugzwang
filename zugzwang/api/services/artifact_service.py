@@ -11,6 +11,7 @@ import yaml
 from zugzwang.api.services.paths import runs_root
 from zugzwang.api.types import DashboardKpis, DashboardTimelinePoint, GameMeta, GameRecordView, RunMeta, RunSummary
 from zugzwang.evaluation.player_color import infer_evaluation_player_color
+from zugzwang.providers.model_routing import resolve_provider_and_model
 
 
 RUN_TS_PATTERN = re.compile(r"-(\d{8}T\d{6}Z)-")
@@ -508,7 +509,11 @@ def _infer_provider_model_for_color(
         return None, None
     if str(player.get("type", "")).strip().lower() != "llm":
         return None, None
-    return _as_str(player.get("provider")), _as_str(player.get("model"))
+    resolved_provider, resolved_model = resolve_provider_and_model(
+        _as_str(player.get("provider")) or "",
+        _as_str(player.get("model")),
+    )
+    return resolved_provider or None, resolved_model
 
 
 def _compose_model_label(provider: str | None, model: str | None) -> str | None:

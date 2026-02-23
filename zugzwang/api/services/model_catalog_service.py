@@ -88,9 +88,10 @@ class ModelCatalogService:
                 api_style="openai_chat_completions",
                 base_url="https://api.moonshot.cn/v1",
                 api_key_env="MOONSHOT_API_KEY",
-                notes="OpenAI-compatible endpoint for Kimi models.",
+                notes="OpenAI-compatible endpoint for Kimi models. Selecting Kimi 2.5 auto-routes to Kimi Code.",
                 models=[
-                    ModelOption(id="kimi-k2-0905-preview", label="Kimi K2 Preview", recommended=True),
+                    ModelOption(id="kimi-2.5", label="Kimi 2.5 (Auto-routed to Kimi Code)", recommended=True),
+                    ModelOption(id="kimi-k2-0905-preview", label="Kimi K2 Preview"),
                     ModelOption(id="kimi-k2-turbo-preview", label="Kimi K2 Turbo Preview"),
                     ModelOption(id="kimi-thinking-preview", label="Kimi Thinking Preview"),
                     ModelOption(id="moonshot-v1-8k", label="Moonshot V1 8K"),

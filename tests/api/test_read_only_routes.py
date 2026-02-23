@@ -322,7 +322,7 @@ def test_configs_route_groups_baselines_and_ablations() -> None:
     model_catalog_response = client.get("/api/configs/model-catalog")
     assert model_catalog_response.status_code == 200
     providers = {item["provider"] for item in model_catalog_response.json()}
-    assert {"zai", "openai", "anthropic", "google", "grok", "deepseek", "kimi", "minimax"}.issubset(providers)
+    assert {"zai", "openai", "anthropic", "google", "grok", "deepseek", "kimi", "kimicode", "minimax"}.issubset(providers)
 
 
 def test_jobs_routes_return_job_and_progress() -> None:

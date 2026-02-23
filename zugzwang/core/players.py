@@ -28,6 +28,7 @@ from zugzwang.providers.base import (
     ProviderResponse,
     should_retry_provider_error,
 )
+from zugzwang.providers.model_routing import resolve_provider_and_model
 from zugzwang.providers.registry import create_provider
 from zugzwang.strategy.context import (
     PromptBuildResult,
@@ -634,7 +635,8 @@ def build_player(
     if player_type == "llm":
         provider_name = player_config.get("provider")
         model = player_config.get("model")
-        provider = create_provider(provider_name)
+        resolved_provider, resolved_model = resolve_provider_and_model(provider_name, model)
+        provider = create_provider(resolved_provider)
         passthrough_keys = {
             "temperature",
             "top_p",
@@ -649,7 +651,7 @@ def build_player(
         return LLMPlayer(
             name=name,
             provider=provider,
-            model=model,
+            model=resolved_model,
             model_config=model_config,
             protocol_mode=protocol_mode,
             strategy_config=strategy_config,

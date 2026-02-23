@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+from zugzwang.providers.model_routing import resolve_provider_and_model
+
 
 class EnvironmentError(ValueError):
     """Raised when runtime environment requirements are not satisfied."""
@@ -52,7 +54,10 @@ def _llm_players(config: dict[str, Any]) -> list[dict[str, Any]]:
 def validate_provider_secrets(config: dict[str, Any], env: dict[str, str] | None = None) -> None:
     environment = env or os.environ
     for player in _llm_players(config):
-        provider = str(player.get("provider", "")).lower()
+        provider, _ = resolve_provider_and_model(
+            str(player.get("provider", "")),
+            str(player.get("model", "")),
+        )
         if provider not in PROVIDER_ENV_KEYS:
             raise EnvironmentError(f"Unknown provider '{provider}'")
         key_names = PROVIDER_ENV_KEYS[provider]

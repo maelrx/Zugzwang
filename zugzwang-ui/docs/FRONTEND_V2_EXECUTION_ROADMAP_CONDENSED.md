@@ -231,7 +231,8 @@ Before closing each milestone:
 
 ## 10. Deviation Log
 
-None yet.
+1. `M9 (partial)`: legacy redirects activated for `/run-lab`, `/runs/compare`, and `/runs/:runId/replay/:gameNumber`.
+2. `M9 (deferred)`: `/jobs/:jobId` redirect remains deferred because the current Job Detail logs surface is still the primary observability view in this codebase.
 
 ## 11. Commit Convention
 

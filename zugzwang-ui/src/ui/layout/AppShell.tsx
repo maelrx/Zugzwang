@@ -219,7 +219,7 @@ export function AppShell() {
           {!collapsed ? (
             <div className="mt-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-3 text-xs text-[var(--color-text-secondary)]">
               <p className="font-semibold text-[var(--color-text-primary)]">Current milestone</p>
-              <p className="mt-1">M8: settings + notifications hardening</p>
+              <p className="mt-1">M9: cutover + legacy cleanup</p>
             </div>
           ) : null}
         </aside>

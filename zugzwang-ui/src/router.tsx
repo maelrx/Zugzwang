@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
 import { AppShell } from "./ui/layout/AppShell";
 import { DashboardPage } from "./ui/pages/DashboardPage";
 import { JobDetailPage } from "./ui/pages/JobDetailPage";
@@ -43,7 +43,9 @@ const labRoute = createRoute({
 const runLabRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/run-lab",
-  component: RunLabPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/lab" });
+  },
 });
 
 const jobsRoute = createRoute({
@@ -67,7 +69,9 @@ const runsRoute = createRoute({
 const runCompareRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/compare",
-  component: RunComparePage,
+  beforeLoad: () => {
+    throw redirect({ to: "/compare" });
+  },
 });
 
 const compareRoute = createRoute({
@@ -85,7 +89,15 @@ const runDetailRoute = createRoute({
 const replayRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/$runId/replay/$gameNumber",
-  component: ReplayPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/runs/$runId/game/$gameNumber",
+      params: {
+        runId: params.runId,
+        gameNumber: params.gameNumber,
+      },
+    });
+  },
 });
 
 const replayGameRoute = createRoute({
@@ -120,7 +132,11 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
-  defaultPendingComponent: () => <p className="p-6 text-sm text-slate-600">Loading page...</p>,
+  defaultPendingComponent: () => (
+    <p role="status" aria-live="polite" className="p-6 text-sm text-[var(--color-text-secondary)]">
+      Loading page...
+    </p>
+  ),
   defaultErrorComponent: RouterErrorFallback,
 });
 

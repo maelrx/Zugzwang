@@ -642,6 +642,7 @@ def build_player(
             "top_p",
             "max_tokens",
             "pricing_mode",
+            "thinking_type",
         }
         model_config = {
             key: player_config[key]

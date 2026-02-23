@@ -29,16 +29,19 @@ def load_dotenv(path: str | Path = ".env") -> None:
     dotenv_path = Path(path)
     if not dotenv_path.exists():
         return
-    for line in dotenv_path.read_text(encoding="utf-8").splitlines():
+    # utf-8-sig handles BOM-prefixed files (common on Windows editors).
+    for line in dotenv_path.read_text(encoding="utf-8-sig").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
         if "=" not in stripped:
             continue
         key, value = stripped.split("=", 1)
-        key = key.strip()
+        key = key.strip().lstrip("\ufeff")
         value = value.strip().strip("'").strip('"')
-        os.environ.setdefault(key, value)
+        current = os.environ.get(key)
+        if current is None or not str(current).strip():
+            os.environ[key] = value
 
 
 def _llm_players(config: dict[str, Any]) -> list[dict[str, Any]]:

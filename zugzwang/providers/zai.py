@@ -46,6 +46,14 @@ class ZAIProvider:
             "messages": messages,
             "stream": False,
         }
+        # GLM-5 may return empty `content` when reasoning is enabled by default.
+        # For move-generation reliability, default to non-thinking mode unless overridden.
+        thinking_type = str(
+            model_config.get("thinking_type")
+            or os.environ.get("ZAI_THINKING_TYPE", "disabled")
+        ).strip().lower()
+        if thinking_type in {"enabled", "disabled"}:
+            payload["thinking"] = {"type": thinking_type}
         for field in ("temperature", "top_p", "max_tokens"):
             if field in model_config:
                 payload[field] = model_config[field]
@@ -129,6 +137,11 @@ class ZAIProvider:
     def _extract_message_text(message: dict[str, Any]) -> str:
         content = message.get("content", "")
         if isinstance(content, str):
+            if content.strip():
+                return content
+            reasoning = message.get("reasoning_content")
+            if isinstance(reasoning, str):
+                return reasoning.strip()
             return content
         if isinstance(content, list):
             chunks: list[str] = []
@@ -137,7 +150,16 @@ class ZAIProvider:
                     chunks.append(str(item.get("text", "")))
                 else:
                     chunks.append(str(item))
-            return "\n".join(part for part in chunks if part).strip()
+            merged = "\n".join(part for part in chunks if part).strip()
+            if merged:
+                return merged
+            reasoning = message.get("reasoning_content")
+            if isinstance(reasoning, str):
+                return reasoning.strip()
+            return merged
+        reasoning = message.get("reasoning_content")
+        if isinstance(reasoning, str):
+            return reasoning.strip()
         return str(content)
 
 

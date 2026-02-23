@@ -281,8 +281,9 @@ describe("navigation smoke", () => {
 
     await user.click(await screen.findByRole("link", { name: RUN_ID }));
     await screen.findByRole("heading", { name: RUN_ID });
+    await user.click(screen.getByRole("button", { name: "Games" }));
 
-    await user.click(await screen.findByRole("link", { name: "Open replay" }));
+    await user.click(await screen.findByRole("link", { name: "Full Analysis" }));
     await screen.findByRole("heading", { name: new RegExp(`${RUN_ID} / game 1`) });
 
     await user.click(screen.getByRole("link", { name: "Settings" }));

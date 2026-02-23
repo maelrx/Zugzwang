@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "../../api/client";
 import { useConfigs, useModelCatalog, usePreviewConfig, useStartPlay, useStartRun, useValidateConfig } from "../../api/queries";
+import { useLabStore } from "../../stores/labStore";
 import { PageHeader } from "../components/PageHeader";
 
 export function RunLabPage() {
@@ -13,11 +14,20 @@ export function RunLabPage() {
   const modelCatalogQuery = useModelCatalog();
   const navigate = useNavigate();
 
-  const [selectedConfigPath, setSelectedConfigPath] = useState("");
+  const storedTemplatePath = useLabStore((state) => state.selectedTemplatePath);
+  const storedProvider = useLabStore((state) => state.selectedProvider);
+  const storedModel = useLabStore((state) => state.selectedModel);
+  const storedOverrides = useLabStore((state) => state.rawOverridesText);
+  const setStoredTemplatePath = useLabStore((state) => state.setSelectedTemplatePath);
+  const setStoredProvider = useLabStore((state) => state.setSelectedProvider);
+  const setStoredModel = useLabStore((state) => state.setSelectedModel);
+  const setStoredOverrides = useLabStore((state) => state.setRawOverridesText);
+
+  const [selectedConfigPath, setSelectedConfigPath] = useState(storedTemplatePath ?? "");
   const [modelProfile, setModelProfile] = useState("");
-  const [overridesText, setOverridesText] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
+  const [overridesText, setOverridesText] = useState(storedOverrides);
+  const [selectedProvider, setSelectedProvider] = useState(storedProvider ?? "");
+  const [selectedModel, setSelectedModel] = useState(storedModel ?? "");
 
   const templates = useMemo(() => {
     const baselines = (configsQuery.data?.baselines ?? []).map((item) => ({ ...item, bucket: "Baselines" }));
@@ -57,6 +67,22 @@ export function RunLabPage() {
       setSelectedModel(next);
     }
   }, [activePreset, selectedModel]);
+
+  useEffect(() => {
+    setStoredTemplatePath(selectedConfigPath || null);
+  }, [selectedConfigPath, setStoredTemplatePath]);
+
+  useEffect(() => {
+    setStoredProvider(selectedProvider || null);
+  }, [selectedProvider, setStoredProvider]);
+
+  useEffect(() => {
+    setStoredModel(selectedModel || null);
+  }, [selectedModel, setStoredModel]);
+
+  useEffect(() => {
+    setStoredOverrides(overridesText);
+  }, [overridesText, setStoredOverrides]);
 
   return (
     <section>

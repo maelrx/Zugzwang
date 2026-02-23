@@ -158,7 +158,7 @@ describe("runs explorer filters and compare selection", () => {
     expect(compareButton).toBeEnabled();
     await user.click(compareButton);
 
-    await screen.findByRole("heading", { name: "Run Comparison" });
+    await screen.findByRole("heading", { name: "Compare Workbench" });
 
     await waitFor(() => {
       const calls = vi.mocked(globalThis.fetch).mock.calls.map(([input]) => toUrl(input));

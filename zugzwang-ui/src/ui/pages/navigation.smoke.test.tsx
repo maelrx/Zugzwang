@@ -290,9 +290,9 @@ describe("navigation smoke", () => {
     await screen.findByRole("heading", { name: "Environment Diagnostics" });
 
     await user.click(screen.getByRole("link", { name: "Compare" }));
-    await screen.findByRole("heading", { name: "Run Comparison" });
+    await screen.findByRole("heading", { name: "Compare Workbench" });
 
-    expect(screen.getByText("Select two runs to populate comparison metrics.")).toBeInTheDocument();
+    expect(screen.getByText("Select at least 2 runs to populate the comparison table.")).toBeInTheDocument();
   });
 });
 

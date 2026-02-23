@@ -751,7 +751,7 @@ export function RunLabPage() {
 
           <div className="mt-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Resolved config preview</p>
-            <pre className="mt-2 max-h-[400px] overflow-auto rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3 font-['IBM_Plex_Mono'] text-xs text-[var(--color-text-primary)]">
+            <pre className="mt-2 max-h-[400px] max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3 font-['IBM_Plex_Mono'] text-xs text-[var(--color-text-primary)]">
               {toPrettyJson(resolvedConfigPreview)}
             </pre>
           </div>

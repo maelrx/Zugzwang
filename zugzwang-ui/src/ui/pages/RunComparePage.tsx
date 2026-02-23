@@ -104,6 +104,24 @@ export function RunComparePage() {
       })
       .slice(0, 25);
   }, [runs, searchText, selectedRunSet]);
+  const emptySearchMessage = useMemo(() => {
+    if (runsQuery.isLoading || filteredRuns.length > 0) {
+      return null;
+    }
+    if (selectedRunIds.length >= MAX_SELECTED_RUNS) {
+      return `Selection limit reached (${MAX_SELECTED_RUNS}). Remove one run to add another.`;
+    }
+    if (runs.length === 0) {
+      return "No runs available yet.";
+    }
+    if (selectedRunIds.length > 0 && searchText.trim().length === 0) {
+      return "All available runs are already selected.";
+    }
+    if (selectedRunIds.length > 0) {
+      return "No additional runs match this search.";
+    }
+    return "No runs match this search.";
+  }, [filteredRuns.length, runs.length, runsQuery.isLoading, searchText, selectedRunIds.length]);
 
   const summaryQueries = useQueries({
     queries: selectedRunIds.map((runId) => ({
@@ -294,9 +312,7 @@ export function RunComparePage() {
           ))}
         </div>
 
-        {filteredRuns.length === 0 ? (
-          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">No runs available for this search.</p>
-        ) : null}
+        {emptySearchMessage ? <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{emptySearchMessage}</p> : null}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {selectedRunIds.map((runId) => (
@@ -436,7 +452,8 @@ function CompareGridHeader({ runIds, deltaPairs }: { runIds: string[]; deltaPair
       ))}
       {deltaPairs.map(([left, right]) => (
         <span key={`${left}-${right}`} className="truncate">
-          Δ {left}→{right}
+          Delta {left}{"->"}
+          {right}
         </span>
       ))}
     </div>
@@ -795,3 +812,4 @@ function readRunIdsFromUrl(rawSearch: string): string[] {
     .filter((item) => item.length > 0)
     .slice(0, MAX_SELECTED_RUNS);
 }
+

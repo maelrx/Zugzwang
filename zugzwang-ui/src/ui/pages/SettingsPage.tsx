@@ -6,6 +6,7 @@ import { PageHeader } from "../components/PageHeader";
 type ProviderTestSnapshot = {
   ok: boolean;
   checkedAt: number;
+  message: string;
 };
 
 export function SettingsPage() {
@@ -159,7 +160,11 @@ export function SettingsPage() {
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                   Models: {models.length > 0 ? models.map((model) => model.id).join(", ") : "none from catalog"}
                 </p>
-                {tested ? <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">Last test: {formatTimestamp(tested.checkedAt)}</p> : null}
+                {tested ? (
+                  <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">
+                    Last test: {formatTimestamp(tested.checkedAt)} | {tested.message}
+                  </p>
+                ) : null}
               </article>
             );
           })}
@@ -298,19 +303,29 @@ async function runProviderTest(
     if (provider === "all") {
       const next: Record<string, ProviderTestSnapshot> = {};
       for (const item of checks) {
-        next[item.provider] = { ok: item.ok, checkedAt: now };
+        next[item.provider] = { ok: item.ok, checkedAt: now, message: item.message };
       }
       setProviderTests((prev) => ({ ...prev, ...next }));
       return;
     }
 
     const matched = checks.find((item) => item.provider === provider);
-    if (matched) {
+    setProviderTests((prev) => ({
+      ...prev,
+      [provider]: {
+        ok: matched?.ok ?? false,
+        checkedAt: now,
+        message: matched?.message ?? "No env-check response for this provider.",
+      },
+    }));
+  } catch (error) {
+    if (provider !== "all") {
       setProviderTests((prev) => ({
         ...prev,
         [provider]: {
-          ok: matched.ok,
-          checkedAt: now,
+          ok: false,
+          checkedAt: Date.now(),
+          message: `Test failed: ${formatProviderTestError(error)}`,
         },
       }));
     }
@@ -331,8 +346,15 @@ function statusClass(kind: "configured" | "reachable" | "unreachable" | "missing
 
 function formatTimestamp(timestamp: number): string {
   try {
-    return new Date(timestamp).toLocaleTimeString();
+    return new Date(timestamp).toLocaleString();
   } catch {
     return "--";
   }
+}
+
+function formatProviderTestError(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return "Unknown error";
 }

@@ -158,11 +158,12 @@ export function QuickPlayPage() {
   const latestReport = asRecord(progressQuery.data?.latest_report);
   const isRunning = activeJobStatus === "running" || activeJobStatus === "queued";
   const isTerminal = isTerminalStatus(activeJobStatus);
+  const canQueryRunArtifacts = Boolean(runId) && (isTerminal || progressQuery.isSuccess);
 
   const gamesQuery = useQuery({
     queryKey: ["quick-play-games", runId] as const,
     queryFn: () => apiRequest<GameListItem[]>(`/api/runs/${runId}/games`),
-    enabled: Boolean(runId),
+    enabled: canQueryRunArtifacts,
     staleTime: 0,
     refetchInterval: isRunning ? 2_000 : false,
     retry: shouldRetryWithout404,
@@ -172,7 +173,7 @@ export function QuickPlayPage() {
   const gameQuery = useQuery({
     queryKey: ["quick-play-game", runId, firstGameNumber] as const,
     queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runId}/games/${firstGameNumber}`),
-    enabled: Boolean(runId) && firstGameNumber !== null,
+    enabled: canQueryRunArtifacts && firstGameNumber !== null,
     staleTime: 0,
     refetchInterval: isRunning ? 2_000 : false,
     retry: shouldRetryWithout404,
@@ -181,7 +182,7 @@ export function QuickPlayPage() {
   const framesQuery = useQuery({
     queryKey: ["quick-play-frames", runId, firstGameNumber] as const,
     queryFn: () => apiRequest<Array<Record<string, unknown>>>(`/api/runs/${runId}/games/${firstGameNumber}/frames`),
-    enabled: Boolean(runId) && firstGameNumber !== null,
+    enabled: canQueryRunArtifacts && firstGameNumber !== null,
     staleTime: 0,
     refetchInterval: isRunning ? 2_000 : false,
     retry: shouldRetryWithout404,
@@ -240,13 +241,15 @@ export function QuickPlayPage() {
   const resultDuration = numberValue(gameQuery.data?.duration_seconds);
 
   const showNoProviderConfigured = envCheckQuery.isSuccess && modelCatalogQuery.isSuccess && !hasConfiguredProvider;
+  const runArtifactError =
+    extractRunArtifactError(gamesQuery.error, isRunning) ||
+    extractRunArtifactError(gameQuery.error, isRunning) ||
+    extractRunArtifactError(framesQuery.error, isRunning);
   const statusError =
     extractError(startPlayMutation.error) ||
     extractError(jobQuery.error) ||
     extractError(progressQuery.error) ||
-    extractError(gamesQuery.error) ||
-    extractError(gameQuery.error) ||
-    extractError(framesQuery.error) ||
+    runArtifactError ||
     extractError(summaryQuery.error);
 
   return (
@@ -782,6 +785,17 @@ function extractError(error: unknown): string | null {
     return error.message;
   }
   return "Unknown error";
+}
+
+function extractRunArtifactError(error: unknown, isRunning: boolean): string | null {
+  if (isRunning && isNotFoundError(error)) {
+    return null;
+  }
+  return extractError(error);
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

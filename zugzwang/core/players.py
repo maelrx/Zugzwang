@@ -36,6 +36,7 @@ from zugzwang.strategy.context import (
     PromptRetrievalTelemetry,
     build_direct_prompt_with_metadata,
 )
+from zugzwang.strategy.prompts import DEFAULT_PROMPT_ID
 from zugzwang.strategy.validator import (
     MoveValidationResult,
     build_retry_feedback,
@@ -99,6 +100,11 @@ class LLMPlayer(PlayerInterface):
             self.strategy_config.get("use_system_prompt"),
             default=(self.protocol_mode == "research_strict"),
         )
+        configured_prompt_id = str(
+            self.strategy_config.get("system_prompt_id", DEFAULT_PROMPT_ID)
+        ).strip()
+        self.system_prompt_id = configured_prompt_id or DEFAULT_PROMPT_ID
+        self.strategy_config["system_prompt_id"] = self.system_prompt_id
 
     def choose_move(self, game_state: GameState) -> MoveDecision:
         if self.protocol_mode == "agentic_compat":
@@ -119,6 +125,7 @@ class LLMPlayer(PlayerInterface):
         *,
         game_state: GameState,
         retry_index: int,
+        prompt_meta: PromptBuildResult,
         messages: list[dict[str, str]],
         raw_response: str,
         validation: MoveValidationResult,
@@ -145,6 +152,12 @@ class LLMPlayer(PlayerInterface):
             "provider": self.provider.__class__.__name__,
             "model": provider_model,
             "messages": messages,
+            "prompt": {
+                "requested_id": prompt_meta.prompt_id_requested,
+                "effective_id": prompt_meta.prompt_id_effective,
+                "label": prompt_meta.prompt_label,
+                "dropped_blocks": list(prompt_meta.dropped_blocks),
+            },
             "raw_response": raw_response,
             "validation": {
                 "move_uci": validation.move_uci,
@@ -287,6 +300,7 @@ class LLMPlayer(PlayerInterface):
                 self._record_prompt_transcript(
                     game_state=game_state,
                     retry_index=retry,
+                    prompt_meta=prompt_meta,
                     messages=messages,
                     raw_response="",
                     validation=validation,
@@ -315,6 +329,7 @@ class LLMPlayer(PlayerInterface):
             self._record_prompt_transcript(
                 game_state=game_state,
                 retry_index=retry,
+                prompt_meta=prompt_meta,
                 messages=messages,
                 raw_response=response.text,
                 validation=validation,

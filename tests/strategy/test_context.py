@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from zugzwang.core.models import GameState
-from zugzwang.strategy.context import build_direct_prompt
+from zugzwang.strategy.context import build_direct_prompt, build_direct_prompt_with_metadata
 
 
 def _game_state() -> GameState:
@@ -125,3 +125,40 @@ def test_build_direct_prompt_can_compress_rag_block() -> None:
     prompt = build_direct_prompt(_game_state(), cfg)
     assert "Knowledge snippets (retrieved):" not in prompt
     assert "Context compression: dropped rag." in prompt
+
+
+def test_build_direct_prompt_uses_system_prompt_id_and_interpolates_vars() -> None:
+    cfg = {
+        "use_system_prompt": True,
+        "system_prompt_id": "structured_analysis",
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+
+    assert payload.prompt_id_requested == "structured_analysis"
+    assert payload.prompt_id_effective == "structured_analysis"
+    assert payload.system_content is not None
+    assert "white" in payload.system_content
+    assert "opening" in payload.system_content
+
+
+def test_build_direct_prompt_falls_back_to_default_for_invalid_prompt_id() -> None:
+    cfg = {
+        "use_system_prompt": True,
+        "system_prompt_id": "does_not_exist",
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+
+    assert payload.prompt_id_requested == "does_not_exist"
+    assert payload.prompt_id_effective == "default"
+    assert payload.system_content is not None
+    assert "chess assistant" in payload.system_content

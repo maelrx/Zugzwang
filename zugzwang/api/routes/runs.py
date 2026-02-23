@@ -77,6 +77,7 @@ def get_run_summary(
         inferred_opponent_elo=summary.run_meta.inferred_opponent_elo,
         inferred_model_label=summary.run_meta.inferred_model_label,
         inferred_config_template=summary.run_meta.inferred_config_template,
+        inferred_prompt_id=summary.run_meta.inferred_prompt_id,
     )
 
 

@@ -18,6 +18,7 @@ protocol:
 
 strategy:
   use_system_prompt: false
+  system_prompt_id: default
   board_format: fen
   provide_legal_moves: true
   provide_history: true

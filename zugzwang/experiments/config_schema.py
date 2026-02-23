@@ -346,6 +346,16 @@ def validate_config(config: dict[str, Any]) -> None:
     use_system_prompt = config.get("strategy", {}).get("use_system_prompt")
     if use_system_prompt is not None and not isinstance(use_system_prompt, bool):
         raise ConfigValidationError("strategy.use_system_prompt must be a boolean when provided")
+    system_prompt_id = config.get("strategy", {}).get("system_prompt_id", "default")
+    if not isinstance(system_prompt_id, str) or not system_prompt_id.strip():
+        raise ConfigValidationError("strategy.system_prompt_id must be a non-empty string")
+    system_prompt_template = config.get("strategy", {}).get("system_prompt_template")
+    if system_prompt_template is not None and (
+        not isinstance(system_prompt_template, str) or not system_prompt_template.strip()
+    ):
+        raise ConfigValidationError(
+            "strategy.system_prompt_template must be a non-empty string when provided"
+        )
 
     feedback = config.get("strategy", {}).get("validation", {}).get("feedback_level", "rich")
     if feedback not in ALLOWED_FEEDBACK_LEVELS:

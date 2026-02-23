@@ -90,6 +90,7 @@ class RunMeta:
     inferred_model: str | None = None
     inferred_model_label: str | None = None
     inferred_config_template: str | None = None
+    inferred_prompt_id: str | None = None
     inferred_eval_status: str | None = None
     num_games_target: int | None = None
     num_games_valid: int | None = None

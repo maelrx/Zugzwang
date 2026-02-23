@@ -301,6 +301,7 @@ class ArtifactService:
         inferred_model_label = _compose_model_label(inferred_provider, inferred_model)
         inferred_opponent_elo = _infer_opponent_elo(resolved_config, inferred_player_color)
         inferred_config_template = _infer_config_template(run_id, resolved_config)
+        inferred_prompt_id = _infer_prompt_id(resolved_config)
         inferred_eval_status = _infer_eval_status(report_exists=report_exists, evaluated_exists=evaluated_exists)
 
         num_games_target = _first_int(
@@ -345,6 +346,7 @@ class ArtifactService:
             inferred_model=inferred_model,
             inferred_model_label=inferred_model_label,
             inferred_config_template=inferred_config_template,
+            inferred_prompt_id=inferred_prompt_id,
             inferred_eval_status=inferred_eval_status,
             num_games_target=num_games_target,
             num_games_valid=num_games_valid,
@@ -626,6 +628,22 @@ def _infer_config_template(run_id: str, resolved_config: dict[str, Any] | None) 
     parsed = _parse_run_id(run_id)
     if parsed is not None:
         return parsed[0]
+    return None
+
+
+def _infer_prompt_id(resolved_config: dict[str, Any] | None) -> str | None:
+    if not isinstance(resolved_config, dict):
+        return None
+    strategy = resolved_config.get("strategy")
+    if not isinstance(strategy, dict):
+        return None
+
+    effective = _as_str(strategy.get("system_prompt_id_effective"))
+    if effective:
+        return effective
+    configured = _as_str(strategy.get("system_prompt_id"))
+    if configured:
+        return configured
     return None
 
 

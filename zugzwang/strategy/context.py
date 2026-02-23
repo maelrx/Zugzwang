@@ -11,14 +11,10 @@ from zugzwang.knowledge.retriever import (
 from zugzwang.strategy.few_shot import render_few_shot_block
 from zugzwang.strategy.formats import board_context_lines
 from zugzwang.strategy.phase import normalize_phase
+from zugzwang.strategy.prompts import DEFAULT_PROMPT_ID, resolve_system_prompt
 
 
 DEFAULT_COMPRESSION_ORDER = ["history", "rag", "legal_moves", "few_shot"]
-DEFAULT_SYSTEM_PROMPT = (
-    "You are a chess assistant playing one move.\n"
-    "Return exactly one legal move in UCI format.\n"
-    "Do not include explanation."
-)
 
 
 @dataclass(frozen=True)
@@ -37,6 +33,9 @@ class PromptBuildResult:
     retrieval: PromptRetrievalTelemetry
     system_content: str | None = None
     user_content: str = ""
+    prompt_id_requested: str = DEFAULT_PROMPT_ID
+    prompt_id_effective: str = DEFAULT_PROMPT_ID
+    prompt_label: str = "Default Assistant"
 
 
 def build_direct_prompt(
@@ -61,11 +60,16 @@ def build_direct_prompt_with_metadata(
     include_history = bool(strategy_config.get("provide_history", True))
     history_plies = int(strategy_config.get("history_plies", 8))
     use_system_prompt = bool(strategy_config.get("use_system_prompt", False))
-    raw_system_template = strategy_config.get("system_prompt_template", DEFAULT_SYSTEM_PROMPT)
-    if not isinstance(raw_system_template, str) or not raw_system_template.strip():
-        raw_system_template = DEFAULT_SYSTEM_PROMPT
 
     phase = normalize_phase(game_state.phase)
+    prompt_resolution = resolve_system_prompt(
+        system_prompt_id=_as_optional_str(strategy_config.get("system_prompt_id")) or DEFAULT_PROMPT_ID,
+        variables={
+            "color": str(game_state.active_color),
+            "phase": phase,
+        },
+        custom_template=_as_optional_str(strategy_config.get("system_prompt_template")),
+    )
 
     base_lines = [
         f"Phase: {phase}",
@@ -118,11 +122,12 @@ def build_direct_prompt_with_metadata(
     if max_prompt_chars is not None and len(user_prompt) > max_prompt_chars:
         user_prompt = _truncate_prompt(user_prompt, max_prompt_chars)
 
-    system_content = raw_system_template.strip() if use_system_prompt else None
+    selected_system_template = prompt_resolution.rendered_template.strip()
+    system_content = selected_system_template if use_system_prompt else None
     if system_content:
         prompt = f"{system_content}\n\n{user_prompt}"
     else:
-        prompt = f"{raw_system_template.strip()}\n\n{user_prompt}"
+        prompt = f"{selected_system_template}\n\n{user_prompt}"
         if max_prompt_chars is not None and len(prompt) > max_prompt_chars:
             prompt = _truncate_prompt(prompt, max_prompt_chars)
 
@@ -139,6 +144,9 @@ def build_direct_prompt_with_metadata(
         retrieval=retrieval_telemetry,
         system_content=system_content,
         user_content=user_prompt,
+        prompt_id_requested=prompt_resolution.requested_id,
+        prompt_id_effective=prompt_resolution.effective_id,
+        prompt_label=prompt_resolution.label,
     )
 
 
@@ -258,3 +266,10 @@ def _render_rag_block(rag_result: Any, rag_cfg: Any) -> str | None:
         return None
     lines.append("Use snippets only as optional guidance. Return one legal UCI move.")
     return "\n".join(lines)
+
+
+def _as_optional_str(value: Any) -> str | None:
+    if isinstance(value, str):
+        parsed = value.strip()
+        return parsed or None
+    return None

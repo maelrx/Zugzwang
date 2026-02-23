@@ -7,6 +7,8 @@ from zugzwang.api.main import create_app
 from zugzwang.api.types import (
     BoardStateFrame,
     ConfigTemplate,
+    DashboardKpis,
+    DashboardTimelinePoint,
     GameMeta,
     GameRecordView,
     ResolvedConfigPreview,
@@ -87,18 +89,113 @@ class FakeRunService:
 
 
 class FakeArtifactService:
-    def list_runs(self, filters=None) -> list[RunMeta]:
-        _ = filters
-        return [
+    def __init__(self) -> None:
+        self._runs = [
             RunMeta(
                 run_id="run-1",
                 run_dir="results/runs/run-1",
                 created_at_utc="2026-02-22T05:00:00Z",
                 config_hash="abc123",
                 report_exists=True,
+                evaluated_report_exists=True,
+                inferred_player_color="black",
+                inferred_opponent_elo=1200,
+                inferred_provider="zai",
+                inferred_model="glm-5",
+                inferred_model_label="zai / glm-5",
+                inferred_config_template="best_known_start",
+                inferred_eval_status="evaluated",
+                num_games_target=5,
+                num_games_valid=5,
+                completion_rate=1.0,
+                total_cost_usd=1.23,
+                elo_estimate=620.0,
+                acpl_overall=55.0,
+                blunder_rate=0.1,
+            ),
+            RunMeta(
+                run_id="run-2",
+                run_dir="results/runs/run-2",
+                created_at_utc="2026-02-21T03:00:00Z",
+                config_hash="def456",
+                report_exists=True,
                 evaluated_report_exists=False,
-            )
+                inferred_player_color="black",
+                inferred_provider="openai",
+                inferred_model="gpt-5-mini",
+                inferred_model_label="openai / gpt-5-mini",
+                inferred_config_template="rag_variant",
+                inferred_eval_status="needs_eval",
+                num_games_target=8,
+                num_games_valid=6,
+                completion_rate=0.75,
+                total_cost_usd=2.5,
+            ),
         ]
+
+    def list_runs(self, filters=None) -> list[RunMeta]:
+        filters = filters or {}
+        items = list(self._runs)
+
+        query = str(filters.get("query", "")).strip().lower()
+        if query:
+            items = [
+                item
+                for item in items
+                if query in item.run_id.lower()
+                or query in (item.inferred_model_label or "").lower()
+            ]
+
+        if bool(filters.get("evaluated_only", False)):
+            items = [item for item in items if item.evaluated_report_exists]
+
+        provider = str(filters.get("provider", "")).strip().lower()
+        if provider:
+            items = [item for item in items if (item.inferred_provider or "").lower() == provider]
+
+        model = str(filters.get("model", "")).strip().lower()
+        if model:
+            items = [item for item in items if (item.inferred_model or "").lower() == model]
+
+        status = str(filters.get("status", "")).strip().lower()
+        if status == "evaluated":
+            items = [item for item in items if item.evaluated_report_exists]
+        elif status == "needs_eval":
+            items = [item for item in items if item.report_exists and not item.evaluated_report_exists]
+        elif status == "pending_report":
+            items = [item for item in items if not item.report_exists]
+
+        date_from = filters.get("date_from")
+        if date_from is not None:
+            lower = date_from.isoformat()
+            items = [item for item in items if (item.created_at_utc or "")[:10] >= lower]
+
+        date_to = filters.get("date_to")
+        if date_to is not None:
+            upper = date_to.isoformat()
+            items = [item for item in items if (item.created_at_utc or "")[:10] <= upper]
+
+        sort_by = str(filters.get("sort_by", "created_at_utc"))
+        sort_dir = str(filters.get("sort_dir", "desc")).lower()
+        reverse = sort_dir != "asc"
+        if sort_by == "total_cost_usd":
+            items.sort(key=lambda item: item.total_cost_usd or 0.0, reverse=reverse)
+        elif sort_by == "elo_estimate":
+            items.sort(key=lambda item: item.elo_estimate or 0.0, reverse=reverse)
+        elif sort_by == "acpl_overall":
+            items.sort(key=lambda item: item.acpl_overall or 0.0, reverse=reverse)
+        elif sort_by == "run_id":
+            items.sort(key=lambda item: item.run_id, reverse=reverse)
+        else:
+            items.sort(key=lambda item: item.created_at_utc or "", reverse=reverse)
+
+        offset = int(filters.get("offset", 0) or 0)
+        if offset > 0:
+            items = items[offset:]
+        limit = filters.get("limit")
+        if limit is not None:
+            items = items[: int(limit)]
+        return items
 
     def load_run_summary(self, run_dir: str) -> RunSummary:
         if run_dir != "run-1":
@@ -110,6 +207,37 @@ class FakeArtifactService:
             report={"num_games_target": 5},
             evaluated_report=None,
             game_count=2,
+        )
+
+    def build_dashboard_kpis(self, timeline_limit: int = 40) -> DashboardKpis:
+        runs = self.list_runs({"sort_by": "created_at_utc", "sort_dir": "desc"})
+        evaluated = [item for item in runs if item.evaluated_report_exists]
+        timeline = [
+            DashboardTimelinePoint(
+                run_id=item.run_id,
+                created_at_utc=item.created_at_utc,
+                inferred_model_label=item.inferred_model_label,
+                total_cost_usd=item.total_cost_usd,
+                elo_estimate=item.elo_estimate,
+                acpl_overall=item.acpl_overall,
+                evaluated_report_exists=item.evaluated_report_exists,
+            )
+            for item in runs[:timeline_limit]
+        ]
+        return DashboardKpis(
+            total_runs=len(runs),
+            runs_with_reports=sum(1 for item in runs if item.report_exists),
+            evaluated_runs=len(evaluated),
+            best_elo=max((item.elo_estimate for item in evaluated if item.elo_estimate is not None), default=None),
+            avg_acpl=(
+                sum(item.acpl_overall for item in evaluated if item.acpl_overall is not None)
+                / max(1, len([item for item in evaluated if item.acpl_overall is not None]))
+            )
+            if any(item.acpl_overall is not None for item in evaluated)
+            else None,
+            total_cost_usd=float(sum(item.total_cost_usd or 0.0 for item in runs)),
+            last_run_id=runs[0].run_id if runs else None,
+            timeline=timeline,
         )
 
     def list_games(self, run_dir: str) -> list[GameMeta]:
@@ -246,8 +374,53 @@ def test_runs_routes_return_summary_games_and_frames() -> None:
     assert frames_response.status_code == 200
     assert len(frames_response.json()) == 2
 
+    inferred = summary_response.json()
+    assert inferred["inferred_model_label"] == "zai / glm-5"
+    assert inferred["run_meta"]["inferred_eval_status"] == "evaluated"
+    assert inferred["run_meta"]["elo_estimate"] == 620.0
+
     missing_run_response = client.get("/api/runs/missing")
     assert missing_run_response.status_code == 404
+
+
+def test_runs_route_supports_extended_filters_sort_and_pagination() -> None:
+    client = _build_client()
+    response = client.get(
+        "/api/runs",
+        params={
+            "q": "glm-5",
+            "provider": "zai",
+            "model": "glm-5",
+            "status": "evaluated",
+            "date_from": "2026-02-20",
+            "date_to": "2026-02-23",
+            "sort_by": "total_cost_usd",
+            "sort_dir": "asc",
+            "offset": 0,
+            "limit": 1,
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["run_id"] == "run-1"
+    assert payload[0]["inferred_model_label"] == "zai / glm-5"
+
+    alias_response = client.get("/api/runs", params={"evaluated": "true"})
+    assert alias_response.status_code == 200
+    assert [item["run_id"] for item in alias_response.json()] == ["run-1"]
+
+
+def test_dashboard_kpis_route_returns_aggregates() -> None:
+    client = _build_client()
+    response = client.get("/api/dashboard/kpis", params={"timeline_limit": 1})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_runs"] == 2
+    assert payload["evaluated_runs"] == 1
+    assert payload["best_elo"] == 620.0
+    assert len(payload["timeline"]) == 1
+    assert payload["timeline"][0]["run_id"] == "run-1"
 
 
 def test_env_check_route_exposes_provider_statuses() -> None:

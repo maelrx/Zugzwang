@@ -33,7 +33,7 @@ export function JobsPage() {
             key={job.job_id}
             className="grid grid-cols-[1.6fr_1fr_1fr_1.4fr] items-center border-b border-[#f0ece3] px-4 py-3 text-sm text-[#28404f]"
           >
-            <Link to="/jobs/$jobId" params={{ jobId: job.job_id }} className="truncate font-medium text-[#1d5d77] hover:underline">
+            <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.job_id }} className="truncate font-medium text-[#1d5d77] hover:underline">
               {job.job_id}
             </Link>
             <span>{job.job_type}</span>

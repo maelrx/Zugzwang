@@ -1,8 +1,9 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
 import { AppShell } from "./ui/layout/AppShell";
 import { DashboardPage } from "./ui/pages/DashboardPage";
 import { JobDetailPage } from "./ui/pages/JobDetailPage";
 import { JobsPage } from "./ui/pages/JobsPage";
+import { QuickPlayPage } from "./ui/pages/QuickPlayPage";
 import { ReplayPage } from "./ui/pages/ReplayPage";
 import { RunComparePage } from "./ui/pages/RunComparePage";
 import { RunLabPage } from "./ui/pages/RunLabPage";
@@ -21,22 +22,63 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 });
 
+const commandCenterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard",
+  component: DashboardPage,
+});
+
+const dashboardJobsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard/jobs",
+  component: JobsPage,
+});
+
+const dashboardJobDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard/jobs/$jobId",
+  component: JobDetailPage,
+});
+
+const quickPlayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/quick-play",
+  component: QuickPlayPage,
+});
+
+const labRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/lab",
+  component: RunLabPage,
+});
+
 const runLabRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/run-lab",
-  component: RunLabPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/lab" });
+  },
 });
 
 const jobsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/jobs",
-  component: JobsPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard/jobs" });
+  },
 });
 
 const jobDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/jobs/$jobId",
-  component: JobDetailPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/dashboard/jobs/$jobId",
+      params: {
+        jobId: params.jobId,
+      },
+    });
+  },
 });
 
 const runsRoute = createRoute({
@@ -48,6 +90,14 @@ const runsRoute = createRoute({
 const runCompareRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/compare",
+  beforeLoad: () => {
+    throw redirect({ to: "/compare" });
+  },
+});
+
+const compareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/compare",
   component: RunComparePage,
 });
 
@@ -60,6 +110,20 @@ const runDetailRoute = createRoute({
 const replayRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/$runId/replay/$gameNumber",
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/runs/$runId/game/$gameNumber",
+      params: {
+        runId: params.runId,
+        gameNumber: params.gameNumber,
+      },
+    });
+  },
+});
+
+const replayGameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/$runId/game/$gameNumber",
   component: ReplayPage,
 });
 
@@ -71,20 +135,31 @@ const settingsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
+  commandCenterRoute,
+  dashboardJobsRoute,
+  dashboardJobDetailRoute,
+  quickPlayRoute,
+  labRoute,
   runLabRoute,
   jobsRoute,
   jobDetailRoute,
   runsRoute,
+  compareRoute,
   runCompareRoute,
   runDetailRoute,
   replayRoute,
+  replayGameRoute,
   settingsRoute,
 ]);
 
 export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
-  defaultPendingComponent: () => <p className="p-6 text-sm text-slate-600">Loading page...</p>,
+  defaultPendingComponent: () => (
+    <p role="status" aria-live="polite" className="p-6 text-sm text-[var(--color-text-secondary)]">
+      Loading page...
+    </p>
+  ),
   defaultErrorComponent: RouterErrorFallback,
 });
 

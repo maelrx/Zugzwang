@@ -1,321 +1,891 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "../../api/client";
-import { useConfigs, useModelCatalog, usePreviewConfig, useStartPlay, useStartRun, useValidateConfig } from "../../api/queries";
+import {
+  useConfigs,
+  useEnvCheck,
+  useModelCatalog,
+  usePreviewConfig,
+  useStartPlay,
+  useStartRun,
+  useValidateConfig,
+} from "../../api/queries";
+import { useLabStore } from "../../stores/labStore";
+import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
+import { StatusBadge } from "../components/StatusBadge";
+import { formatUsd } from "../lib/runMetrics";
+
+const AUTO_CHECK_DEBOUNCE_MS = 500;
+const MIN_TARGET_GAMES = 1;
+const MAX_TARGET_GAMES = 500;
+const DEFAULT_TARGET_GAMES = 10;
+
+type TemplateBucket = "baselines" | "ablations" | "custom";
+type BoardFormat = "fen" | "pgn";
+type FeedbackLevel = "minimal" | "moderate" | "rich";
+
+type TemplateOption = {
+  name: string;
+  path: string;
+  category: string;
+  bucket: TemplateBucket;
+};
 
 export function RunLabPage() {
+  const navigate = useNavigate();
   const configsQuery = useConfigs();
+  const modelCatalogQuery = useModelCatalog();
+  const envCheckQuery = useEnvCheck();
   const validateMutation = useValidateConfig();
   const previewMutation = usePreviewConfig();
   const startRunMutation = useStartRun();
   const startPlayMutation = useStartPlay();
-  const modelCatalogQuery = useModelCatalog();
-  const navigate = useNavigate();
 
-  const [selectedConfigPath, setSelectedConfigPath] = useState("");
+  const storedTemplatePath = useLabStore((state) => state.selectedTemplatePath);
+  const storedProvider = useLabStore((state) => state.selectedProvider);
+  const storedModel = useLabStore((state) => state.selectedModel);
+  const storedOverrides = useLabStore((state) => state.rawOverridesText);
+  const storedAdvancedOpen = useLabStore((state) => state.advancedOpen);
+  const setStoredTemplatePath = useLabStore((state) => state.setSelectedTemplatePath);
+  const setStoredProvider = useLabStore((state) => state.setSelectedProvider);
+  const setStoredModel = useLabStore((state) => state.setSelectedModel);
+  const setStoredOverrides = useLabStore((state) => state.setRawOverridesText);
+  const setStoredAdvancedOpen = useLabStore((state) => state.setAdvancedOpen);
+
+  const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
+  const defaultProvider = usePreferencesStore((state) => state.defaultProvider);
+  const defaultModel = usePreferencesStore((state) => state.defaultModel);
+  const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
+
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [selectedConfigPath, setSelectedConfigPath] = useState(storedTemplatePath ?? "");
+  const [selectedProvider, setSelectedProvider] = useState(storedProvider ?? "");
+  const [selectedModel, setSelectedModel] = useState(storedModel ?? "");
   const [modelProfile, setModelProfile] = useState("");
-  const [overridesText, setOverridesText] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
+  const [targetValidGames, setTargetValidGames] = useState(DEFAULT_TARGET_GAMES);
+  const [maxBudgetUsdText, setMaxBudgetUsdText] = useState("");
+  const [boardFormat, setBoardFormat] = useState<BoardFormat>("fen");
+  const [provideLegalMoves, setProvideLegalMoves] = useState(true);
+  const [provideHistory, setProvideHistory] = useState(true);
+  const [feedbackLevel, setFeedbackLevel] = useState<FeedbackLevel>("rich");
+  const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState(autoEvaluatePreference);
+  const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"white" | "black">("black");
+  const [evaluationOpponentEloText, setEvaluationOpponentEloText] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(storedAdvancedOpen);
+  const [customOverridesText, setCustomOverridesText] = useState(storedOverrides);
 
   const templates = useMemo(() => {
-    const baselines = (configsQuery.data?.baselines ?? []).map((item) => ({ ...item, bucket: "Baselines" }));
-    const ablations = (configsQuery.data?.ablations ?? []).map((item) => ({ ...item, bucket: "Ablations" }));
-    return [...baselines, ...ablations];
+    const all = [...(configsQuery.data?.baselines ?? []), ...(configsQuery.data?.ablations ?? [])];
+    return all.map<TemplateOption>((template) => ({
+      name: template.name,
+      path: template.path,
+      category: template.category,
+      bucket: resolveTemplateBucket(template.category, template.path),
+    }));
   }, [configsQuery.data?.ablations, configsQuery.data?.baselines]);
 
-  const currentConfigPath = selectedConfigPath || templates[0]?.path || "";
-  const parsedOverrides = useMemo(() => parseOverrides(overridesText), [overridesText]);
-  const invalidOverrideLines = useMemo(() => parsedOverrides.filter((line) => !line.includes("=")), [parsedOverrides]);
-  const providerPresets = modelCatalogQuery.data ?? [];
-  const effectiveProvider = selectedProvider || providerPresets[0]?.provider || "";
-  const activePreset = useMemo(
-    () => providerPresets.find((preset) => preset.provider === effectiveProvider) ?? null,
-    [effectiveProvider, providerPresets],
-  );
-  const recommendedModel = activePreset?.models.find((model) => model.recommended)?.id || activePreset?.models[0]?.id || "";
-  const effectiveModel = selectedModel || recommendedModel;
+  const filteredTemplates = useMemo(() => {
+    const query = templateSearch.trim().toLowerCase();
+    if (!query) {
+      return templates;
+    }
+    return templates.filter((item) => item.name.toLowerCase().includes(query) || item.path.toLowerCase().includes(query));
+  }, [templateSearch, templates]);
 
-  const baselineCount = configsQuery.data?.baselines?.length ?? 0;
-  const ablationCount = configsQuery.data?.ablations?.length ?? 0;
+  const groupedTemplates = useMemo(
+    () => ({
+      baselines: filteredTemplates.filter((item) => item.bucket === "baselines"),
+      ablations: filteredTemplates.filter((item) => item.bucket === "ablations"),
+      custom: filteredTemplates.filter((item) => item.bucket === "custom"),
+    }),
+    [filteredTemplates],
+  );
+
+  const currentConfigPath = selectedConfigPath || templates[0]?.path || "";
+  const selectedTemplate = useMemo(
+    () => templates.find((item) => item.path === currentConfigPath) ?? null,
+    [currentConfigPath, templates],
+  );
+
+  const providerPresets = modelCatalogQuery.data ?? [];
+  const envChecks = envCheckQuery.data ?? [];
+  const providerStatusMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const item of envChecks) {
+      map.set(item.provider, item.ok);
+    }
+    return map;
+  }, [envChecks]);
+  const stockfishCheckKnown = useMemo(() => envChecks.some((item) => item.provider === "stockfish"), [envChecks]);
+  const stockfishAvailable = providerStatusMap.get("stockfish") === true;
+  const selectedProviderReady = providerStatusMap.get(selectedProvider) === true;
+
+  const activePreset = useMemo(
+    () => providerPresets.find((preset) => preset.provider === selectedProvider) ?? null,
+    [providerPresets, selectedProvider],
+  );
+
+  const parsedCustomOverrides = useMemo(() => parseOverrides(customOverridesText), [customOverridesText]);
+  const invalidOverrideLines = useMemo(
+    () => parsedCustomOverrides.filter((line) => !line.includes("=")),
+    [parsedCustomOverrides],
+  );
+  const validCustomOverrides = useMemo(
+    () => parsedCustomOverrides.filter((line) => line.includes("=")),
+    [parsedCustomOverrides],
+  );
+
+  const parsedMaxBudgetUsd = parseOptionalPositiveNumber(maxBudgetUsdText);
+  const invalidMaxBudgetUsd = maxBudgetUsdText.trim().length > 0 && parsedMaxBudgetUsd === null;
+  const parsedOpponentElo = parseOptionalInteger(evaluationOpponentEloText);
+  const invalidOpponentElo = evaluationOpponentEloText.trim().length > 0 && parsedOpponentElo === null;
+
+  const structuredOverrides = useMemo(
+    () =>
+      buildStructuredOverrides({
+        provider: selectedProvider,
+        model: selectedModel,
+        targetValidGames,
+        maxBudgetUsd: parsedMaxBudgetUsd,
+        boardFormat,
+        provideLegalMoves,
+        provideHistory,
+        feedbackLevel,
+        autoEvaluateEnabled,
+        evaluationPlayerColor,
+        evaluationOpponentElo: parsedOpponentElo,
+      }),
+    [
+      autoEvaluateEnabled,
+      boardFormat,
+      evaluationPlayerColor,
+      feedbackLevel,
+      parsedMaxBudgetUsd,
+      parsedOpponentElo,
+      provideHistory,
+      provideLegalMoves,
+      selectedModel,
+      selectedProvider,
+      targetValidGames,
+    ],
+  );
+
+  const mergedOverrides = useMemo(
+    () => mergeOverrides(structuredOverrides, validCustomOverrides),
+    [structuredOverrides, validCustomOverrides],
+  );
+
+  const requestPayload = useMemo(
+    () => ({
+      config_path: currentConfigPath,
+      model_profile: modelProfile.trim() || null,
+      overrides: mergedOverrides,
+    }),
+    [currentConfigPath, mergedOverrides, modelProfile],
+  );
+
   const isLaunching = startRunMutation.isPending || startPlayMutation.isPending;
+  const canAutoCheck =
+    Boolean(currentConfigPath) &&
+    Boolean(selectedProvider) &&
+    Boolean(selectedModel) &&
+    invalidOverrideLines.length === 0 &&
+    !invalidMaxBudgetUsd &&
+    !invalidOpponentElo;
 
   useEffect(() => {
-    if (!selectedProvider && providerPresets[0]?.provider) {
-      setSelectedProvider(providerPresets[0].provider);
+    if (templates.length === 0) {
+      return;
     }
-  }, [providerPresets, selectedProvider]);
+    if (!selectedConfigPath || !templates.some((item) => item.path === selectedConfigPath)) {
+      setSelectedConfigPath(templates[0]?.path ?? "");
+    }
+  }, [selectedConfigPath, templates]);
+
+  useEffect(() => {
+    if (selectedProvider && providerPresets.some((preset) => preset.provider === selectedProvider)) {
+      return;
+    }
+    const preferred = defaultProvider ? providerPresets.find((preset) => preset.provider === defaultProvider) : undefined;
+    setSelectedProvider(preferred?.provider ?? providerPresets[0]?.provider ?? "");
+  }, [defaultProvider, providerPresets, selectedProvider]);
 
   useEffect(() => {
     if (!activePreset) {
       setSelectedModel("");
       return;
     }
-    if (!activePreset.models.some((item) => item.id === selectedModel)) {
-      const next = activePreset.models.find((item) => item.recommended)?.id || activePreset.models[0]?.id || "";
-      setSelectedModel(next);
+    if (activePreset.models.some((item) => item.id === selectedModel)) {
+      return;
     }
-  }, [activePreset, selectedModel]);
+    const preferredModel = defaultModel ? activePreset.models.find((item) => item.id === defaultModel) : undefined;
+    const fallback = preferredModel ?? activePreset.models.find((item) => item.recommended) ?? activePreset.models[0] ?? null;
+    setSelectedModel(fallback?.id ?? "");
+  }, [activePreset, defaultModel, selectedModel]);
+
+  useEffect(() => {
+    if (!envCheckQuery.isSuccess || !stockfishCheckKnown || stockfishAvailable) {
+      return;
+    }
+    if (autoEvaluateEnabled) {
+      setAutoEvaluateEnabled(false);
+      setAutoEvaluatePreference(false);
+    }
+  }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
+
+  useEffect(() => {
+    setStoredTemplatePath(selectedConfigPath || null);
+  }, [selectedConfigPath, setStoredTemplatePath]);
+
+  useEffect(() => {
+    setStoredProvider(selectedProvider || null);
+  }, [selectedProvider, setStoredProvider]);
+
+  useEffect(() => {
+    setStoredModel(selectedModel || null);
+  }, [selectedModel, setStoredModel]);
+
+  useEffect(() => {
+    setStoredOverrides(customOverridesText);
+  }, [customOverridesText, setStoredOverrides]);
+
+  useEffect(() => {
+    setStoredAdvancedOpen(advancedOpen);
+  }, [advancedOpen, setStoredAdvancedOpen]);
+
+  useEffect(() => {
+    if (!canAutoCheck) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      validateMutation.mutate(requestPayload);
+      previewMutation.mutate(requestPayload);
+    }, AUTO_CHECK_DEBOUNCE_MS);
+    return () => window.clearTimeout(timeout);
+  }, [canAutoCheck, previewMutation, requestPayload, validateMutation]);
+
+  const blockingErrors = useMemo(() => {
+    const errors: string[] = [];
+    if (!currentConfigPath) {
+      errors.push("Select a template.");
+    }
+    if (!selectedProvider || !selectedModel) {
+      errors.push("Select provider and model.");
+    }
+    if (invalidOverrideLines.length > 0) {
+      errors.push(`Fix invalid override lines: ${invalidOverrideLines.join(", ")}`);
+    }
+    if (invalidMaxBudgetUsd) {
+      errors.push("Max budget must be a positive number.");
+    }
+    if (invalidOpponentElo) {
+      errors.push("Opponent Elo must be an integer.");
+    }
+    if (envCheckQuery.isSuccess && selectedProvider && !selectedProviderReady) {
+      errors.push(`Provider "${selectedProvider}" is missing credentials in Settings.`);
+    }
+    if (autoEvaluateEnabled && envCheckQuery.isSuccess && stockfishCheckKnown && !stockfishAvailable) {
+      errors.push("Auto-evaluate is enabled but Stockfish is unavailable.");
+    }
+    if (validateMutation.data && !validateMutation.data.ok) {
+      errors.push(validateMutation.data.message || "Config validation failed.");
+    }
+    if (validateMutation.isError) {
+      errors.push(extractErrorMessage(validateMutation.error));
+    }
+    if (previewMutation.isError) {
+      errors.push(extractErrorMessage(previewMutation.error));
+    }
+    return dedupeStrings(errors).filter((item) => item.trim().length > 0);
+  }, [
+    autoEvaluateEnabled,
+    currentConfigPath,
+    envCheckQuery.isSuccess,
+    invalidMaxBudgetUsd,
+    invalidOpponentElo,
+    invalidOverrideLines,
+    previewMutation.error,
+    previewMutation.isError,
+    selectedModel,
+    selectedProvider,
+    selectedProviderReady,
+    stockfishAvailable,
+    stockfishCheckKnown,
+    validateMutation.data,
+    validateMutation.error,
+    validateMutation.isError,
+  ]);
+
+  const canLaunch = canAutoCheck && blockingErrors.length === 0 && !isLaunching && !validateMutation.isPending && !previewMutation.isPending;
+  const previewData = previewMutation.data;
+  const resolvedConfigPreview = previewData?.resolved_config ?? validateMutation.data?.resolved_config ?? null;
+  const estimatedCostUsd = previewData?.estimated_total_cost_usd ?? null;
+
+  const baselineCount = templates.filter((item) => item.bucket === "baselines").length;
+  const ablationCount = templates.filter((item) => item.bucket === "ablations").length;
+  const customCount = templates.filter((item) => item.bucket === "custom").length;
 
   return (
     <section>
       <PageHeader
         eyebrow="Run Lab"
         title="Experiment Launch Workbench"
-        subtitle="Configure, validate, preview and launch jobs directly from the UI."
+        subtitle="Build, validate and launch multi-game experiments with live preview and safety checks."
       />
 
-      <div className="rounded-2xl border border-[#d5cfc4] bg-white/80 p-5 shadow-[0_10px_24px_rgba(12,30,42,0.07)]">
-        <p className="mb-3 text-xs uppercase tracking-[0.15em] text-[#607786]">
-          Templates loaded: {configsQuery.isLoading ? "..." : `${baselineCount} baselines / ${ablationCount} ablations`}
-        </p>
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+        <StatusBadge label={selectedProviderReady ? "provider ready" : "provider missing key"} tone={selectedProviderReady ? "success" : "error"} />
+        <StatusBadge label={stockfishAvailable ? "stockfish ready" : "stockfish missing"} tone={stockfishAvailable ? "success" : "warning"} />
+        <span className="text-[var(--color-text-secondary)]">
+          Templates: {configsQuery.isLoading ? "..." : `${baselineCount} baselines / ${ablationCount} ablations / ${customCount} custom`}
+        </span>
+      </div>
 
-        {configsQuery.isError && (
-          <p className="mb-3 rounded-lg border border-[#cf8f8f] bg-[#fff0ed] px-3 py-2 text-sm text-[#8a3434]">
-            Failed to load `/api/configs`.
-          </p>
-        )}
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Template Browser</p>
+          <label className="mt-2 block text-xs text-[var(--color-text-secondary)]">
+            Search templates
+            <input
+              value={templateSearch}
+              onChange={(event) => setTemplateSearch(event.target.value)}
+              placeholder="best_known_start..."
+              className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+            />
+          </label>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border border-[#ded8cf] bg-[#f9f6ef] p-4">
-            <h3 className="mb-3 text-sm font-semibold text-[#26404f]">Inputs</h3>
+          <div className="mt-3 max-h-[620px] overflow-auto pr-1">
+            <TemplateGroup
+              label="Baselines"
+              templates={groupedTemplates.baselines}
+              selectedPath={currentConfigPath}
+              onSelect={setSelectedConfigPath}
+            />
+            <TemplateGroup
+              label="Ablations"
+              templates={groupedTemplates.ablations}
+              selectedPath={currentConfigPath}
+              onSelect={setSelectedConfigPath}
+            />
+            <TemplateGroup label="Custom" templates={groupedTemplates.custom} selectedPath={currentConfigPath} onSelect={setSelectedConfigPath} />
 
-            <div className="mb-3 rounded-lg border border-[#d7d0c2] bg-white p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#5f7481]">Quick Model Selector</p>
+            {filteredTemplates.length === 0 ? (
+              <p className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
+                No templates match this search.
+              </p>
+            ) : null}
+          </div>
+        </section>
 
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <label className="text-xs text-[#516977]">
-                  Provider
-                  <select
-                    value={effectiveProvider}
-                    onChange={(event) => setSelectedProvider(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 text-sm text-[#2f4957]"
-                  >
-                    {providerPresets.map((preset) => (
-                      <option key={preset.provider} value={preset.provider}>
-                        {preset.provider_label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Config Builder</p>
+              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Structured inputs generate deterministic overrides for this template.</p>
+            </div>
+            <StatusBadge label={selectedTemplate ? selectedTemplate.bucket : "unselected"} tone="info" />
+          </div>
 
-                <label className="text-xs text-[#516977]">
-                  Model
-                  <select
-                    value={effectiveModel}
-                    onChange={(event) => setSelectedModel(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 text-sm text-[#2f4957]"
-                    disabled={!activePreset}
-                  >
-                    {(activePreset?.models ?? []).map((model) => (
-                      <option key={model.id} value={model.id}>
-                        {model.label}
-                        {model.recommended ? " (Recommended)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+          <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Model</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Provider
+                <select
+                  value={selectedProvider}
+                  onChange={(event) => setSelectedProvider(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  {providerPresets.map((preset) => (
+                    <option key={preset.provider} value={preset.provider}>
+                      {preset.provider_label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Model
+                <select
+                  value={selectedModel}
+                  onChange={(event) => setSelectedModel(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                  disabled={!activePreset}
+                >
+                  {(activePreset?.models ?? []).map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                      {model.recommended ? " (Recommended)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="mt-2 rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-xs font-semibold text-[#edf8fd]"
-                disabled={!activePreset || !effectiveModel}
+                className="rounded-md border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] px-3 py-1.5 text-xs font-semibold text-[var(--color-surface-canvas)]"
+                disabled={!selectedProvider || !selectedModel}
                 onClick={() => {
-                  if (!activePreset || !effectiveModel) {
-                    return;
-                  }
-                  const safeName = `${activePreset.provider}_${effectiveModel}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
-                  setOverridesText((prev) =>
+                  setCustomOverridesText((prev) =>
                     upsertOverrides(prev, {
                       "players.black.type": "llm",
-                      "players.black.provider": activePreset.provider,
-                      "players.black.model": effectiveModel,
-                      "players.black.name": safeName,
+                      "players.black.provider": selectedProvider,
+                      "players.black.model": selectedModel,
+                      "players.black.name": safeModelName(selectedProvider, selectedModel),
                     }),
                   );
                 }}
               >
                 Apply Preset to Overrides
               </button>
-
-              {activePreset && (
-                <p className="mt-2 text-[11px] text-[#57707e]">
-                  API: {activePreset.api_style} | Base URL: {activePreset.base_url} | Secret: {activePreset.api_key_env}
+              {activePreset ? (
+                <p className="text-[11px] text-[var(--color-text-secondary)]">
+                  {activePreset.api_style} | {activePreset.base_url}
                 </p>
-              )}
+              ) : null}
+            </div>
+          </div>
+          <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Experiment</summary>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Target valid games
+                <input
+                  type="number"
+                  min={MIN_TARGET_GAMES}
+                  max={MAX_TARGET_GAMES}
+                  value={targetValidGames}
+                  onChange={(event) => setTargetValidGames(clampInt(event.target.value, MIN_TARGET_GAMES, MAX_TARGET_GAMES, DEFAULT_TARGET_GAMES))}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
 
-              {activePreset?.notes && <p className="mt-1 text-[11px] text-[#57707e]">{activePreset.notes}</p>}
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Max budget USD (optional)
+                <input
+                  value={maxBudgetUsdText}
+                  onChange={(event) => setMaxBudgetUsdText(event.target.value)}
+                  placeholder="e.g. 2.50"
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+            </div>
+          </details>
 
-              {modelCatalogQuery.isError && (
-                <p className="mt-2 rounded-md border border-[#cf8f8f] bg-[#fff2ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
-                  Failed to load `/api/configs/model-catalog`.
-                </p>
-              )}
+          <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Strategy</summary>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Board format
+                <select
+                  value={boardFormat}
+                  onChange={(event) => setBoardFormat(event.target.value as BoardFormat)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="fen">fen</option>
+                  <option value="pgn">pgn</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Feedback level
+                <select
+                  value={feedbackLevel}
+                  onChange={(event) => setFeedbackLevel(event.target.value as FeedbackLevel)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="minimal">minimal</option>
+                  <option value="moderate">moderate</option>
+                  <option value="rich">rich</option>
+                </select>
+              </label>
             </div>
 
-            <label className="mb-3 block text-xs text-[#516977]">
-              Config template
-              <select
-                value={currentConfigPath}
-                onChange={(event) => setSelectedConfigPath(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 text-sm text-[#2f4957]"
-              >
-                {templates.map((item) => (
-                  <option key={item.path} value={item.path}>
-                    [{item.bucket}] {item.name}
-                  </option>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+                <input
+                  type="checkbox"
+                  checked={provideLegalMoves}
+                  onChange={(event) => setProvideLegalMoves(event.target.checked)}
+                  className="h-4 w-4 rounded border-[var(--color-border-strong)]"
+                />
+                Include legal moves
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+                <input
+                  type="checkbox"
+                  checked={provideHistory}
+                  onChange={(event) => setProvideHistory(event.target.checked)}
+                  className="h-4 w-4 rounded border-[var(--color-border-strong)]"
+                />
+                Include history
+              </label>
+            </div>
+          </details>
+
+          <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+              Evaluation Settings
+            </summary>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)] sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={autoEvaluateEnabled}
+                  onChange={(event) => {
+                    setAutoEvaluateEnabled(event.target.checked);
+                    setAutoEvaluatePreference(event.target.checked);
+                  }}
+                  disabled={!stockfishAvailable}
+                  className="h-4 w-4 rounded border-[var(--color-border-strong)]"
+                />
+                Auto-evaluate after run
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Player color
+                <select
+                  value={evaluationPlayerColor}
+                  onChange={(event) => setEvaluationPlayerColor(event.target.value as "white" | "black")}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="white">white</option>
+                  <option value="black">black</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Opponent Elo (optional)
+                <input
+                  value={evaluationOpponentEloText}
+                  onChange={(event) => setEvaluationOpponentEloText(event.target.value)}
+                  placeholder="e.g. 1000"
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+            </div>
+
+            {!stockfishAvailable ? (
+              <p className="mt-2 text-xs text-[var(--color-warning-text)]">
+                Stockfish not detected. Configure it in{" "}
+                <Link to="/settings" className="underline">
+                  Settings
+                </Link>{" "}
+                to enable auto-evaluation.
+              </p>
+            ) : null}
+          </details>
+
+          <div className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((prev) => !prev)}
+              className="w-full text-left text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]"
+            >
+              {advancedOpen ? "Hide advanced overrides" : "Show advanced overrides"}
+            </button>
+            {advancedOpen ? (
+              <div className="mt-3">
+                <label className="block text-xs text-[var(--color-text-secondary)]">
+                  Model profile (optional)
+                  <input
+                    value={modelProfile}
+                    onChange={(event) => setModelProfile(event.target.value)}
+                    placeholder="configs/models/..."
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                  />
+                </label>
+
+                <label className="mt-3 block text-xs text-[var(--color-text-secondary)]">
+                  Overrides (`key=value`, one per line)
+                  <textarea
+                    value={customOverridesText}
+                    onChange={(event) => setCustomOverridesText(event.target.value)}
+                    rows={7}
+                    placeholder="players.white.type=engine"
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 font-['IBM_Plex_Mono'] text-xs text-[var(--color-text-primary)]"
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Preview & Validation</p>
+              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                Auto-refreshes after changes ({AUTO_CHECK_DEBOUNCE_MS}ms debounce).
+              </p>
+            </div>
+            <button
+              type="button"
+              className="rounded-md border border-[var(--color-border-strong)] bg-[var(--color-surface-canvas)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text-primary)]"
+              disabled={!canAutoCheck}
+              onClick={() => {
+                if (!canAutoCheck) {
+                  return;
+                }
+                validateMutation.mutate(requestPayload);
+                previewMutation.mutate(requestPayload);
+              }}
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
+            <ChecklistRow
+              label="Config valid"
+              tone={
+                validateMutation.isPending
+                  ? "pending"
+                  : validateMutation.data?.ok
+                    ? "success"
+                    : validateMutation.data
+                      ? "error"
+                      : "pending"
+              }
+              detail={validateMutation.data?.message ?? "Waiting for auto validation"}
+            />
+            <ChecklistRow
+              label="Provider reachable"
+              tone={
+                !selectedProvider
+                  ? "pending"
+                  : envCheckQuery.isLoading
+                    ? "pending"
+                    : selectedProviderReady
+                      ? "success"
+                      : "error"
+              }
+              detail={selectedProvider || "Unselected"}
+            />
+            <ChecklistRow
+              label="Stockfish for eval"
+              tone={!autoEvaluateEnabled ? "warning" : stockfishAvailable ? "success" : envCheckQuery.isLoading ? "pending" : "error"}
+              detail={autoEvaluateEnabled ? (stockfishAvailable ? "Detected" : "Unavailable") : "Auto-eval disabled"}
+            />
+          </div>
+          {blockingErrors.length > 0 ? (
+            <div className="mt-3 rounded-xl border border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-3 py-2 text-sm text-[var(--color-error-text)]">
+              <p className="font-semibold">Blocking issues</p>
+              <ul className="mt-1 list-disc pl-4">
+                {blockingErrors.map((issue) => (
+                  <li key={issue}>{issue}</li>
                 ))}
-              </select>
-            </label>
-
-            <label className="mb-3 block text-xs text-[#516977]">
-              Model profile (optional)
-              <input
-                value={modelProfile}
-                onChange={(event) => setModelProfile(event.target.value)}
-                placeholder="configs/models/..."
-                className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 text-sm text-[#2f4957]"
-              />
-            </label>
-
-            <label className="mb-3 block text-xs text-[#516977]">
-              Overrides (`key=value`, one per line)
-              <textarea
-                value={overridesText}
-                onChange={(event) => setOverridesText(event.target.value)}
-                rows={8}
-                placeholder="experiment.target_valid_games=5"
-                className="mt-1 w-full rounded-lg border border-[#d7d0c2] bg-white px-2.5 py-2 font-['IBM_Plex_Mono'] text-xs text-[#2f4957]"
-              />
-            </label>
-
-            {invalidOverrideLines.length > 0 && (
-              <p className="rounded-md border border-[#cf8f8f] bg-[#fff2ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
-                Invalid override line(s): {invalidOverrideLines.join(", ")}
-              </p>
-            )}
-          </section>
-
-          <section className="rounded-xl border border-[#ded8cf] bg-[#f9f6ef] p-4">
-            <h3 className="mb-3 text-sm font-semibold text-[#26404f]">Actions</h3>
-
-            <div className="mb-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-md border border-[#2b6985] bg-[#2b6985] px-3 py-1.5 text-xs font-semibold text-[#eef8fd]"
-                disabled={!currentConfigPath || invalidOverrideLines.length > 0 || validateMutation.isPending}
-                onClick={() =>
-                  validateMutation.mutate({
-                    config_path: currentConfigPath,
-                    model_profile: modelProfile.trim() || null,
-                    overrides: parsedOverrides,
-                  })
-                }
-              >
-                {validateMutation.isPending ? "Validating..." : "Validate"}
-              </button>
-
-              <button
-                type="button"
-                className="rounded-md border border-[#2b6985] bg-[#2b6985] px-3 py-1.5 text-xs font-semibold text-[#eef8fd]"
-                disabled={!currentConfigPath || invalidOverrideLines.length > 0 || previewMutation.isPending}
-                onClick={() =>
-                  previewMutation.mutate({
-                    config_path: currentConfigPath,
-                    model_profile: modelProfile.trim() || null,
-                    overrides: parsedOverrides,
-                  })
-                }
-              >
-                {previewMutation.isPending ? "Previewing..." : "Preview"}
-              </button>
+              </ul>
             </div>
+          ) : null}
 
-            <div className="mb-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-xs font-semibold text-[#edf8fd]"
-                disabled={!currentConfigPath || invalidOverrideLines.length > 0 || isLaunching}
-                onClick={() =>
-                  startPlayMutation.mutate(
-                    {
-                      config_path: currentConfigPath,
-                      model_profile: modelProfile.trim() || null,
-                      overrides: parsedOverrides,
-                    },
-                    {
-                      onSuccess: (job) =>
-                        navigate({
-                          to: "/jobs/$jobId",
-                          params: { jobId: job.job_id },
-                        }),
-                    },
-                  )
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <InfoChip label="Run ID" value={previewData?.run_id ?? "--"} />
+            <InfoChip label="Config hash" value={previewData?.config_hash ?? validateMutation.data?.config_hash ?? "--"} />
+            <InfoChip label="Scheduled games" value={previewData ? String(previewData.scheduled_games) : String(targetValidGames)} />
+            <InfoChip label="Estimated cost (USD)" value={formatUsd(estimatedCostUsd, 4)} />
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] px-3 py-2 text-sm font-semibold text-[var(--color-surface-canvas)]"
+              disabled={!canLaunch}
+              onClick={() => {
+                if (!canLaunch) {
+                  return;
                 }
-              >
-                {startPlayMutation.isPending ? "Starting..." : "Play (1 game)"}
-              </button>
-
-              <button
-                type="button"
-                className="rounded-md border border-[#1f637d] bg-[#1f637d] px-3 py-1.5 text-xs font-semibold text-[#edf8fd]"
-                disabled={!currentConfigPath || invalidOverrideLines.length > 0 || isLaunching}
-                onClick={() =>
-                  startRunMutation.mutate(
-                    {
-                      config_path: currentConfigPath,
-                      model_profile: modelProfile.trim() || null,
-                      overrides: parsedOverrides,
-                    },
-                    {
-                      onSuccess: (job) =>
-                        navigate({
-                          to: "/jobs/$jobId",
-                          params: { jobId: job.job_id },
-                        }),
-                    },
-                  )
+                if (!confirmLaunch("run", previewData?.run_id, previewData?.scheduled_games, estimatedCostUsd, autoEvaluateEnabled)) {
+                  return;
                 }
-              >
-                {startRunMutation.isPending ? "Starting..." : "Run"}
-              </button>
-            </div>
+                startRunMutation.mutate(requestPayload, {
+                  onSuccess: (job) => {
+                    navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.job_id } });
+                  },
+                });
+              }}
+            >
+              {startRunMutation.isPending ? "Starting..." : "Launch Experiment"}
+            </button>
 
-            <StatusBox
-              label="Validation"
-              text={
-                validateMutation.data
-                  ? `${validateMutation.data.ok ? "ok" : "failed"}: ${validateMutation.data.message}`
-                  : "Run validation to check config integrity."
-              }
-              tone={validateMutation.data?.ok ? "good" : validateMutation.isError ? "bad" : "neutral"}
-            />
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--color-text-primary)]"
+              disabled={!canLaunch}
+              onClick={() => {
+                if (!canLaunch) {
+                  return;
+                }
+                if (!confirmLaunch("play", previewData?.run_id, 1, estimatedCostUsd, autoEvaluateEnabled)) {
+                  return;
+                }
+                startPlayMutation.mutate(requestPayload, {
+                  onSuccess: (job) => {
+                    navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.job_id } });
+                  },
+                });
+              }}
+            >
+              {startPlayMutation.isPending ? "Starting..." : "Play (1 game)"}
+            </button>
 
-            <StatusBox
-              label="Preview"
-              text={
-                previewMutation.data
-                  ? `run_id=${previewMutation.data.run_id} | scheduled=${previewMutation.data.scheduled_games} | est_cost=${formatCost(previewMutation.data.estimated_total_cost_usd)}`
-                  : "Run preview to get run id, hash and cost estimation."
-              }
-              tone={previewMutation.isError ? "bad" : previewMutation.data ? "good" : "neutral"}
-            />
+            <Link
+              to="/dashboard/jobs"
+              className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+            >
+              Open Jobs
+            </Link>
+          </div>
 
-            {(validateMutation.isError || previewMutation.isError || startRunMutation.isError || startPlayMutation.isError) && (
-              <p className="mt-3 rounded-md border border-[#cf8f8f] bg-[#fff2ef] px-2.5 py-1.5 text-xs text-[#8a3434]">
-                {extractErrorMessage(validateMutation.error) ||
-                  extractErrorMessage(previewMutation.error) ||
-                  extractErrorMessage(startPlayMutation.error) ||
-                  extractErrorMessage(startRunMutation.error)}
-              </p>
-            )}
-          </section>
-        </div>
+          {(startRunMutation.isError || startPlayMutation.isError || modelCatalogQuery.isError || configsQuery.isError) && (
+            <p className="mt-3 rounded-lg border border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-3 py-2 text-sm text-[var(--color-error-text)]">
+              {extractErrorMessage(startRunMutation.error) ||
+                extractErrorMessage(startPlayMutation.error) ||
+                extractErrorMessage(modelCatalogQuery.error) ||
+                extractErrorMessage(configsQuery.error)}
+            </p>
+          )}
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Resolved config preview</p>
+            <pre className="mt-2 max-h-[400px] overflow-auto rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3 font-['IBM_Plex_Mono'] text-xs text-[var(--color-text-primary)]">
+              {toPrettyJson(resolvedConfigPreview)}
+            </pre>
+          </div>
+        </section>
       </div>
     </section>
   );
+}
+
+function TemplateGroup({
+  label,
+  templates,
+  selectedPath,
+  onSelect,
+}: {
+  label: string;
+  templates: TemplateOption[];
+  selectedPath: string;
+  onSelect: (path: string) => void;
+}) {
+  if (templates.length === 0) {
+    return null;
+  }
+  return (
+    <section className="mb-3">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{label}</p>
+      <div className="space-y-1">
+        {templates.map((template) => (
+          <button
+            key={template.path}
+            type="button"
+            onClick={() => onSelect(template.path)}
+            className={[
+              "w-full rounded-lg border px-2.5 py-2 text-left",
+              template.path === selectedPath
+                ? "border-[var(--color-primary-700)] bg-[var(--color-primary-50)]"
+                : "border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)]",
+            ].join(" ")}
+          >
+            <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{template.name}</p>
+            <p className="truncate text-[11px] text-[var(--color-text-secondary)]">{template.path}</p>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ChecklistRow({ label, tone, detail }: { label: string; tone: "success" | "warning" | "error" | "pending"; detail: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div>
+        <p className="text-xs font-semibold text-[var(--color-text-primary)]">{label}</p>
+        <p className="text-[11px] text-[var(--color-text-secondary)]">{detail}</p>
+      </div>
+      <StatusBadge label={toneLabel(tone)} tone={toneToBadgeTone(tone)} />
+    </div>
+  );
+}
+
+function InfoChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-2.5 py-2">
+      <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">{label}</p>
+      <p className="mt-1 truncate text-xs font-semibold text-[var(--color-text-primary)]">{value}</p>
+    </div>
+  );
+}
+function toneLabel(tone: "success" | "warning" | "error" | "pending"): string {
+  if (tone === "success") {
+    return "ok";
+  }
+  if (tone === "warning") {
+    return "warning";
+  }
+  if (tone === "error") {
+    return "blocked";
+  }
+  return "pending";
+}
+
+function toneToBadgeTone(tone: "success" | "warning" | "error" | "pending"): "success" | "warning" | "error" | "neutral" {
+  if (tone === "success") {
+    return "success";
+  }
+  if (tone === "warning") {
+    return "warning";
+  }
+  if (tone === "error") {
+    return "error";
+  }
+  return "neutral";
+}
+
+function buildStructuredOverrides(input: {
+  provider: string;
+  model: string;
+  targetValidGames: number;
+  maxBudgetUsd: number | null;
+  boardFormat: BoardFormat;
+  provideLegalMoves: boolean;
+  provideHistory: boolean;
+  feedbackLevel: FeedbackLevel;
+  autoEvaluateEnabled: boolean;
+  evaluationPlayerColor: "white" | "black";
+  evaluationOpponentElo: number | null;
+}): string[] {
+  const overrides: string[] = [
+    `players.black.type=llm`,
+    `players.black.provider=${input.provider}`,
+    `players.black.model=${input.model}`,
+    `players.black.name=${safeModelName(input.provider, input.model)}`,
+    `experiment.target_valid_games=${input.targetValidGames}`,
+    `strategy.board_format=${input.boardFormat}`,
+    `strategy.provide_legal_moves=${input.provideLegalMoves}`,
+    `strategy.provide_history=${input.provideHistory}`,
+    `strategy.validation.feedback_level=${input.feedbackLevel}`,
+  ];
+
+  if (input.maxBudgetUsd !== null) {
+    overrides.push(`experiment.max_budget_usd=${input.maxBudgetUsd}`);
+  }
+
+  if (input.autoEvaluateEnabled) {
+    overrides.push("evaluation.auto.enabled=true");
+    overrides.push(`evaluation.auto.player_color=${input.evaluationPlayerColor}`);
+    if (input.evaluationOpponentElo !== null) {
+      overrides.push(`evaluation.auto.opponent_elo=${input.evaluationOpponentElo}`);
+    }
+  } else {
+    overrides.push("evaluation.auto.enabled=false");
+  }
+
+  return overrides;
 }
 
 function parseOverrides(raw: string): string[] {
@@ -331,19 +901,14 @@ function upsertOverrides(existingRaw: string, updates: Record<string, string>): 
   const map = new Map<string, string>();
 
   for (const line of existingLines) {
-    if (!line.includes("=")) {
+    const parsed = parseOverrideLine(line);
+    if (!parsed) {
       continue;
     }
-    const idx = line.indexOf("=");
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim();
-    if (!key) {
-      continue;
+    if (!orderedKeys.includes(parsed.key)) {
+      orderedKeys.push(parsed.key);
     }
-    if (!orderedKeys.includes(key)) {
-      orderedKeys.push(key);
-    }
-    map.set(key, value);
+    map.set(parsed.key, parsed.value);
   }
 
   for (const [key, value] of Object.entries(updates)) {
@@ -354,6 +919,107 @@ function upsertOverrides(existingRaw: string, updates: Record<string, string>): 
   }
 
   return orderedKeys.map((key) => `${key}=${map.get(key) ?? ""}`).join("\n");
+}
+
+function mergeOverrides(base: string[], custom: string[]): string[] {
+  const order: string[] = [];
+  const map = new Map<string, string>();
+
+  const applyLine = (line: string) => {
+    const parsed = parseOverrideLine(line);
+    if (!parsed) {
+      return;
+    }
+    if (!order.includes(parsed.key)) {
+      order.push(parsed.key);
+    }
+    map.set(parsed.key, parsed.value);
+  };
+
+  for (const line of base) {
+    applyLine(line);
+  }
+  for (const line of custom) {
+    applyLine(line);
+  }
+
+  return order.map((key) => `${key}=${map.get(key) ?? ""}`);
+}
+
+function parseOverrideLine(line: string): { key: string; value: string } | null {
+  const idx = line.indexOf("=");
+  if (idx <= 0) {
+    return null;
+  }
+  const key = line.slice(0, idx).trim();
+  const value = line.slice(idx + 1).trim();
+  if (!key) {
+    return null;
+  }
+  return { key, value };
+}
+
+function resolveTemplateBucket(category: string | null | undefined, path: string): TemplateBucket {
+  const normalizedCategory = (category ?? "").toLowerCase();
+  const normalizedPath = path.toLowerCase();
+  if (normalizedCategory.includes("custom") || normalizedPath.includes("/custom/")) {
+    return "custom";
+  }
+  if (normalizedCategory.includes("ablation") || normalizedPath.includes("/ablations/")) {
+    return "ablations";
+  }
+  return "baselines";
+}
+
+function safeModelName(provider: string, model: string): string {
+  return `${provider}_${model}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
+}
+
+function parseOptionalPositiveNumber(value: string): number | null {
+  if (value.trim().length === 0) {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
+function parseOptionalInteger(value: string): number | null {
+  if (value.trim().length === 0) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+function clampInt(raw: string, minimum: number, maximum: number, fallback: number): number {
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(minimum, Math.min(maximum, parsed));
+}
+
+function confirmLaunch(
+  mode: "run" | "play",
+  runId: string | undefined,
+  scheduledGames: number | undefined,
+  estimatedCostUsd: number | null,
+  autoEvaluateEnabled: boolean,
+): boolean {
+  const lines = [
+    `Run ID: ${runId ?? "--"}`,
+    `Scheduled games: ${scheduledGames ?? "--"}`,
+    `Estimated cost: ${formatUsd(estimatedCostUsd, 4)}`,
+    `Auto-evaluate: ${autoEvaluateEnabled ? "ON" : "OFF"}`,
+    "",
+    mode === "run" ? "Launch this experiment now?" : "Launch one quick play game now?",
+  ];
+  return window.confirm(lines.join("\n"));
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -369,26 +1035,26 @@ function extractErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
-function formatCost(value: number | null | undefined): string {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return "--";
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    unique.push(value);
   }
-  return value.toFixed(4);
+  return unique;
 }
 
-function StatusBox({ label, text, tone }: { label: string; text: string; tone: "good" | "bad" | "neutral" }) {
-  return (
-    <div
-      className={[
-        "mt-2 rounded-md border px-2.5 py-1.5 text-xs",
-        tone === "good"
-          ? "border-[#99c7ac] bg-[#eaf8f0] text-[#24583f]"
-          : tone === "bad"
-            ? "border-[#cf8f8f] bg-[#fff2ef] text-[#8a3434]"
-            : "border-[#cfd7dc] bg-[#f3f7fa] text-[#48616f]",
-      ].join(" ")}
-    >
-      <span className="font-semibold">{label}:</span> {text}
-    </div>
-  );
+function toPrettyJson(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "{}";
+  }
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }

@@ -4,46 +4,17 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("react-chessboard", () => ({
+  Chessboard: () => <div data-testid="mock-chessboard">mock-chessboard</div>,
+}));
+
 import { router } from "../../router";
 
-class FakeEventSource {
-  static instances: FakeEventSource[] = [];
-
-  readonly url: string;
-  private listeners = new Map<string, Array<(event: { data: string }) => void>>();
-
-  constructor(url: string) {
-    this.url = url;
-    FakeEventSource.instances.push(this);
-  }
-
-  addEventListener(type: string, listener: (event: { data: string }) => void) {
-    const current = this.listeners.get(type) ?? [];
-    current.push(listener);
-    this.listeners.set(type, current);
-  }
-
-  close() {
-    // no-op for tests
-  }
-
-  emit(type: string, data: string) {
-    const listeners = this.listeners.get(type) ?? [];
-    for (const listener of listeners) {
-      listener({ data });
-    }
-  }
-}
-
-describe("run lab launch flow", () => {
+describe("quick play flow", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
     let jobsVisible = false;
-
-    FakeEventSource.instances = [];
-    vi.stubGlobal("EventSource", FakeEventSource);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = toUrl(input);
@@ -102,46 +73,6 @@ describe("run lab launch flow", () => {
         ]);
       }
 
-      if (pathname === "/api/configs/validate" && method === "POST") {
-        return jsonResponse({
-          ok: true,
-          message: "valid",
-          config_hash: "cfg-hash-1",
-          resolved_config: { experiment: { target_valid_games: 10 } },
-        });
-      }
-
-      if (pathname === "/api/configs/preview" && method === "POST") {
-        return jsonResponse({
-          config_path: "configs/baselines/best_known_start.yaml",
-          config_hash: "cfg-hash-1",
-          run_id: "run-preview-1",
-          scheduled_games: 10,
-          estimated_total_cost_usd: 0.25,
-          resolved_config: { experiment: { target_valid_games: 10 } },
-        });
-      }
-
-      if (pathname === "/api/jobs/run" && method === "POST") {
-        jobsVisible = true;
-        return jsonResponse({
-          job_id: "job-run-1",
-          job_type: "run",
-          status: "running",
-          pid: 111,
-          command: ["python", "-m", "zugzwang.cli", "run"],
-          created_at_utc: "2026-02-22T00:00:00Z",
-          updated_at_utc: null,
-          stdout_path: "results/ui_jobs/logs/job-run-1.stdout.log",
-          stderr_path: "results/ui_jobs/logs/job-run-1.stderr.log",
-          run_id: "run-1",
-          run_dir: "results/runs/run-1",
-          meta: {},
-          result_payload: null,
-          exit_code: null,
-        });
-      }
-
       if (pathname === "/api/jobs/play" && method === "POST") {
         jobsVisible = true;
         return jsonResponse({
@@ -190,8 +121,54 @@ describe("run lab launch flow", () => {
           run_dir: "results/runs/run-play-1",
           stopped_due_to_budget: false,
           budget_stop_reason: null,
-          latest_report: null,
+          latest_report: { total_cost_usd: 0.02 },
           log_tail: "",
+        });
+      }
+
+      if (pathname === "/api/runs/run-play-1/games" && method === "GET") {
+        return jsonResponse([{ game_number: 1, path: "results/runs/run-play-1/games/game_0001.json" }]);
+      }
+
+      if (pathname === "/api/runs/run-play-1/games/1" && method === "GET") {
+        return jsonResponse({
+          game_number: 1,
+          result: "1-0",
+          termination: "checkmate",
+          duration_seconds: 9.5,
+          total_cost_usd: 0.02,
+          total_tokens: { input: 120, output: 30 },
+          moves: [
+            { ply_number: 1, move_decision: { move_uci: "e2e4", move_san: "e4" } },
+            { ply_number: 2, move_decision: { move_uci: "e7e5", move_san: "e5" } },
+          ],
+        });
+      }
+
+      if (pathname === "/api/runs/run-play-1/games/1/frames" && method === "GET") {
+        return jsonResponse([
+          { ply_number: 0, fen: "start", svg: "<svg />", move_uci: null, move_san: null, color: null, raw_response: null },
+          { ply_number: 1, fen: "after", svg: "<svg />", move_uci: "e2e4", move_san: "e4", color: "white", raw_response: "e2e4" },
+        ]);
+      }
+
+      if (pathname === "/api/runs/run-play-1" && method === "GET") {
+        return jsonResponse({
+          run_meta: {
+            run_id: "run-play-1",
+            run_dir: "results/runs/run-play-1",
+            created_at_utc: "2026-02-22T00:00:00Z",
+            config_hash: "abc123",
+            report_exists: true,
+            evaluated_report_exists: true,
+          },
+          report: { num_games_target: 1, num_games_valid: 1, total_cost_usd: 0.02 },
+          evaluated_report: {
+            acpl_overall: 32.0,
+            blunder_rate: 0.05,
+            best_move_agreement: 0.45,
+          },
+          game_count: 1,
         });
       }
 
@@ -202,11 +179,10 @@ describe("run lab launch flow", () => {
   afterEach(async () => {
     cleanup();
     vi.restoreAllMocks();
-    vi.unstubAllGlobals();
     await router.navigate({ to: "/" });
   });
 
-  it("starts play from run lab and navigates to job detail", async () => {
+  it("launches quick play and renders post-game summary", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -216,7 +192,7 @@ describe("run lab launch flow", () => {
       },
     });
 
-    await router.navigate({ to: "/run-lab" });
+    await router.navigate({ to: "/quick-play" });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -224,14 +200,15 @@ describe("run lab launch flow", () => {
       </QueryClientProvider>,
     );
 
-    await screen.findByRole("heading", { name: "Experiment Launch Workbench" });
     const user = userEvent.setup();
-    const playButton = screen.getByRole("button", { name: "Play (1 game)" });
-    await waitFor(() => expect(playButton).toBeEnabled());
-    await user.click(playButton);
+    await screen.findByRole("heading", { name: "Quick Play" });
+    await user.click(screen.getByRole("button", { name: "Show advanced options" }));
+    await user.selectOptions(screen.getByLabelText("Opponent"), "stockfish");
+    await user.click(screen.getByRole("button", { name: "Play Game" }));
 
-    await screen.findByRole("heading", { name: "Job job-play-1" });
-    expect(window.confirm).toHaveBeenCalled();
+    await screen.findByText("Result summary");
+    expect(screen.getByText(/checkmate/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Full Analysis" })).toBeInTheDocument();
 
     await waitFor(() => {
       const calls = vi.mocked(globalThis.fetch).mock.calls;
@@ -243,6 +220,7 @@ describe("run lab launch flow", () => {
       expect(overrides).toContain("players.black.provider=zai");
       expect(overrides).toContain("players.black.model=glm-5");
       expect(overrides).toContain("evaluation.auto.enabled=true");
+      expect(overrides).toContain("players.white.type=engine");
     });
 
     await waitFor(() => {

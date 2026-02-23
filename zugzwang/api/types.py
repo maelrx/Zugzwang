@@ -84,6 +84,20 @@ class RunMeta:
     config_hash: str | None
     report_exists: bool
     evaluated_report_exists: bool
+    inferred_player_color: str | None = None
+    inferred_opponent_elo: int | None = None
+    inferred_provider: str | None = None
+    inferred_model: str | None = None
+    inferred_model_label: str | None = None
+    inferred_config_template: str | None = None
+    inferred_eval_status: str | None = None
+    num_games_target: int | None = None
+    num_games_valid: int | None = None
+    completion_rate: float | None = None
+    total_cost_usd: float | None = None
+    elo_estimate: float | None = None
+    acpl_overall: float | None = None
+    blunder_rate: float | None = None
 
 
 @dataclass
@@ -93,6 +107,29 @@ class RunSummary:
     report: dict[str, Any] | None
     evaluated_report: dict[str, Any] | None
     game_count: int
+
+
+@dataclass
+class DashboardTimelinePoint:
+    run_id: str
+    created_at_utc: str | None
+    inferred_model_label: str | None
+    total_cost_usd: float | None
+    elo_estimate: float | None
+    acpl_overall: float | None
+    evaluated_report_exists: bool
+
+
+@dataclass
+class DashboardKpis:
+    total_runs: int
+    runs_with_reports: int
+    evaluated_runs: int
+    best_elo: float | None
+    avg_acpl: float | None
+    total_cost_usd: float
+    last_run_id: str | None
+    timeline: list[DashboardTimelinePoint]
 
 
 @dataclass

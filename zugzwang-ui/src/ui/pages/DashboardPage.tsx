@@ -2,122 +2,249 @@ import { useQueries } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { apiRequest } from "../../api/client";
-import { useJobs, useRuns } from "../../api/queries";
-import type { JobResponse, RunListItem, RunSummaryResponse } from "../../api/types";
-import { InfoCard } from "../components/InfoCard";
+import { useDashboardKpis, useJobs, useRuns } from "../../api/queries";
+import type { JobResponse, RunListItem, RunProgressResponse } from "../../api/types";
+import { useCompareStore } from "../../stores/compareStore";
+import { ProgressBar } from "../components/ProgressBar";
+import { StatCard } from "../components/StatCard";
+import { StatusBadge } from "../components/StatusBadge";
 import { PageHeader } from "../components/PageHeader";
-import { computeDashboardKpis, extractRunMetrics, formatDecimal, formatRate, formatUsd } from "../lib/runMetrics";
+import { formatDecimal, formatUsd } from "../lib/runMetrics";
 
-const DASHBOARD_SUMMARY_LIMIT = 20;
 const RECENT_RUN_ROWS = 8;
 const EMPTY_JOBS: JobResponse[] = [];
 const EMPTY_RUNS: RunListItem[] = [];
 
 export function DashboardPage() {
+  const kpisQuery = useDashboardKpis(80);
   const jobsQuery = useJobs();
-  const runsQuery = useRuns();
+  const runsQuery = useRuns({ sortBy: "created_at_utc", sortDir: "desc", limit: RECENT_RUN_ROWS });
 
   const jobs = jobsQuery.data ?? EMPTY_JOBS;
   const runs = runsQuery.data ?? EMPTY_RUNS;
-  const sampledRuns = runs.slice(0, DASHBOARD_SUMMARY_LIMIT);
+  const activeJobs = useMemo(() => jobs.filter((job) => job.status === "running" || job.status === "queued"), [jobs]);
 
-  const summaryQueries = useQueries({
-    queries: sampledRuns.map((run) => ({
-      queryKey: ["run-summary-dashboard", run.run_id] as const,
-      queryFn: () => apiRequest<RunSummaryResponse>(`/api/runs/${run.run_id}`),
-      staleTime: 30_000,
+  const selectedRunIds = useCompareStore((state) => state.selectedRunIds);
+  const toggleRunSelection = useCompareStore((state) => state.toggleRunSelection);
+  const clearSelection = useCompareStore((state) => state.clearSelection);
+
+  const progressQueries = useQueries({
+    queries: activeJobs.map((job) => ({
+      queryKey: ["dashboard-job-progress", job.job_id] as const,
+      queryFn: () => apiRequest<RunProgressResponse>(`/api/jobs/${job.job_id}/progress`),
+      staleTime: 0,
+      refetchInterval: 2_000,
     })),
   });
 
-  const summaries = useMemo(
-    () => summaryQueries.map((query) => query.data).filter((summary): summary is RunSummaryResponse => Boolean(summary)),
-    [summaryQueries],
-  );
-
-  const summaryByRunId = useMemo(() => {
-    const map = new Map<string, RunSummaryResponse>();
-    for (const summary of summaries) {
-      map.set(summary.run_meta.run_id, summary);
+  const progressByJobId = useMemo(() => {
+    const entries = new Map<string, RunProgressResponse>();
+    for (let index = 0; index < activeJobs.length; index += 1) {
+      const data = progressQueries[index]?.data;
+      if (data) {
+        entries.set(activeJobs[index].job_id, data);
+      }
     }
-    return map;
-  }, [summaries]);
+    return entries;
+  }, [activeJobs, progressQueries]);
 
-  const recentRows = useMemo(
-    () =>
-      runs.slice(0, RECENT_RUN_ROWS).map((run) => {
-        const summary = summaryByRunId.get(run.run_id);
-        const metrics = extractRunMetrics(summary);
-        return {
-          runId: run.run_id,
-          completionRate: formatRate(metrics.completionRate),
-          costUsd: formatUsd(metrics.totalCostUsd),
-          acpl: formatDecimal(metrics.acplOverall, 1),
-          evaluated: run.evaluated_report_exists ? "yes" : "no",
-        };
-      }),
-    [runs, summaryByRunId],
-  );
-
-  const kpis = useMemo(() => computeDashboardKpis(jobs, runs, summaries), [jobs, runs, summaries]);
-
-  const summariesLoading = summaryQueries.some((query) => query.isLoading);
-  const summariesError = summaryQueries.some((query) => query.isError);
+  const kpis = kpisQuery.data;
+  const selectedCount = selectedRunIds.length;
+  const canCompare = selectedCount >= 2;
+  const hasErrors = kpisQuery.isError || jobsQuery.isError || runsQuery.isError || progressQueries.some((query) => query.isError);
 
   return (
     <section>
       <PageHeader
         eyebrow="Home"
-        title="Research Operations Dashboard"
-        subtitle="Operational KPIs and recent experiment outcomes, all loaded from FastAPI routes."
+        title="Command Center"
+        subtitle="Research operations snapshot with active jobs, quick actions, and compare-ready recent runs."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <InfoCard title="Active jobs" value={String(kpis.activeJobs)} hint={jobsQuery.isLoading ? "Loading jobs..." : "Polled from /api/jobs"} />
-        <InfoCard title="Runs indexed" value={String(kpis.runsIndexed)} hint={runsQuery.isLoading ? "Loading runs..." : "Loaded from /api/runs"} />
-        <InfoCard
-          title="Completion rate"
-          value={formatRate(kpis.completionRate)}
-          hint={summariesLoading ? "Computing from latest reports..." : "Aggregate valid/target games."}
-        />
-        <InfoCard title="Total spend (USD)" value={formatUsd(kpis.totalSpendUsd)} hint="Sum of report.total_cost_usd across sampled runs." />
-        <InfoCard title="Avg ACPL" value={formatDecimal(kpis.avgAcpl, 1)} hint="Average ACPL from sampled evaluated reports." />
-        <InfoCard title="Evaluated runs" value={String(kpis.evaluatedRuns)} hint={`Budget-stopped runs: ${kpis.budgetStops}`} />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard label="Total runs" value={String(kpis?.total_runs ?? 0)} hint="Indexed from /api/dashboard/kpis" />
+        <StatCard label="Best Elo" value={formatDecimal(kpis?.best_elo, 1)} hint="Highest evaluated run Elo" />
+        <StatCard label="Avg ACPL" value={formatDecimal(kpis?.avg_acpl, 1)} hint="Across evaluated runs" />
+        <StatCard label="Total cost" value={formatUsd(kpis?.total_cost_usd, 4)} hint="All-time aggregate spend" />
+        <StatCard label="Active jobs" value={String(activeJobs.length)} hint="Polled from /api/jobs" />
       </div>
 
-      <div className="mt-5 overflow-x-auto rounded-2xl border border-[#d9d1c4] bg-white/85 shadow-[0_10px_24px_rgba(16,32,41,0.08)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e2ddd2] bg-[#f5f2ea] px-4 py-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#5e7382]">Recent runs</p>
-          <span className="text-xs text-[#5e7382]">Last run: {kpis.lastRunId ?? "--"}</span>
+      <section className="mt-5 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Quick actions</p>
+          {kpis?.last_run_id ? (
+            <span className="text-xs text-[var(--color-text-secondary)]">Last run: {kpis.last_run_id}</span>
+          ) : (
+            <span className="text-xs text-[var(--color-text-secondary)]">No runs yet</span>
+          )}
         </div>
 
-        <div className="grid min-w-[720px] grid-cols-[2fr_1fr_1fr_1fr_1fr] border-b border-[#ece6da] px-4 py-2 text-xs uppercase tracking-[0.12em] text-[#627786]">
-          <span>Run ID</span>
-          <span>Completion</span>
-          <span>Cost USD</span>
-          <span>ACPL</span>
-          <span>Evaluated</span>
-        </div>
-
-        {recentRows.length === 0 && !runsQuery.isLoading && <p className="px-4 py-4 text-sm text-[#5d6f7a]">No runs found.</p>}
-
-        {recentRows.map((row) => (
-          <div key={row.runId} className="grid min-w-[720px] grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center border-b border-[#f0ece2] px-4 py-3 text-sm text-[#27404f]">
-            <Link to="/runs/$runId" params={{ runId: row.runId }} className="truncate font-medium text-[#1d5d77] hover:underline">
-              {row.runId}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            to="/quick-play"
+            className="inline-flex items-center rounded-lg border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] px-3 py-2 text-sm font-semibold text-[var(--color-surface-canvas)]"
+          >
+            Quick Play
+          </Link>
+          <Link
+            to="/lab"
+            className="inline-flex items-center rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--color-text-primary)]"
+          >
+            New Experiment
+          </Link>
+          {kpis?.last_run_id ? (
+            <Link
+              to="/runs/$runId"
+              params={{ runId: kpis.last_run_id }}
+              className="inline-flex items-center rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--color-text-primary)]"
+            >
+              View Last Run
             </Link>
-            <span>{row.completionRate}</span>
-            <span>{row.costUsd}</span>
-            <span>{row.acpl}</span>
-            <span>{row.evaluated}</span>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="mt-5 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Active jobs</p>
+          {activeJobs.length > 0 ? <StatusBadge label={`${activeJobs.length} running`} tone="info" /> : null}
+        </div>
+
+        {activeJobs.length === 0 ? (
+          <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-text-secondary)]">
+            No active jobs. Launch one from Quick Play or the Experiment Lab.
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {activeJobs.map((job) => {
+              const progress = progressByJobId.get(job.job_id);
+              const gamesWritten = progress?.games_written ?? 0;
+              const gamesTarget = progress?.games_target ?? 0;
+              const progressLabel = gamesTarget > 0 ? `${gamesWritten}/${gamesTarget} games` : `${gamesWritten} games`;
+
+              return (
+                <article
+                  key={job.job_id}
+                  className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-3 py-3"
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{job.run_id ?? job.job_id}</p>
+                    <StatusBadge label={job.status} tone="info" />
+                  </div>
+                  <ProgressBar value={gamesWritten} max={Math.max(1, gamesTarget || gamesWritten)} label={progressLabel} />
+                  <div className="mt-2">
+                    <Link
+                      to="/dashboard/jobs/$jobId"
+                      params={{ jobId: job.job_id }}
+                      className="text-xs font-semibold text-[var(--color-primary-700)] hover:underline"
+                    >
+                      Open job details
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-5 overflow-x-auto rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] shadow-[var(--shadow-card)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Recent runs</p>
+          <div className="flex items-center gap-2">
+            {canCompare ? (
+              <Link
+                to="/compare"
+                className="inline-flex items-center rounded-lg border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-surface-canvas)]"
+              >
+                Compare selected ({selectedCount})
+              </Link>
+            ) : null}
+            {selectedCount > 0 ? (
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="inline-flex items-center rounded-lg border border-[var(--color-border-strong)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-text-primary)]"
+              >
+                Clear selection
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="grid min-w-[920px] grid-cols-[0.35fr_2.1fr_1.3fr_1fr_1fr_1fr_1fr] border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+          <span />
+          <span>Run ID</span>
+          <span>Model</span>
+          <span>Games</span>
+          <span>Elo</span>
+          <span>Cost</span>
+          <span>Status</span>
+        </div>
+
+        {!runsQuery.isLoading && runs.length === 0 ? (
+          <p className="px-4 py-4 text-sm text-[var(--color-text-secondary)]">No runs found yet. Start by playing one game or launching an experiment.</p>
+        ) : null}
+
+        {runs.map((run) => (
+          <div
+            key={run.run_id}
+            className="grid min-w-[920px] grid-cols-[0.35fr_2.1fr_1.3fr_1fr_1fr_1fr_1fr] items-center border-b border-[var(--color-border-subtle)] px-4 py-3 text-sm text-[var(--color-text-primary)]"
+          >
+            <input
+              type="checkbox"
+              checked={selectedRunIds.includes(run.run_id)}
+              onChange={() => toggleRunSelection(run.run_id)}
+              aria-label={`Select ${run.run_id} for compare`}
+              className="h-4 w-4 rounded border-[var(--color-border-strong)]"
+            />
+            <Link to="/runs/$runId" params={{ runId: run.run_id }} className="truncate font-medium text-[var(--color-primary-700)] hover:underline">
+              {run.run_id}
+            </Link>
+            <span className="truncate text-xs text-[var(--color-text-secondary)]">{run.inferred_model_label ?? "--"}</span>
+            <span className="text-xs text-[var(--color-text-secondary)]">{formatGames(run.num_games_valid, run.num_games_target)}</span>
+            <span className="text-xs text-[var(--color-text-secondary)]">{formatDecimal(run.elo_estimate, 1)}</span>
+            <span className="text-xs text-[var(--color-text-secondary)]">{formatUsd(run.total_cost_usd, 4)}</span>
+            <StatusBadge label={formatEvalStatus(run.inferred_eval_status)} tone={evalStatusTone(run.inferred_eval_status)} />
           </div>
         ))}
-      </div>
+      </section>
 
-      {(jobsQuery.isError || runsQuery.isError || summariesError) && (
-        <div className="mt-5 rounded-xl border border-[#c58f8f] bg-[#fff3f1] px-4 py-3 text-sm text-[#7f2d2d]">
-          Failed to load one or more dashboard widgets from API.
+      {hasErrors ? (
+        <div className="mt-5 rounded-xl border border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-4 py-3 text-sm text-[var(--color-error-text)]">
+          Failed to load one or more command center widgets from API.
         </div>
-      )}
+      ) : null}
     </section>
   );
+}
+
+function formatGames(valid: number | null | undefined, target: number | null | undefined): string {
+  if (typeof valid !== "number" || typeof target !== "number") {
+    return "--";
+  }
+  return `${valid}/${target}`;
+}
+
+function formatEvalStatus(status: RunListItem["inferred_eval_status"]): string {
+  if (status === "evaluated") {
+    return "evaluated";
+  }
+  if (status === "needs_eval") {
+    return "needs eval";
+  }
+  if (status === "pending_report") {
+    return "pending";
+  }
+  return "unknown";
+}
+
+function evalStatusTone(status: RunListItem["inferred_eval_status"]): "neutral" | "success" | "warning" {
+  if (status === "evaluated") {
+    return "success";
+  }
+  if (status === "needs_eval") {
+    return "warning";
+  }
+  return "neutral";
 }

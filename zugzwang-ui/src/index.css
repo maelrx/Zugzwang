@@ -2,6 +2,45 @@
 @import "tailwindcss";
 
 :root {
+  --color-primary-700: #0f5a74;
+  --color-primary-600: #1f6c88;
+  --color-primary-500: #2b7f9f;
+
+  --color-surface-canvas: #f3f1ea;
+  --color-surface-sidebar: #f7f4ec;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #ece8de;
+
+  --color-border-default: #d6cfc3;
+  --color-border-subtle: #dcd5c9;
+  --color-border-strong: #8fa6b2;
+
+  --color-text-primary: #16303d;
+  --color-text-secondary: #4c6371;
+  --color-text-muted: #617986;
+
+  --color-success-bg: #e6f7ef;
+  --color-success-border: #9ad0b3;
+  --color-success-text: #1d6444;
+
+  --color-warning-bg: #fff3dd;
+  --color-warning-border: #ddb678;
+  --color-warning-text: #7a5a1a;
+
+  --color-error-bg: #ffeceb;
+  --color-error-border: #d79898;
+  --color-error-text: #853333;
+
+  --color-info-bg: #eaf3ff;
+  --color-info-border: #9db7df;
+  --color-info-text: #2f4f78;
+
+  --color-neutral-bg: #edf2f5;
+  --color-neutral-border: #b7c4cc;
+  --color-neutral-text: #47606d;
+
+  --shadow-card: 0 10px 24px rgba(16, 32, 41, 0.08);
+
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -23,4 +62,6 @@ body,
 
 body {
   margin: 0;
+  background-color: var(--color-surface-canvas);
+  color: var(--color-text-primary);
 }

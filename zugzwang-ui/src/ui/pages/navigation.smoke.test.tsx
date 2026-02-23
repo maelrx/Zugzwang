@@ -76,8 +76,37 @@ describe("navigation smoke", () => {
             config_hash: "abc123",
             report_exists: true,
             evaluated_report_exists: true,
+            inferred_model_label: "zai / glm-5",
+            inferred_eval_status: "evaluated",
+            num_games_valid: 1,
+            num_games_target: 1,
+            total_cost_usd: 0.03,
+            elo_estimate: 630.0,
           },
         ]);
+      }
+
+      if (pathname === "/api/dashboard/kpis") {
+        return jsonResponse({
+          total_runs: 1,
+          runs_with_reports: 1,
+          evaluated_runs: 1,
+          best_elo: 630.0,
+          avg_acpl: 20.0,
+          total_cost_usd: 0.03,
+          last_run_id: RUN_ID,
+          timeline: [
+            {
+              run_id: RUN_ID,
+              created_at_utc: "2026-02-22T00:00:00Z",
+              inferred_model_label: "zai / glm-5",
+              total_cost_usd: 0.03,
+              elo_estimate: 630.0,
+              acpl_overall: 20.0,
+              evaluated_report_exists: true,
+            },
+          ],
+        });
       }
 
       if (pathname === `/api/runs/${RUN_ID}`) {
@@ -239,31 +268,32 @@ describe("navigation smoke", () => {
 
     const user = userEvent.setup();
 
-    await screen.findByRole("heading", { name: "Research Operations Dashboard" });
+    await screen.findByRole("heading", { name: "Command Center" });
 
-    await user.click(screen.getByRole("link", { name: "Run Lab" }));
+    await user.click(screen.getByRole("link", { name: "Experiment Lab" }));
     await screen.findByRole("heading", { name: "Experiment Launch Workbench" });
 
-    await user.click(screen.getByRole("link", { name: "Jobs" }));
-    await screen.findByRole("heading", { name: "Execution Monitor" });
+    await user.click(screen.getByRole("link", { name: "Quick Play" }));
+    await screen.findByRole("heading", { name: "Quick Play" });
 
     await user.click(screen.getByRole("link", { name: "Runs" }));
     await screen.findByRole("heading", { name: "Run Explorer" });
 
     await user.click(await screen.findByRole("link", { name: RUN_ID }));
     await screen.findByRole("heading", { name: RUN_ID });
+    await user.click(screen.getByRole("button", { name: "Games" }));
 
-    await user.click(await screen.findByRole("link", { name: "Open replay" }));
+    await user.click(await screen.findByRole("link", { name: "Full Analysis" }));
     await screen.findByRole("heading", { name: new RegExp(`${RUN_ID} / game 1`) });
 
     await user.click(screen.getByRole("link", { name: "Settings" }));
     await screen.findByRole("heading", { name: "Environment Diagnostics" });
 
     await user.click(screen.getByRole("link", { name: "Compare" }));
-    await screen.findByRole("heading", { name: "Run Comparison" });
+    await screen.findByRole("heading", { name: "Compare Workbench" });
 
-    expect(screen.getByText("Select two runs to populate comparison metrics.")).toBeInTheDocument();
-  });
+    expect(screen.getByText("Select at least 2 runs to populate the comparison table.")).toBeInTheDocument();
+  }, 10_000);
 });
 
 function toUrl(input: RequestInfo | URL): URL {

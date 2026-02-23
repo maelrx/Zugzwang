@@ -8,6 +8,9 @@ import { router } from "../../router";
 
 describe("run lab model selector", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = toUrl(input);
       const pathname = url.pathname;
@@ -41,6 +44,34 @@ describe("run lab model selector", () => {
             models: [{ id: "gpt-5", label: "GPT-5", recommended: true }],
           },
         ]);
+      }
+
+      if (pathname === "/api/env-check" && method === "GET") {
+        return jsonResponse([
+          { provider: "zai", ok: true, message: "configured" },
+          { provider: "openai", ok: true, message: "configured" },
+          { provider: "stockfish", ok: true, message: "configured" },
+        ]);
+      }
+
+      if (pathname === "/api/configs/validate" && method === "POST") {
+        return jsonResponse({
+          ok: true,
+          message: "valid",
+          config_hash: "cfg-hash-1",
+          resolved_config: { experiment: { target_valid_games: 10 } },
+        });
+      }
+
+      if (pathname === "/api/configs/preview" && method === "POST") {
+        return jsonResponse({
+          config_path: "configs/baselines/best_known_start.yaml",
+          config_hash: "cfg-hash-1",
+          run_id: "run-preview-1",
+          scheduled_games: 10,
+          estimated_total_cost_usd: 0.25,
+          resolved_config: { experiment: { target_valid_games: 10 } },
+        });
       }
 
       return jsonResponse({ detail: `Unhandled mock route: ${method} ${pathname}` }, 404);
@@ -78,6 +109,7 @@ describe("run lab model selector", () => {
     await user.selectOptions(screen.getByLabelText("Provider"), "openai");
     await user.selectOptions(screen.getByLabelText("Model"), "gpt-5");
     await user.click(screen.getByRole("button", { name: "Apply Preset to Overrides" }));
+    await user.click(screen.getByRole("button", { name: "Show advanced overrides" }));
 
     const overrides = screen.getByLabelText("Overrides (`key=value`, one per line)") as HTMLTextAreaElement;
     expect(overrides.value).toContain("players.black.type=llm");

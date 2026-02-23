@@ -98,7 +98,7 @@ describe("job detail log stream", () => {
       },
     });
 
-    await router.navigate({ to: "/jobs/$jobId", params: { jobId: "job-sse-1" } });
+    await router.navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: "job-sse-1" } });
 
     render(
       <QueryClientProvider client={queryClient}>

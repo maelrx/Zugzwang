@@ -22,6 +22,7 @@ from zugzwang.core.protocol import (
     build_agentic_prompt,
     parse_agentic_action,
 )
+from zugzwang.experiments.tracker import write_prompt_transcript
 from zugzwang.providers.base import (
     ProviderError,
     ProviderInterface,
@@ -35,7 +36,11 @@ from zugzwang.strategy.context import (
     PromptRetrievalTelemetry,
     build_direct_prompt_with_metadata,
 )
-from zugzwang.strategy.validator import build_retry_feedback, validate_move_response
+from zugzwang.strategy.validator import (
+    MoveValidationResult,
+    build_retry_feedback,
+    validate_move_response,
+)
 
 
 class PlayerInterface(ABC):
@@ -90,11 +95,82 @@ class LLMPlayer(PlayerInterface):
         self.protocol_mode = protocol_mode
         self.strategy_config = strategy_config
         self._rng = rng or random.Random()
+        self.use_system_prompt = _safe_bool_with_default(
+            self.strategy_config.get("use_system_prompt"),
+            default=(self.protocol_mode == "research_strict"),
+        )
 
     def choose_move(self, game_state: GameState) -> MoveDecision:
         if self.protocol_mode == "agentic_compat":
             return self._choose_move_agentic(game_state)
         return self._choose_move_direct(game_state)
+
+    def _build_messages(self, prompt_meta: PromptBuildResult) -> list[dict[str, str]]:
+        if self.use_system_prompt and prompt_meta.system_content:
+            user_content = prompt_meta.user_content or prompt_meta.prompt
+            return [
+                {"role": "system", "content": prompt_meta.system_content},
+                {"role": "user", "content": user_content},
+            ]
+        return [{"role": "user", "content": prompt_meta.prompt}]
+
+    def _record_prompt_transcript(
+        self,
+        *,
+        game_state: GameState,
+        retry_index: int,
+        messages: list[dict[str, str]],
+        raw_response: str,
+        validation: MoveValidationResult,
+        provider_model: str,
+        tokens_input: int,
+        tokens_output: int,
+        latency_ms: int,
+        cost_usd: float,
+    ) -> None:
+        tracking = self.strategy_config.get("_tracking")
+        if not isinstance(tracking, dict):
+            return
+        if not bool(tracking.get("persist_prompt_transcripts", False)):
+            return
+        run_dir = tracking.get("run_dir")
+        game_number = tracking.get("game_number")
+        if not isinstance(run_dir, str) or not run_dir.strip():
+            return
+        if not isinstance(game_number, int) or game_number <= 0:
+            return
+
+        payload = {
+            "protocol_mode": self.protocol_mode,
+            "provider": self.provider.__class__.__name__,
+            "model": provider_model,
+            "messages": messages,
+            "raw_response": raw_response,
+            "validation": {
+                "move_uci": validation.move_uci,
+                "parse_ok": validation.parse_ok,
+                "is_legal": validation.is_legal,
+                "error_code": validation.error_code,
+            },
+            "metrics": {
+                "tokens_input": tokens_input,
+                "tokens_output": tokens_output,
+                "latency_ms": latency_ms,
+                "cost_usd": cost_usd,
+            },
+        }
+
+        try:
+            write_prompt_transcript(
+                run_dir=run_dir,
+                game_number=game_number,
+                ply_number=game_state.ply_number + 1,
+                retry_index=retry_index,
+                payload=payload,
+            )
+        except Exception:
+            # Transcript persistence must never break move selection.
+            return
 
     def _choose_move_direct(self, game_state: GameState) -> MoveDecision:
         validation_cfg = self.strategy_config.get("validation", {})
@@ -131,6 +207,7 @@ class LLMPlayer(PlayerInterface):
                 retry_feedback=retry_feedback if retry > 0 else None,
             )
             prompt = prompt_meta.prompt
+            messages = self._build_messages(prompt_meta)
             last_prompt_meta = prompt_meta
 
             if self._is_multi_agent_enabled():
@@ -184,7 +261,11 @@ class LLMPlayer(PlayerInterface):
                     )
 
                 last_error = moa_result.error or "moa_validation_failed"
-                validation = validate_move_response(last_response, game_state.legal_moves_uci)
+                validation = validate_move_response(
+                    last_response,
+                    game_state.legal_moves_uci,
+                    fen=game_state.fen,
+                )
                 retry_feedback = build_retry_feedback(
                     validation=validation,
                     feedback_level=feedback_level,
@@ -194,9 +275,27 @@ class LLMPlayer(PlayerInterface):
                 continue
 
             try:
-                response = self._call_provider([{"role": "user", "content": prompt}])
+                response = self._call_provider(messages)
             except ProviderError as exc:
                 last_error = _provider_error_code(exc)
+                validation = MoveValidationResult(
+                    move_uci=None,
+                    parse_ok=False,
+                    is_legal=False,
+                    error_code=last_error,
+                )
+                self._record_prompt_transcript(
+                    game_state=game_state,
+                    retry_index=retry,
+                    messages=messages,
+                    raw_response="",
+                    validation=validation,
+                    provider_model=self.model,
+                    tokens_input=0,
+                    tokens_output=0,
+                    latency_ms=0,
+                    cost_usd=0.0,
+                )
                 retry_feedback = "Provider call failed. Return exactly one legal UCI move."
                 if not should_retry_provider_error(exc):
                     break
@@ -208,7 +307,23 @@ class LLMPlayer(PlayerInterface):
             total_cost_usd += response.cost_usd
             last_response = response.text
 
-            validation = validate_move_response(response.text, game_state.legal_moves_uci)
+            validation = validate_move_response(
+                response.text,
+                game_state.legal_moves_uci,
+                fen=game_state.fen,
+            )
+            self._record_prompt_transcript(
+                game_state=game_state,
+                retry_index=retry,
+                messages=messages,
+                raw_response=response.text,
+                validation=validation,
+                provider_model=response.model,
+                tokens_input=response.input_tokens,
+                tokens_output=response.output_tokens,
+                latency_ms=response.latency_ms,
+                cost_usd=response.cost_usd,
+            )
             if not (validation.parse_ok and validation.is_legal and validation.move_uci):
                 last_error = validation.error_code or "validation_failed"
                 retry_feedback = build_retry_feedback(
@@ -239,6 +354,32 @@ class LLMPlayer(PlayerInterface):
                 retrieval_sources=list(prompt_meta.retrieval.sources),
                 retrieval_phase=prompt_meta.retrieval.phase,
                 decision_mode=decision_mode,
+            )
+
+        if self.protocol_mode == "research_strict":
+            return MoveDecision(
+                move_uci=None,
+                move_san="",
+                raw_response=last_response,
+                parse_ok=False,
+                is_legal=False,
+                retry_count=move_retries,
+                tokens_input=total_in,
+                tokens_output=total_out,
+                latency_ms=total_latency,
+                provider_model=self.model,
+                provider_calls=provider_calls,
+                feedback_level=feedback_level,
+                error=last_error or "retries_exhausted",
+                cost_usd=total_cost_usd,
+                retrieval_enabled=bool(last_prompt_meta.retrieval.enabled),
+                retrieval_hit_count=int(last_prompt_meta.retrieval.hit_count),
+                retrieval_latency_ms=int(last_prompt_meta.retrieval.latency_ms),
+                retrieval_sources=list(last_prompt_meta.retrieval.sources),
+                retrieval_phase=last_prompt_meta.retrieval.phase,
+                decision_mode=decision_mode,
+                agent_trace=last_agent_trace,
+                aggregator_rationale=last_aggregator_rationale,
             )
 
         fallback_move = self._rng.choice(game_state.legal_moves_uci)
@@ -731,3 +872,15 @@ def _safe_optional_bounded_int(value: Any, minimum: int, maximum: int) -> int | 
     if parsed < minimum or parsed > maximum:
         return None
     return parsed
+
+
+def _safe_bool_with_default(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    return default

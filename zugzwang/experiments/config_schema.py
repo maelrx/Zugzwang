@@ -29,7 +29,7 @@ REQUIRED_FIELDS = [
     "budget.max_total_usd",
 ]
 
-ALLOWED_PROTOCOL_MODES = {"direct", "agentic_compat"}
+ALLOWED_PROTOCOL_MODES = {"direct", "agentic_compat", "research_strict"}
 ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode"}
 ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
@@ -343,6 +343,10 @@ def validate_config(config: dict[str, Any]) -> None:
         allowed = ", ".join(sorted(ALLOWED_BOARD_FORMATS))
         raise ConfigValidationError(f"strategy.board_format must be one of [{allowed}]")
 
+    use_system_prompt = config.get("strategy", {}).get("use_system_prompt")
+    if use_system_prompt is not None and not isinstance(use_system_prompt, bool):
+        raise ConfigValidationError("strategy.use_system_prompt must be a boolean when provided")
+
     feedback = config.get("strategy", {}).get("validation", {}).get("feedback_level", "rich")
     if feedback not in ALLOWED_FEEDBACK_LEVELS:
         allowed = ", ".join(sorted(ALLOWED_FEEDBACK_LEVELS))
@@ -377,6 +381,14 @@ def validate_config(config: dict[str, Any]) -> None:
     if not isinstance(estimated_avg_cost, (int, float)) or estimated_avg_cost < 0:
         raise ConfigValidationError(
             "budget.estimated_avg_cost_per_game_usd must be a non-negative number"
+        )
+
+    persist_prompt_transcripts = config.get("tracking", {}).get("persist_prompt_transcripts")
+    if persist_prompt_transcripts is not None and not isinstance(
+        persist_prompt_transcripts, bool
+    ):
+        raise ConfigValidationError(
+            "tracking.persist_prompt_transcripts must be a boolean when provided"
         )
 
     _validate_player_config(_get_by_path(config, "players"))

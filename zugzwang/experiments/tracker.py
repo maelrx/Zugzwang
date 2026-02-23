@@ -68,3 +68,25 @@ def write_experiment_report(run_dir: str | Path, report: ExperimentReport) -> Pa
     path = Path(run_dir) / "experiment_report.json"
     path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
     return path
+
+
+def write_prompt_transcript(
+    *,
+    run_dir: str | Path,
+    game_number: int,
+    ply_number: int,
+    retry_index: int,
+    payload: dict[str, Any],
+) -> Path:
+    game_dir = Path(run_dir) / "games" / f"game_{game_number:04d}" / "transcripts"
+    game_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_payload = sanitize_for_metadata(payload)
+    safe_payload["schema_version"] = RUN_METADATA_SCHEMA_VERSION
+    safe_payload["game_number"] = int(game_number)
+    safe_payload["ply_number"] = int(ply_number)
+    safe_payload["retry_index"] = int(retry_index)
+
+    path = game_dir / f"{ply_number:03d}_{retry_index:02d}.json"
+    path.write_text(json.dumps(safe_payload, indent=2), encoding="utf-8")
+    return path

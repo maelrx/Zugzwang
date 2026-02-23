@@ -14,6 +14,11 @@ from zugzwang.strategy.phase import normalize_phase
 
 
 DEFAULT_COMPRESSION_ORDER = ["history", "rag", "legal_moves", "few_shot"]
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a chess assistant playing one move.\n"
+    "Return exactly one legal move in UCI format.\n"
+    "Do not include explanation."
+)
 
 
 @dataclass(frozen=True)
@@ -30,6 +35,8 @@ class PromptBuildResult:
     prompt: str
     dropped_blocks: list[str]
     retrieval: PromptRetrievalTelemetry
+    system_content: str | None = None
+    user_content: str = ""
 
 
 def build_direct_prompt(
@@ -53,13 +60,14 @@ def build_direct_prompt_with_metadata(
     include_legal = bool(strategy_config.get("provide_legal_moves", True))
     include_history = bool(strategy_config.get("provide_history", True))
     history_plies = int(strategy_config.get("history_plies", 8))
+    use_system_prompt = bool(strategy_config.get("use_system_prompt", False))
+    raw_system_template = strategy_config.get("system_prompt_template", DEFAULT_SYSTEM_PROMPT)
+    if not isinstance(raw_system_template, str) or not raw_system_template.strip():
+        raw_system_template = DEFAULT_SYSTEM_PROMPT
 
     phase = normalize_phase(game_state.phase)
 
     base_lines = [
-        "You are a chess assistant playing one move.",
-        "Return exactly one legal move in UCI format.",
-        "Do not include explanation.",
         f"Phase: {phase}",
         f"Side to move: {game_state.active_color}",
         *board_context_lines(game_state.fen, board_format),
@@ -101,12 +109,22 @@ def build_direct_prompt_with_metadata(
         max_prompt_chars=max_prompt_chars,
     )
 
-    prompt = "\n".join(lines)
+    user_prompt = "\n".join(lines)
     if dropped:
-        prompt = "\n".join([prompt, f"Context compression: dropped {', '.join(dropped)}."])
+        user_prompt = "\n".join(
+            [user_prompt, f"Context compression: dropped {', '.join(dropped)}."]
+        )
 
-    if max_prompt_chars is not None and len(prompt) > max_prompt_chars:
-        prompt = _truncate_prompt(prompt, max_prompt_chars)
+    if max_prompt_chars is not None and len(user_prompt) > max_prompt_chars:
+        user_prompt = _truncate_prompt(user_prompt, max_prompt_chars)
+
+    system_content = raw_system_template.strip() if use_system_prompt else None
+    if system_content:
+        prompt = f"{system_content}\n\n{user_prompt}"
+    else:
+        prompt = f"{raw_system_template.strip()}\n\n{user_prompt}"
+        if max_prompt_chars is not None and len(prompt) > max_prompt_chars:
+            prompt = _truncate_prompt(prompt, max_prompt_chars)
 
     retrieval_telemetry = PromptRetrievalTelemetry(
         enabled=bool(isinstance(rag_cfg, dict) and rag_cfg.get("enabled", False)),
@@ -119,6 +137,8 @@ def build_direct_prompt_with_metadata(
         prompt=prompt,
         dropped_blocks=dropped,
         retrieval=retrieval_telemetry,
+        system_content=system_content,
+        user_content=user_prompt,
     )
 
 

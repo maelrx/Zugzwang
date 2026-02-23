@@ -25,7 +25,7 @@ class GameState:
 
 @dataclass
 class MoveDecision:
-    move_uci: str
+    move_uci: str | None
     move_san: str
     raw_response: str
     parse_ok: bool

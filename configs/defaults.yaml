@@ -17,6 +17,7 @@ protocol:
   mode: direct
 
 strategy:
+  use_system_prompt: false
   board_format: fen
   provide_legal_moves: true
   provide_history: true
@@ -78,3 +79,4 @@ budget:
 tracking:
   persist_move_records: true
   persist_game_records: true
+  persist_prompt_transcripts: false

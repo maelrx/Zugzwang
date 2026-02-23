@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import random
 from dataclasses import dataclass
@@ -148,7 +149,6 @@ class ExperimentRunner:
         base_seed = int(config["runtime"].get("seed", 42))
         max_plies = int(config["runtime"].get("max_plies", 200))
         protocol_mode = str(config["protocol"]["mode"])
-        strategy_cfg = config["strategy"]
         budget_cap_usd = float(config["budget"]["max_total_usd"])
         estimated_avg_cost = float(config["budget"].get("estimated_avg_cost_per_game_usd", 0.0))
         timeout_policy = _timeout_policy_from_config(config)
@@ -181,6 +181,16 @@ class ExperimentRunner:
 
             seed = game_seed(base_seed, game_number)
             rng = random.Random(seed)
+            strategy_cfg = copy.deepcopy(config["strategy"])
+            tracking_cfg = config.get("tracking", {})
+            strategy_cfg["_tracking"] = {
+                "persist_prompt_transcripts": bool(
+                    isinstance(tracking_cfg, dict)
+                    and tracking_cfg.get("persist_prompt_transcripts", False)
+                ),
+                "run_dir": str(run_dir),
+                "game_number": game_number,
+            }
 
             white_cfg = config["players"]["white"]
             black_cfg = config["players"]["black"]
@@ -196,6 +206,7 @@ class ExperimentRunner:
                     players_cfg=config["players"],
                     white_player=white_player,
                     black_player=black_player,
+                    protocol_mode=protocol_mode,
                     max_plies=max_plies,
                 )
             finally:

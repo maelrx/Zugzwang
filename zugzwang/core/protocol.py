@@ -6,7 +6,7 @@ from typing import Literal
 from zugzwang.core.models import GameState
 
 
-ProtocolMode = Literal["direct", "agentic_compat"]
+ProtocolMode = Literal["direct", "agentic_compat", "research_strict"]
 ActionType = Literal["get_current_board", "get_legal_moves", "make_move", "invalid"]
 
 UCI_PATTERN = re.compile(r"\b[a-h][1-8][a-h][1-8][qrbn]?\b", flags=re.IGNORECASE)

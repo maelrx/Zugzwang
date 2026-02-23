@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { router } from "../../router";
@@ -107,7 +107,7 @@ describe("job detail log stream", () => {
     );
 
     await screen.findByRole("heading", { name: "Job job-sse-1" });
-    expect(FakeEventSource.instances.length).toBeGreaterThan(0);
+    await waitFor(() => expect(FakeEventSource.instances.length).toBeGreaterThan(0));
 
     const stream = FakeEventSource.instances[0];
     stream.emit("stdout", "line from stdout");

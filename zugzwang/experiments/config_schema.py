@@ -34,6 +34,7 @@ ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode"}
 ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}
+ALLOWED_EVAL_PLAYER_COLORS = {"white", "black", "auto"}
 ALLOWED_TIMEOUT_POLICY_ACTIONS = {"stop_run"}
 ALLOWED_RAG_SOURCES = {"eco", "lichess", "endgames"}
 ALLOWED_MULTI_AGENT_MODES = {"capability_moa", "specialist_moa", "hybrid_phase_router"}
@@ -85,6 +86,25 @@ def _validate_player_config(players: dict[str, Any]) -> None:
             hash_mb = player.get("hash_mb", 64)
             if not isinstance(hash_mb, int) or hash_mb <= 0:
                 raise ConfigValidationError(f"players.{color}.hash_mb must be a positive int")
+            uci_limit_strength = player.get("uci_limit_strength")
+            if uci_limit_strength is not None and not isinstance(uci_limit_strength, bool):
+                raise ConfigValidationError(
+                    f"players.{color}.uci_limit_strength must be a boolean when provided"
+                )
+            uci_elo = player.get("uci_elo")
+            if uci_elo is not None and (not isinstance(uci_elo, int) or uci_elo <= 0):
+                raise ConfigValidationError(f"players.{color}.uci_elo must be a positive int")
+            if uci_elo is not None and uci_limit_strength is False:
+                raise ConfigValidationError(
+                    f"players.{color}.uci_limit_strength must be true when uci_elo is set"
+                )
+            skill_level = player.get("skill_level")
+            if skill_level is not None and (
+                not isinstance(skill_level, int) or skill_level < 0 or skill_level > 20
+            ):
+                raise ConfigValidationError(
+                    f"players.{color}.skill_level must be an int in [0, 20]"
+                )
 
 
 def _validate_evaluation_auto(config: dict[str, Any]) -> None:
@@ -102,9 +122,9 @@ def _validate_evaluation_auto(config: dict[str, Any]) -> None:
     if not isinstance(fail_on_error, bool):
         raise ConfigValidationError("evaluation.auto.fail_on_error must be a boolean")
 
-    player_color = auto_cfg.get("player_color", "black")
-    if player_color not in ALLOWED_PLAYER_COLORS:
-        allowed = ", ".join(sorted(ALLOWED_PLAYER_COLORS))
+    player_color = auto_cfg.get("player_color", "auto")
+    if player_color not in ALLOWED_EVAL_PLAYER_COLORS:
+        allowed = ", ".join(sorted(ALLOWED_EVAL_PLAYER_COLORS))
         raise ConfigValidationError(f"evaluation.auto.player_color must be one of [{allowed}]")
 
     opponent_elo = auto_cfg.get("opponent_elo")

@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import { useEnvCheck, useModelCatalog } from "../../api/queries";
 import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
+import { resolveStockfishResources } from "../lib/stockfishHardware";
 
 type ProviderTestSnapshot = {
   ok: boolean;
   checkedAt: number;
+  message: string;
 };
 
 export function SettingsPage() {
@@ -16,12 +18,18 @@ export function SettingsPage() {
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
   const autoEvaluate = usePreferencesStore((state) => state.autoEvaluate);
   const stockfishDepth = usePreferencesStore((state) => state.stockfishDepth);
+  const stockfishResourceMode = usePreferencesStore((state) => state.stockfishResourceMode);
+  const stockfishThreads = usePreferencesStore((state) => state.stockfishThreads);
+  const stockfishHashMb = usePreferencesStore((state) => state.stockfishHashMb);
   const notificationsEnabled = usePreferencesStore((state) => state.notificationsEnabled);
   const theme = usePreferencesStore((state) => state.theme);
   const setDefaultProvider = usePreferencesStore((state) => state.setDefaultProvider);
   const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel);
   const setAutoEvaluate = usePreferencesStore((state) => state.setAutoEvaluate);
   const setStockfishDepth = usePreferencesStore((state) => state.setStockfishDepth);
+  const setStockfishResourceMode = usePreferencesStore((state) => state.setStockfishResourceMode);
+  const setStockfishThreads = usePreferencesStore((state) => state.setStockfishThreads);
+  const setStockfishHashMb = usePreferencesStore((state) => state.setStockfishHashMb);
   const setNotificationsEnabled = usePreferencesStore((state) => state.setNotificationsEnabled);
   const setTheme = usePreferencesStore((state) => state.setTheme);
 
@@ -82,6 +90,24 @@ export function SettingsPage() {
   }, [availableModels, defaultModel, selectedPreset, setDefaultModel]);
 
   const stockfishCheck = checksByProvider.get("stockfish");
+  const autoStockfishResources = useMemo(
+    () =>
+      resolveStockfishResources({
+        mode: "auto",
+        manualThreads: stockfishThreads,
+        manualHashMb: stockfishHashMb,
+      }),
+    [stockfishHashMb, stockfishThreads],
+  );
+  const effectiveStockfishResources = useMemo(
+    () =>
+      resolveStockfishResources({
+        mode: stockfishResourceMode,
+        manualThreads: stockfishThreads,
+        manualHashMb: stockfishHashMb,
+      }),
+    [stockfishHashMb, stockfishResourceMode, stockfishThreads],
+  );
   const readyCount = checks.filter((item) => item.ok).length;
   const allReady = checks.length > 0 && readyCount === checks.length;
 
@@ -159,7 +185,11 @@ export function SettingsPage() {
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                   Models: {models.length > 0 ? models.map((model) => model.id).join(", ") : "none from catalog"}
                 </p>
-                {tested ? <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">Last test: {formatTimestamp(tested.checkedAt)}</p> : null}
+                {tested ? (
+                  <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">
+                    Last test: {formatTimestamp(tested.checkedAt)} | {tested.message}
+                  </p>
+                ) : null}
               </article>
             );
           })}
@@ -207,7 +237,7 @@ export function SettingsPage() {
           </label>
 
           <label className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]">
-            Default depth
+            Default evaluation depth
             <input
               type="number"
               min={1}
@@ -216,6 +246,64 @@ export function SettingsPage() {
               value={stockfishDepth}
               onChange={(event) => setStockfishDepth(Number(event.target.value))}
               className="mt-1 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2 py-1 text-sm"
+            />
+          </label>
+
+          <label className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]">
+            Engine resources mode
+            <select
+              value={stockfishResourceMode}
+              onChange={(event) => setStockfishResourceMode(event.target.value === "manual" ? "manual" : "auto")}
+              className="mt-1 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2 py-1 text-sm"
+            >
+              <option value="auto">Auto-tuning (hardware)</option>
+              <option value="manual">Manual</option>
+            </select>
+          </label>
+
+          <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]">
+            <p className="text-xs text-[var(--color-text-secondary)]">Effective resources</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">
+              Threads: {effectiveStockfishResources.threads} | Hash: {effectiveStockfishResources.hashMb} MB
+            </p>
+            {stockfishResourceMode === "auto" ? (
+              <p className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
+                Auto from browser hardware
+                {autoStockfishResources.hardwareConcurrency ? ` | logical cores: ${autoStockfishResources.hardwareConcurrency}` : ""}
+                {autoStockfishResources.deviceMemoryGb ? ` | device memory: ${autoStockfishResources.deviceMemoryGb} GB` : ""}
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-[var(--color-text-secondary)]">Manual values are used for both play and evaluate.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]">
+            Manual Stockfish threads
+            <input
+              type="number"
+              min={1}
+              max={64}
+              step={1}
+              value={stockfishThreads}
+              onChange={(event) => setStockfishThreads(Number(event.target.value))}
+              disabled={stockfishResourceMode !== "manual"}
+              className="mt-1 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2 py-1 text-sm disabled:opacity-60"
+            />
+          </label>
+
+          <label className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]">
+            Manual Stockfish hash (MB)
+            <input
+              type="number"
+              min={64}
+              max={8192}
+              step={64}
+              value={stockfishHashMb}
+              onChange={(event) => setStockfishHashMb(Number(event.target.value))}
+              disabled={stockfishResourceMode !== "manual"}
+              className="mt-1 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2 py-1 text-sm disabled:opacity-60"
             />
           </label>
         </div>
@@ -298,19 +386,29 @@ async function runProviderTest(
     if (provider === "all") {
       const next: Record<string, ProviderTestSnapshot> = {};
       for (const item of checks) {
-        next[item.provider] = { ok: item.ok, checkedAt: now };
+        next[item.provider] = { ok: item.ok, checkedAt: now, message: item.message };
       }
       setProviderTests((prev) => ({ ...prev, ...next }));
       return;
     }
 
     const matched = checks.find((item) => item.provider === provider);
-    if (matched) {
+    setProviderTests((prev) => ({
+      ...prev,
+      [provider]: {
+        ok: matched?.ok ?? false,
+        checkedAt: now,
+        message: matched?.message ?? "No env-check response for this provider.",
+      },
+    }));
+  } catch (error) {
+    if (provider !== "all") {
       setProviderTests((prev) => ({
         ...prev,
         [provider]: {
-          ok: matched.ok,
-          checkedAt: now,
+          ok: false,
+          checkedAt: Date.now(),
+          message: `Test failed: ${formatProviderTestError(error)}`,
         },
       }));
     }
@@ -331,8 +429,15 @@ function statusClass(kind: "configured" | "reachable" | "unreachable" | "missing
 
 function formatTimestamp(timestamp: number): string {
   try {
-    return new Date(timestamp).toLocaleTimeString();
+    return new Date(timestamp).toLocaleString();
   } catch {
     return "--";
   }
+}
+
+function formatProviderTestError(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return "Unknown error";
 }

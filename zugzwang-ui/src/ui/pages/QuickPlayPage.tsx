@@ -4,21 +4,33 @@ import { useEffect, useMemo, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { ApiError, apiRequest } from "../../api/client";
 import { useConfigs, useEnvCheck, useJob, useJobProgress, useModelCatalog, useRunSummary, useStartPlay } from "../../api/queries";
-import type { GameDetailResponse, GameListItem, StartJobRequest } from "../../api/types";
+import type { GameDetailResponse, GameListItem, JobResponse, StartJobRequest } from "../../api/types";
 import { useLabStore } from "../../stores/labStore";
 import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
 import { ProgressBar } from "../components/ProgressBar";
 import { StatusBadge } from "../components/StatusBadge";
+import { resolveStockfishResources } from "../lib/stockfishHardware";
 import { extractRunMetrics, formatDecimal, formatRate, formatUsd } from "../lib/runMetrics";
 
 const FALLBACK_CONFIG_PATH = "configs/baselines/best_known_start.yaml";
 const ADVANCED_OPEN_SESSION_KEY = "zugzwang-quick-play-advanced-open";
 const DEFAULT_BOARD_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS = 4_000;
+const STOCKFISH_ELO_PRESETS = [
+  1200,
+  1400,
+  1600,
+  1800,
+  2000,
+  2200,
+  2400,
+  2600,
+] as const;
 
 type BoardFormat = "fen" | "pgn";
 type FeedbackLevel = "minimal" | "moderate" | "rich";
-type OpponentMode = "random" | "stockfish";
+type OpponentMode = "random" | "stockfish" | "llm";
 
 export function QuickPlayPage() {
   const navigate = useNavigate();
@@ -31,6 +43,9 @@ export function QuickPlayPage() {
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
   const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
   const stockfishDepthPreference = usePreferencesStore((state) => state.stockfishDepth);
+  const stockfishResourceMode = usePreferencesStore((state) => state.stockfishResourceMode);
+  const stockfishThreadsPreference = usePreferencesStore((state) => state.stockfishThreads);
+  const stockfishHashPreference = usePreferencesStore((state) => state.stockfishHashMb);
   const setDefaultProvider = usePreferencesStore((state) => state.setDefaultProvider);
   const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
@@ -49,34 +64,45 @@ export function QuickPlayPage() {
   const [provideHistory, setProvideHistory] = useState(true);
   const [feedbackLevel, setFeedbackLevel] = useState<FeedbackLevel>("rich");
   const [opponentMode, setOpponentMode] = useState<OpponentMode>("random");
-  const [stockfishLevel, setStockfishLevel] = useState(stockfishDepthPreference);
+  const [opponentProvider, setOpponentProvider] = useState("");
+  const [opponentModel, setOpponentModel] = useState("");
+  const [stockfishOpponentElo, setStockfishOpponentElo] = useState(() => mapEvaluationDepthToDefaultElo(stockfishDepthPreference));
+  const [evaluationDepth, setEvaluationDepth] = useState(stockfishDepthPreference);
   const [rawOverridesText, setRawOverridesText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(loadAdvancedOpen());
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState<boolean>(autoEvaluatePreference);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [runArtifactsReadyAt, setRunArtifactsReadyAt] = useState<number | null>(null);
 
   const providerPresets = modelCatalogQuery.data ?? [];
   const envChecks = envCheckQuery.data ?? [];
   const providerStatusMap = useMemo(() => {
     const map = new Map<string, boolean>();
     for (const item of envChecks) {
-      map.set(item.provider, item.ok);
+      map.set(normalizeProviderId(item.provider), item.ok);
     }
     return map;
   }, [envChecks]);
   const stockfishCheckKnown = useMemo(() => envChecks.some((item) => item.provider === "stockfish"), [envChecks]);
   const stockfishAvailable = providerStatusMap.get("stockfish") === true;
+  const selectedProviderId = normalizeProviderId(selectedProvider);
+  const opponentProviderId = normalizeProviderId(opponentProvider);
 
   const configuredProviders = useMemo(
-    () => providerPresets.filter((preset) => providerStatusMap.get(preset.provider) === true),
+    () => providerPresets.filter((preset) => providerStatusMap.get(normalizeProviderId(preset.provider)) === true),
     [providerPresets, providerStatusMap],
   );
   const hasConfiguredProvider = configuredProviders.length > 0;
-  const selectedProviderReady = providerStatusMap.get(selectedProvider) === true;
+  const selectedProviderReady = providerStatusMap.get(selectedProviderId) === true;
+  const opponentProviderReady = providerStatusMap.get(opponentProviderId) === true;
   const activePreset = useMemo(
-    () => providerPresets.find((preset) => preset.provider === selectedProvider) ?? null,
-    [providerPresets, selectedProvider],
+    () => providerPresets.find((preset) => normalizeProviderId(preset.provider) === selectedProviderId) ?? null,
+    [providerPresets, selectedProviderId],
+  );
+  const opponentPreset = useMemo(
+    () => providerPresets.find((preset) => normalizeProviderId(preset.provider) === opponentProviderId) ?? null,
+    [providerPresets, opponentProviderId],
   );
 
   useEffect(() => {
@@ -84,15 +110,23 @@ export function QuickPlayPage() {
       return;
     }
 
-    const selectedStillExists = providerPresets.some((preset) => preset.provider === selectedProvider);
-    if (selectedProvider && selectedStillExists) {
+    if (selectedProvider && selectedProvider !== selectedProviderId) {
+      setSelectedProvider(selectedProviderId);
       return;
     }
 
-    const byDefault = defaultProvider ? providerPresets.find((preset) => preset.provider === defaultProvider) : undefined;
+    const selectedStillExists = providerPresets.some((preset) => normalizeProviderId(preset.provider) === selectedProviderId);
+    if (selectedProviderId && selectedStillExists) {
+      return;
+    }
+
+    const defaultProviderId = normalizeProviderId(defaultProvider ?? "");
+    const byDefault = defaultProviderId
+      ? providerPresets.find((preset) => normalizeProviderId(preset.provider) === defaultProviderId)
+      : undefined;
     const preferredProvider = byDefault ?? configuredProviders[0] ?? providerPresets[0];
-    setSelectedProvider(preferredProvider?.provider ?? "");
-  }, [configuredProviders, defaultProvider, providerPresets, selectedProvider]);
+    setSelectedProvider(normalizeProviderId(preferredProvider?.provider ?? ""));
+  }, [configuredProviders, defaultProvider, providerPresets, selectedProvider, selectedProviderId]);
 
   useEffect(() => {
     if (!activePreset) {
@@ -111,16 +145,47 @@ export function QuickPlayPage() {
   }, [activePreset, defaultModel, selectedModel]);
 
   useEffect(() => {
-    if (selectedProvider) {
-      setDefaultProvider(selectedProvider);
+    if (selectedProviderId) {
+      setDefaultProvider(selectedProviderId);
     }
-  }, [selectedProvider, setDefaultProvider]);
+  }, [selectedProviderId, setDefaultProvider]);
 
   useEffect(() => {
     if (selectedModel) {
       setDefaultModel(selectedModel);
     }
   }, [selectedModel, setDefaultModel]);
+
+  useEffect(() => {
+    if (providerPresets.length === 0 || opponentMode !== "llm") {
+      return;
+    }
+
+    const preferredOpponentProvider = selectedProviderId || configuredProviders[0]?.provider || providerPresets[0]?.provider || "";
+    const preferredOpponentProviderId = normalizeProviderId(preferredOpponentProvider);
+    const opponentProviderStillExists = providerPresets.some(
+      (preset) => normalizeProviderId(preset.provider) === opponentProviderId,
+    );
+
+    if (!opponentProviderId || !opponentProviderStillExists) {
+      setOpponentProvider(preferredOpponentProviderId);
+    }
+  }, [configuredProviders, opponentMode, opponentProviderId, providerPresets, selectedProviderId]);
+
+  useEffect(() => {
+    if (opponentMode !== "llm" || !opponentPreset) {
+      return;
+    }
+
+    const hasSelectedOpponentModel = opponentPreset.models.some((item) => item.id === opponentModel);
+    if (hasSelectedOpponentModel) {
+      return;
+    }
+
+    const mirrorModel = selectedModel ? opponentPreset.models.find((item) => item.id === selectedModel) : undefined;
+    const fallback = mirrorModel ?? opponentPreset.models.find((item) => item.recommended) ?? opponentPreset.models[0] ?? null;
+    setOpponentModel(fallback?.id ?? "");
+  }, [opponentMode, opponentModel, opponentPreset, selectedModel]);
 
   useEffect(() => {
     persistAdvancedOpen(advancedOpen);
@@ -137,14 +202,8 @@ export function QuickPlayPage() {
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
 
   useEffect(() => {
-    if (stockfishDepthPreference !== stockfishLevel) {
-      setStockfishLevel(stockfishDepthPreference);
-    }
-  }, [stockfishDepthPreference, stockfishLevel]);
-
-  useEffect(() => {
-    setStockfishDepthPreference(stockfishLevel);
-  }, [setStockfishDepthPreference, stockfishLevel]);
+    setEvaluationDepth(stockfishDepthPreference);
+  }, [stockfishDepthPreference]);
 
   const jobQuery = useJob(activeJobId);
   const progressQuery = useJobProgress(activeJobId);
@@ -158,11 +217,13 @@ export function QuickPlayPage() {
   const latestReport = asRecord(progressQuery.data?.latest_report);
   const isRunning = activeJobStatus === "running" || activeJobStatus === "queued";
   const isTerminal = isTerminalStatus(activeJobStatus);
+  const artifactsDelayElapsed = runArtifactsReadyAt === null || Date.now() >= runArtifactsReadyAt;
+  const canQueryRunArtifacts = Boolean(runId) && (isTerminal || (progressQuery.isSuccess && artifactsDelayElapsed));
 
   const gamesQuery = useQuery({
     queryKey: ["quick-play-games", runId] as const,
     queryFn: () => apiRequest<GameListItem[]>(`/api/runs/${runId}/games`),
-    enabled: Boolean(runId),
+    enabled: canQueryRunArtifacts,
     staleTime: 0,
     refetchInterval: isRunning ? 2_000 : false,
     retry: shouldRetryWithout404,
@@ -172,7 +233,7 @@ export function QuickPlayPage() {
   const gameQuery = useQuery({
     queryKey: ["quick-play-game", runId, firstGameNumber] as const,
     queryFn: () => apiRequest<GameDetailResponse>(`/api/runs/${runId}/games/${firstGameNumber}`),
-    enabled: Boolean(runId) && firstGameNumber !== null,
+    enabled: canQueryRunArtifacts && firstGameNumber !== null,
     staleTime: 0,
     refetchInterval: isRunning ? 2_000 : false,
     retry: shouldRetryWithout404,
@@ -181,7 +242,7 @@ export function QuickPlayPage() {
   const framesQuery = useQuery({
     queryKey: ["quick-play-frames", runId, firstGameNumber] as const,
     queryFn: () => apiRequest<Array<Record<string, unknown>>>(`/api/runs/${runId}/games/${firstGameNumber}/frames`),
-    enabled: Boolean(runId) && firstGameNumber !== null,
+    enabled: canQueryRunArtifacts && firstGameNumber !== null,
     staleTime: 0,
     refetchInterval: isRunning ? 2_000 : false,
     retry: shouldRetryWithout404,
@@ -197,6 +258,15 @@ export function QuickPlayPage() {
   const invalidOverrideLines = useMemo(
     () => parsedCustomOverrides.filter((line) => !line.includes("=")),
     [parsedCustomOverrides],
+  );
+  const stockfishResources = useMemo(
+    () =>
+      resolveStockfishResources({
+        mode: stockfishResourceMode,
+        manualThreads: stockfishThreadsPreference,
+        manualHashMb: stockfishHashPreference,
+      }),
+    [stockfishHashPreference, stockfishResourceMode, stockfishThreadsPreference],
   );
 
   const liveFrames = framesQuery.data ?? [];
@@ -227,9 +297,11 @@ export function QuickPlayPage() {
   const totalTokens = (tokensInput ?? 0) + (tokensOutput ?? 0);
   const totalCost = numberValue(gameQuery.data?.total_cost_usd) ?? numberValue(latestReport.total_cost_usd);
   const canStartGame =
-    Boolean(selectedProvider) &&
+    Boolean(selectedProviderId) &&
     Boolean(selectedModel) &&
     selectedProviderReady &&
+    (opponentMode !== "llm" || (Boolean(opponentProviderId) && Boolean(opponentModel) && opponentProviderReady)) &&
+    (opponentMode !== "stockfish" || stockfishAvailable) &&
     invalidOverrideLines.length === 0 &&
     !startPlayMutation.isPending;
 
@@ -240,14 +312,19 @@ export function QuickPlayPage() {
   const resultDuration = numberValue(gameQuery.data?.duration_seconds);
 
   const showNoProviderConfigured = envCheckQuery.isSuccess && modelCatalogQuery.isSuccess && !hasConfiguredProvider;
+  const runArtifactError =
+    extractRunArtifactError(gamesQuery.error, isRunning) ||
+    extractRunArtifactError(gameQuery.error, isRunning) ||
+    extractRunArtifactError(framesQuery.error, isRunning);
   const statusError =
     extractError(startPlayMutation.error) ||
     extractError(jobQuery.error) ||
     extractError(progressQuery.error) ||
-    extractError(gamesQuery.error) ||
-    extractError(gameQuery.error) ||
-    extractError(framesQuery.error) ||
+    runArtifactError ||
     extractError(summaryQuery.error);
+  const stockfishPresetValue = useMemo(() => {
+    return STOCKFISH_ELO_PRESETS.some((elo) => elo === stockfishOpponentElo) ? String(stockfishOpponentElo) : "custom";
+  }, [stockfishOpponentElo]);
 
   return (
     <section>
@@ -262,15 +339,16 @@ export function QuickPlayPage() {
           <label className="text-xs text-[var(--color-text-secondary)]">
             Provider
             <select
-              value={selectedProvider}
-              onChange={(event) => setSelectedProvider(event.target.value)}
+              value={selectedProviderId}
+              onChange={(event) => setSelectedProvider(normalizeProviderId(event.target.value))}
               className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-canvas)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
               disabled={modelCatalogQuery.isLoading || providerPresets.length === 0}
             >
               {providerPresets.map((preset) => {
-                const providerReady = providerStatusMap.get(preset.provider) === true;
+                const providerId = normalizeProviderId(preset.provider);
+                const providerReady = providerStatusMap.get(providerId) === true;
                 return (
-                  <option key={preset.provider} value={preset.provider}>
+                  <option key={providerId} value={providerId}>
                     {preset.provider_label} {providerReady ? "(ready)" : "(missing key)"}
                   </option>
                 );
@@ -301,23 +379,25 @@ export function QuickPlayPage() {
               onClick={() => {
                 const payload = buildPlayPayload({
                   configPath: chosenConfigPath,
-                  provider: selectedProvider,
+                  provider: selectedProviderId,
                   model: selectedModel,
                   boardFormat,
                   provideLegalMoves,
                   provideHistory,
                   feedbackLevel,
                   opponentMode,
-                  stockfishLevel,
+                  opponentLlmProvider: opponentProviderId,
+                  opponentLlmModel: opponentModel,
+                  stockfishOpponentElo,
+                  evaluationDepth,
+                  stockfishThreads: stockfishResources.threads,
+                  stockfishHashMb: stockfishResources.hashMb,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                 });
 
                 startPlayMutation.mutate(payload, {
-                  onSuccess: (job) => {
-                    setActiveJobId(job.job_id);
-                    setActiveRunId(job.run_id ?? null);
-                  },
+                  onSuccess: handlePlayJobStarted,
                 });
               }}
               disabled={!canStartGame}
@@ -409,18 +489,90 @@ export function QuickPlayPage() {
                 >
                   <option value="random">Random</option>
                   <option value="stockfish">Stockfish</option>
+                  <option value="llm">LLM</option>
+                </select>
+              </label>
+
+              {opponentMode === "llm" ? (
+                <>
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent provider
+                    <select
+                      value={opponentProviderId}
+                      onChange={(event) => setOpponentProvider(normalizeProviderId(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                      disabled={providerPresets.length === 0}
+                    >
+                      {providerPresets.map((preset) => {
+                        const providerId = normalizeProviderId(preset.provider);
+                        const providerReady = providerStatusMap.get(providerId) === true;
+                        return (
+                          <option key={`opponent-${providerId}`} value={providerId}>
+                            {preset.provider_label} {providerReady ? "(ready)" : "(missing key)"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent model
+                    <select
+                      value={opponentModel}
+                      onChange={(event) => setOpponentModel(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                      disabled={!opponentPreset}
+                    >
+                      {(opponentPreset?.models ?? []).map((model) => (
+                        <option key={`opponent-model-${model.id}`} value={model.id}>
+                          {model.label}
+                          {model.recommended ? " (Recommended)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : null}
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Stockfish ELO preset
+                <select
+                  value={stockfishPresetValue}
+                  onChange={(event) => {
+                    const raw = event.target.value;
+                    if (raw === "custom") {
+                      return;
+                    }
+                    const elo = Number.parseInt(raw, 10);
+                    if (!Number.isFinite(elo)) {
+                      return;
+                    }
+                    setStockfishOpponentElo(elo);
+                  }}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  {STOCKFISH_ELO_PRESETS.map((elo) => (
+                    <option key={`elo-${elo}`} value={String(elo)}>
+                      {elo}
+                    </option>
+                  ))}
+                  <option value="custom">Custom ELO</option>
                 </select>
               </label>
 
               <label className="text-xs text-[var(--color-text-secondary)]">
-                Stockfish level/depth
+                Stockfish ELO (native UCI)
                 <input
                   type="number"
-                  min={1}
-                  max={20}
-                  value={stockfishLevel}
-                  onChange={(event) => setStockfishLevel(clampInt(event.target.value, 1, 20, 8))}
-                  disabled={opponentMode !== "stockfish"}
+                  min={800}
+                  max={3000}
+                  value={stockfishOpponentElo}
+                  onChange={(event) => {
+                    const elo = clampInt(event.target.value, 800, 3000, 1600);
+                    setStockfishOpponentElo(elo);
+                  }}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 />
               </label>
@@ -439,6 +591,23 @@ export function QuickPlayPage() {
                 Auto-evaluate after play
               </label>
 
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Evaluation depth (Stockfish)
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={evaluationDepth}
+                  onChange={(event) => {
+                    const depth = clampInt(event.target.value, 1, 30, 12);
+                    setEvaluationDepth(depth);
+                    setStockfishDepthPreference(depth);
+                  }}
+                  disabled={!stockfishAvailable || !autoEvaluateEnabled}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+
               <label className="text-xs text-[var(--color-text-secondary)] md:col-span-2">
                 Raw overrides (`key=value`, one per line)
                 <textarea
@@ -452,6 +621,16 @@ export function QuickPlayPage() {
 
               {!stockfishAvailable ? (
                 <p className="text-xs text-[var(--color-warning-text)] md:col-span-2">Stockfish unavailable. Auto-eval toggle is disabled.</p>
+              ) : null}
+              {opponentMode === "stockfish" && !stockfishAvailable ? (
+                <p className="text-xs text-[var(--color-warning-text)] md:col-span-2">
+                  Stockfish opponent requires STOCKFISH_PATH in Settings.
+                </p>
+              ) : null}
+              {opponentMode === "llm" && !opponentProviderReady ? (
+                <p className="text-xs text-[var(--color-warning-text)] md:col-span-2">
+                  Opponent provider is missing credentials in Settings.
+                </p>
               ) : null}
             </div>
           ) : null}
@@ -562,23 +741,25 @@ export function QuickPlayPage() {
               onClick={() => {
                 const payload = buildPlayPayload({
                   configPath: chosenConfigPath,
-                  provider: selectedProvider,
+                  provider: selectedProviderId,
                   model: selectedModel,
                   boardFormat,
                   provideLegalMoves,
                   provideHistory,
                   feedbackLevel,
                   opponentMode,
-                  stockfishLevel,
+                  opponentLlmProvider: opponentProviderId,
+                  opponentLlmModel: opponentModel,
+                  stockfishOpponentElo,
+                  evaluationDepth,
+                  stockfishThreads: stockfishResources.threads,
+                  stockfishHashMb: stockfishResources.hashMb,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                 });
 
                 startPlayMutation.mutate(payload, {
-                  onSuccess: (job) => {
-                    setActiveJobId(job.job_id);
-                    setActiveRunId(job.run_id ?? null);
-                  },
+                  onSuccess: handlePlayJobStarted,
                 });
               }}
               disabled={!canStartGame}
@@ -592,21 +773,26 @@ export function QuickPlayPage() {
               onClick={() => {
                 const labOverrides = buildPlayPayload({
                   configPath: chosenConfigPath,
-                  provider: selectedProvider,
+                  provider: selectedProviderId,
                   model: selectedModel,
                   boardFormat,
                   provideLegalMoves,
                   provideHistory,
                   feedbackLevel,
                   opponentMode,
-                  stockfishLevel,
+                  opponentLlmProvider: opponentProviderId,
+                  opponentLlmModel: opponentModel,
+                  stockfishOpponentElo,
+                  evaluationDepth,
+                  stockfishThreads: stockfishResources.threads,
+                  stockfishHashMb: stockfishResources.hashMb,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
                   includeSeedOverride: false,
                 }).overrides ?? [];
 
                 setLabTemplatePath(chosenConfigPath);
-                setLabProvider(selectedProvider || null);
+                setLabProvider(selectedProviderId || null);
                 setLabModel(selectedModel || null);
                 setLabOverrides(labOverrides.join("\n"));
                 setLabAdvancedOpen(true);
@@ -630,6 +816,12 @@ export function QuickPlayPage() {
       ) : null}
     </section>
   );
+
+  function handlePlayJobStarted(job: JobResponse): void {
+    setActiveJobId(job.job_id);
+    setActiveRunId(job.run_id ?? null);
+    setRunArtifactsReadyAt(Date.now() + RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS);
+  }
 }
 
 function buildPlayPayload(input: {
@@ -641,7 +833,12 @@ function buildPlayPayload(input: {
   provideHistory: boolean;
   feedbackLevel: FeedbackLevel;
   opponentMode: OpponentMode;
-  stockfishLevel: number;
+  opponentLlmProvider: string;
+  opponentLlmModel: string;
+  stockfishOpponentElo: number;
+  evaluationDepth: number;
+  stockfishThreads: number;
+  stockfishHashMb: number;
   autoEvaluateEnabled: boolean;
   customOverrides: string[];
   includeSeedOverride?: boolean;
@@ -660,7 +857,15 @@ function buildPlayPayload(input: {
   if (input.opponentMode === "stockfish") {
     overrides.push("players.white.type=engine");
     overrides.push("players.white.name=stockfish_white");
-    overrides.push(`players.white.depth=${input.stockfishLevel}`);
+    overrides.push("players.white.uci_limit_strength=true");
+    overrides.push(`players.white.uci_elo=${input.stockfishOpponentElo}`);
+    overrides.push(`players.white.threads=${input.stockfishThreads}`);
+    overrides.push(`players.white.hash_mb=${input.stockfishHashMb}`);
+  } else if (input.opponentMode === "llm") {
+    overrides.push("players.white.type=llm");
+    overrides.push(`players.white.provider=${input.opponentLlmProvider}`);
+    overrides.push(`players.white.model=${input.opponentLlmModel}`);
+    overrides.push(`players.white.name=${safeModelName(input.opponentLlmProvider, input.opponentLlmModel)}`);
   } else {
     overrides.push("players.white.type=random");
     overrides.push("players.white.name=random_white");
@@ -668,9 +873,12 @@ function buildPlayPayload(input: {
 
   if (input.autoEvaluateEnabled) {
     overrides.push("evaluation.auto.enabled=true");
-    overrides.push("evaluation.auto.player_color=black");
+    overrides.push("evaluation.auto.player_color=auto");
+    overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
+    overrides.push(`evaluation.stockfish.threads=${input.stockfishThreads}`);
+    overrides.push(`evaluation.stockfish.hash_mb=${input.stockfishHashMb}`);
     if (input.opponentMode === "stockfish") {
-      overrides.push(`evaluation.auto.opponent_elo=${mapStockfishLevelToElo(input.stockfishLevel)}`);
+      overrides.push(`evaluation.auto.opponent_elo=${input.stockfishOpponentElo}`);
     }
   } else {
     overrides.push("evaluation.auto.enabled=false");
@@ -687,6 +895,14 @@ function buildPlayPayload(input: {
   };
 }
 
+function normalizeProviderId(value: string | null | undefined): string {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "z.ai") {
+    return "zai";
+  }
+  return normalized;
+}
+
 function parseOverrides(raw: string): string[] {
   return raw
     .split("\n")
@@ -698,26 +914,20 @@ function safeModelName(provider: string, model: string): string {
   return `${provider}_${model}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
-function mapStockfishLevelToElo(level: number): number {
-  if (level <= 2) {
-    return 600;
-  }
-  if (level <= 5) {
-    return 800;
-  }
-  if (level <= 8) {
-    return 1000;
-  }
-  if (level <= 11) {
+function mapEvaluationDepthToDefaultElo(depth: number): number {
+  if (depth <= 6) {
     return 1200;
   }
-  if (level <= 14) {
+  if (depth <= 10) {
     return 1600;
   }
-  if (level <= 17) {
+  if (depth <= 14) {
     return 2000;
   }
-  return 2500;
+  if (depth <= 18) {
+    return 2400;
+  }
+  return 2600;
 }
 
 function buildMoveArrow(moveUci: string | null | undefined): { startSquare: string; endSquare: string; color: string } | null {
@@ -782,6 +992,17 @@ function extractError(error: unknown): string | null {
     return error.message;
   }
   return "Unknown error";
+}
+
+function extractRunArtifactError(error: unknown, isRunning: boolean): string | null {
+  if (isRunning && isNotFoundError(error)) {
+    return null;
+  }
+  return extractError(error);
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

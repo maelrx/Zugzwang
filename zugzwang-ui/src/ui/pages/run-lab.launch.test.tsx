@@ -226,6 +226,7 @@ describe("run lab launch flow", () => {
 
     await screen.findByRole("heading", { name: "Experiment Launch Workbench" });
     const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText("Opponent mode"), "llm");
     const playButton = screen.getByRole("button", { name: "Play (1 game)" });
     await waitFor(() => expect(playButton).toBeEnabled());
     await user.click(playButton);
@@ -242,6 +243,9 @@ describe("run lab launch flow", () => {
       const overrides = Array.isArray(payload.overrides) ? payload.overrides : [];
       expect(overrides).toContain("players.black.provider=zai");
       expect(overrides).toContain("players.black.model=glm-5");
+      expect(overrides).toContain("players.white.type=llm");
+      expect(overrides).toContain("players.white.provider=zai");
+      expect(overrides).toContain("players.white.model=glm-5");
       expect(overrides).toContain("evaluation.auto.enabled=true");
     });
 

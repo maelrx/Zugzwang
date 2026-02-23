@@ -10,6 +10,8 @@ import yaml
 
 from zugzwang.api.services.paths import runs_root
 from zugzwang.api.types import DashboardKpis, DashboardTimelinePoint, GameMeta, GameRecordView, RunMeta, RunSummary
+from zugzwang.evaluation.player_color import infer_evaluation_player_color
+from zugzwang.providers.model_routing import resolve_provider_and_model
 
 
 RUN_TS_PATTERN = re.compile(r"-(\d{8}T\d{6}Z)-")
@@ -237,7 +239,13 @@ class ArtifactService:
 
         report_exists = report is not None
         evaluated_exists = evaluated_report is not None
-        inferred_player_color, inferred_provider, inferred_model = _infer_llm_player(resolved_config)
+        inferred_player_color = _infer_eval_player_color(resolved_config)
+        inferred_provider, inferred_model = _infer_provider_model_for_color(
+            resolved_config,
+            inferred_player_color,
+        )
+        if inferred_provider is None and inferred_model is None:
+            _, inferred_provider, inferred_model = _infer_llm_player(resolved_config)
         inferred_model_label = _compose_model_label(inferred_provider, inferred_model)
         inferred_opponent_elo = _infer_opponent_elo(resolved_config, inferred_player_color)
         inferred_config_template = _infer_config_template(run_id, resolved_config)
@@ -460,6 +468,52 @@ def _infer_llm_player(resolved_config: dict[str, Any] | None) -> tuple[str | Non
             _as_str(player.get("model")),
         )
     return None, None, None
+
+
+def _infer_eval_player_color(resolved_config: dict[str, Any] | None) -> str | None:
+    if not isinstance(resolved_config, dict):
+        return None
+
+    requested = "auto"
+    evaluation_cfg = resolved_config.get("evaluation")
+    if isinstance(evaluation_cfg, dict):
+        auto_cfg = evaluation_cfg.get("auto")
+        if isinstance(auto_cfg, dict):
+            raw = auto_cfg.get("player_color")
+            if isinstance(raw, str) and raw.strip():
+                requested = raw
+
+    try:
+        color, _ = infer_evaluation_player_color(
+            resolved_config=resolved_config,
+            requested_color=requested,
+        )
+    except ValueError:
+        return None
+    return color
+
+
+def _infer_provider_model_for_color(
+    resolved_config: dict[str, Any] | None,
+    color: str | None,
+) -> tuple[str | None, str | None]:
+    if not isinstance(resolved_config, dict):
+        return None, None
+    if color not in {"white", "black"}:
+        return None, None
+    players = resolved_config.get("players")
+    if not isinstance(players, dict):
+        return None, None
+    player = players.get(color)
+    if not isinstance(player, dict):
+        return None, None
+    if str(player.get("type", "")).strip().lower() != "llm":
+        return None, None
+    resolved_provider, resolved_model = resolve_provider_and_model(
+        _as_str(player.get("provider")) or "",
+        _as_str(player.get("model")),
+    )
+    return resolved_provider or None, resolved_model
 
 
 def _compose_model_label(provider: str | None, model: str | None) -> str | None:

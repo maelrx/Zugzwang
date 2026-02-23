@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+from zugzwang.providers.model_routing import resolve_provider_and_model
+
 
 class EnvironmentError(ValueError):
     """Raised when runtime environment requirements are not satisfied."""
@@ -17,6 +19,7 @@ PROVIDER_ENV_KEYS: dict[str, tuple[str, ...] | None] = {
     "deepseek": ("DEEPSEEK_API_KEY",),
     "grok": ("XAI_API_KEY", "GROK_API_KEY"),
     "kimi": ("MOONSHOT_API_KEY", "KIMI_API_KEY"),
+    "kimicode": ("KIMI_CODE_API_KEY", "KIMI_API_KEY", "MOONSHOT_API_KEY"),
     "minimax": ("MINIMAX_API_KEY",),
     "mock": None,
 }
@@ -26,16 +29,19 @@ def load_dotenv(path: str | Path = ".env") -> None:
     dotenv_path = Path(path)
     if not dotenv_path.exists():
         return
-    for line in dotenv_path.read_text(encoding="utf-8").splitlines():
+    # utf-8-sig handles BOM-prefixed files (common on Windows editors).
+    for line in dotenv_path.read_text(encoding="utf-8-sig").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
         if "=" not in stripped:
             continue
         key, value = stripped.split("=", 1)
-        key = key.strip()
+        key = key.strip().lstrip("\ufeff")
         value = value.strip().strip("'").strip('"')
-        os.environ.setdefault(key, value)
+        current = os.environ.get(key)
+        if current is None or not str(current).strip():
+            os.environ[key] = value
 
 
 def _llm_players(config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -51,7 +57,10 @@ def _llm_players(config: dict[str, Any]) -> list[dict[str, Any]]:
 def validate_provider_secrets(config: dict[str, Any], env: dict[str, str] | None = None) -> None:
     environment = env or os.environ
     for player in _llm_players(config):
-        provider = str(player.get("provider", "")).lower()
+        provider, _ = resolve_provider_and_model(
+            str(player.get("provider", "")),
+            str(player.get("model", "")),
+        )
         if provider not in PROVIDER_ENV_KEYS:
             raise EnvironmentError(f"Unknown provider '{provider}'")
         key_names = PROVIDER_ENV_KEYS[provider]

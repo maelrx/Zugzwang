@@ -52,7 +52,7 @@ evaluation:
     path: null
   auto:
     enabled: false
-    player_color: black
+    player_color: auto
     opponent_elo: null
     elo_color_correction: 0.0
     output_filename: experiment_report_evaluated.json

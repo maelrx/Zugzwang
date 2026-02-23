@@ -329,7 +329,7 @@ function SortHeader({
   return (
     <button type="button" onClick={onClick} className="text-left text-[11px] font-semibold uppercase tracking-[0.12em]">
       {label}
-      {active ? (direction === "asc" ? " ↑" : " ↓") : ""}
+      {active ? (direction === "asc" ? " (asc)" : " (desc)") : ""}
     </button>
   );
 }
@@ -439,3 +439,4 @@ function formatCreatedAt(value: string | null | undefined): string {
   }
   return parsed.toLocaleString();
 }
+

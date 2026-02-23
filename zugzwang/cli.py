@@ -23,11 +23,13 @@ def _build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--dry-run", action="store_true")
     run_parser.add_argument("--resume", action="store_true")
     run_parser.add_argument("--resume-run-id")
+    run_parser.add_argument("--run-id")
 
     play_parser = subparsers.add_parser("play")
     play_parser.add_argument("--config", required=True)
     play_parser.add_argument("--model-profile")
     play_parser.add_argument("--set", action="append", dest="overrides")
+    play_parser.add_argument("--run-id")
 
     env_parser = subparsers.add_parser("env-check")
     env_parser.add_argument("--config", required=True)
@@ -36,7 +38,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     eval_parser = subparsers.add_parser("evaluate")
     eval_parser.add_argument("--run-dir", required=True)
-    eval_parser.add_argument("--player-color", choices=["white", "black"], default="black")
+    eval_parser.add_argument("--player-color", choices=["auto", "white", "black"], default="auto")
     eval_parser.add_argument("--opponent-elo", type=float)
     eval_parser.add_argument("--elo-color-correction", type=float, default=0.0)
     eval_parser.add_argument("--output-filename", default="experiment_report_evaluated.json")
@@ -55,6 +57,7 @@ def _run_command(args: argparse.Namespace) -> int:
         overrides=args.overrides,
         resume=bool(getattr(args, "resume", False)),
         resume_run_id=getattr(args, "resume_run_id", None),
+        run_id=getattr(args, "run_id", None),
     )
     if args.dry_run:
         print(json.dumps(runner.dry_run(), indent=2))
@@ -75,6 +78,7 @@ def _play_command(args: argparse.Namespace) -> int:
         config_path=args.config,
         model_profile_path=args.model_profile,
         overrides=overrides,
+        run_id=getattr(args, "run_id", None),
     )
     print(json.dumps(runner.run(), indent=2))
     return 0

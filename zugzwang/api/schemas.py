@@ -87,7 +87,7 @@ class StartJobRequest(ApiModel):
 
 class StartEvalRequest(ApiModel):
     run_dir: str
-    player_color: Literal["white", "black"] = "black"
+    player_color: Literal["auto", "white", "black"] = "auto"
     opponent_elo: float | None = None
     output_filename: str = "experiment_report_evaluated.json"
 

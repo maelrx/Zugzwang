@@ -55,12 +55,14 @@ class ExperimentRunner:
         overrides: list[str] | None = None,
         resume: bool = False,
         resume_run_id: str | None = None,
+        run_id: str | None = None,
     ) -> None:
         self.config_path = Path(config_path)
         self.model_profile_path = Path(model_profile_path) if model_profile_path else None
         self.overrides = overrides or []
         self.resume = resume
         self.resume_run_id = resume_run_id
+        self.run_id = run_id
 
     def prepare(self) -> PreparedRun:
         resolved, cfg_hash = resolve_with_hash(
@@ -69,7 +71,7 @@ class ExperimentRunner:
             cli_overrides=self.overrides,
         )
         experiment_name = resolved["experiment"]["name"]
-        run_id = make_run_id(experiment_name, cfg_hash)
+        run_id = self.run_id or make_run_id(experiment_name, cfg_hash)
         target_valid = int(resolved["experiment"]["target_valid_games"])
         expected_completion = float(resolved["runtime"].get("expected_completion_rate", 1.0))
         scheduled_games = math.ceil(target_valid / expected_completion)
@@ -185,16 +187,21 @@ class ExperimentRunner:
             white_player = build_player(white_cfg, protocol_mode, strategy_cfg, rng)
             black_player = build_player(black_cfg, protocol_mode, strategy_cfg, rng)
 
-            record = play_game(
-                experiment_id=resume_state.run_id,
-                game_number=game_number,
-                config_hash=prepared.config_hash,
-                seed=seed,
-                players_cfg=config["players"],
-                white_player=white_player,
-                black_player=black_player,
-                max_plies=max_plies,
-            )
+            try:
+                record = play_game(
+                    experiment_id=resume_state.run_id,
+                    game_number=game_number,
+                    config_hash=prepared.config_hash,
+                    seed=seed,
+                    players_cfg=config["players"],
+                    white_player=white_player,
+                    black_player=black_player,
+                    max_plies=max_plies,
+                )
+            finally:
+                _close_player_safely(white_player)
+                if black_player is not white_player:
+                    _close_player_safely(black_player)
             write_game_record(run_dir, record)
             records.append(record)
             total_cost_usd += record.cost_usd
@@ -325,7 +332,7 @@ class ExperimentRunner:
         if games_written <= 0:
             return {"enabled": True, "status": "skipped", "reason": "no_games_to_evaluate"}
 
-        player_color = str(auto_cfg.get("player_color", "black"))
+        player_color = str(auto_cfg.get("player_color", "auto"))
         opponent_elo_raw = auto_cfg.get("opponent_elo")
         opponent_elo = float(opponent_elo_raw) if opponent_elo_raw is not None else None
         elo_color_correction = float(auto_cfg.get("elo_color_correction", 0.0))
@@ -412,3 +419,14 @@ def _record_has_provider_timeout(record: GameRecord) -> bool:
         if isinstance(error, str) and error.startswith("provider_timeout"):
             return True
     return False
+
+
+def _close_player_safely(player: Any) -> None:
+    close_fn = getattr(player, "close", None)
+    if not callable(close_fn):
+        return
+    try:
+        close_fn()
+    except Exception:
+        # Do not fail run finalization because of player cleanup errors.
+        pass

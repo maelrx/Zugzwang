@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import {
   useConfigs,
@@ -14,16 +14,19 @@ import { useLabStore } from "../../stores/labStore";
 import { usePreferencesStore } from "../../stores/preferencesStore";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { resolveStockfishResources } from "../lib/stockfishHardware";
 import { formatUsd } from "../lib/runMetrics";
 
 const AUTO_CHECK_DEBOUNCE_MS = 500;
 const MIN_TARGET_GAMES = 1;
 const MAX_TARGET_GAMES = 500;
 const DEFAULT_TARGET_GAMES = 10;
+const STOCKFISH_ELO_PRESETS = [1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600] as const;
 
 type TemplateBucket = "baselines" | "ablations" | "custom";
 type BoardFormat = "fen" | "pgn";
 type FeedbackLevel = "minimal" | "moderate" | "rich";
+type OpponentMode = "template" | "random" | "stockfish" | "llm";
 
 type TemplateOption = {
   name: string;
@@ -56,7 +59,12 @@ export function RunLabPage() {
   const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
   const defaultProvider = usePreferencesStore((state) => state.defaultProvider);
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
+  const stockfishDepthPreference = usePreferencesStore((state) => state.stockfishDepth);
+  const stockfishResourceMode = usePreferencesStore((state) => state.stockfishResourceMode);
+  const stockfishThreadsPreference = usePreferencesStore((state) => state.stockfishThreads);
+  const stockfishHashPreference = usePreferencesStore((state) => state.stockfishHashMb);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
+  const setStockfishDepthPreference = usePreferencesStore((state) => state.setStockfishDepth);
 
   const [templateSearch, setTemplateSearch] = useState("");
   const [selectedConfigPath, setSelectedConfigPath] = useState(storedTemplatePath ?? "");
@@ -69,8 +77,13 @@ export function RunLabPage() {
   const [provideLegalMoves, setProvideLegalMoves] = useState(true);
   const [provideHistory, setProvideHistory] = useState(true);
   const [feedbackLevel, setFeedbackLevel] = useState<FeedbackLevel>("rich");
+  const [opponentMode, setOpponentMode] = useState<OpponentMode>("template");
+  const [opponentProvider, setOpponentProvider] = useState(storedProvider ?? defaultProvider ?? "");
+  const [opponentModel, setOpponentModel] = useState(storedModel ?? defaultModel ?? "");
+  const [opponentStockfishElo, setOpponentStockfishElo] = useState(() => mapEvaluationDepthToDefaultElo(stockfishDepthPreference));
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState(autoEvaluatePreference);
-  const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"white" | "black">("black");
+  const [evaluationDepth, setEvaluationDepth] = useState(stockfishDepthPreference);
+  const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"auto" | "white" | "black">("auto");
   const [evaluationOpponentEloText, setEvaluationOpponentEloText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(storedAdvancedOpen);
   const [customOverridesText, setCustomOverridesText] = useState(storedOverrides);
@@ -120,10 +133,15 @@ export function RunLabPage() {
   const stockfishCheckKnown = useMemo(() => envChecks.some((item) => item.provider === "stockfish"), [envChecks]);
   const stockfishAvailable = providerStatusMap.get("stockfish") === true;
   const selectedProviderReady = providerStatusMap.get(selectedProvider) === true;
+  const opponentProviderReady = providerStatusMap.get(opponentProvider) === true;
 
   const activePreset = useMemo(
     () => providerPresets.find((preset) => preset.provider === selectedProvider) ?? null,
     [providerPresets, selectedProvider],
+  );
+  const opponentPreset = useMemo(
+    () => providerPresets.find((preset) => preset.provider === opponentProvider) ?? null,
+    [opponentProvider, providerPresets],
   );
 
   const parsedCustomOverrides = useMemo(() => parseOverrides(customOverridesText), [customOverridesText]);
@@ -140,12 +158,25 @@ export function RunLabPage() {
   const invalidMaxBudgetUsd = maxBudgetUsdText.trim().length > 0 && parsedMaxBudgetUsd === null;
   const parsedOpponentElo = parseOptionalInteger(evaluationOpponentEloText);
   const invalidOpponentElo = evaluationOpponentEloText.trim().length > 0 && parsedOpponentElo === null;
+  const stockfishResources = useMemo(
+    () =>
+      resolveStockfishResources({
+        mode: stockfishResourceMode,
+        manualThreads: stockfishThreadsPreference,
+        manualHashMb: stockfishHashPreference,
+      }),
+    [stockfishHashPreference, stockfishResourceMode, stockfishThreadsPreference],
+  );
 
   const structuredOverrides = useMemo(
     () =>
       buildStructuredOverrides({
         provider: selectedProvider,
         model: selectedModel,
+        opponentMode,
+        opponentProvider,
+        opponentModel,
+        opponentStockfishElo,
         targetValidGames,
         maxBudgetUsd: parsedMaxBudgetUsd,
         boardFormat,
@@ -153,6 +184,9 @@ export function RunLabPage() {
         provideHistory,
         feedbackLevel,
         autoEvaluateEnabled,
+        evaluationDepth,
+        stockfishThreads: stockfishResources.threads,
+        stockfishHashMb: stockfishResources.hashMb,
         evaluationPlayerColor,
         evaluationOpponentElo: parsedOpponentElo,
       }),
@@ -163,11 +197,18 @@ export function RunLabPage() {
       feedbackLevel,
       parsedMaxBudgetUsd,
       parsedOpponentElo,
+      opponentMode,
+      opponentModel,
+      opponentProvider,
+      opponentStockfishElo,
       provideHistory,
       provideLegalMoves,
       selectedModel,
       selectedProvider,
+      stockfishResources.hashMb,
+      stockfishResources.threads,
       targetValidGames,
+      evaluationDepth,
     ],
   );
 
@@ -184,12 +225,18 @@ export function RunLabPage() {
     }),
     [currentConfigPath, mergedOverrides, modelProfile],
   );
+  const requestPayloadSignature = useMemo(() => JSON.stringify(requestPayload), [requestPayload]);
+  const lastAutoCheckedSignatureRef = useRef<string | null>(null);
+  const triggerValidate = validateMutation.mutate;
+  const triggerPreview = previewMutation.mutate;
 
   const isLaunching = startRunMutation.isPending || startPlayMutation.isPending;
   const canAutoCheck =
     Boolean(currentConfigPath) &&
     Boolean(selectedProvider) &&
     Boolean(selectedModel) &&
+    (opponentMode !== "llm" || (Boolean(opponentProvider) && Boolean(opponentModel))) &&
+    (opponentMode !== "stockfish" || stockfishAvailable) &&
     invalidOverrideLines.length === 0 &&
     !invalidMaxBudgetUsd &&
     !invalidOpponentElo;
@@ -225,6 +272,29 @@ export function RunLabPage() {
   }, [activePreset, defaultModel, selectedModel]);
 
   useEffect(() => {
+    if (providerPresets.length === 0 || opponentMode !== "llm") {
+      return;
+    }
+    if (opponentProvider && providerPresets.some((preset) => preset.provider === opponentProvider)) {
+      return;
+    }
+    setOpponentProvider(selectedProvider || (providerPresets[0]?.provider ?? ""));
+  }, [opponentMode, opponentProvider, providerPresets, selectedProvider]);
+
+  useEffect(() => {
+    if (!opponentPreset || opponentMode !== "llm") {
+      setOpponentModel("");
+      return;
+    }
+    if (opponentPreset.models.some((item) => item.id === opponentModel)) {
+      return;
+    }
+    const mirrorModel = selectedModel ? opponentPreset.models.find((item) => item.id === selectedModel) : undefined;
+    const fallback = mirrorModel ?? opponentPreset.models.find((item) => item.recommended) ?? opponentPreset.models[0] ?? null;
+    setOpponentModel(fallback?.id ?? "");
+  }, [opponentMode, opponentModel, opponentPreset, selectedModel]);
+
+  useEffect(() => {
     if (!envCheckQuery.isSuccess || !stockfishCheckKnown || stockfishAvailable) {
       return;
     }
@@ -233,6 +303,12 @@ export function RunLabPage() {
       setAutoEvaluatePreference(false);
     }
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
+
+  useEffect(() => {
+    if (stockfishDepthPreference !== evaluationDepth) {
+      setEvaluationDepth(stockfishDepthPreference);
+    }
+  }, [evaluationDepth, stockfishDepthPreference]);
 
   useEffect(() => {
     setStoredTemplatePath(selectedConfigPath || null);
@@ -256,14 +332,19 @@ export function RunLabPage() {
 
   useEffect(() => {
     if (!canAutoCheck) {
+      lastAutoCheckedSignatureRef.current = null;
+      return;
+    }
+    if (requestPayloadSignature === lastAutoCheckedSignatureRef.current) {
       return;
     }
     const timeout = window.setTimeout(() => {
-      validateMutation.mutate(requestPayload);
-      previewMutation.mutate(requestPayload);
+      lastAutoCheckedSignatureRef.current = requestPayloadSignature;
+      triggerValidate(requestPayload);
+      triggerPreview(requestPayload);
     }, AUTO_CHECK_DEBOUNCE_MS);
     return () => window.clearTimeout(timeout);
-  }, [canAutoCheck, previewMutation, requestPayload, validateMutation]);
+  }, [canAutoCheck, requestPayload, requestPayloadSignature, triggerPreview, triggerValidate]);
 
   const blockingErrors = useMemo(() => {
     const errors: string[] = [];
@@ -272,6 +353,9 @@ export function RunLabPage() {
     }
     if (!selectedProvider || !selectedModel) {
       errors.push("Select provider and model.");
+    }
+    if (opponentMode === "llm" && (!opponentProvider || !opponentModel)) {
+      errors.push("Select opponent provider and model.");
     }
     if (invalidOverrideLines.length > 0) {
       errors.push(`Fix invalid override lines: ${invalidOverrideLines.join(", ")}`);
@@ -284,6 +368,12 @@ export function RunLabPage() {
     }
     if (envCheckQuery.isSuccess && selectedProvider && !selectedProviderReady) {
       errors.push(`Provider "${selectedProvider}" is missing credentials in Settings.`);
+    }
+    if (envCheckQuery.isSuccess && opponentMode === "llm" && opponentProvider && !opponentProviderReady) {
+      errors.push(`Opponent provider "${opponentProvider}" is missing credentials in Settings.`);
+    }
+    if (envCheckQuery.isSuccess && opponentMode === "stockfish" && stockfishCheckKnown && !stockfishAvailable) {
+      errors.push("Stockfish opponent selected but Stockfish is unavailable.");
     }
     if (autoEvaluateEnabled && envCheckQuery.isSuccess && stockfishCheckKnown && !stockfishAvailable) {
       errors.push("Auto-evaluate is enabled but Stockfish is unavailable.");
@@ -305,6 +395,10 @@ export function RunLabPage() {
     invalidMaxBudgetUsd,
     invalidOpponentElo,
     invalidOverrideLines,
+    opponentMode,
+    opponentModel,
+    opponentProvider,
+    opponentProviderReady,
     previewMutation.error,
     previewMutation.isError,
     selectedModel,
@@ -321,6 +415,10 @@ export function RunLabPage() {
   const previewData = previewMutation.data;
   const resolvedConfigPreview = previewData?.resolved_config ?? validateMutation.data?.resolved_config ?? null;
   const estimatedCostUsd = previewData?.estimated_total_cost_usd ?? null;
+  const stockfishPresetValue = useMemo(
+    () => (STOCKFISH_ELO_PRESETS.some((elo) => elo === opponentStockfishElo) ? String(opponentStockfishElo) : "custom"),
+    [opponentStockfishElo],
+  );
 
   const baselineCount = templates.filter((item) => item.bucket === "baselines").length;
   const ablationCount = templates.filter((item) => item.bucket === "ablations").length;
@@ -342,8 +440,8 @@ export function RunLabPage() {
         </span>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)]">
-        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Template Browser</p>
           <label className="mt-2 block text-xs text-[var(--color-text-secondary)]">
             Search templates
@@ -378,7 +476,7 @@ export function RunLabPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Config Builder</p>
@@ -389,7 +487,7 @@ export function RunLabPage() {
 
           <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Model</p>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Provider
                 <select
@@ -441,6 +539,19 @@ export function RunLabPage() {
               >
                 Apply Preset to Overrides
               </button>
+              {opponentMode === "llm" ? (
+                <button
+                  type="button"
+                  className="rounded-md border border-[var(--color-border-strong)] bg-[var(--color-surface-raised)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)]"
+                  disabled={!selectedProvider || !selectedModel}
+                  onClick={() => {
+                    setOpponentProvider(selectedProvider);
+                    setOpponentModel(selectedModel);
+                  }}
+                >
+                  Mirror as Opponent
+                </button>
+              ) : null}
               {activePreset ? (
                 <p className="text-[11px] text-[var(--color-text-secondary)]">
                   {activePreset.api_style} | {activePreset.base_url}
@@ -450,7 +561,7 @@ export function RunLabPage() {
           </div>
           <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Experiment</summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Target valid games
                 <input
@@ -476,8 +587,125 @@ export function RunLabPage() {
           </details>
 
           <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Opponent</summary>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Opponent mode
+                <select
+                  value={opponentMode}
+                  onChange={(event) => setOpponentMode(event.target.value as OpponentMode)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="template">Template default</option>
+                  <option value="random">Random</option>
+                  <option value="stockfish">Stockfish</option>
+                  <option value="llm">LLM</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Stockfish ELO preset
+                <select
+                  value={stockfishPresetValue}
+                  onChange={(event) => {
+                    const raw = event.target.value;
+                    if (raw === "custom") {
+                      return;
+                    }
+                    const elo = Number.parseInt(raw, 10);
+                    if (!Number.isFinite(elo)) {
+                      return;
+                    }
+                    setOpponentStockfishElo(elo);
+                  }}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  {STOCKFISH_ELO_PRESETS.map((elo) => (
+                    <option key={`elo-${elo}`} value={String(elo)}>
+                      {elo}
+                    </option>
+                  ))}
+                  <option value="custom">Custom ELO</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Stockfish ELO (native UCI)
+                <input
+                  type="number"
+                  min={800}
+                  max={3000}
+                  value={opponentStockfishElo}
+                  onChange={(event) => {
+                    const elo = clampInt(event.target.value, 800, 3000, 1600);
+                    setOpponentStockfishElo(elo);
+                  }}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+
+              {opponentMode === "llm" ? (
+                <>
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent provider
+                    <select
+                      value={opponentProvider}
+                      onChange={(event) => setOpponentProvider(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                    >
+                      {providerPresets.map((preset) => (
+                        <option key={`opponent-${preset.provider}`} value={preset.provider}>
+                          {preset.provider_label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent model
+                    <select
+                      value={opponentModel}
+                      onChange={(event) => setOpponentModel(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                      disabled={!opponentPreset}
+                    >
+                      {(opponentPreset?.models ?? []).map((model) => (
+                        <option key={`opponent-model-${model.id}`} value={model.id}>
+                          {model.label}
+                          {model.recommended ? " (Recommended)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : null}
+            </div>
+
+            {opponentMode === "stockfish" && !stockfishAvailable ? (
+              <p className="mt-2 text-xs text-[var(--color-warning-text)]">
+                Stockfish opponent requires STOCKFISH_PATH in{" "}
+                <Link to="/settings" className="underline">
+                  Settings
+                </Link>
+                .
+              </p>
+            ) : null}
+            {opponentMode === "llm" && opponentProvider && !opponentProviderReady ? (
+              <p className="mt-2 text-xs text-[var(--color-warning-text)]">
+                Opponent provider credentials missing in{" "}
+                <Link to="/settings" className="underline">
+                  Settings
+                </Link>
+                .
+              </p>
+            ) : null}
+          </details>
+
+          <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Strategy</summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Board format
                 <select
@@ -504,7 +732,7 @@ export function RunLabPage() {
               </label>
             </div>
 
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
                 <input
                   type="checkbox"
@@ -530,7 +758,7 @@ export function RunLabPage() {
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
               Evaluation Settings
             </summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text-primary)] sm:col-span-2">
                 <input
                   type="checkbox"
@@ -546,12 +774,13 @@ export function RunLabPage() {
               </label>
 
               <label className="text-xs text-[var(--color-text-secondary)]">
-                Player color
+                Evaluated side
                 <select
                   value={evaluationPlayerColor}
-                  onChange={(event) => setEvaluationPlayerColor(event.target.value as "white" | "black")}
+                  onChange={(event) => setEvaluationPlayerColor(event.target.value as "auto" | "white" | "black")}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 >
+                  <option value="auto">auto (recommended)</option>
                   <option value="white">white</option>
                   <option value="black">black</option>
                 </select>
@@ -563,6 +792,23 @@ export function RunLabPage() {
                   value={evaluationOpponentEloText}
                   onChange={(event) => setEvaluationOpponentEloText(event.target.value)}
                   placeholder="e.g. 1000"
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Evaluation depth (Stockfish)
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={evaluationDepth}
+                  onChange={(event) => {
+                    const depth = clampInt(event.target.value, 1, 30, 12);
+                    setEvaluationDepth(depth);
+                    setStockfishDepthPreference(depth);
+                  }}
+                  disabled={!stockfishAvailable || !autoEvaluateEnabled}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 />
               </label>
@@ -614,7 +860,7 @@ export function RunLabPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Preview & Validation</p>
@@ -630,8 +876,9 @@ export function RunLabPage() {
                 if (!canAutoCheck) {
                   return;
                 }
-                validateMutation.mutate(requestPayload);
-                previewMutation.mutate(requestPayload);
+                lastAutoCheckedSignatureRef.current = requestPayloadSignature;
+                triggerValidate(requestPayload);
+                triggerPreview(requestPayload);
               }}
             >
               Refresh
@@ -682,7 +929,7 @@ export function RunLabPage() {
             </div>
           ) : null}
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <InfoChip label="Run ID" value={previewData?.run_id ?? "--"} />
             <InfoChip label="Config hash" value={previewData?.config_hash ?? validateMutation.data?.config_hash ?? "--"} />
             <InfoChip label="Scheduled games" value={previewData ? String(previewData.scheduled_games) : String(targetValidGames)} />
@@ -751,7 +998,7 @@ export function RunLabPage() {
 
           <div className="mt-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Resolved config preview</p>
-            <pre className="mt-2 max-h-[400px] overflow-auto rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3 font-['IBM_Plex_Mono'] text-xs text-[var(--color-text-primary)]">
+            <pre className="mt-2 max-h-[400px] max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3 font-['IBM_Plex_Mono'] text-xs text-[var(--color-text-primary)]">
               {toPrettyJson(resolvedConfigPreview)}
             </pre>
           </div>
@@ -849,6 +1096,10 @@ function toneToBadgeTone(tone: "success" | "warning" | "error" | "pending"): "su
 function buildStructuredOverrides(input: {
   provider: string;
   model: string;
+  opponentMode: OpponentMode;
+  opponentProvider: string;
+  opponentModel: string;
+  opponentStockfishElo: number;
   targetValidGames: number;
   maxBudgetUsd: number | null;
   boardFormat: BoardFormat;
@@ -856,7 +1107,10 @@ function buildStructuredOverrides(input: {
   provideHistory: boolean;
   feedbackLevel: FeedbackLevel;
   autoEvaluateEnabled: boolean;
-  evaluationPlayerColor: "white" | "black";
+  evaluationDepth: number;
+  stockfishThreads: number;
+  stockfishHashMb: number;
+  evaluationPlayerColor: "auto" | "white" | "black";
   evaluationOpponentElo: number | null;
 }): string[] {
   const overrides: string[] = [
@@ -865,11 +1119,29 @@ function buildStructuredOverrides(input: {
     `players.black.model=${input.model}`,
     `players.black.name=${safeModelName(input.provider, input.model)}`,
     `experiment.target_valid_games=${input.targetValidGames}`,
+    `experiment.max_games=${input.targetValidGames}`,
     `strategy.board_format=${input.boardFormat}`,
     `strategy.provide_legal_moves=${input.provideLegalMoves}`,
     `strategy.provide_history=${input.provideHistory}`,
     `strategy.validation.feedback_level=${input.feedbackLevel}`,
   ];
+
+  if (input.opponentMode === "random") {
+    overrides.push("players.white.type=random");
+    overrides.push("players.white.name=random_white");
+  } else if (input.opponentMode === "stockfish") {
+    overrides.push("players.white.type=engine");
+    overrides.push("players.white.name=stockfish_white");
+    overrides.push("players.white.uci_limit_strength=true");
+    overrides.push(`players.white.uci_elo=${input.opponentStockfishElo}`);
+    overrides.push(`players.white.threads=${input.stockfishThreads}`);
+    overrides.push(`players.white.hash_mb=${input.stockfishHashMb}`);
+  } else if (input.opponentMode === "llm") {
+    overrides.push("players.white.type=llm");
+    overrides.push(`players.white.provider=${input.opponentProvider}`);
+    overrides.push(`players.white.model=${input.opponentModel}`);
+    overrides.push(`players.white.name=${safeModelName(input.opponentProvider, input.opponentModel)}`);
+  }
 
   if (input.maxBudgetUsd !== null) {
     overrides.push(`experiment.max_budget_usd=${input.maxBudgetUsd}`);
@@ -878,8 +1150,13 @@ function buildStructuredOverrides(input: {
   if (input.autoEvaluateEnabled) {
     overrides.push("evaluation.auto.enabled=true");
     overrides.push(`evaluation.auto.player_color=${input.evaluationPlayerColor}`);
+    overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
+    overrides.push(`evaluation.stockfish.threads=${input.stockfishThreads}`);
+    overrides.push(`evaluation.stockfish.hash_mb=${input.stockfishHashMb}`);
     if (input.evaluationOpponentElo !== null) {
       overrides.push(`evaluation.auto.opponent_elo=${input.evaluationOpponentElo}`);
+    } else if (input.opponentMode === "stockfish") {
+      overrides.push(`evaluation.auto.opponent_elo=${input.opponentStockfishElo}`);
     }
   } else {
     overrides.push("evaluation.auto.enabled=false");
@@ -975,6 +1252,22 @@ function safeModelName(provider: string, model: string): string {
   return `${provider}_${model}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
+function mapEvaluationDepthToDefaultElo(depth: number): number {
+  if (depth <= 6) {
+    return 1200;
+  }
+  if (depth <= 10) {
+    return 1600;
+  }
+  if (depth <= 14) {
+    return 2000;
+  }
+  if (depth <= 18) {
+    return 2400;
+  }
+  return 2600;
+}
+
 function parseOptionalPositiveNumber(value: string): number | null {
   if (value.trim().length === 0) {
     return null;
@@ -1058,3 +1351,4 @@ function toPrettyJson(value: unknown): string {
     return String(value);
   }
 }
+

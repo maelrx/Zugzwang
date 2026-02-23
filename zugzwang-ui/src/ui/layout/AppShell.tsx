@@ -63,7 +63,7 @@ export function AppShell() {
 
   const progressQueries = useQueries({
     queries: activeJobs.map((job) => ({
-      queryKey: ["sidebar-job-progress", job.job_id] as const,
+      queryKey: ["job-progress", job.job_id] as const,
       queryFn: () => apiRequest<RunProgressResponse>(`/api/jobs/${job.job_id}/progress`),
       staleTime: 0,
       refetchInterval: 2_000,

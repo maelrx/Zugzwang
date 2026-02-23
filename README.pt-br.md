@@ -143,7 +143,7 @@ Copie `.env.example` para `.env` e preencha suas chaves de API:
 
 ```bash
 cp .env.example .env
-# Edite .env e defina as chaves de provider (ex.: ZAI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / MINIMAX_API_KEY)
+# Edite .env e defina as chaves de provider (ex.: ZAI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / KIMI_CODE_API_KEY / MINIMAX_API_KEY)
 # Para Stockfish: defina STOCKFISH_PATH=/caminho/para/stockfish
 ```
 
@@ -259,12 +259,13 @@ runtime:
 
 ### Engine Player (UCI)
 
-Jogue contra o Stockfish com nível de habilidade configurável:
+Jogue contra o Stockfish com força nativa por Elo UCI:
 
 ```bash
 zugzwang play --config configs/baselines/best_known_start.yaml \
   --set players.white.type=engine \
-  --set players.white.depth=8
+  --set players.white.uci_limit_strength=true \
+  --set players.white.uci_elo=1600
 ```
 
 ### Integração z.ai / GLM-5
@@ -436,3 +437,4 @@ MIT. Veja [LICENSE](LICENSE).
 <div align="center">
 <sub>Construído com rigor, curiosidade e profundo respeito pelo jogo.</sub>
 </div>
+

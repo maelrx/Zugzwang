@@ -109,6 +109,12 @@ export function RunDetailPage() {
   const rerunConfigPath = resolveRerunConfigPath(runMeta?.inferred_config_template);
   const rerunOverrides = buildRerunOverrides(summary);
 
+  useEffect(() => {
+    if (runMeta?.inferred_player_color === "white" || runMeta?.inferred_player_color === "black") {
+      setPlayerColor(runMeta.inferred_player_color);
+    }
+  }, [runId, runMeta?.inferred_player_color]);
+
   if (summaryNotFound) {
     return (
       <section>
@@ -258,7 +264,7 @@ export function RunDetailPage() {
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="text-xs text-[var(--color-text-secondary)]">
-                Player color
+                Evaluated side
                 <select
                   value={playerColor}
                   onChange={(event) => setPlayerColor(event.target.value as "white" | "black")}

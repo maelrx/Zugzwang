@@ -3,18 +3,15 @@ import { apiRequest } from "../client";
 import type { CancelJobResponse, JobResponse, RunProgressResponse, StartEvalRequest, StartJobRequest } from "../types";
 
 export const jobsQueryKey = ["jobs"] as const;
+const JOB_POLL_INTERVAL_MS = 2_000;
 
 export function useJobs() {
   return useQuery({
     queryKey: jobsQueryKey,
     queryFn: () => apiRequest<JobResponse[]>("/api/jobs"),
-    refetchInterval: (query) => {
-      const jobs = query.state.data;
-      if (!jobs?.length) {
-        return false;
-      }
-      return jobs.some((job) => job.status === "running" || job.status === "queued") ? 2_000 : false;
-    },
+    // Keep jobs fresh even when all known jobs are terminal, so externally
+    // started runs (CLI/API) become visible without manual refresh.
+    refetchInterval: JOB_POLL_INTERVAL_MS,
   });
 }
 
@@ -23,7 +20,7 @@ export function useJob(jobId: string | null) {
     queryKey: ["job", jobId] as const,
     queryFn: () => apiRequest<JobResponse>(`/api/jobs/${jobId}`),
     enabled: Boolean(jobId),
-    refetchInterval: 2_000,
+    refetchInterval: (query) => (shouldPollStatus(query.state.data?.status) ? JOB_POLL_INTERVAL_MS : false),
   });
 }
 
@@ -32,7 +29,7 @@ export function useJobProgress(jobId: string | null) {
     queryKey: ["job-progress", jobId] as const,
     queryFn: () => apiRequest<RunProgressResponse>(`/api/jobs/${jobId}/progress`),
     enabled: Boolean(jobId),
-    refetchInterval: 2_000,
+    refetchInterval: (query) => (shouldPollStatus(query.state.data?.status) ? JOB_POLL_INTERVAL_MS : false),
   });
 }
 
@@ -97,5 +94,12 @@ function upsertJob(current: JobResponse[], job: JobResponse): JobResponse[] {
   const next = current.filter((item) => item.job_id !== job.job_id);
   next.unshift(job);
   return next;
+}
+
+function shouldPollStatus(status: JobResponse["status"] | RunProgressResponse["status"] | null | undefined): boolean {
+  if (!status) {
+    return true;
+  }
+  return status === "queued" || status === "running";
 }
 

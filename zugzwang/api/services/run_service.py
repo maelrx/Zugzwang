@@ -32,6 +32,7 @@ class RunService:
         mode: RunMode = "run",
     ) -> JobHandle:
         parsed_overrides = self.config_service.parse_overrides(overrides)
+        parsed_overrides = _normalize_run_overrides(parsed_overrides, mode)
         config_path_resolved = self.config_service.resolve_path(config_path)
         config_arg = str(config_path_resolved)
         resolved_profile = self.config_service.resolve_optional_path(model_profile)
@@ -66,6 +67,7 @@ class RunService:
             cmd.append("play")
         else:
             cmd.append("run")
+        cmd.extend(["--run-id", prepared.run_id])
         cmd.extend(["--config", config_arg])
 
         if resolved_profile is not None:
@@ -201,4 +203,26 @@ def _as_string(value: Any) -> str | None:
         stripped = value.strip()
         return stripped or None
     return None
+
+
+def _normalize_run_overrides(overrides: list[str], mode: RunMode) -> list[str]:
+    normalized = list(overrides)
+    if mode in {"run", "dry-run"}:
+        target_games = _find_override_value(normalized, "experiment.target_valid_games")
+        max_games = _find_override_value(normalized, "experiment.max_games")
+        if target_games and max_games is None:
+            normalized.append(f"experiment.max_games={target_games}")
+    return normalized
+
+
+def _find_override_value(overrides: list[str], key: str) -> str | None:
+    value: str | None = None
+    prefix = f"{key}="
+    for item in overrides:
+        candidate = item.strip()
+        if candidate.startswith(prefix):
+            raw = candidate[len(prefix) :].strip()
+            if raw:
+                value = raw
+    return value
 

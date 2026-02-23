@@ -1,7 +1,14 @@
 experiment:
-  name: moa_specialist
+  name: transferability_moa_role_overrides_template
   target_valid_games: 30
   max_games: 36
+
+players:
+  black:
+    type: llm
+    name: transfer_target_black
+    provider: openai
+    model: gpt-5-mini
 
 protocol:
   mode: research_strict
@@ -18,8 +25,12 @@ strategy:
       - positional
       - endgame
     include_legal_moves_in_aggregator: true
-    provider_policy: shared_model
-    role_models: {}
+    provider_policy: role_model_overrides
+    role_models:
+      tactical: gpt-5-mini
+      positional: gpt-5-mini
+      endgame: gpt-5
+      aggregator: gpt-5
   validation:
     feedback_level: rich
     move_retries: 3
@@ -39,10 +50,10 @@ runtime:
   timeout_policy:
     enabled: true
     min_games_before_enforcement: 6
-    max_provider_timeout_game_rate: 0.4
+    max_provider_timeout_game_rate: 0.42
     min_observed_completion_rate: 0.55
     action: stop_run
 
 budget:
-  max_total_usd: 70.0
-  estimated_avg_cost_per_game_usd: 1.65
+  max_total_usd: 95.0
+  estimated_avg_cost_per_game_usd: 2.4

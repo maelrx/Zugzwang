@@ -1,7 +1,14 @@
 experiment:
-  name: moa_specialist
+  name: transferability_single_agent_template
   target_valid_games: 30
   max_games: 36
+
+players:
+  black:
+    type: llm
+    name: transfer_target_black
+    provider: zai
+    model: glm-5
 
 protocol:
   mode: research_strict
@@ -10,16 +17,7 @@ strategy:
   use_system_prompt: true
   system_prompt_id: checklist_strict
   multi_agent:
-    enabled: true
-    mode: specialist_moa
-    proposer_count: 3
-    proposer_roles:
-      - tactical
-      - positional
-      - endgame
-    include_legal_moves_in_aggregator: true
-    provider_policy: shared_model
-    role_models: {}
+    enabled: false
   validation:
     feedback_level: rich
     move_retries: 3
@@ -35,14 +33,14 @@ evaluation:
 
 runtime:
   timeout_seconds: 120
-  expected_completion_rate: 0.78
+  expected_completion_rate: 0.86
   timeout_policy:
     enabled: true
     min_games_before_enforcement: 6
-    max_provider_timeout_game_rate: 0.4
-    min_observed_completion_rate: 0.55
+    max_provider_timeout_game_rate: 0.35
+    min_observed_completion_rate: 0.62
     action: stop_run
 
 budget:
-  max_total_usd: 70.0
-  estimated_avg_cost_per_game_usd: 1.65
+  max_total_usd: 35.0
+  estimated_avg_cost_per_game_usd: 0.6

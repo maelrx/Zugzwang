@@ -187,16 +187,21 @@ class ExperimentRunner:
             white_player = build_player(white_cfg, protocol_mode, strategy_cfg, rng)
             black_player = build_player(black_cfg, protocol_mode, strategy_cfg, rng)
 
-            record = play_game(
-                experiment_id=resume_state.run_id,
-                game_number=game_number,
-                config_hash=prepared.config_hash,
-                seed=seed,
-                players_cfg=config["players"],
-                white_player=white_player,
-                black_player=black_player,
-                max_plies=max_plies,
-            )
+            try:
+                record = play_game(
+                    experiment_id=resume_state.run_id,
+                    game_number=game_number,
+                    config_hash=prepared.config_hash,
+                    seed=seed,
+                    players_cfg=config["players"],
+                    white_player=white_player,
+                    black_player=black_player,
+                    max_plies=max_plies,
+                )
+            finally:
+                _close_player_safely(white_player)
+                if black_player is not white_player:
+                    _close_player_safely(black_player)
             write_game_record(run_dir, record)
             records.append(record)
             total_cost_usd += record.cost_usd
@@ -414,3 +419,14 @@ def _record_has_provider_timeout(record: GameRecord) -> bool:
         if isinstance(error, str) and error.startswith("provider_timeout"):
             return True
     return False
+
+
+def _close_player_safely(player: Any) -> None:
+    close_fn = getattr(player, "close", None)
+    if not callable(close_fn):
+        return
+    try:
+        close_fn()
+    except Exception:
+        # Do not fail run finalization because of player cleanup errors.
+        pass

@@ -9,13 +9,9 @@ export function useJobs() {
   return useQuery({
     queryKey: jobsQueryKey,
     queryFn: () => apiRequest<JobResponse[]>("/api/jobs"),
-    refetchInterval: (query) => {
-      const jobs = query.state.data;
-      if (!jobs?.length) {
-        return false;
-      }
-      return jobs.some((job) => shouldPollStatus(job.status)) ? JOB_POLL_INTERVAL_MS : false;
-    },
+    // Keep jobs fresh even when all known jobs are terminal, so externally
+    // started runs (CLI/API) become visible without manual refresh.
+    refetchInterval: JOB_POLL_INTERVAL_MS,
   });
 }
 

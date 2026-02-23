@@ -62,6 +62,46 @@ def test_runner_auto_evaluates_when_enabled(tmp_path: Path, monkeypatch) -> None
     assert calls["output_filename"] == "auto_eval_report.json"
 
 
+def test_runner_auto_evaluation_uses_auto_player_color_by_default(tmp_path: Path, monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    def fake_evaluate_run_dir(  # type: ignore[no-untyped-def]
+        run_dir,
+        player_color="black",
+        opponent_elo=None,
+        elo_color_correction=0.0,
+        output_filename="experiment_report_evaluated.json",
+    ):
+        run_path = Path(run_dir)
+        output_path = run_path / output_filename
+        output_path.write_text("{}", encoding="utf-8")
+        calls["player_color"] = player_color
+        _ = (opponent_elo, elo_color_correction)
+        return {
+            "run_dir": str(run_path),
+            "output_report": str(output_path),
+            "acpl_overall": 12.0,
+        }
+
+    monkeypatch.setattr("zugzwang.experiments.runner.evaluate_run_dir", fake_evaluate_run_dir)
+
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    runner = ExperimentRunner(
+        config_path=config_path,
+        overrides=[
+            "experiment.target_valid_games=1",
+            "experiment.max_games=1",
+            "runtime.max_plies=6",
+            f"runtime.output_dir={tmp_path.as_posix()}",
+            "evaluation.auto.enabled=true",
+        ],
+    )
+    payload = runner.run()
+
+    assert payload["evaluation"]["status"] == "completed"
+    assert calls["player_color"] == "auto"
+
+
 def test_runner_auto_evaluation_error_is_non_fatal_by_default(tmp_path: Path, monkeypatch) -> None:
     def failing_evaluate(*args, **kwargs):  # type: ignore[no-untyped-def]
         raise RuntimeError("stockfish missing")

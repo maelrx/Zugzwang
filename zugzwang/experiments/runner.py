@@ -332,7 +332,7 @@ class ExperimentRunner:
         if games_written <= 0:
             return {"enabled": True, "status": "skipped", "reason": "no_games_to_evaluate"}
 
-        player_color = str(auto_cfg.get("player_color", "black"))
+        player_color = str(auto_cfg.get("player_color", "auto"))
         opponent_elo_raw = auto_cfg.get("opponent_elo")
         opponent_elo = float(opponent_elo_raw) if opponent_elo_raw is not None else None
         elo_color_correction = float(auto_cfg.get("elo_color_correction", 0.0))

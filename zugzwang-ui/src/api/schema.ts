@@ -722,7 +722,7 @@ export interface components {
              * @default black
              * @enum {string}
              */
-            player_color: "white" | "black";
+            player_color: "auto" | "white" | "black";
             /** Opponent Elo */
             opponent_elo?: number | null;
             /**

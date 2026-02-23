@@ -873,7 +873,7 @@ function buildPlayPayload(input: {
 
   if (input.autoEvaluateEnabled) {
     overrides.push("evaluation.auto.enabled=true");
-    overrides.push("evaluation.auto.player_color=black");
+    overrides.push("evaluation.auto.player_color=auto");
     overrides.push(`evaluation.stockfish.depth=${input.evaluationDepth}`);
     overrides.push(`evaluation.stockfish.threads=${input.stockfishThreads}`);
     overrides.push(`evaluation.stockfish.hash_mb=${input.stockfishHashMb}`);

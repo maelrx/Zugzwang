@@ -220,6 +220,7 @@ describe("quick play flow", () => {
       expect(overrides).toContain("players.black.provider=zai");
       expect(overrides).toContain("players.black.model=glm-5");
       expect(overrides).toContain("evaluation.auto.enabled=true");
+      expect(overrides).toContain("evaluation.auto.player_color=auto");
       expect(overrides).toContain("players.white.type=engine");
       expect(overrides).toContain("players.white.uci_limit_strength=true");
       expect(overrides.some((entry: string) => entry.startsWith("players.white.uci_elo="))).toBe(true);

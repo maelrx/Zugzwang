@@ -12,13 +12,14 @@ from zugzwang.core.models import ExperimentReport, GameRecord
 from zugzwang.evaluation.elo import estimate_elo_mle
 from zugzwang.evaluation.metrics import summarize_experiment
 from zugzwang.evaluation.move_quality import classify_centipawn_loss
+from zugzwang.evaluation.player_color import infer_evaluation_player_color
 from zugzwang.evaluation.stockfish import StockfishEvaluator
 from zugzwang.experiments.io import load_game_records
 
 
 def evaluate_run_dir(
     run_dir: str | Path,
-    player_color: str = "black",
+    player_color: str = "auto",
     opponent_elo: float | None = None,
     elo_color_correction: float = 0.0,
     output_filename: str = "experiment_report_evaluated.json",
@@ -33,6 +34,10 @@ def evaluate_run_dir(
     records = load_game_records(games_dir)
     if not records:
         raise ValueError(f"No game records found in {games_dir}")
+    resolved_player_color, player_color_resolution = infer_evaluation_player_color(
+        resolved_config=resolved_config,
+        requested_color=player_color,
+    )
 
     existing_report = _load_existing_report(run_path / "experiment_report.json")
     scheduled_games = (
@@ -68,14 +73,14 @@ def evaluate_run_dir(
         move_quality = _evaluate_move_quality(
             records=records,
             evaluator=evaluator,
-            player_color=player_color,
+            player_color=resolved_player_color,
         )
 
     elo_estimate = None
     elo_ci = None
     if opponent_elo is not None:
         observations = [
-            (opponent_elo, _result_score(record.result, player_color)) for record in records
+            (opponent_elo, _result_score(record.result, resolved_player_color)) for record in records
         ]
         elo = estimate_elo_mle(observations, color_correction_elo=elo_color_correction)
         elo_estimate = float(elo.estimate)
@@ -102,7 +107,9 @@ def evaluate_run_dir(
             "threads": evaluator.threads,
             "hash_mb": evaluator.hash_mb,
         },
-        "player_color": player_color,
+        "player_color": resolved_player_color,
+        "player_color_requested": player_color,
+        "player_color_resolution": player_color_resolution,
         "opponent_elo": opponent_elo,
         "elo_color_correction": elo_color_correction,
         "evaluated_move_count": move_quality["evaluated_move_count"],
@@ -115,6 +122,8 @@ def evaluate_run_dir(
         "run_dir": str(run_path),
         "input_games": len(records),
         "output_report": str(output_path),
+        "player_color": resolved_player_color,
+        "player_color_resolution": player_color_resolution,
         "evaluated_move_count": move_quality["evaluated_move_count"],
         "acpl_overall": move_quality["acpl_overall"],
         "blunder_rate": move_quality["blunder_rate"],

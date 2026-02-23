@@ -38,7 +38,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     eval_parser = subparsers.add_parser("evaluate")
     eval_parser.add_argument("--run-dir", required=True)
-    eval_parser.add_argument("--player-color", choices=["white", "black"], default="black")
+    eval_parser.add_argument("--player-color", choices=["auto", "white", "black"], default="auto")
     eval_parser.add_argument("--opponent-elo", type=float)
     eval_parser.add_argument("--elo-color-correction", type=float, default=0.0)
     eval_parser.add_argument("--output-filename", default="experiment_report_evaluated.json")

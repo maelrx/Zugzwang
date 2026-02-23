@@ -83,7 +83,7 @@ export function RunLabPage() {
   const [opponentStockfishElo, setOpponentStockfishElo] = useState(() => mapEvaluationDepthToDefaultElo(stockfishDepthPreference));
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState(autoEvaluatePreference);
   const [evaluationDepth, setEvaluationDepth] = useState(stockfishDepthPreference);
-  const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"white" | "black">("black");
+  const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"auto" | "white" | "black">("auto");
   const [evaluationOpponentEloText, setEvaluationOpponentEloText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(storedAdvancedOpen);
   const [customOverridesText, setCustomOverridesText] = useState(storedOverrides);
@@ -774,12 +774,13 @@ export function RunLabPage() {
               </label>
 
               <label className="text-xs text-[var(--color-text-secondary)]">
-                Player color
+                Evaluated side
                 <select
                   value={evaluationPlayerColor}
-                  onChange={(event) => setEvaluationPlayerColor(event.target.value as "white" | "black")}
+                  onChange={(event) => setEvaluationPlayerColor(event.target.value as "auto" | "white" | "black")}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 >
+                  <option value="auto">auto (recommended)</option>
                   <option value="white">white</option>
                   <option value="black">black</option>
                 </select>
@@ -1109,7 +1110,7 @@ function buildStructuredOverrides(input: {
   evaluationDepth: number;
   stockfishThreads: number;
   stockfishHashMb: number;
-  evaluationPlayerColor: "white" | "black";
+  evaluationPlayerColor: "auto" | "white" | "black";
   evaluationOpponentElo: number | null;
 }): string[] {
   const overrides: string[] = [

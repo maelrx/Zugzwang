@@ -18,7 +18,7 @@ class EvaluationService:
     def start_evaluation(
         self,
         run_dir: str,
-        player_color: str = "black",
+        player_color: str = "auto",
         opponent_elo: float | None = None,
         output_filename: str = "experiment_report_evaluated.json",
     ) -> JobHandle:

@@ -34,6 +34,7 @@ ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode"}
 ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}
+ALLOWED_EVAL_PLAYER_COLORS = {"white", "black", "auto"}
 ALLOWED_TIMEOUT_POLICY_ACTIONS = {"stop_run"}
 ALLOWED_RAG_SOURCES = {"eco", "lichess", "endgames"}
 ALLOWED_MULTI_AGENT_MODES = {"capability_moa", "specialist_moa", "hybrid_phase_router"}
@@ -121,9 +122,9 @@ def _validate_evaluation_auto(config: dict[str, Any]) -> None:
     if not isinstance(fail_on_error, bool):
         raise ConfigValidationError("evaluation.auto.fail_on_error must be a boolean")
 
-    player_color = auto_cfg.get("player_color", "black")
-    if player_color not in ALLOWED_PLAYER_COLORS:
-        allowed = ", ".join(sorted(ALLOWED_PLAYER_COLORS))
+    player_color = auto_cfg.get("player_color", "auto")
+    if player_color not in ALLOWED_EVAL_PLAYER_COLORS:
+        allowed = ", ".join(sorted(ALLOWED_EVAL_PLAYER_COLORS))
         raise ConfigValidationError(f"evaluation.auto.player_color must be one of [{allowed}]")
 
     opponent_elo = auto_cfg.get("opponent_elo")

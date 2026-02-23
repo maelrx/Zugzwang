@@ -25,6 +25,18 @@ def test_config_accepts_evaluation_auto_block() -> None:
     assert resolved["evaluation"]["auto"]["player_color"] == "white"
 
 
+def test_config_accepts_auto_player_color_mode() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "evaluation.auto.enabled=true",
+            "evaluation.auto.player_color=auto",
+        ],
+    )
+    assert resolved["evaluation"]["auto"]["player_color"] == "auto"
+
+
 def test_config_rejects_invalid_evaluation_auto_player_color() -> None:
     config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
     with pytest.raises(ValueError, match="evaluation.auto.player_color"):

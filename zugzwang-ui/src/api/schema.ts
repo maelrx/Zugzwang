@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/configs/model-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Model Catalog */
+        get: operations["list_model_catalog_api_configs_model_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/configs/validate": {
         parameters: {
             query?: never;
@@ -201,6 +218,23 @@ export interface paths {
         };
         /** Stream Job Logs */
         get: operations["stream_job_logs_api_jobs__job_id__logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard/kpis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Kpis */
+        get: operations["get_dashboard_kpis_api_dashboard_kpis_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -433,6 +467,42 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** DashboardKpisResponse */
+        DashboardKpisResponse: {
+            /** Total Runs */
+            total_runs: number;
+            /** Runs With Reports */
+            runs_with_reports: number;
+            /** Evaluated Runs */
+            evaluated_runs: number;
+            /** Best Elo */
+            best_elo?: number | null;
+            /** Avg Acpl */
+            avg_acpl?: number | null;
+            /** Total Cost Usd */
+            total_cost_usd: number;
+            /** Last Run Id */
+            last_run_id?: string | null;
+            /** Timeline */
+            timeline?: components["schemas"]["DashboardTimelinePointResponse"][];
+        };
+        /** DashboardTimelinePointResponse */
+        DashboardTimelinePointResponse: {
+            /** Run Id */
+            run_id: string;
+            /** Created At Utc */
+            created_at_utc?: string | null;
+            /** Inferred Model Label */
+            inferred_model_label?: string | null;
+            /** Total Cost Usd */
+            total_cost_usd?: number | null;
+            /** Elo Estimate */
+            elo_estimate?: number | null;
+            /** Acpl Overall */
+            acpl_overall?: number | null;
+            /** Evaluated Report Exists */
+            evaluated_report_exists: boolean;
+        };
         /** EnvCheckResponse */
         EnvCheckResponse: {
             /** Provider */
@@ -516,6 +586,35 @@ export interface components {
             /** Exit Code */
             exit_code?: number | null;
         };
+        /** ModelOptionResponse */
+        ModelOptionResponse: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+        };
+        /** ModelProviderPresetResponse */
+        ModelProviderPresetResponse: {
+            /** Provider */
+            provider: string;
+            /** Provider Label */
+            provider_label: string;
+            /** Api Style */
+            api_style: string;
+            /** Base Url */
+            base_url: string;
+            /** Api Key Env */
+            api_key_env: string;
+            /** Notes */
+            notes: string;
+            /** Models */
+            models?: components["schemas"]["ModelOptionResponse"][];
+        };
         /** RunListItem */
         RunListItem: {
             /** Run Id */
@@ -530,6 +629,34 @@ export interface components {
             report_exists: boolean;
             /** Evaluated Report Exists */
             evaluated_report_exists: boolean;
+            /** Inferred Player Color */
+            inferred_player_color?: ("white" | "black") | null;
+            /** Inferred Opponent Elo */
+            inferred_opponent_elo?: number | null;
+            /** Inferred Provider */
+            inferred_provider?: string | null;
+            /** Inferred Model */
+            inferred_model?: string | null;
+            /** Inferred Model Label */
+            inferred_model_label?: string | null;
+            /** Inferred Config Template */
+            inferred_config_template?: string | null;
+            /** Inferred Eval Status */
+            inferred_eval_status?: ("pending_report" | "needs_eval" | "evaluated") | null;
+            /** Num Games Target */
+            num_games_target?: number | null;
+            /** Num Games Valid */
+            num_games_valid?: number | null;
+            /** Completion Rate */
+            completion_rate?: number | null;
+            /** Total Cost Usd */
+            total_cost_usd?: number | null;
+            /** Elo Estimate */
+            elo_estimate?: number | null;
+            /** Acpl Overall */
+            acpl_overall?: number | null;
+            /** Blunder Rate */
+            blunder_rate?: number | null;
         };
         /** RunProgressResponse */
         RunProgressResponse: {
@@ -577,6 +704,14 @@ export interface components {
             } | null;
             /** Game Count */
             game_count: number;
+            /** Inferred Player Color */
+            inferred_player_color?: ("white" | "black") | null;
+            /** Inferred Opponent Elo */
+            inferred_opponent_elo?: number | null;
+            /** Inferred Model Label */
+            inferred_model_label?: string | null;
+            /** Inferred Config Template */
+            inferred_config_template?: string | null;
         };
         /** StartEvalRequest */
         StartEvalRequest: {
@@ -665,6 +800,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfigListResponse"];
+                };
+            };
+        };
+    };
+    list_model_catalog_api_configs_model_catalog_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProviderPresetResponse"][];
                 };
             };
         };
@@ -998,11 +1153,52 @@ export interface operations {
             };
         };
     };
+    get_dashboard_kpis_api_dashboard_kpis_get: {
+        parameters: {
+            query?: {
+                timeline_limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardKpisResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_runs_api_runs_get: {
         parameters: {
             query?: {
                 q?: string | null;
                 evaluated_only?: boolean;
+                evaluated?: boolean | null;
+                provider?: string | null;
+                model?: string | null;
+                status?: ("all" | "evaluated" | "needs_eval" | "pending_report") | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sort_by?: "created_at_utc" | "run_id" | "total_cost_usd" | "elo_estimate" | "acpl_overall";
+                sort_dir?: "asc" | "desc";
+                offset?: number;
+                limit?: number | null;
             };
             header?: never;
             path?: never;

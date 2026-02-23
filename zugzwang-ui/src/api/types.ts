@@ -6,6 +6,7 @@ export type ConfigListResponse = components["schemas"]["ConfigListResponse"];
 export type ConfigPreviewResponse = components["schemas"]["ConfigPreviewResponse"];
 export type ConfigValidateRequest = components["schemas"]["ConfigValidateRequest"];
 export type ConfigValidateResponse = components["schemas"]["ConfigValidateResponse"];
+export type DashboardKpisResponse = components["schemas"]["DashboardKpisResponse"];
 export type EnvCheckResponse = components["schemas"]["EnvCheckResponse"];
 export type GameDetailResponse = components["schemas"]["GameDetailResponse"];
 export type GameListItem = components["schemas"]["GameListItem"];

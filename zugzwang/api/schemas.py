@@ -117,6 +117,20 @@ class RunListItem(ApiModel):
     config_hash: str | None = None
     report_exists: bool
     evaluated_report_exists: bool
+    inferred_player_color: Literal["white", "black"] | None = None
+    inferred_opponent_elo: int | None = None
+    inferred_provider: str | None = None
+    inferred_model: str | None = None
+    inferred_model_label: str | None = None
+    inferred_config_template: str | None = None
+    inferred_eval_status: Literal["pending_report", "needs_eval", "evaluated"] | None = None
+    num_games_target: int | None = None
+    num_games_valid: int | None = None
+    completion_rate: float | None = None
+    total_cost_usd: float | None = None
+    elo_estimate: float | None = None
+    acpl_overall: float | None = None
+    blunder_rate: float | None = None
 
 
 class RunSummaryResponse(ApiModel):
@@ -125,6 +139,31 @@ class RunSummaryResponse(ApiModel):
     report: dict[str, Any] | None = None
     evaluated_report: dict[str, Any] | None = None
     game_count: int
+    inferred_player_color: Literal["white", "black"] | None = None
+    inferred_opponent_elo: int | None = None
+    inferred_model_label: str | None = None
+    inferred_config_template: str | None = None
+
+
+class DashboardTimelinePointResponse(ApiModel):
+    run_id: str
+    created_at_utc: str | None = None
+    inferred_model_label: str | None = None
+    total_cost_usd: float | None = None
+    elo_estimate: float | None = None
+    acpl_overall: float | None = None
+    evaluated_report_exists: bool
+
+
+class DashboardKpisResponse(ApiModel):
+    total_runs: int
+    runs_with_reports: int
+    evaluated_runs: int
+    best_elo: float | None = None
+    avg_acpl: float | None = None
+    total_cost_usd: float
+    last_run_id: str | None = None
+    timeline: list[DashboardTimelinePointResponse] = Field(default_factory=list)
 
 
 class GameListItem(ApiModel):

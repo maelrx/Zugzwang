@@ -18,15 +18,18 @@ export function useJobWatcher() {
   const jobs = useMemo(() => jobsQuery.data ?? [], [jobsQuery.data]);
 
   useEffect(() => {
-    if (!notificationsEnabled || jobs.length === 0) {
-      if (jobs.length === 0) {
-        previousStatusesRef.current = null;
-      }
+    if (jobs.length === 0) {
+      previousStatusesRef.current = null;
       return;
     }
 
     const nextStatuses = new Map(jobs.map((job) => [job.job_id, job.status]));
     const previousStatuses = previousStatusesRef.current;
+
+    if (!notificationsEnabled) {
+      previousStatusesRef.current = nextStatuses;
+      return;
+    }
 
     if (previousStatuses) {
       for (const job of jobs) {

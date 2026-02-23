@@ -39,6 +39,7 @@ describe("run lab launch flow", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
+    let jobsVisible = false;
 
     FakeEventSource.instances = [];
     vi.stubGlobal("EventSource", FakeEventSource);
@@ -77,6 +78,30 @@ describe("run lab launch flow", () => {
         ]);
       }
 
+      if (pathname === "/api/jobs" && method === "GET") {
+        if (!jobsVisible) {
+          return jsonResponse([]);
+        }
+        return jsonResponse([
+          {
+            job_id: "job-play-1",
+            job_type: "play",
+            status: "running",
+            pid: 222,
+            command: ["python", "-m", "zugzwang.cli", "play"],
+            created_at_utc: "2026-02-22T00:00:00Z",
+            updated_at_utc: null,
+            stdout_path: "results/ui_jobs/logs/job-play-1.stdout.log",
+            stderr_path: "results/ui_jobs/logs/job-play-1.stderr.log",
+            run_id: "run-play-1",
+            run_dir: "results/runs/run-play-1",
+            meta: {},
+            result_payload: null,
+            exit_code: null,
+          },
+        ]);
+      }
+
       if (pathname === "/api/configs/validate" && method === "POST") {
         return jsonResponse({
           ok: true,
@@ -98,6 +123,7 @@ describe("run lab launch flow", () => {
       }
 
       if (pathname === "/api/jobs/run" && method === "POST") {
+        jobsVisible = true;
         return jsonResponse({
           job_id: "job-run-1",
           job_type: "run",
@@ -117,6 +143,7 @@ describe("run lab launch flow", () => {
       }
 
       if (pathname === "/api/jobs/play" && method === "POST") {
+        jobsVisible = true;
         return jsonResponse({
           job_id: "job-play-1",
           job_type: "play",
@@ -216,6 +243,13 @@ describe("run lab launch flow", () => {
       expect(overrides).toContain("players.black.provider=zai");
       expect(overrides).toContain("players.black.model=glm-5");
       expect(overrides).toContain("evaluation.auto.enabled=true");
+    });
+
+    await waitFor(() => {
+      const jobsCalls = vi
+        .mocked(globalThis.fetch)
+        .mock.calls.filter(([input, init]) => toUrl(input).pathname === "/api/jobs" && (init?.method ?? "GET").toUpperCase() === "GET");
+      expect(jobsCalls.length).toBeGreaterThanOrEqual(2);
     });
   });
 });

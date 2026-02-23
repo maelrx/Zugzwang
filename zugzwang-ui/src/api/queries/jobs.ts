@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../client";
 import type { CancelJobResponse, JobResponse, RunProgressResponse, StartEvalRequest, StartJobRequest } from "../types";
 
@@ -37,32 +37,44 @@ export function useJobProgress(jobId: string | null) {
 }
 
 export function useStartRun() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: StartJobRequest) =>
       apiRequest<JobResponse>("/api/jobs/run", {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+    onSuccess: (job) => {
+      syncJobsAfterStart(queryClient, job);
+    },
   });
 }
 
 export function useStartPlay() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: StartJobRequest) =>
       apiRequest<JobResponse>("/api/jobs/play", {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+    onSuccess: (job) => {
+      syncJobsAfterStart(queryClient, job);
+    },
   });
 }
 
 export function useStartEvaluation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: StartEvalRequest) =>
       apiRequest<JobResponse>("/api/jobs/evaluate", {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+    onSuccess: (job) => {
+      syncJobsAfterStart(queryClient, job);
+    },
   });
 }
 
@@ -73,5 +85,17 @@ export function useCancelJob() {
         method: "DELETE",
       }),
   });
+}
+
+function syncJobsAfterStart(queryClient: QueryClient, job: JobResponse): void {
+  queryClient.setQueryData<JobResponse[]>(jobsQueryKey, (current) => upsertJob(current ?? [], job));
+  queryClient.setQueryData<JobResponse>(["job", job.job_id], job);
+  queryClient.invalidateQueries({ queryKey: jobsQueryKey }).catch(() => undefined);
+}
+
+function upsertJob(current: JobResponse[], job: JobResponse): JobResponse[] {
+  const next = current.filter((item) => item.job_id !== job.job_id);
+  next.unshift(job);
+  return next;
 }
 

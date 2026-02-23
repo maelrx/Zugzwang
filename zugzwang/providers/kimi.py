@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from zugzwang.providers.openai import OpenAIProvider
 
 
@@ -7,6 +9,12 @@ class KimiProvider(OpenAIProvider):
     """Moonshot Kimi adapter via OpenAI-compatible chat completions."""
 
     def __init__(self, base_url: str | None = None, timeout_seconds: float | None = None) -> None:
+        # Backward-compatible alias: allow KIMI_API_KEY when MOONSHOT_API_KEY is absent.
+        kimi_key = os.environ.get("KIMI_API_KEY", "").strip()
+        moonshot_key = os.environ.get("MOONSHOT_API_KEY", "").strip()
+        if kimi_key and not moonshot_key:
+            os.environ["MOONSHOT_API_KEY"] = kimi_key
+
         super().__init__(
             base_url=base_url or "https://api.moonshot.cn/v1",
             timeout_seconds=timeout_seconds,

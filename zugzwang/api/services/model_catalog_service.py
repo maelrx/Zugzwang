@@ -91,6 +91,8 @@ class ModelCatalogService:
                 notes="OpenAI-compatible endpoint for Kimi models.",
                 models=[
                     ModelOption(id="kimi-k2-0905-preview", label="Kimi K2 Preview", recommended=True),
+                    ModelOption(id="kimi-k2-turbo-preview", label="Kimi K2 Turbo Preview"),
+                    ModelOption(id="kimi-thinking-preview", label="Kimi Thinking Preview"),
                     ModelOption(id="moonshot-v1-8k", label="Moonshot V1 8K"),
                 ],
             ),

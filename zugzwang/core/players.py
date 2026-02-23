@@ -157,6 +157,7 @@ class LLMPlayer(PlayerInterface):
                 "effective_id": prompt_meta.prompt_id_effective,
                 "label": prompt_meta.prompt_label,
                 "dropped_blocks": list(prompt_meta.dropped_blocks),
+                "few_shot_examples_injected": int(prompt_meta.few_shot_examples_injected),
             },
             "raw_response": raw_response,
             "validation": {

@@ -8,7 +8,7 @@ from zugzwang.knowledge.retriever import (
     DEFAULT_MAX_CHARS_PER_CHUNK,
     query as query_knowledge,
 )
-from zugzwang.strategy.few_shot import render_few_shot_block
+from zugzwang.strategy.few_shot import render_few_shot_block_with_metadata
 from zugzwang.strategy.formats import board_context_lines
 from zugzwang.strategy.phase import normalize_phase
 from zugzwang.strategy.prompts import DEFAULT_PROMPT_ID, resolve_system_prompt
@@ -31,6 +31,7 @@ class PromptBuildResult:
     prompt: str
     dropped_blocks: list[str]
     retrieval: PromptRetrievalTelemetry
+    few_shot_examples_injected: int = 0
     system_content: str | None = None
     user_content: str = ""
     prompt_id_requested: str = DEFAULT_PROMPT_ID
@@ -79,9 +80,9 @@ def build_direct_prompt_with_metadata(
 
     optional_blocks: dict[str, str] = {}
 
-    few_shot = render_few_shot_block(strategy_config, phase=phase)
-    if few_shot:
-        optional_blocks["few_shot"] = few_shot
+    few_shot_meta = render_few_shot_block_with_metadata(strategy_config, phase=phase)
+    if few_shot_meta.block:
+        optional_blocks["few_shot"] = few_shot_meta.block
 
     rag_cfg = strategy_config.get("rag", {})
     rag_result = query_knowledge(game_state, rag_cfg)
@@ -138,10 +139,14 @@ def build_direct_prompt_with_metadata(
         sources=list(getattr(rag_result, "sources", []) or []),
         phase=phase,
     )
+    few_shot_injected = (
+        0 if "few_shot" in dropped else int(few_shot_meta.example_count)
+    )
     return PromptBuildResult(
         prompt=prompt,
         dropped_blocks=dropped,
         retrieval=retrieval_telemetry,
+        few_shot_examples_injected=few_shot_injected,
         system_content=system_content,
         user_content=user_prompt,
         prompt_id_requested=prompt_resolution.requested_id,

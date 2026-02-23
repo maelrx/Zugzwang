@@ -74,9 +74,39 @@ def test_build_direct_prompt_includes_few_shot() -> None:
         "validation": {"feedback_level": "rich"},
     }
 
-    prompt = build_direct_prompt(_game_state(), cfg)
-    assert "Few-shot examples" in prompt
-    assert "e2e4" in prompt
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+    assert "Few-shot examples" in payload.prompt
+    assert "e2e4" in payload.prompt
+    assert payload.few_shot_examples_injected == 1
+
+
+def test_build_direct_prompt_tracks_few_shot_count_after_compression() -> None:
+    cfg = {
+        "board_format": "fen",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "few_shot": {
+            "enabled": True,
+            "source": "config",
+            "max_examples": 2,
+            "by_phase": {
+                "opening": [
+                    {"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "move_uci": "e2e4"},
+                    {"fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", "move_uci": "e7e5"},
+                ]
+            },
+        },
+        "context": {
+            "max_prompt_chars": 120,
+            "compression_order": ["few_shot"],
+        },
+        "validation": {"feedback_level": "rich"},
+    }
+
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+
+    assert "Few-shot examples" not in payload.prompt
+    assert payload.few_shot_examples_injected == 0
 
 
 def test_build_direct_prompt_includes_rag_block_when_enabled() -> None:

@@ -23,6 +23,11 @@ strategy:
   provide_legal_moves: true
   provide_history: true
   history_plies: 8
+  few_shot:
+    enabled: false
+    source: builtin
+    max_examples: 3
+    by_phase: {}
   rag:
     enabled: false
     max_chunks: 3

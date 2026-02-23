@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from zugzwang.experiments.runner import ExperimentRunner
@@ -29,3 +30,7 @@ def test_runner_persists_prompt_transcripts_when_enabled(tmp_path: Path) -> None
     assert payload["games_written"] == 1
     assert transcript_dir.exists()
     assert transcript_files
+
+    first_payload = json.loads(transcript_files[0].read_text(encoding="utf-8"))
+    assert "prompt" in first_payload
+    assert "few_shot_examples_injected" in first_payload["prompt"]

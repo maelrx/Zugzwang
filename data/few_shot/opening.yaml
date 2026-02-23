@@ -1,0 +1,24 @@
+metadata:
+  phase: opening
+  version: "1.0"
+  description: "Opening few-shot examples verified for legal UCI output."
+
+examples:
+  - fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    move_uci: "e2e4"
+    note: "Claim central space immediately with a principal pawn move."
+  - fen: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+    move_uci: "e7e5"
+    note: "Meet center control with symmetric center contest."
+  - fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
+    move_uci: "b8c6"
+    note: "Develop a knight while reinforcing the e5 pawn."
+  - fen: "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"
+    move_uci: "d7d5"
+    note: "Challenge white center with immediate counter-occupation."
+  - fen: "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq c3 0 1"
+    move_uci: "e7e5"
+    note: "Punish slower flank starts by seizing central squares."
+  - fen: "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1"
+    move_uci: "d7d5"
+    note: "Against Reti setups, contest central control directly."

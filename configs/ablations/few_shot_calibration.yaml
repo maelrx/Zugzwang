@@ -1,2 +1,8 @@
 experiment:
   name: few_shot_calibration
+
+strategy:
+  few_shot:
+    enabled: true
+    source: builtin
+    max_examples: 3

@@ -1,0 +1,24 @@
+metadata:
+  phase: endgame
+  version: "1.0"
+  description: "Endgame few-shot examples focused on king activity and conversion."
+
+examples:
+  - fen: "8/5pk1/6p1/8/4K3/6PP/8/8 w - - 0 40"
+    move_uci: "e4e5"
+    note: "Central king advance is often the strongest practical plan."
+  - fen: "8/8/4k3/8/2K1P3/8/8/8 w - - 0 50"
+    move_uci: "e4e5"
+    note: "Push supported passed pawns when king opposition is favorable."
+  - fen: "3r4/5pk1/6p1/4R3/8/6PP/5PK1/8 w - - 0 42"
+    move_uci: "e5e7"
+    note: "In rook endings, activity on the seventh rank is a key conversion motif."
+  - fen: "8/8/2k5/3p4/3P4/2K5/8/8 w - - 0 45"
+    move_uci: "c3d3"
+    note: "Improve king placement before committing pawn structure changes."
+  - fen: "8/8/5k2/5p2/5P2/4K3/8/8 w - - 0 55"
+    move_uci: "e3d4"
+    note: "King centralization supports pawn races and limits counterplay."
+  - fen: "8/3k4/8/3P4/8/3K4/8/8 w - - 0 60"
+    move_uci: "d5d6"
+    note: "Advance the passer when the route to promotion is controllable."

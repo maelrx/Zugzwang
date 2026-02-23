@@ -290,10 +290,6 @@ export function RunLabPage() {
   }, [opponentStockfishLevel, stockfishDepthPreference]);
 
   useEffect(() => {
-    setStockfishDepthPreference(opponentStockfishLevel);
-  }, [opponentStockfishLevel, setStockfishDepthPreference]);
-
-  useEffect(() => {
     setStoredTemplatePath(selectedConfigPath || null);
   }, [selectedConfigPath, setStoredTemplatePath]);
 
@@ -589,7 +585,11 @@ export function RunLabPage() {
                   min={1}
                   max={20}
                   value={opponentStockfishLevel}
-                  onChange={(event) => setOpponentStockfishLevel(clampInt(event.target.value, 1, 20, 8))}
+                  onChange={(event) => {
+                    const level = clampInt(event.target.value, 1, 20, 8);
+                    setOpponentStockfishLevel(level);
+                    setStockfishDepthPreference(level);
+                  }}
                   disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 />

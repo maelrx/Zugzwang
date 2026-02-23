@@ -16,6 +16,15 @@ const FALLBACK_CONFIG_PATH = "configs/baselines/best_known_start.yaml";
 const ADVANCED_OPEN_SESSION_KEY = "zugzwang-quick-play-advanced-open";
 const DEFAULT_BOARD_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS = 4_000;
+const STOCKFISH_ELO_PRESETS = [
+  { elo: 600, depth: 2 },
+  { elo: 800, depth: 5 },
+  { elo: 1000, depth: 8 },
+  { elo: 1200, depth: 11 },
+  { elo: 1600, depth: 14 },
+  { elo: 2000, depth: 17 },
+  { elo: 2500, depth: 20 },
+] as const;
 
 type BoardFormat = "fen" | "pgn";
 type FeedbackLevel = "minimal" | "moderate" | "rich";
@@ -187,14 +196,8 @@ export function QuickPlayPage() {
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
 
   useEffect(() => {
-    if (stockfishDepthPreference !== stockfishLevel) {
-      setStockfishLevel(stockfishDepthPreference);
-    }
-  }, [stockfishDepthPreference, stockfishLevel]);
-
-  useEffect(() => {
-    setStockfishDepthPreference(stockfishLevel);
-  }, [setStockfishDepthPreference, stockfishLevel]);
+    setStockfishLevel(stockfishDepthPreference);
+  }, [stockfishDepthPreference]);
 
   const jobQuery = useJob(activeJobId);
   const progressQuery = useJobProgress(activeJobId);
@@ -304,6 +307,10 @@ export function QuickPlayPage() {
     extractError(progressQuery.error) ||
     runArtifactError ||
     extractError(summaryQuery.error);
+  const stockfishPresetValue = useMemo(() => {
+    const preset = STOCKFISH_ELO_PRESETS.find((item) => item.depth === stockfishLevel);
+    return preset ? String(preset.elo) : "custom";
+  }, [stockfishLevel]);
 
   return (
     <section>
@@ -511,13 +518,46 @@ export function QuickPlayPage() {
               ) : null}
 
               <label className="text-xs text-[var(--color-text-secondary)]">
+                Stockfish ELO preset
+                <select
+                  value={stockfishPresetValue}
+                  onChange={(event) => {
+                    const raw = event.target.value;
+                    if (raw === "custom") {
+                      return;
+                    }
+                    const elo = Number.parseInt(raw, 10);
+                    const preset = STOCKFISH_ELO_PRESETS.find((item) => item.elo === elo);
+                    if (!preset) {
+                      return;
+                    }
+                    setStockfishLevel(preset.depth);
+                    setStockfishDepthPreference(preset.depth);
+                  }}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  {STOCKFISH_ELO_PRESETS.map((item) => (
+                    <option key={`elo-${item.elo}`} value={String(item.elo)}>
+                      {item.elo} (depth {item.depth})
+                    </option>
+                  ))}
+                  <option value="custom">Custom depth</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
                 Stockfish level/depth
                 <input
                   type="number"
                   min={1}
                   max={20}
                   value={stockfishLevel}
-                  onChange={(event) => setStockfishLevel(clampInt(event.target.value, 1, 20, 8))}
+                  onChange={(event) => {
+                    const level = clampInt(event.target.value, 1, 20, 8);
+                    setStockfishLevel(level);
+                    setStockfishDepthPreference(level);
+                  }}
                   disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 />

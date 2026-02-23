@@ -102,6 +102,15 @@ export function DashboardPage() {
             </Link>
           ) : null}
         </div>
+
+        <div className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Research flow</p>
+          <div className="mt-2 grid gap-1.5 text-xs text-[var(--color-text-secondary)]">
+            <span>1. Launch experiment from Experiment Lab or Quick Play.</span>
+            <span>2. Follow active jobs in this command center or Jobs page.</span>
+            <span>3. Open Run Detail for metadata and quality, then Compare for statistical report.</span>
+          </div>
+        </div>
       </section>
 
       <section className="mt-5 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
@@ -175,7 +184,7 @@ export function DashboardPage() {
         <div className="grid min-w-[920px] grid-cols-[0.35fr_2.1fr_1.3fr_1fr_1fr_1fr_1fr] border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
           <span />
           <span>Run ID</span>
-          <span>Model</span>
+          <span>Model + Metadata</span>
           <span>Games</span>
           <span>Elo</span>
           <span>Cost</span>
@@ -201,7 +210,11 @@ export function DashboardPage() {
             <Link to="/runs/$runId" params={{ runId: run.run_id }} className="truncate font-medium text-[var(--color-primary-700)] hover:underline">
               {run.run_id}
             </Link>
-            <span className="truncate text-xs text-[var(--color-text-secondary)]">{run.inferred_model_label ?? "--"}</span>
+            <div className="min-w-0">
+              <p className="truncate text-xs text-[var(--color-text-secondary)]">{run.inferred_model_label ?? "--"}</p>
+              <p className="truncate text-[11px] text-[var(--color-text-muted)]">tpl: {formatTemplateShort(run.inferred_config_template)}</p>
+              <p className="truncate text-[11px] text-[var(--color-text-muted)]">cfg: {formatHashShort(run.config_hash)}</p>
+            </div>
             <span className="text-xs text-[var(--color-text-secondary)]">{formatGames(run.num_games_valid, run.num_games_target)}</span>
             <span className="text-xs text-[var(--color-text-secondary)]">{formatDecimal(run.elo_estimate, 1)}</span>
             <span className="text-xs text-[var(--color-text-secondary)]">{formatUsd(run.total_cost_usd, 4)}</span>
@@ -247,4 +260,23 @@ function evalStatusTone(status: RunListItem["inferred_eval_status"]): "neutral" 
     return "warning";
   }
   return "neutral";
+}
+
+function formatTemplateShort(value: string | null | undefined): string {
+  if (!value || value.trim().length === 0) {
+    return "--";
+  }
+  const normalized = value.replace(/\\/g, "/");
+  const parts = normalized.split("/");
+  return parts[parts.length - 1] ?? normalized;
+}
+
+function formatHashShort(value: string | null | undefined): string {
+  if (!value || value.trim().length === 0) {
+    return "--";
+  }
+  if (value.length <= 12) {
+    return value;
+  }
+  return `${value.slice(0, 8)}...`;
 }

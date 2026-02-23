@@ -197,7 +197,7 @@ export function RunsPage() {
             direction={filters.sortDir}
             onClick={() => setFilters((prev) => flipSort(prev, "run_id"))}
           />
-          <span>Model</span>
+          <span>Model + Metadata</span>
           <span>Games</span>
           <SortHeader
             label="Elo"
@@ -273,9 +273,11 @@ export function RunsPage() {
                 {run.run_id}
               </Link>
 
-              <span className="truncate text-xs text-[var(--color-text-secondary)]">
-                {run.inferred_model_label ?? run.inferred_model ?? "--"}
-              </span>
+              <div className="min-w-0">
+                <p className="truncate text-xs text-[var(--color-text-secondary)]">{run.inferred_model_label ?? run.inferred_model ?? "--"}</p>
+                <p className="truncate text-[11px] text-[var(--color-text-muted)]">tpl: {formatTemplateShort(run.inferred_config_template)}</p>
+                <p className="truncate text-[11px] text-[var(--color-text-muted)]">cfg: {formatHashShort(run.config_hash)}</p>
+              </div>
               <span>{formatGames(run.num_games_valid, run.num_games_target)}</span>
               <span>{formatDecimal(run.elo_estimate, 1)}</span>
               <span>{formatDecimal(run.acpl_overall, 1)}</span>
@@ -438,5 +440,24 @@ function formatCreatedAt(value: string | null | undefined): string {
     return value;
   }
   return parsed.toLocaleString();
+}
+
+function formatTemplateShort(value: string | null | undefined): string {
+  if (!value || value.trim().length === 0) {
+    return "--";
+  }
+  const normalized = value.replace(/\\/g, "/");
+  const parts = normalized.split("/");
+  return parts[parts.length - 1] ?? normalized;
+}
+
+function formatHashShort(value: string | null | undefined): string {
+  if (!value || value.trim().length === 0) {
+    return "--";
+  }
+  if (value.length <= 12) {
+    return value;
+  }
+  return `${value.slice(0, 8)}...`;
 }
 

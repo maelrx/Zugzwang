@@ -37,8 +37,12 @@ class FakeEventSource {
 
 describe("run lab launch flow", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+
     FakeEventSource.instances = [];
     vi.stubGlobal("EventSource", FakeEventSource);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = toUrl(input);
@@ -64,6 +68,33 @@ describe("run lab launch flow", () => {
             models: [{ id: "glm-5", label: "GLM-5", recommended: true }],
           },
         ]);
+      }
+
+      if (pathname === "/api/env-check" && method === "GET") {
+        return jsonResponse([
+          { provider: "zai", ok: true, message: "configured" },
+          { provider: "stockfish", ok: true, message: "configured" },
+        ]);
+      }
+
+      if (pathname === "/api/configs/validate" && method === "POST") {
+        return jsonResponse({
+          ok: true,
+          message: "valid",
+          config_hash: "cfg-hash-1",
+          resolved_config: { experiment: { target_valid_games: 10 } },
+        });
+      }
+
+      if (pathname === "/api/configs/preview" && method === "POST") {
+        return jsonResponse({
+          config_path: "configs/baselines/best_known_start.yaml",
+          config_hash: "cfg-hash-1",
+          run_id: "run-preview-1",
+          scheduled_games: 10,
+          estimated_total_cost_usd: 0.25,
+          resolved_config: { experiment: { target_valid_games: 10 } },
+        });
       }
 
       if (pathname === "/api/jobs/run" && method === "POST") {
@@ -168,14 +199,23 @@ describe("run lab launch flow", () => {
 
     await screen.findByRole("heading", { name: "Experiment Launch Workbench" });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Play (1 game)" }));
+    const playButton = screen.getByRole("button", { name: "Play (1 game)" });
+    await waitFor(() => expect(playButton).toBeEnabled());
+    await user.click(playButton);
 
     await screen.findByRole("heading", { name: "Job job-play-1" });
+    expect(window.confirm).toHaveBeenCalled();
 
     await waitFor(() => {
       const calls = vi.mocked(globalThis.fetch).mock.calls;
       const playCall = calls.find(([input, init]) => toUrl(input).pathname === "/api/jobs/play" && (init?.method ?? "GET").toUpperCase() === "POST");
       expect(playCall).toBeDefined();
+      const requestInit = playCall?.[1] as RequestInit | undefined;
+      const payload = requestInit?.body ? JSON.parse(String(requestInit.body)) : {};
+      const overrides = Array.isArray(payload.overrides) ? payload.overrides : [];
+      expect(overrides).toContain("players.black.provider=zai");
+      expect(overrides).toContain("players.black.model=glm-5");
+      expect(overrides).toContain("evaluation.auto.enabled=true");
     });
   });
 });

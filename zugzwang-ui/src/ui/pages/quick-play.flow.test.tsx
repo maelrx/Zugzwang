@@ -230,6 +230,43 @@ describe("quick play flow", () => {
       expect(jobsCalls.length).toBeGreaterThanOrEqual(2);
     });
   });
+
+  it("launches quick play with llm opponent from UI controls", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          refetchOnWindowFocus: false,
+        },
+      },
+    });
+
+    await router.navigate({ to: "/quick-play" });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    const user = userEvent.setup();
+    await screen.findByRole("heading", { name: "Quick Play" });
+    await user.click(screen.getByRole("button", { name: "Show advanced options" }));
+    await user.selectOptions(screen.getByLabelText("Opponent"), "llm");
+    await user.click(screen.getByRole("button", { name: "Play Game" }));
+
+    await waitFor(() => {
+      const calls = vi.mocked(globalThis.fetch).mock.calls;
+      const playCall = calls.find(([input, init]) => toUrl(input).pathname === "/api/jobs/play" && (init?.method ?? "GET").toUpperCase() === "POST");
+      expect(playCall).toBeDefined();
+      const requestInit = playCall?.[1] as RequestInit | undefined;
+      const payload = requestInit?.body ? JSON.parse(String(requestInit.body)) : {};
+      const overrides = Array.isArray(payload.overrides) ? payload.overrides : [];
+      expect(overrides).toContain("players.white.type=llm");
+      expect(overrides).toContain("players.white.provider=zai");
+      expect(overrides).toContain("players.white.model=glm-5");
+    });
+  });
 });
 
 function toUrl(input: RequestInfo | URL): URL {

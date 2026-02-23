@@ -24,6 +24,7 @@ const DEFAULT_TARGET_GAMES = 10;
 type TemplateBucket = "baselines" | "ablations" | "custom";
 type BoardFormat = "fen" | "pgn";
 type FeedbackLevel = "minimal" | "moderate" | "rich";
+type OpponentMode = "template" | "random" | "stockfish" | "llm";
 
 type TemplateOption = {
   name: string;
@@ -56,7 +57,9 @@ export function RunLabPage() {
   const autoEvaluatePreference = usePreferencesStore((state) => state.autoEvaluate);
   const defaultProvider = usePreferencesStore((state) => state.defaultProvider);
   const defaultModel = usePreferencesStore((state) => state.defaultModel);
+  const stockfishDepthPreference = usePreferencesStore((state) => state.stockfishDepth);
   const setAutoEvaluatePreference = usePreferencesStore((state) => state.setAutoEvaluate);
+  const setStockfishDepthPreference = usePreferencesStore((state) => state.setStockfishDepth);
 
   const [templateSearch, setTemplateSearch] = useState("");
   const [selectedConfigPath, setSelectedConfigPath] = useState(storedTemplatePath ?? "");
@@ -69,6 +72,10 @@ export function RunLabPage() {
   const [provideLegalMoves, setProvideLegalMoves] = useState(true);
   const [provideHistory, setProvideHistory] = useState(true);
   const [feedbackLevel, setFeedbackLevel] = useState<FeedbackLevel>("rich");
+  const [opponentMode, setOpponentMode] = useState<OpponentMode>("template");
+  const [opponentProvider, setOpponentProvider] = useState(storedProvider ?? defaultProvider ?? "");
+  const [opponentModel, setOpponentModel] = useState(storedModel ?? defaultModel ?? "");
+  const [opponentStockfishLevel, setOpponentStockfishLevel] = useState(stockfishDepthPreference);
   const [autoEvaluateEnabled, setAutoEvaluateEnabled] = useState(autoEvaluatePreference);
   const [evaluationPlayerColor, setEvaluationPlayerColor] = useState<"white" | "black">("black");
   const [evaluationOpponentEloText, setEvaluationOpponentEloText] = useState("");
@@ -120,10 +127,15 @@ export function RunLabPage() {
   const stockfishCheckKnown = useMemo(() => envChecks.some((item) => item.provider === "stockfish"), [envChecks]);
   const stockfishAvailable = providerStatusMap.get("stockfish") === true;
   const selectedProviderReady = providerStatusMap.get(selectedProvider) === true;
+  const opponentProviderReady = providerStatusMap.get(opponentProvider) === true;
 
   const activePreset = useMemo(
     () => providerPresets.find((preset) => preset.provider === selectedProvider) ?? null,
     [providerPresets, selectedProvider],
+  );
+  const opponentPreset = useMemo(
+    () => providerPresets.find((preset) => preset.provider === opponentProvider) ?? null,
+    [opponentProvider, providerPresets],
   );
 
   const parsedCustomOverrides = useMemo(() => parseOverrides(customOverridesText), [customOverridesText]);
@@ -146,6 +158,10 @@ export function RunLabPage() {
       buildStructuredOverrides({
         provider: selectedProvider,
         model: selectedModel,
+        opponentMode,
+        opponentProvider,
+        opponentModel,
+        opponentStockfishLevel,
         targetValidGames,
         maxBudgetUsd: parsedMaxBudgetUsd,
         boardFormat,
@@ -163,6 +179,10 @@ export function RunLabPage() {
       feedbackLevel,
       parsedMaxBudgetUsd,
       parsedOpponentElo,
+      opponentMode,
+      opponentModel,
+      opponentProvider,
+      opponentStockfishLevel,
       provideHistory,
       provideLegalMoves,
       selectedModel,
@@ -194,6 +214,8 @@ export function RunLabPage() {
     Boolean(currentConfigPath) &&
     Boolean(selectedProvider) &&
     Boolean(selectedModel) &&
+    (opponentMode !== "llm" || (Boolean(opponentProvider) && Boolean(opponentModel))) &&
+    (opponentMode !== "stockfish" || stockfishAvailable) &&
     invalidOverrideLines.length === 0 &&
     !invalidMaxBudgetUsd &&
     !invalidOpponentElo;
@@ -229,6 +251,29 @@ export function RunLabPage() {
   }, [activePreset, defaultModel, selectedModel]);
 
   useEffect(() => {
+    if (providerPresets.length === 0 || opponentMode !== "llm") {
+      return;
+    }
+    if (opponentProvider && providerPresets.some((preset) => preset.provider === opponentProvider)) {
+      return;
+    }
+    setOpponentProvider(selectedProvider || (providerPresets[0]?.provider ?? ""));
+  }, [opponentMode, opponentProvider, providerPresets, selectedProvider]);
+
+  useEffect(() => {
+    if (!opponentPreset || opponentMode !== "llm") {
+      setOpponentModel("");
+      return;
+    }
+    if (opponentPreset.models.some((item) => item.id === opponentModel)) {
+      return;
+    }
+    const mirrorModel = selectedModel ? opponentPreset.models.find((item) => item.id === selectedModel) : undefined;
+    const fallback = mirrorModel ?? opponentPreset.models.find((item) => item.recommended) ?? opponentPreset.models[0] ?? null;
+    setOpponentModel(fallback?.id ?? "");
+  }, [opponentMode, opponentModel, opponentPreset, selectedModel]);
+
+  useEffect(() => {
     if (!envCheckQuery.isSuccess || !stockfishCheckKnown || stockfishAvailable) {
       return;
     }
@@ -237,6 +282,16 @@ export function RunLabPage() {
       setAutoEvaluatePreference(false);
     }
   }, [autoEvaluateEnabled, envCheckQuery.isSuccess, setAutoEvaluatePreference, stockfishAvailable, stockfishCheckKnown]);
+
+  useEffect(() => {
+    if (stockfishDepthPreference !== opponentStockfishLevel) {
+      setOpponentStockfishLevel(stockfishDepthPreference);
+    }
+  }, [opponentStockfishLevel, stockfishDepthPreference]);
+
+  useEffect(() => {
+    setStockfishDepthPreference(opponentStockfishLevel);
+  }, [opponentStockfishLevel, setStockfishDepthPreference]);
 
   useEffect(() => {
     setStoredTemplatePath(selectedConfigPath || null);
@@ -282,6 +337,9 @@ export function RunLabPage() {
     if (!selectedProvider || !selectedModel) {
       errors.push("Select provider and model.");
     }
+    if (opponentMode === "llm" && (!opponentProvider || !opponentModel)) {
+      errors.push("Select opponent provider and model.");
+    }
     if (invalidOverrideLines.length > 0) {
       errors.push(`Fix invalid override lines: ${invalidOverrideLines.join(", ")}`);
     }
@@ -293,6 +351,12 @@ export function RunLabPage() {
     }
     if (envCheckQuery.isSuccess && selectedProvider && !selectedProviderReady) {
       errors.push(`Provider "${selectedProvider}" is missing credentials in Settings.`);
+    }
+    if (envCheckQuery.isSuccess && opponentMode === "llm" && opponentProvider && !opponentProviderReady) {
+      errors.push(`Opponent provider "${opponentProvider}" is missing credentials in Settings.`);
+    }
+    if (envCheckQuery.isSuccess && opponentMode === "stockfish" && stockfishCheckKnown && !stockfishAvailable) {
+      errors.push("Stockfish opponent selected but Stockfish is unavailable.");
     }
     if (autoEvaluateEnabled && envCheckQuery.isSuccess && stockfishCheckKnown && !stockfishAvailable) {
       errors.push("Auto-evaluate is enabled but Stockfish is unavailable.");
@@ -314,6 +378,10 @@ export function RunLabPage() {
     invalidMaxBudgetUsd,
     invalidOpponentElo,
     invalidOverrideLines,
+    opponentMode,
+    opponentModel,
+    opponentProvider,
+    opponentProviderReady,
     previewMutation.error,
     previewMutation.isError,
     selectedModel,
@@ -450,6 +518,19 @@ export function RunLabPage() {
               >
                 Apply Preset to Overrides
               </button>
+              {opponentMode === "llm" ? (
+                <button
+                  type="button"
+                  className="rounded-md border border-[var(--color-border-strong)] bg-[var(--color-surface-raised)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)]"
+                  disabled={!selectedProvider || !selectedModel}
+                  onClick={() => {
+                    setOpponentProvider(selectedProvider);
+                    setOpponentModel(selectedModel);
+                  }}
+                >
+                  Mirror as Opponent
+                </button>
+              ) : null}
               {activePreset ? (
                 <p className="text-[11px] text-[var(--color-text-secondary)]">
                   {activePreset.api_style} | {activePreset.base_url}
@@ -482,6 +563,93 @@ export function RunLabPage() {
                 />
               </label>
             </div>
+          </details>
+
+          <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Opponent</summary>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Opponent mode
+                <select
+                  value={opponentMode}
+                  onChange={(event) => setOpponentMode(event.target.value as OpponentMode)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="template">Template default</option>
+                  <option value="random">Random</option>
+                  <option value="stockfish">Stockfish</option>
+                  <option value="llm">LLM</option>
+                </select>
+              </label>
+
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                Stockfish depth
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={opponentStockfishLevel}
+                  onChange={(event) => setOpponentStockfishLevel(clampInt(event.target.value, 1, 20, 8))}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                />
+              </label>
+
+              {opponentMode === "llm" ? (
+                <>
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent provider
+                    <select
+                      value={opponentProvider}
+                      onChange={(event) => setOpponentProvider(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                    >
+                      {providerPresets.map((preset) => (
+                        <option key={`opponent-${preset.provider}`} value={preset.provider}>
+                          {preset.provider_label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent model
+                    <select
+                      value={opponentModel}
+                      onChange={(event) => setOpponentModel(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                      disabled={!opponentPreset}
+                    >
+                      {(opponentPreset?.models ?? []).map((model) => (
+                        <option key={`opponent-model-${model.id}`} value={model.id}>
+                          {model.label}
+                          {model.recommended ? " (Recommended)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : null}
+            </div>
+
+            {opponentMode === "stockfish" && !stockfishAvailable ? (
+              <p className="mt-2 text-xs text-[var(--color-warning-text)]">
+                Stockfish opponent requires STOCKFISH_PATH in{" "}
+                <Link to="/settings" className="underline">
+                  Settings
+                </Link>
+                .
+              </p>
+            ) : null}
+            {opponentMode === "llm" && opponentProvider && !opponentProviderReady ? (
+              <p className="mt-2 text-xs text-[var(--color-warning-text)]">
+                Opponent provider credentials missing in{" "}
+                <Link to="/settings" className="underline">
+                  Settings
+                </Link>
+                .
+              </p>
+            ) : null}
           </details>
 
           <details className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3" open>
@@ -859,6 +1027,10 @@ function toneToBadgeTone(tone: "success" | "warning" | "error" | "pending"): "su
 function buildStructuredOverrides(input: {
   provider: string;
   model: string;
+  opponentMode: OpponentMode;
+  opponentProvider: string;
+  opponentModel: string;
+  opponentStockfishLevel: number;
   targetValidGames: number;
   maxBudgetUsd: number | null;
   boardFormat: BoardFormat;
@@ -881,6 +1053,20 @@ function buildStructuredOverrides(input: {
     `strategy.validation.feedback_level=${input.feedbackLevel}`,
   ];
 
+  if (input.opponentMode === "random") {
+    overrides.push("players.white.type=random");
+    overrides.push("players.white.name=random_white");
+  } else if (input.opponentMode === "stockfish") {
+    overrides.push("players.white.type=engine");
+    overrides.push("players.white.name=stockfish_white");
+    overrides.push(`players.white.depth=${input.opponentStockfishLevel}`);
+  } else if (input.opponentMode === "llm") {
+    overrides.push("players.white.type=llm");
+    overrides.push(`players.white.provider=${input.opponentProvider}`);
+    overrides.push(`players.white.model=${input.opponentModel}`);
+    overrides.push(`players.white.name=${safeModelName(input.opponentProvider, input.opponentModel)}`);
+  }
+
   if (input.maxBudgetUsd !== null) {
     overrides.push(`experiment.max_budget_usd=${input.maxBudgetUsd}`);
   }
@@ -890,6 +1076,8 @@ function buildStructuredOverrides(input: {
     overrides.push(`evaluation.auto.player_color=${input.evaluationPlayerColor}`);
     if (input.evaluationOpponentElo !== null) {
       overrides.push(`evaluation.auto.opponent_elo=${input.evaluationOpponentElo}`);
+    } else if (input.opponentMode === "stockfish") {
+      overrides.push(`evaluation.auto.opponent_elo=${mapStockfishLevelToElo(input.opponentStockfishLevel)}`);
     }
   } else {
     overrides.push("evaluation.auto.enabled=false");
@@ -983,6 +1171,28 @@ function resolveTemplateBucket(category: string | null | undefined, path: string
 
 function safeModelName(provider: string, model: string): string {
   return `${provider}_${model}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
+}
+
+function mapStockfishLevelToElo(level: number): number {
+  if (level <= 2) {
+    return 600;
+  }
+  if (level <= 5) {
+    return 800;
+  }
+  if (level <= 8) {
+    return 1000;
+  }
+  if (level <= 11) {
+    return 1200;
+  }
+  if (level <= 14) {
+    return 1600;
+  }
+  if (level <= 17) {
+    return 2000;
+  }
+  return 2500;
 }
 
 function parseOptionalPositiveNumber(value: string): number | null {

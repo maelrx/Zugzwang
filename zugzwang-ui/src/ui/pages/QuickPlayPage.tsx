@@ -19,7 +19,7 @@ const RUN_ARTIFACTS_BOOTSTRAP_DELAY_MS = 4_000;
 
 type BoardFormat = "fen" | "pgn";
 type FeedbackLevel = "minimal" | "moderate" | "rich";
-type OpponentMode = "random" | "stockfish";
+type OpponentMode = "random" | "stockfish" | "llm";
 
 export function QuickPlayPage() {
   const navigate = useNavigate();
@@ -50,6 +50,8 @@ export function QuickPlayPage() {
   const [provideHistory, setProvideHistory] = useState(true);
   const [feedbackLevel, setFeedbackLevel] = useState<FeedbackLevel>("rich");
   const [opponentMode, setOpponentMode] = useState<OpponentMode>("random");
+  const [opponentProvider, setOpponentProvider] = useState("");
+  const [opponentModel, setOpponentModel] = useState("");
   const [stockfishLevel, setStockfishLevel] = useState(stockfishDepthPreference);
   const [rawOverridesText, setRawOverridesText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(loadAdvancedOpen());
@@ -70,6 +72,7 @@ export function QuickPlayPage() {
   const stockfishCheckKnown = useMemo(() => envChecks.some((item) => item.provider === "stockfish"), [envChecks]);
   const stockfishAvailable = providerStatusMap.get("stockfish") === true;
   const selectedProviderId = normalizeProviderId(selectedProvider);
+  const opponentProviderId = normalizeProviderId(opponentProvider);
 
   const configuredProviders = useMemo(
     () => providerPresets.filter((preset) => providerStatusMap.get(normalizeProviderId(preset.provider)) === true),
@@ -77,9 +80,14 @@ export function QuickPlayPage() {
   );
   const hasConfiguredProvider = configuredProviders.length > 0;
   const selectedProviderReady = providerStatusMap.get(selectedProviderId) === true;
+  const opponentProviderReady = providerStatusMap.get(opponentProviderId) === true;
   const activePreset = useMemo(
     () => providerPresets.find((preset) => normalizeProviderId(preset.provider) === selectedProviderId) ?? null,
     [providerPresets, selectedProviderId],
+  );
+  const opponentPreset = useMemo(
+    () => providerPresets.find((preset) => normalizeProviderId(preset.provider) === opponentProviderId) ?? null,
+    [providerPresets, opponentProviderId],
   );
 
   useEffect(() => {
@@ -132,6 +140,37 @@ export function QuickPlayPage() {
       setDefaultModel(selectedModel);
     }
   }, [selectedModel, setDefaultModel]);
+
+  useEffect(() => {
+    if (providerPresets.length === 0 || opponentMode !== "llm") {
+      return;
+    }
+
+    const preferredOpponentProvider = selectedProviderId || configuredProviders[0]?.provider || providerPresets[0]?.provider || "";
+    const preferredOpponentProviderId = normalizeProviderId(preferredOpponentProvider);
+    const opponentProviderStillExists = providerPresets.some(
+      (preset) => normalizeProviderId(preset.provider) === opponentProviderId,
+    );
+
+    if (!opponentProviderId || !opponentProviderStillExists) {
+      setOpponentProvider(preferredOpponentProviderId);
+    }
+  }, [configuredProviders, opponentMode, opponentProviderId, providerPresets, selectedProviderId]);
+
+  useEffect(() => {
+    if (opponentMode !== "llm" || !opponentPreset) {
+      return;
+    }
+
+    const hasSelectedOpponentModel = opponentPreset.models.some((item) => item.id === opponentModel);
+    if (hasSelectedOpponentModel) {
+      return;
+    }
+
+    const mirrorModel = selectedModel ? opponentPreset.models.find((item) => item.id === selectedModel) : undefined;
+    const fallback = mirrorModel ?? opponentPreset.models.find((item) => item.recommended) ?? opponentPreset.models[0] ?? null;
+    setOpponentModel(fallback?.id ?? "");
+  }, [opponentMode, opponentModel, opponentPreset, selectedModel]);
 
   useEffect(() => {
     persistAdvancedOpen(advancedOpen);
@@ -243,6 +282,8 @@ export function QuickPlayPage() {
     Boolean(selectedProviderId) &&
     Boolean(selectedModel) &&
     selectedProviderReady &&
+    (opponentMode !== "llm" || (Boolean(opponentProviderId) && Boolean(opponentModel) && opponentProviderReady)) &&
+    (opponentMode !== "stockfish" || stockfishAvailable) &&
     invalidOverrideLines.length === 0 &&
     !startPlayMutation.isPending;
 
@@ -324,6 +365,8 @@ export function QuickPlayPage() {
                   provideHistory,
                   feedbackLevel,
                   opponentMode,
+                  opponentLlmProvider: opponentProviderId,
+                  opponentLlmModel: opponentModel,
                   stockfishLevel,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
@@ -422,8 +465,50 @@ export function QuickPlayPage() {
                 >
                   <option value="random">Random</option>
                   <option value="stockfish">Stockfish</option>
+                  <option value="llm">LLM</option>
                 </select>
               </label>
+
+              {opponentMode === "llm" ? (
+                <>
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent provider
+                    <select
+                      value={opponentProviderId}
+                      onChange={(event) => setOpponentProvider(normalizeProviderId(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                      disabled={providerPresets.length === 0}
+                    >
+                      {providerPresets.map((preset) => {
+                        const providerId = normalizeProviderId(preset.provider);
+                        const providerReady = providerStatusMap.get(providerId) === true;
+                        return (
+                          <option key={`opponent-${providerId}`} value={providerId}>
+                            {preset.provider_label} {providerReady ? "(ready)" : "(missing key)"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-[var(--color-text-secondary)]">
+                    Opponent model
+                    <select
+                      value={opponentModel}
+                      onChange={(event) => setOpponentModel(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
+                      disabled={!opponentPreset}
+                    >
+                      {(opponentPreset?.models ?? []).map((model) => (
+                        <option key={`opponent-model-${model.id}`} value={model.id}>
+                          {model.label}
+                          {model.recommended ? " (Recommended)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : null}
 
               <label className="text-xs text-[var(--color-text-secondary)]">
                 Stockfish level/depth
@@ -433,7 +518,7 @@ export function QuickPlayPage() {
                   max={20}
                   value={stockfishLevel}
                   onChange={(event) => setStockfishLevel(clampInt(event.target.value, 1, 20, 8))}
-                  disabled={opponentMode !== "stockfish"}
+                  disabled={opponentMode !== "stockfish" || !stockfishAvailable}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 />
               </label>
@@ -465,6 +550,16 @@ export function QuickPlayPage() {
 
               {!stockfishAvailable ? (
                 <p className="text-xs text-[var(--color-warning-text)] md:col-span-2">Stockfish unavailable. Auto-eval toggle is disabled.</p>
+              ) : null}
+              {opponentMode === "stockfish" && !stockfishAvailable ? (
+                <p className="text-xs text-[var(--color-warning-text)] md:col-span-2">
+                  Stockfish opponent requires STOCKFISH_PATH in Settings.
+                </p>
+              ) : null}
+              {opponentMode === "llm" && !opponentProviderReady ? (
+                <p className="text-xs text-[var(--color-warning-text)] md:col-span-2">
+                  Opponent provider is missing credentials in Settings.
+                </p>
               ) : null}
             </div>
           ) : null}
@@ -582,6 +677,8 @@ export function QuickPlayPage() {
                   provideHistory,
                   feedbackLevel,
                   opponentMode,
+                  opponentLlmProvider: opponentProviderId,
+                  opponentLlmModel: opponentModel,
                   stockfishLevel,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
@@ -609,6 +706,8 @@ export function QuickPlayPage() {
                   provideHistory,
                   feedbackLevel,
                   opponentMode,
+                  opponentLlmProvider: opponentProviderId,
+                  opponentLlmModel: opponentModel,
                   stockfishLevel,
                   autoEvaluateEnabled: stockfishAvailable && autoEvaluateEnabled,
                   customOverrides: parsedCustomOverrides,
@@ -657,6 +756,8 @@ function buildPlayPayload(input: {
   provideHistory: boolean;
   feedbackLevel: FeedbackLevel;
   opponentMode: OpponentMode;
+  opponentLlmProvider: string;
+  opponentLlmModel: string;
   stockfishLevel: number;
   autoEvaluateEnabled: boolean;
   customOverrides: string[];
@@ -677,6 +778,11 @@ function buildPlayPayload(input: {
     overrides.push("players.white.type=engine");
     overrides.push("players.white.name=stockfish_white");
     overrides.push(`players.white.depth=${input.stockfishLevel}`);
+  } else if (input.opponentMode === "llm") {
+    overrides.push("players.white.type=llm");
+    overrides.push(`players.white.provider=${input.opponentLlmProvider}`);
+    overrides.push(`players.white.model=${input.opponentLlmModel}`);
+    overrides.push(`players.white.name=${safeModelName(input.opponentLlmProvider, input.opponentLlmModel)}`);
   } else {
     overrides.push("players.white.type=random");
     overrides.push("players.white.name=random_white");

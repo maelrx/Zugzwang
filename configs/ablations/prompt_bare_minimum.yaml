@@ -1,0 +1,6 @@
+﻿experiment:
+  name: prompt_ablation_bare_minimum
+
+strategy:
+  use_system_prompt: true
+  system_prompt_id: bare_minimum

@@ -104,6 +104,7 @@ class FakeArtifactService:
                 inferred_model="glm-5",
                 inferred_model_label="zai / glm-5",
                 inferred_config_template="best_known_start",
+                inferred_prompt_id="structured_analysis",
                 inferred_eval_status="evaluated",
                 num_games_target=5,
                 num_games_valid=5,
@@ -125,6 +126,7 @@ class FakeArtifactService:
                 inferred_model="gpt-5-mini",
                 inferred_model_label="openai / gpt-5-mini",
                 inferred_config_template="rag_variant",
+                inferred_prompt_id="default",
                 inferred_eval_status="needs_eval",
                 num_games_target=8,
                 num_games_valid=6,
@@ -377,6 +379,7 @@ def test_runs_routes_return_summary_games_and_frames() -> None:
     inferred = summary_response.json()
     assert inferred["inferred_model_label"] == "zai / glm-5"
     assert inferred["run_meta"]["inferred_eval_status"] == "evaluated"
+    assert inferred["run_meta"]["inferred_prompt_id"] == "structured_analysis"
     assert inferred["run_meta"]["elo_estimate"] == 620.0
 
     missing_run_response = client.get("/api/runs/missing")

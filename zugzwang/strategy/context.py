@@ -8,9 +8,10 @@ from zugzwang.knowledge.retriever import (
     DEFAULT_MAX_CHARS_PER_CHUNK,
     query as query_knowledge,
 )
-from zugzwang.strategy.few_shot import render_few_shot_block
+from zugzwang.strategy.few_shot import render_few_shot_block_with_metadata
 from zugzwang.strategy.formats import board_context_lines
 from zugzwang.strategy.phase import normalize_phase
+from zugzwang.strategy.prompts import DEFAULT_PROMPT_ID, resolve_system_prompt
 
 
 DEFAULT_COMPRESSION_ORDER = ["history", "rag", "legal_moves", "few_shot"]
@@ -30,6 +31,12 @@ class PromptBuildResult:
     prompt: str
     dropped_blocks: list[str]
     retrieval: PromptRetrievalTelemetry
+    few_shot_examples_injected: int = 0
+    system_content: str | None = None
+    user_content: str = ""
+    prompt_id_requested: str = DEFAULT_PROMPT_ID
+    prompt_id_effective: str = DEFAULT_PROMPT_ID
+    prompt_label: str = "Default Assistant"
 
 
 def build_direct_prompt(
@@ -53,23 +60,29 @@ def build_direct_prompt_with_metadata(
     include_legal = bool(strategy_config.get("provide_legal_moves", True))
     include_history = bool(strategy_config.get("provide_history", True))
     history_plies = int(strategy_config.get("history_plies", 8))
+    use_system_prompt = bool(strategy_config.get("use_system_prompt", False))
 
     phase = normalize_phase(game_state.phase)
+    prompt_resolution = resolve_system_prompt(
+        system_prompt_id=_as_optional_str(strategy_config.get("system_prompt_id")) or DEFAULT_PROMPT_ID,
+        variables={
+            "color": str(game_state.active_color),
+            "phase": phase,
+        },
+        custom_template=_as_optional_str(strategy_config.get("system_prompt_template")),
+    )
 
     base_lines = [
-        "You are a chess assistant playing one move.",
-        "Return exactly one legal move in UCI format.",
-        "Do not include explanation.",
         f"Phase: {phase}",
         f"Side to move: {game_state.active_color}",
-        *board_context_lines(game_state.fen, board_format),
+        *board_context_lines(game_state.fen, board_format, game_state.pgn),
     ]
 
     optional_blocks: dict[str, str] = {}
 
-    few_shot = render_few_shot_block(strategy_config, phase=phase)
-    if few_shot:
-        optional_blocks["few_shot"] = few_shot
+    few_shot_meta = render_few_shot_block_with_metadata(strategy_config, phase=phase)
+    if few_shot_meta.block:
+        optional_blocks["few_shot"] = few_shot_meta.block
 
     rag_cfg = strategy_config.get("rag", {})
     rag_result = query_knowledge(game_state, rag_cfg)
@@ -101,12 +114,23 @@ def build_direct_prompt_with_metadata(
         max_prompt_chars=max_prompt_chars,
     )
 
-    prompt = "\n".join(lines)
+    user_prompt = "\n".join(lines)
     if dropped:
-        prompt = "\n".join([prompt, f"Context compression: dropped {', '.join(dropped)}."])
+        user_prompt = "\n".join(
+            [user_prompt, f"Context compression: dropped {', '.join(dropped)}."]
+        )
 
-    if max_prompt_chars is not None and len(prompt) > max_prompt_chars:
-        prompt = _truncate_prompt(prompt, max_prompt_chars)
+    if max_prompt_chars is not None and len(user_prompt) > max_prompt_chars:
+        user_prompt = _truncate_prompt(user_prompt, max_prompt_chars)
+
+    selected_system_template = prompt_resolution.rendered_template.strip()
+    system_content = selected_system_template if use_system_prompt else None
+    if system_content:
+        prompt = f"{system_content}\n\n{user_prompt}"
+    else:
+        prompt = f"{selected_system_template}\n\n{user_prompt}"
+        if max_prompt_chars is not None and len(prompt) > max_prompt_chars:
+            prompt = _truncate_prompt(prompt, max_prompt_chars)
 
     retrieval_telemetry = PromptRetrievalTelemetry(
         enabled=bool(isinstance(rag_cfg, dict) and rag_cfg.get("enabled", False)),
@@ -115,10 +139,19 @@ def build_direct_prompt_with_metadata(
         sources=list(getattr(rag_result, "sources", []) or []),
         phase=phase,
     )
+    few_shot_injected = (
+        0 if "few_shot" in dropped else int(few_shot_meta.example_count)
+    )
     return PromptBuildResult(
         prompt=prompt,
         dropped_blocks=dropped,
         retrieval=retrieval_telemetry,
+        few_shot_examples_injected=few_shot_injected,
+        system_content=system_content,
+        user_content=user_prompt,
+        prompt_id_requested=prompt_resolution.requested_id,
+        prompt_id_effective=prompt_resolution.effective_id,
+        prompt_label=prompt_resolution.label,
     )
 
 
@@ -238,3 +271,10 @@ def _render_rag_block(rag_result: Any, rag_cfg: Any) -> str | None:
         return None
     lines.append("Use snippets only as optional guidance. Return one legal UCI move.")
     return "\n".join(lines)
+
+
+def _as_optional_str(value: Any) -> str | None:
+    if isinstance(value, str):
+        parsed = value.strip()
+        return parsed or None
+    return None

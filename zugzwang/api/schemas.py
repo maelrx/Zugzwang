@@ -123,6 +123,7 @@ class RunListItem(ApiModel):
     inferred_model: str | None = None
     inferred_model_label: str | None = None
     inferred_config_template: str | None = None
+    inferred_prompt_id: str | None = None
     inferred_eval_status: Literal["pending_report", "needs_eval", "evaluated"] | None = None
     num_games_target: int | None = None
     num_games_valid: int | None = None
@@ -143,6 +144,7 @@ class RunSummaryResponse(ApiModel):
     inferred_opponent_elo: int | None = None
     inferred_model_label: str | None = None
     inferred_config_template: str | None = None
+    inferred_prompt_id: str | None = None
 
 
 class DashboardTimelinePointResponse(ApiModel):
@@ -195,3 +197,116 @@ class EnvCheckResponse(ApiModel):
     provider: str
     ok: bool
     message: str
+
+
+class AnalysisCompareRequest(ApiModel):
+    run_a: str
+    run_b: str
+    comparison_id: str | None = None
+    confidence: float = Field(default=0.95, gt=0.0, lt=1.0)
+    alpha: float = Field(default=0.05, gt=0.0, lt=1.0)
+    bootstrap_iterations: int = Field(default=10_000, ge=100, le=200_000)
+    permutation_iterations: int = Field(default=10_000, ge=100, le=200_000)
+    seed: int = 42
+
+
+class AnalysisRunSampleResponse(ApiModel):
+    run_id: str
+    run_dir: str
+    player_color: str
+    total_games: int
+    valid_games: int
+    sample_size_win: int
+    sample_size_acpl: int
+
+
+class AnalysisRunsResponse(ApiModel):
+    a: AnalysisRunSampleResponse
+    b: AnalysisRunSampleResponse
+
+
+class AnalysisMetricRunSideResponse(ApiModel):
+    mean: float
+    ci_low: float
+    ci_high: float
+    confidence: float
+    sample_size: int
+
+
+class AnalysisMetricResponse(ApiModel):
+    name: str
+    run_a: AnalysisMetricRunSideResponse
+    run_b: AnalysisMetricRunSideResponse
+    delta: float
+    ci_low: float
+    ci_high: float
+    p_value: float
+    effect_size: float
+    effect_size_name: str
+    effect_size_magnitude: str
+    significant: bool
+
+
+class AnalysisMetricsResponse(ApiModel):
+    win_rate: AnalysisMetricResponse
+    acpl: AnalysisMetricResponse | None = None
+
+
+class AnalysisArtifactsResponse(ApiModel):
+    comparison_dir: str
+    json_path: str
+    markdown_path: str
+
+
+class AnalysisCompareResponse(ApiModel):
+    comparison_id: str
+    created_at_utc: str
+    runs: AnalysisRunsResponse
+    metrics: AnalysisMetricsResponse
+    recommendation: str
+    confidence_note: str
+    notes: list[str] = Field(default_factory=list)
+    artifacts: AnalysisArtifactsResponse
+
+
+class SchedulerStepRequest(ApiModel):
+    step_id: str | None = None
+    config_path: str
+    mode: Literal["run", "play"] = "run"
+    model_profile: str | None = None
+    overrides: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)
+
+
+class SchedulerBatchCreateRequest(ApiModel):
+    steps: list[SchedulerStepRequest] = Field(default_factory=list)
+    fail_fast: bool = True
+    dry_run: bool = False
+    batch_id: str | None = None
+
+
+class SchedulerStepResponse(ApiModel):
+    step_id: str
+    config_path: str
+    mode: Literal["run", "play"]
+    model_profile: str | None = None
+    overrides: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)
+    status: Literal["pending", "running", "completed", "failed", "canceled", "skipped", "dry_run"]
+    message: str | None = None
+    job_id: str | None = None
+    run_id: str | None = None
+    run_dir: str | None = None
+    started_at_utc: str | None = None
+    finished_at_utc: str | None = None
+    preview: dict[str, Any] | None = None
+
+
+class SchedulerBatchResponse(ApiModel):
+    batch_id: str
+    status: Literal["queued", "running", "completed", "failed", "canceled", "dry_run"]
+    fail_fast: bool
+    dry_run: bool
+    created_at_utc: str
+    updated_at_utc: str
+    steps: list[SchedulerStepResponse] = Field(default_factory=list)

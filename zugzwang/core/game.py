@@ -18,6 +18,7 @@ def play_game(
     players_cfg: dict[str, Any],
     white_player: PlayerInterface,
     black_player: PlayerInterface,
+    protocol_mode: str,
     max_plies: int,
 ) -> GameRecord:
     board = BoardManager()
@@ -37,9 +38,44 @@ def play_game(
         actor = white_player if state.active_color == "white" else black_player
         decision = actor.choose_move(state)
 
+        if protocol_mode == "research_strict" and (not decision.is_legal or not decision.move_uci):
+            decision.error = decision.error or "retries_exhausted"
+            move_records.append(
+                MoveRecord(
+                    ply_number=len(history_uci) + 1,
+                    color=state.active_color,
+                    fen_before=state.fen,
+                    move_decision=decision,
+                )
+            )
+            termination = "error"
+            break
+
+        if not decision.move_uci:
+            fallback_move = rng.choice(state.legal_moves_uci)
+            decision.move_uci = fallback_move
+            decision.is_legal = True
+            decision.parse_ok = False
+            decision.error = decision.error or "missing_move_fallback"
+
         apply_result = board.apply_move(decision.move_uci)
         if not apply_result.ok:
-            # Invariant: never apply illegal move. Use legal fallback if needed.
+            if protocol_mode == "research_strict":
+                decision.error = decision.error or apply_result.error or "illegal_move_error"
+                decision.is_legal = False
+                decision.parse_ok = False
+                move_records.append(
+                    MoveRecord(
+                        ply_number=len(history_uci) + 1,
+                        color=state.active_color,
+                        fen_before=state.fen,
+                        move_decision=decision,
+                    )
+                )
+                termination = "error"
+                break
+
+            # Invariant for compat modes: never apply illegal move.
             fallback_move = rng.choice(state.legal_moves_uci)
             decision.move_uci = fallback_move
             decision.is_legal = True

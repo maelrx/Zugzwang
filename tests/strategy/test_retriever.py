@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from zugzwang.core.models import GameState
-from zugzwang.knowledge.retriever import query
+from zugzwang.knowledge.retriever import clear_caches, query
 
 
 def _opening_state() -> GameState:
@@ -39,6 +39,7 @@ def _endgame_state() -> GameState:
 
 
 def test_query_returns_phase_relevant_opening_chunks() -> None:
+    clear_caches()
     result = query(
         _opening_state(),
         {
@@ -54,9 +55,11 @@ def test_query_returns_phase_relevant_opening_chunks() -> None:
     assert len(result.chunks) == 2
     assert all(chunk.chunk.source == "eco" for chunk in result.chunks)
     assert all(chunk.chunk.phase == "opening" for chunk in result.chunks)
+    assert result.sources == ["eco"]
 
 
 def test_query_returns_endgame_chunks_when_routed() -> None:
+    clear_caches()
     result = query(
         _endgame_state(),
         {
@@ -72,6 +75,7 @@ def test_query_returns_endgame_chunks_when_routed() -> None:
     assert len(result.chunks) == 2
     assert all(chunk.chunk.source == "endgames" for chunk in result.chunks)
     assert all(chunk.chunk.phase == "endgame" for chunk in result.chunks)
+    assert result.sources == ["endgames"]
 
 
 def test_query_disabled_returns_empty_result() -> None:

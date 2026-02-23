@@ -1,9 +1,69 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+from zugzwang.knowledge.sources._shared import (
+    DATA_ROOT,
+    as_text,
+    build_chunk_id,
+    load_yaml_entries,
+    normalize_phase,
+    normalize_tags,
+)
 from zugzwang.knowledge.types import KnowledgeChunk
 
 
+DATA_PATH = DATA_ROOT / "openings" / "eco_book.yaml"
+
+
 def load_eco_chunks() -> list[KnowledgeChunk]:
+    chunks = _load_from_yaml(DATA_PATH)
+    if chunks:
+        return chunks
+    return _fallback_chunks()
+
+
+def _load_from_yaml(path: Path) -> list[KnowledgeChunk]:
+    entries = load_yaml_entries(path)
+    chunks: list[KnowledgeChunk] = []
+    for index, entry in enumerate(entries):
+        eco = as_text(entry.get("eco"))
+        name = as_text(entry.get("name"))
+        moves = as_text(entry.get("moves"))
+        plan = as_text(entry.get("plan")) or as_text(entry.get("description"))
+        if not name or not plan:
+            continue
+
+        title = f"{name} ({eco})" if eco else name
+        content_parts = []
+        if moves:
+            content_parts.append(f"Moves: {moves}.")
+        content_parts.append(plan)
+        content = " ".join(content_parts).strip()
+        if not content:
+            continue
+
+        phase = normalize_phase(entry.get("phase"), default="opening")
+        chunk = KnowledgeChunk(
+            chunk_id=build_chunk_id(
+                source="eco",
+                index=index,
+                explicit_id=entry.get("id"),
+                title=title,
+                extra=eco or moves,
+            ),
+            source="eco",
+            phase=phase,
+            title=title,
+            content=content,
+            fen=as_text(entry.get("key_fen")) or as_text(entry.get("fen")),
+            tags=normalize_tags(entry.get("tags"), defaults=("opening", "eco")),
+        )
+        chunks.append(chunk)
+    return chunks
+
+
+def _fallback_chunks() -> list[KnowledgeChunk]:
     return [
         KnowledgeChunk(
             chunk_id="eco-c20-kings-pawn",

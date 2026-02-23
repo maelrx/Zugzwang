@@ -11,8 +11,10 @@ def game_record_from_dict(payload: dict[str, Any]) -> GameRecord:
     moves: list[MoveRecord] = []
     for move_payload in payload.get("moves", []):
         decision_payload = move_payload.get("move_decision", {})
+        move_uci_raw = decision_payload.get("move_uci")
+        move_uci = None if move_uci_raw is None else str(move_uci_raw)
         decision = MoveDecision(
-            move_uci=str(decision_payload.get("move_uci", "")),
+            move_uci=move_uci,
             move_san=str(decision_payload.get("move_san", "")),
             raw_response=str(decision_payload.get("raw_response", "")),
             parse_ok=bool(decision_payload.get("parse_ok", False)),

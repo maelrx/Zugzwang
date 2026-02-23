@@ -1,0 +1,24 @@
+metadata:
+  phase: middlegame
+  version: "1.0"
+  description: "Middlegame few-shot examples emphasizing activity and tactics."
+
+examples:
+  - fen: "r1bq1rk1/ppp2ppp/2n2n2/3pp3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 7"
+    move_uci: "e4d5"
+    note: "Open central lines when development is complete and tension is high."
+  - fen: "r1bqr1k1/ppp2ppp/2n2n2/3p4/3P4/2N2N2/PPP2PPP/R1BQR1K1 b - - 0 9"
+    move_uci: "c8g4"
+    note: "Develop with tempo by pinning a key defender."
+  - fen: "r2q1rk1/ppp1bppp/2n2n2/3p2B1/3P4/2N2N2/PPP2PPP/R2Q1RK1 b - - 0 8"
+    move_uci: "h7h6"
+    note: "Question an active bishop before conceding long-term pressure."
+  - fen: "r2q1rk1/pp2bppp/2np1n2/2p1p3/2P1P3/2NP1NP1/PP2PPBP/R1BQ1RK1 w - - 0 8"
+    move_uci: "d3d4"
+    note: "Use central expansion to improve piece activity and space."
+  - fen: "r1bq1rk1/pp1n1ppp/2pbpn2/2pp4/2PP4/2N1PN2/PP1BBPPP/R2Q1RK1 w - - 0 9"
+    move_uci: "d4c5"
+    note: "Resolve central tension when capture opens useful diagonals."
+  - fen: "r1bq1rk1/pppn1ppp/3bpn2/3p4/3P4/2NBPN2/PPQ2PPP/R1B2RK1 w - - 0 9"
+    move_uci: "e3e4"
+    note: "Expand central control to improve coordination and piece freedom."

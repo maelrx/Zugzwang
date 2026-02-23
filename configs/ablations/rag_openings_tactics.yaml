@@ -1,0 +1,14 @@
+experiment:
+  name: rag_openings_tactics
+  target_valid_games: 2
+  max_games: 2
+
+strategy:
+  rag:
+    enabled: true
+    max_chunks: 3
+    min_similarity: 0.08
+    include_sources:
+      eco: true
+      lichess: true
+      endgames: false

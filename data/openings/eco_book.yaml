@@ -1,0 +1,79 @@
+- id: eco-c20-kings-pawn
+  eco: C20
+  name: King's Pawn Game
+  moves: "1.e4 e5"
+  plan: "Contest the center early, develop minor pieces quickly, and avoid premature queen activity."
+  key_fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+  tags: [opening, center, development]
+
+- id: eco-b20-sicilian
+  eco: B20
+  name: Sicilian Defense
+  moves: "1.e4 c5"
+  plan: "Fight for central control asymmetrically and aim for queenside counterplay with flexible pawn breaks."
+  key_fen: "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2"
+  tags: [opening, sicilian, counterplay]
+
+- id: eco-c50-italian
+  eco: C50
+  name: Italian Game
+  moves: "1.e4 e5 2.Nf3 Nc6 3.Bc4"
+  plan: "Coordinate pieces toward f7 pressure, castle early, and prepare central expansion with c3 and d4."
+  key_fen: "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3"
+  tags: [opening, italian, king_safety]
+
+- id: eco-c00-french
+  eco: C00
+  name: French Defense
+  moves: "1.e4 e6 2.d4 d5"
+  plan: "Build a resilient pawn chain, challenge white center with c5, and manage light-square weaknesses."
+  key_fen: "rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3"
+  tags: [opening, french, pawn_structure]
+
+- id: eco-d02-queens-pawn
+  eco: D02
+  name: Queen's Pawn Game
+  moves: "1.d4 d5"
+  plan: "Occupy central squares, complete development efficiently, and choose pawn breaks based on piece placement."
+  key_fen: "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2"
+  tags: [opening, queens_pawn, center]
+
+- id: eco-e60-kings-indian
+  eco: E60
+  name: King's Indian Defense
+  moves: "1.d4 Nf6 2.c4 g6 3.Nc3 Bg7"
+  plan: "Delay central commitment, keep king safety high, and counterattack with e5 or c5 at the right moment."
+  key_fen: "rnbqk2r/ppppppbp/5np1/8/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4"
+  tags: [opening, kings_indian, plans]
+
+- id: eco-a40-english
+  eco: A40
+  name: English Opening Structures
+  moves: "1.c4"
+  plan: "Control dark central squares indirectly and transition into favorable transpositions based on opponent setup."
+  key_fen: "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq c3 0 1"
+  tags: [opening, english, flexibility]
+
+- id: eco-b12-caro-kann
+  eco: B12
+  name: Caro-Kann Defense
+  moves: "1.e4 c6 2.d4 d5"
+  plan: "Use a solid pawn structure and timely development to neutralize white center before counterplay."
+  key_fen: "rnbqkbnr/pp1ppppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3"
+  tags: [opening, caro_kann, solidity]
+
+- id: eco-d30-queens-gambit
+  eco: D30
+  name: Queen's Gambit Declined
+  moves: "1.d4 d5 2.c4 e6"
+  plan: "Maintain central tension, develop harmoniously, and strike with c5 or e5 when preparation is complete."
+  key_fen: "rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3"
+  tags: [opening, queens_gambit, structure]
+
+- id: eco-c44-scotch
+  eco: C44
+  name: Scotch Game
+  moves: "1.e4 e5 2.Nf3 Nc6 3.d4"
+  plan: "Open central lines quickly and develop pieces to active squares before tactical operations."
+  key_fen: "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
+  tags: [opening, scotch, open_game]

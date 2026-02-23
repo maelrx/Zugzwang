@@ -29,14 +29,15 @@ REQUIRED_FIELDS = [
     "budget.max_total_usd",
 ]
 
-ALLOWED_PROTOCOL_MODES = {"direct", "agentic_compat"}
-ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode"}
+ALLOWED_PROTOCOL_MODES = {"direct", "agentic_compat", "research_strict"}
+ALLOWED_BOARD_FORMATS = {"fen", "ascii", "combined", "unicode", "pgn"}
 ALLOWED_FEEDBACK_LEVELS = {"minimal", "moderate", "rich"}
 ALLOWED_PLAYER_TYPES = {"random", "llm", "engine"}
 ALLOWED_PLAYER_COLORS = {"white", "black"}
 ALLOWED_EVAL_PLAYER_COLORS = {"white", "black", "auto"}
 ALLOWED_TIMEOUT_POLICY_ACTIONS = {"stop_run"}
 ALLOWED_RAG_SOURCES = {"eco", "lichess", "endgames"}
+ALLOWED_FEW_SHOT_SOURCES = {"builtin", "config"}
 ALLOWED_MULTI_AGENT_MODES = {"capability_moa", "specialist_moa", "hybrid_phase_router"}
 ALLOWED_MULTI_AGENT_PROVIDER_POLICIES = {"shared_model", "role_model_overrides"}
 
@@ -258,6 +259,50 @@ def _validate_strategy_rag(config: dict[str, Any]) -> None:
         )
 
 
+def _validate_strategy_few_shot(config: dict[str, Any]) -> None:
+    few_shot_cfg = config.get("strategy", {}).get("few_shot")
+    if few_shot_cfg is None:
+        return
+    if not isinstance(few_shot_cfg, dict):
+        raise ConfigValidationError("strategy.few_shot must be a mapping when provided")
+
+    enabled = few_shot_cfg.get("enabled", False)
+    if not isinstance(enabled, bool):
+        raise ConfigValidationError("strategy.few_shot.enabled must be a boolean")
+
+    source = few_shot_cfg.get("source", "builtin")
+    if not isinstance(source, str) or source.strip().lower() not in ALLOWED_FEW_SHOT_SOURCES:
+        allowed = ", ".join(sorted(ALLOWED_FEW_SHOT_SOURCES))
+        raise ConfigValidationError(f"strategy.few_shot.source must be one of [{allowed}]")
+
+    max_examples = few_shot_cfg.get("max_examples")
+    if max_examples is not None and (not isinstance(max_examples, int) or max_examples <= 0):
+        raise ConfigValidationError(
+            "strategy.few_shot.max_examples must be a positive int when provided"
+        )
+
+    by_phase = few_shot_cfg.get("by_phase")
+    if by_phase is not None:
+        if not isinstance(by_phase, dict):
+            raise ConfigValidationError("strategy.few_shot.by_phase must be a mapping when provided")
+        for phase_name, entries in by_phase.items():
+            if not isinstance(phase_name, str) or not phase_name.strip():
+                raise ConfigValidationError(
+                    "strategy.few_shot.by_phase keys must be non-empty strings"
+                )
+            if not isinstance(entries, list):
+                raise ConfigValidationError(
+                    f"strategy.few_shot.by_phase.{phase_name} must be a list of examples"
+                )
+
+    if enabled and source.strip().lower() == "config" and (
+        not isinstance(by_phase, dict) or not by_phase
+    ):
+        raise ConfigValidationError(
+            "strategy.few_shot.by_phase must be defined when strategy.few_shot.source=config and enabled=true"
+        )
+
+
 def _validate_strategy_multi_agent(config: dict[str, Any]) -> None:
     multi_agent_cfg = config.get("strategy", {}).get("multi_agent")
     if multi_agent_cfg is None:
@@ -343,6 +388,20 @@ def validate_config(config: dict[str, Any]) -> None:
         allowed = ", ".join(sorted(ALLOWED_BOARD_FORMATS))
         raise ConfigValidationError(f"strategy.board_format must be one of [{allowed}]")
 
+    use_system_prompt = config.get("strategy", {}).get("use_system_prompt")
+    if use_system_prompt is not None and not isinstance(use_system_prompt, bool):
+        raise ConfigValidationError("strategy.use_system_prompt must be a boolean when provided")
+    system_prompt_id = config.get("strategy", {}).get("system_prompt_id", "default")
+    if not isinstance(system_prompt_id, str) or not system_prompt_id.strip():
+        raise ConfigValidationError("strategy.system_prompt_id must be a non-empty string")
+    system_prompt_template = config.get("strategy", {}).get("system_prompt_template")
+    if system_prompt_template is not None and (
+        not isinstance(system_prompt_template, str) or not system_prompt_template.strip()
+    ):
+        raise ConfigValidationError(
+            "strategy.system_prompt_template must be a non-empty string when provided"
+        )
+
     feedback = config.get("strategy", {}).get("validation", {}).get("feedback_level", "rich")
     if feedback not in ALLOWED_FEEDBACK_LEVELS:
         allowed = ", ".join(sorted(ALLOWED_FEEDBACK_LEVELS))
@@ -379,8 +438,17 @@ def validate_config(config: dict[str, Any]) -> None:
             "budget.estimated_avg_cost_per_game_usd must be a non-negative number"
         )
 
+    persist_prompt_transcripts = config.get("tracking", {}).get("persist_prompt_transcripts")
+    if persist_prompt_transcripts is not None and not isinstance(
+        persist_prompt_transcripts, bool
+    ):
+        raise ConfigValidationError(
+            "tracking.persist_prompt_transcripts must be a boolean when provided"
+        )
+
     _validate_player_config(_get_by_path(config, "players"))
     _validate_evaluation_auto(config)
     _validate_timeout_policy(config)
     _validate_strategy_rag(config)
+    _validate_strategy_few_shot(config)
     _validate_strategy_multi_agent(config)

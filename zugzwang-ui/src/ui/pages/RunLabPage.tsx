@@ -22,9 +22,16 @@ const MIN_TARGET_GAMES = 1;
 const MAX_TARGET_GAMES = 500;
 const DEFAULT_TARGET_GAMES = 10;
 const STOCKFISH_ELO_PRESETS = [1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600] as const;
+const BOARD_FORMAT_OPTIONS = [
+  { value: "fen", label: "fen" },
+  { value: "ascii", label: "ascii" },
+  { value: "unicode", label: "unicode" },
+  { value: "combined", label: "combined" },
+  { value: "pgn", label: "pgn" },
+] as const;
 
 type TemplateBucket = "baselines" | "ablations" | "custom";
-type BoardFormat = "fen" | "pgn";
+type BoardFormat = (typeof BOARD_FORMAT_OPTIONS)[number]["value"];
 type FeedbackLevel = "minimal" | "moderate" | "rich";
 type OpponentMode = "template" | "random" | "stockfish" | "llm";
 
@@ -34,6 +41,55 @@ type TemplateOption = {
   category: string;
   bucket: TemplateBucket;
 };
+
+type ResearchPresetId = "paper_repro" | "prompt_ablation" | "rag_vs_off" | "moa_vs_single";
+
+type ResearchPresetDefinition = {
+  id: ResearchPresetId;
+  label: string;
+  description: string;
+  templateCandidates: readonly string[];
+  recommendedTargetGames: number;
+};
+
+const RESEARCH_PRESET_DEFINITIONS: readonly ResearchPresetDefinition[] = [
+  {
+    id: "paper_repro",
+    label: "paper_repro",
+    description: "Replication baseline with minimal moving parts.",
+    templateCandidates: [
+      "configs/ablations/replication_minimal.yaml",
+      "configs/baselines/best_known_start.yaml",
+      "configs/baselines/best_known_start_zai_glm5.yaml",
+    ],
+    recommendedTargetGames: 20,
+  },
+  {
+    id: "prompt_ablation",
+    label: "prompt_ablation",
+    description: "Prompting track ready for controlled A/B compare runs.",
+    templateCandidates: [
+      "configs/ablations/prompt_structured_analysis.yaml",
+      "configs/ablations/prompt_checklist_strict.yaml",
+      "configs/ablations/prompt_bare_minimum.yaml",
+    ],
+    recommendedTargetGames: 16,
+  },
+  {
+    id: "rag_vs_off",
+    label: "rag_vs_off",
+    description: "RAG pathway with clear on/off comparability.",
+    templateCandidates: ["configs/ablations/rag_off.yaml", "configs/ablations/rag_openings_tactics.yaml", "configs/ablations/rag_openings_only.yaml"],
+    recommendedTargetGames: 14,
+  },
+  {
+    id: "moa_vs_single",
+    label: "moa_vs_single",
+    description: "Multi-agent orchestration versus single-agent control.",
+    templateCandidates: ["configs/ablations/moa_single_agent_control.yaml", "configs/ablations/moa_capability.yaml", "configs/ablations/moa_hybrid_phase.yaml"],
+    recommendedTargetGames: 10,
+  },
+] as const;
 
 export function RunLabPage() {
   const navigate = useNavigate();
@@ -87,6 +143,8 @@ export function RunLabPage() {
   const [evaluationOpponentEloText, setEvaluationOpponentEloText] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(storedAdvancedOpen);
   const [customOverridesText, setCustomOverridesText] = useState(storedOverrides);
+  const [activeResearchPreset, setActiveResearchPreset] = useState<ResearchPresetId | null>(null);
+  const [presetFeedback, setPresetFeedback] = useState<string | null>(null);
 
   const templates = useMemo(() => {
     const all = [...(configsQuery.data?.baselines ?? []), ...(configsQuery.data?.ablations ?? [])];
@@ -114,6 +172,13 @@ export function RunLabPage() {
     }),
     [filteredTemplates],
   );
+  const templatesByNormalizedPath = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const template of templates) {
+      map.set(normalizeConfigPath(template.path), template.path);
+    }
+    return map;
+  }, [templates]);
 
   const currentConfigPath = selectedConfigPath || templates[0]?.path || "";
   const selectedTemplate = useMemo(
@@ -423,6 +488,22 @@ export function RunLabPage() {
   const baselineCount = templates.filter((item) => item.bucket === "baselines").length;
   const ablationCount = templates.filter((item) => item.bucket === "ablations").length;
   const customCount = templates.filter((item) => item.bucket === "custom").length;
+  const applyResearchPreset = (presetId: ResearchPresetId) => {
+    const preset = RESEARCH_PRESET_DEFINITIONS.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+    const resolvedTemplatePath = resolveResearchPresetTemplatePath(preset.templateCandidates, templatesByNormalizedPath);
+    if (!resolvedTemplatePath) {
+      setPresetFeedback(`Preset ${preset.label} unavailable: template files not found in current catalog.`);
+      return;
+    }
+    setSelectedConfigPath(resolvedTemplatePath);
+    setTargetValidGames(preset.recommendedTargetGames);
+    setTemplateSearch("");
+    setActiveResearchPreset(preset.id);
+    setPresetFeedback(`Preset ${preset.label} applied with ${preset.recommendedTargetGames} target games using ${resolvedTemplatePath}.`);
+  };
 
   return (
     <section>
@@ -439,6 +520,33 @@ export function RunLabPage() {
           Templates: {configsQuery.isLoading ? "..." : `${baselineCount} baselines / ${ablationCount} ablations / ${customCount} custom`}
         </span>
       </div>
+
+      <section className="mb-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Research presets</p>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          One-click setup for core tracks. Presets update template + recommended target games only.
+        </p>
+        <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {RESEARCH_PRESET_DEFINITIONS.map((preset) => {
+            const active = activeResearchPreset === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                className={[
+                  "rounded-xl border px-3 py-2 text-left",
+                  active ? "border-[var(--color-primary-700)] bg-[var(--color-primary-50)]" : "border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)]",
+                ].join(" ")}
+                onClick={() => applyResearchPreset(preset.id)}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-primary)]">{preset.label}</p>
+                <p className="mt-1 text-[11px] text-[var(--color-text-secondary)]">{preset.description}</p>
+              </button>
+            );
+          })}
+        </div>
+        {presetFeedback ? <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{presetFeedback}</p> : null}
+      </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)]">
         <section className="min-w-0 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
@@ -713,8 +821,11 @@ export function RunLabPage() {
                   onChange={(event) => setBoardFormat(event.target.value as BoardFormat)}
                   className="mt-1 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-2.5 py-2 text-sm text-[var(--color-text-primary)]"
                 >
-                  <option value="fen">fen</option>
-                  <option value="pgn">pgn</option>
+                  {BOARD_FORMAT_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </label>
 
@@ -987,6 +1098,34 @@ export function RunLabPage() {
             </Link>
           </div>
 
+          <section className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Research flow</p>
+            <div className="mt-2 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-[var(--color-text-secondary)]">1. Launch run and monitor progress</span>
+                <Link to="/dashboard/jobs" className="font-semibold text-[var(--color-primary-700)] underline">
+                  Observatory
+                </Link>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-[var(--color-text-secondary)]">2. Inspect run metadata and game quality</span>
+                {previewData?.run_id ? (
+                  <Link to="/runs/$runId" params={{ runId: previewData.run_id }} className="font-semibold text-[var(--color-primary-700)] underline">
+                    Open run detail
+                  </Link>
+                ) : (
+                  <span className="text-[var(--color-text-muted)]">Run ID pending</span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-[var(--color-text-secondary)]">3. Compare runs with statistical report</span>
+                <Link to="/compare" className="font-semibold text-[var(--color-primary-700)] underline">
+                  Open analysis
+                </Link>
+              </div>
+            </div>
+          </section>
+
           {(startRunMutation.isError || startPlayMutation.isError || modelCatalogQuery.isError || configsQuery.isError) && (
             <p className="mt-3 rounded-lg border border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-3 py-2 text-sm text-[var(--color-error-text)]">
               {extractErrorMessage(startRunMutation.error) ||
@@ -1246,6 +1385,20 @@ function resolveTemplateBucket(category: string | null | undefined, path: string
     return "ablations";
   }
   return "baselines";
+}
+
+function resolveResearchPresetTemplatePath(candidates: readonly string[], templatesByNormalizedPath: Map<string, string>): string | null {
+  for (const candidate of candidates) {
+    const match = templatesByNormalizedPath.get(normalizeConfigPath(candidate));
+    if (match) {
+      return match;
+    }
+  }
+  return null;
+}
+
+function normalizeConfigPath(value: string): string {
+  return value.replace(/\\/g, "/").replace(/^\.\/+/, "").toLowerCase();
 }
 
 function safeModelName(provider: string, model: string): string {

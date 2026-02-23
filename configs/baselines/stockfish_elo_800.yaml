@@ -1,0 +1,59 @@
+experiment:
+  name: llm_vs_stockfish_800
+  target_valid_games: 50
+  max_games: 60
+
+players:
+  white:
+    type: llm
+    name: llm_white
+    provider: mock
+    model: mock-1
+  black:
+    type: engine
+    name: stockfish_800
+    uci_limit_strength: true
+    uci_elo: 800
+    depth: 8
+    threads: 1
+    hash_mb: 128
+
+protocol:
+  mode: research_strict
+
+strategy:
+  use_system_prompt: true
+  board_format: fen
+  provide_legal_moves: true
+  provide_history: true
+  history_plies: 10
+  validation:
+    feedback_level: rich
+    move_retries: 3
+    provider_retries: 2
+    max_agentic_turns: 6
+
+evaluation:
+  stockfish:
+    depth: 12
+    threads: 1
+    hash_mb: 128
+    path: null
+  auto:
+    enabled: true
+    player_color: auto
+    opponent_elo: 800
+    elo_color_correction: 0.0
+    output_filename: experiment_report_evaluated.json
+    fail_on_error: false
+
+runtime:
+  seed: 42
+  max_plies: 200
+  timeout_seconds: 120
+  expected_completion_rate: 0.9
+  output_dir: results/runs
+
+budget:
+  max_total_usd: 10.0
+  estimated_avg_cost_per_game_usd: 0.02

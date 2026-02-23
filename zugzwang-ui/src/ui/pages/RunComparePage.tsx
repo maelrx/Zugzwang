@@ -1,8 +1,8 @@
 import { useQueries } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../api/client";
-import { useRuns } from "../../api/queries";
-import type { GameDetailResponse, GameListItem, RunSummaryResponse } from "../../api/types";
+import { useCreateRunComparison, useRunComparison, useRuns } from "../../api/queries";
+import type { AnalysisCompareResponse, GameDetailResponse, GameListItem, RunSummaryResponse } from "../../api/types";
 import { useCompareStore } from "../../stores/compareStore";
 import { PageHeader } from "../components/PageHeader";
 import { aggregateMoveQuality, type MoveQualityCounts } from "../lib/moveQuality";
@@ -45,7 +45,10 @@ export function RunComparePage() {
     return storeSelectedRunIds.slice(0, MAX_SELECTED_RUNS);
   });
   const [visibleRunIds, setVisibleRunIds] = useState<string[]>([]);
+  const [comparisonId, setComparisonId] = useState<string | null>(null);
   const hydratedFromStoreRef = useRef(false);
+  const compareMutation = useCreateRunComparison();
+  const comparisonQuery = useRunComparison(comparisonId);
 
   useEffect(() => {
     if (hydratedFromStoreRef.current) {
@@ -92,6 +95,16 @@ export function RunComparePage() {
   }, [selectedRunIds]);
 
   const selectedRunSet = useMemo(() => new Set(selectedRunIds), [selectedRunIds]);
+  const primaryComparisonPair = useMemo<[string, string] | null>(() => {
+    if (selectedRunIds.length < 2) {
+      return null;
+    }
+    return [selectedRunIds[0], selectedRunIds[1]];
+  }, [selectedRunIds]);
+
+  useEffect(() => {
+    setComparisonId(null);
+  }, [primaryComparisonPair?.[0], primaryComparisonPair?.[1]]);
 
   const filteredRuns = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -257,6 +270,17 @@ export function RunComparePage() {
   const summaryError = summaryQueries.some((query) => query.isError);
   const qualityLoading = gamesQueries.some((query) => query.isLoading) || detailQueries.some((query) => query.isLoading);
   const qualityError = gamesQueries.some((query) => query.isError) || detailQueries.some((query) => query.isError);
+  const comparison = comparisonQuery.data ?? compareMutation.data ?? null;
+  const comparisonErrorMessage = useMemo(() => {
+    const sourceError = compareMutation.error ?? comparisonQuery.error;
+    if (!sourceError) {
+      return null;
+    }
+    if (sourceError instanceof Error) {
+      return sourceError.message;
+    }
+    return "Failed to load comparison artifacts.";
+  }, [compareMutation.error, comparisonQuery.error]);
 
   return (
     <section>
@@ -361,6 +385,72 @@ export function RunComparePage() {
           ))}
         </section>
       ) : null}
+
+      <section className="mb-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Statistical Compare</h3>
+        {primaryComparisonPair ? (
+          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+            Runs: `{primaryComparisonPair[0]}` vs `{primaryComparisonPair[1]}`. This calls `/api/analysis/compare` and stores reproducible artifacts.
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Select at least 2 runs to run statistical comparison.</p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] px-3 py-2 text-sm font-semibold text-[var(--color-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!primaryComparisonPair || compareMutation.isPending}
+            onClick={() => {
+              if (!primaryComparisonPair) {
+                return;
+              }
+              compareMutation.mutate(
+                {
+                  run_a: primaryComparisonPair[0],
+                  run_b: primaryComparisonPair[1],
+                },
+                {
+                  onSuccess: (payload) => {
+                    setComparisonId(payload.comparison_id);
+                  },
+                },
+              );
+            }}
+          >
+            {compareMutation.isPending ? "Running..." : "Run Statistical Compare"}
+          </button>
+
+          {comparison ? (
+            <>
+              <a
+                href={`/api/analysis/compare/${comparison.comparison_id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+              >
+                Open JSON
+              </a>
+              <a
+                href={`/api/analysis/compare/${comparison.comparison_id}/report.md`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-canvas)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+              >
+                Open Markdown
+              </a>
+            </>
+          ) : null}
+        </div>
+
+        {comparisonErrorMessage ? (
+          <p className="mt-3 rounded-lg border border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-3 py-2 text-sm text-[var(--color-error-text)]">
+            {comparisonErrorMessage}
+          </p>
+        ) : null}
+
+        {comparison ? <StatCompareResult comparison={comparison} /> : null}
+      </section>
 
       <section className="mb-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
         <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Config Diff</h3>
@@ -491,6 +581,135 @@ function CompareMetricRow({
         );
       })}
     </div>
+  );
+}
+
+function StatCompareResult({ comparison }: { comparison: AnalysisCompareResponse }) {
+  const metrics = useMemo(() => {
+    const items = [comparison.metrics.win_rate];
+    if (comparison.metrics.acpl) {
+      items.push(comparison.metrics.acpl);
+    }
+    return items;
+  }, [comparison.metrics.acpl, comparison.metrics.win_rate]);
+
+  return (
+    <section className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] p-3">
+      <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Comparison ID</p>
+          <p className="mt-1 break-all text-sm font-semibold text-[var(--color-text-primary)]">{comparison.comparison_id}</p>
+        </div>
+        <div className="text-left lg:text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Created UTC</p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{formatUtcDateTime(comparison.created_at_utc)}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Recommendation</p>
+        <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">{comparison.recommendation}</p>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{comparison.confidence_note}</p>
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <ComparisonRunCard title="Run A" run={comparison.runs.a} />
+        <ComparisonRunCard title="Run B" run={comparison.runs.b} />
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        {metrics.map((metric) => (
+          <StatMetricCard key={metric.name} metric={metric} />
+        ))}
+      </div>
+
+      {comparison.notes.length > 0 ? (
+        <div className="mt-3 rounded-lg border border-[var(--color-info-border)] bg-[var(--color-info-bg)] px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-info-text)]">Method Notes</p>
+          <ul className="mt-2 list-disc pl-5 text-xs text-[var(--color-info-text)]">
+            {comparison.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ComparisonRunCard({ title, run }: { title: string; run: AnalysisCompareResponse["runs"]["a"] }) {
+  return (
+    <section className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] px-3 py-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{title}</p>
+      <p className="mt-1 break-all text-sm font-semibold text-[var(--color-text-primary)]">{run.run_id}</p>
+      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <span className="text-[var(--color-text-secondary)]">Color</span>
+        <span className="text-right text-[var(--color-text-primary)]">{run.player_color}</span>
+        <span className="text-[var(--color-text-secondary)]">Games</span>
+        <span className="text-right text-[var(--color-text-primary)]">
+          {run.valid_games}/{run.total_games} valid
+        </span>
+        <span className="text-[var(--color-text-secondary)]">Win sample n</span>
+        <span className="text-right text-[var(--color-text-primary)]">{run.sample_size_win}</span>
+        <span className="text-[var(--color-text-secondary)]">ACPL sample n</span>
+        <span className="text-right text-[var(--color-text-primary)]">{run.sample_size_acpl}</span>
+      </div>
+    </section>
+  );
+}
+
+function StatMetricCard({ metric }: { metric: AnalysisCompareResponse["metrics"]["win_rate"] }) {
+  return (
+    <section className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{metric.name}</p>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+            metric.significant
+              ? "border border-[var(--color-success-border)] bg-[var(--color-success-bg)] text-[var(--color-success-text)]"
+              : "border border-[var(--color-border-subtle)] bg-[var(--color-neutral-bg)] text-[var(--color-text-secondary)]"
+          }`}
+        >
+          {metric.significant ? "Significant" : "Not significant"}
+        </span>
+      </div>
+
+      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <span className="text-[var(--color-text-secondary)]">Delta</span>
+        <span className="text-right text-[var(--color-text-primary)]">{formatDecimal(metric.delta, 4)}</span>
+        <span className="text-[var(--color-text-secondary)]">CI (delta)</span>
+        <span className="text-right text-[var(--color-text-primary)]">
+          {formatConfidenceInterval(metric.ci_low, metric.ci_high, 4)}
+        </span>
+        <span className="text-[var(--color-text-secondary)]">P-value</span>
+        <span className="text-right text-[var(--color-text-primary)]">{formatPValue(metric.p_value)}</span>
+        <span className="text-[var(--color-text-secondary)]">{metric.effect_size_name}</span>
+        <span className="text-right text-[var(--color-text-primary)]">
+          {formatDecimal(metric.effect_size, 4)} ({metric.effect_size_magnitude})
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        <div className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-2 py-1.5 text-xs">
+          <p className="font-semibold text-[var(--color-text-primary)]">Run A</p>
+          <p className="mt-1 text-[var(--color-text-secondary)]">
+            mean {formatDecimal(metric.run_a.mean, 4)} | CI {formatConfidenceInterval(metric.run_a.ci_low, metric.run_a.ci_high, 4)}
+          </p>
+          <p className="mt-1 text-[var(--color-text-secondary)]">
+            n={metric.run_a.sample_size} @ {formatDecimal(metric.run_a.confidence * 100, 1)}%
+          </p>
+        </div>
+        <div className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-canvas)] px-2 py-1.5 text-xs">
+          <p className="font-semibold text-[var(--color-text-primary)]">Run B</p>
+          <p className="mt-1 text-[var(--color-text-secondary)]">
+            mean {formatDecimal(metric.run_b.mean, 4)} | CI {formatConfidenceInterval(metric.run_b.ci_low, metric.run_b.ci_high, 4)}
+          </p>
+          <p className="mt-1 text-[var(--color-text-secondary)]">
+            n={metric.run_b.sample_size} @ {formatDecimal(metric.run_b.confidence * 100, 1)}%
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -711,6 +930,31 @@ function formatDeltaNumber(value: number): string {
     return value.toFixed(1);
   }
   return value.toFixed(3);
+}
+
+function formatPValue(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+  if (value < 0.001) {
+    return "< 0.001";
+  }
+  return value.toFixed(3);
+}
+
+function formatConfidenceInterval(low: number | null, high: number | null, decimals: number): string {
+  if (low === null || high === null || !Number.isFinite(low) || !Number.isFinite(high)) {
+    return "--";
+  }
+  return `[${low.toFixed(decimals)}, ${high.toFixed(decimals)}]`;
+}
+
+function formatUtcDateTime(raw: string): string {
+  const value = new Date(raw);
+  if (Number.isNaN(value.getTime())) {
+    return raw;
+  }
+  return value.toISOString().replace("T", " ").replace(".000", "");
 }
 
 function buildGridTemplateColumns(runCount: number, deltaCount: number): string {

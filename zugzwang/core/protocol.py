@@ -4,9 +4,10 @@ import re
 from typing import Literal
 
 from zugzwang.core.models import GameState
+from zugzwang.strategy.formats import board_context_lines
 
 
-ProtocolMode = Literal["direct", "agentic_compat"]
+ProtocolMode = Literal["direct", "agentic_compat", "research_strict"]
 ActionType = Literal["get_current_board", "get_legal_moves", "make_move", "invalid"]
 
 UCI_PATTERN = re.compile(r"\b[a-h][1-8][a-h][1-8][qrbn]?\b", flags=re.IGNORECASE)
@@ -29,16 +30,8 @@ def build_direct_prompt(game_state: GameState, strategy_config: dict) -> str:
         "Return only one legal move in UCI format.",
         f"Phase: {game_state.phase}",
         f"Side to move: {game_state.active_color}",
+        *board_context_lines(game_state.fen, board_format, game_state.pgn),
     ]
-    if board_format == "fen":
-        lines.append(f"FEN: {game_state.fen}")
-    elif board_format == "ascii":
-        lines.append(f"Board (unicode):\n{_unicode_board_from_fen(game_state.fen)}")
-    elif board_format == "combined":
-        lines.append(f"FEN: {game_state.fen}")
-        lines.append(f"Board (unicode):\n{_unicode_board_from_fen(game_state.fen)}")
-    else:
-        lines.append(f"Board (unicode):\n{_unicode_board_from_fen(game_state.fen)}")
 
     if include_history:
         tail = _history_tail(game_state.history_uci, history_plies)
@@ -88,18 +81,3 @@ def parse_agentic_action(text: str) -> tuple[ActionType, str | None]:
             return "invalid", None
         return "make_move", move
     return "invalid", None
-
-
-def _unicode_board_from_fen(fen: str) -> str:
-    board_part = fen.split(" ", 1)[0]
-    rows = board_part.split("/")
-    expanded: list[str] = []
-    for row in rows:
-        row_cells: list[str] = []
-        for token in row:
-            if token.isdigit():
-                row_cells.extend(["."] * int(token))
-            else:
-                row_cells.append(token)
-        expanded.append(" ".join(row_cells))
-    return "\n".join(expanded)

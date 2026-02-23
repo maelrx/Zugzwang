@@ -247,6 +247,26 @@ export function RunDetailPage() {
         </p>
       ) : null}
 
+      <section className="mb-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] p-4 shadow-[var(--shadow-card)]">
+        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Run metadata</h3>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Audit-critical metadata used for reproducibility and run-to-run traceability.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricInline label="Run ID" value={runMeta?.run_id ?? runId} />
+          <MetricInline label="Created UTC" value={formatRunMetaDate(runMeta?.created_at_utc)} />
+          <MetricInline label="Config hash" value={runMeta?.config_hash ?? "--"} />
+          <MetricInline label="Template" value={runMeta?.inferred_config_template ?? "--"} />
+          <MetricInline label="Provider" value={runMeta?.inferred_provider ?? "--"} />
+          <MetricInline label="Model" value={runMeta?.inferred_model_label ?? runMeta?.inferred_model ?? "--"} />
+          <MetricInline label="Player color" value={runMeta?.inferred_player_color ?? "--"} />
+          <MetricInline
+            label="Opponent Elo"
+            value={typeof runMeta?.inferred_opponent_elo === "number" ? String(runMeta.inferred_opponent_elo) : "--"}
+          />
+          <MetricInline label="Eval status" value={runMeta?.inferred_eval_status ?? (runMeta?.evaluated_report_exists ? "evaluated" : "needs_eval")} />
+          <MetricInline label="Run dir" value={runMeta?.run_dir ?? "--"} />
+        </div>
+      </section>
+
       <section className="mb-4 flex flex-wrap gap-2">
         <TabButton label="Overview" active={activeTab === "overview"} onClick={() => setActiveTab("overview")} />
         <TabButton label="Games" active={activeTab === "games"} onClick={() => setActiveTab("games")} />
@@ -702,6 +722,17 @@ function readExpandedGameFromUrl(rawSearch: string): number | null {
   }
   const parsed = Number.parseInt(game, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function formatRunMetaDate(value: string | null | undefined): string {
+  if (!value || value.trim().length === 0) {
+    return "--";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toISOString().replace("T", " ").replace(".000", "");
 }
 
 function resolveRerunConfigPath(inferredTemplate: string | null | undefined): string {

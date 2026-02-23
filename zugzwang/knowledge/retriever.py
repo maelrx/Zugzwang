@@ -75,6 +75,11 @@ def query(game_state: GameState, retrieval_config: Any) -> RetrievalResult:
     return result
 
 
+def clear_caches() -> None:
+    _DB_CACHE.clear()
+    _QUERY_CACHE.clear()
+
+
 def _get_or_create_db(source_names: list[str]) -> InMemoryVectorDB:
     key = tuple(sorted(source_names))
     cached = _DB_CACHE.get(key)

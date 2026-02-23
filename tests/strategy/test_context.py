@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from zugzwang.core.models import GameState
-from zugzwang.strategy.context import build_direct_prompt
+from zugzwang.strategy.context import build_direct_prompt, build_direct_prompt_with_metadata
 
 
 def _game_state() -> GameState:
@@ -34,6 +34,33 @@ def test_build_direct_prompt_contains_core_blocks() -> None:
     assert "FEN:" in prompt
     assert "Legal moves (UCI):" in prompt
     assert "Previous moves (UCI" in prompt
+
+
+def test_build_direct_prompt_supports_pgn_board_format() -> None:
+    state = _game_state()
+    state.pgn = "1. e4 e5 2. Nf3 Nc6"
+    cfg = {
+        "board_format": "pgn",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    prompt = build_direct_prompt(state, cfg)
+    assert "PGN: 1. e4 e5 2. Nf3 Nc6" in prompt
+
+
+def test_build_direct_prompt_pgn_falls_back_to_fen_when_missing() -> None:
+    cfg = {
+        "board_format": "pgn",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    prompt = build_direct_prompt(_game_state(), cfg)
+    assert "PGN: (not available yet)" in prompt
+    assert "FEN:" in prompt
 
 
 def test_build_direct_prompt_applies_compression() -> None:
@@ -74,9 +101,39 @@ def test_build_direct_prompt_includes_few_shot() -> None:
         "validation": {"feedback_level": "rich"},
     }
 
-    prompt = build_direct_prompt(_game_state(), cfg)
-    assert "Few-shot examples" in prompt
-    assert "e2e4" in prompt
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+    assert "Few-shot examples" in payload.prompt
+    assert "e2e4" in payload.prompt
+    assert payload.few_shot_examples_injected == 1
+
+
+def test_build_direct_prompt_tracks_few_shot_count_after_compression() -> None:
+    cfg = {
+        "board_format": "fen",
+        "provide_legal_moves": False,
+        "provide_history": False,
+        "few_shot": {
+            "enabled": True,
+            "source": "config",
+            "max_examples": 2,
+            "by_phase": {
+                "opening": [
+                    {"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "move_uci": "e2e4"},
+                    {"fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", "move_uci": "e7e5"},
+                ]
+            },
+        },
+        "context": {
+            "max_prompt_chars": 120,
+            "compression_order": ["few_shot"],
+        },
+        "validation": {"feedback_level": "rich"},
+    }
+
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+
+    assert "Few-shot examples" not in payload.prompt
+    assert payload.few_shot_examples_injected == 0
 
 
 def test_build_direct_prompt_includes_rag_block_when_enabled() -> None:
@@ -125,3 +182,40 @@ def test_build_direct_prompt_can_compress_rag_block() -> None:
     prompt = build_direct_prompt(_game_state(), cfg)
     assert "Knowledge snippets (retrieved):" not in prompt
     assert "Context compression: dropped rag." in prompt
+
+
+def test_build_direct_prompt_uses_system_prompt_id_and_interpolates_vars() -> None:
+    cfg = {
+        "use_system_prompt": True,
+        "system_prompt_id": "structured_analysis",
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+
+    assert payload.prompt_id_requested == "structured_analysis"
+    assert payload.prompt_id_effective == "structured_analysis"
+    assert payload.system_content is not None
+    assert "white" in payload.system_content
+    assert "opening" in payload.system_content
+
+
+def test_build_direct_prompt_falls_back_to_default_for_invalid_prompt_id() -> None:
+    cfg = {
+        "use_system_prompt": True,
+        "system_prompt_id": "does_not_exist",
+        "board_format": "fen",
+        "provide_legal_moves": True,
+        "provide_history": False,
+        "validation": {"feedback_level": "rich"},
+    }
+
+    payload = build_direct_prompt_with_metadata(_game_state(), cfg)
+
+    assert payload.prompt_id_requested == "does_not_exist"
+    assert payload.prompt_id_effective == "default"
+    assert payload.system_content is not None
+    assert "chess assistant" in payload.system_content

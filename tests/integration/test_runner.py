@@ -71,6 +71,17 @@ def test_mock_llm_direct_mode_with_rag_enabled(tmp_path: Path) -> None:
     assert payload["games_written"] == 1
     assert game_data["players"]["black"]["type"] == "llm"
     assert game_data["moves"]
+    black_moves = [
+        move["move_decision"]
+        for move in game_data["moves"]
+        if move.get("color") == "black"
+    ]
+    assert black_moves
+    assert any(decision.get("retrieval_enabled") is True for decision in black_moves)
+    assert any(
+        isinstance(decision.get("retrieval_sources"), list) and decision.get("retrieval_sources")
+        for decision in black_moves
+    )
 
 
 def test_mock_llm_direct_mode_with_capability_moa_enabled(tmp_path: Path) -> None:

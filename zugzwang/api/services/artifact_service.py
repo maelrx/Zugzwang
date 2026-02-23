@@ -43,6 +43,8 @@ class ArtifactService:
         for run_dir in self.root.iterdir():
             if not run_dir.is_dir():
                 continue
+            if run_dir.name.startswith("_"):
+                continue
             meta = self._build_run_meta(run_dir)
             if query:
                 haystack = " ".join(
@@ -177,6 +179,43 @@ class ArtifactService:
             raise FileNotFoundError(f"Artifact not found: {path}")
         return path.read_text(encoding="utf-8", errors="replace")
 
+    def save_comparison_artifacts(
+        self,
+        comparison_id: str,
+        payload: dict[str, Any],
+        markdown_report: str,
+    ) -> dict[str, str]:
+        if not comparison_id.strip():
+            raise ValueError("comparison_id must not be empty")
+        comparison_dir = self._comparisons_root() / comparison_id.strip()
+        comparison_dir.mkdir(parents=True, exist_ok=True)
+
+        json_path = comparison_dir / "comparison.json"
+        markdown_path = comparison_dir / "report.md"
+        artifact_paths = {
+            "comparison_dir": str(comparison_dir),
+            "json_path": str(json_path),
+            "markdown_path": str(markdown_path),
+        }
+        payload_with_paths = dict(payload)
+        payload_with_paths["artifacts"] = artifact_paths
+        json_path.write_text(json.dumps(payload_with_paths, indent=2), encoding="utf-8")
+        markdown_path.write_text(markdown_report, encoding="utf-8")
+        return artifact_paths
+
+    def load_comparison_payload(self, comparison_id: str) -> dict[str, Any]:
+        path = self._comparison_file(comparison_id, "comparison.json")
+        payload = _load_json(path)
+        if payload is None:
+            raise FileNotFoundError(f"Comparison payload not found: {path}")
+        return payload
+
+    def load_comparison_markdown(self, comparison_id: str) -> str:
+        path = self._comparison_file(comparison_id, "report.md")
+        if not path.exists():
+            raise FileNotFoundError(f"Comparison report markdown not found: {path}")
+        return path.read_text(encoding="utf-8")
+
     def _resolve_run_dir(self, run_dir: str | Path) -> Path:
         path = Path(run_dir)
         if path.is_absolute() and path.exists():
@@ -204,6 +243,8 @@ class ArtifactService:
         for run_dir in self.root.iterdir():
             if not run_dir.is_dir():
                 continue
+            if run_dir.name.startswith("_"):
+                continue
             parsed = _parse_run_id(run_dir.name)
             if parsed is None:
                 continue
@@ -223,6 +264,17 @@ class ArtifactService:
             return None
         candidates.sort(key=lambda item: (item[0], item[1]))
         return candidates[0][2]
+
+    def _comparisons_root(self) -> Path:
+        path = self.root / "_comparisons"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def _comparison_file(self, comparison_id: str, name: str) -> Path:
+        normalized = comparison_id.strip()
+        if not normalized:
+            raise FileNotFoundError("comparison_id must not be empty")
+        return self._comparisons_root() / normalized / name
 
     def _build_run_meta(self, run_dir: Path) -> RunMeta:
         run_id = run_dir.name
@@ -249,6 +301,7 @@ class ArtifactService:
         inferred_model_label = _compose_model_label(inferred_provider, inferred_model)
         inferred_opponent_elo = _infer_opponent_elo(resolved_config, inferred_player_color)
         inferred_config_template = _infer_config_template(run_id, resolved_config)
+        inferred_prompt_id = _infer_prompt_id(resolved_config)
         inferred_eval_status = _infer_eval_status(report_exists=report_exists, evaluated_exists=evaluated_exists)
 
         num_games_target = _first_int(
@@ -293,6 +346,7 @@ class ArtifactService:
             inferred_model=inferred_model,
             inferred_model_label=inferred_model_label,
             inferred_config_template=inferred_config_template,
+            inferred_prompt_id=inferred_prompt_id,
             inferred_eval_status=inferred_eval_status,
             num_games_target=num_games_target,
             num_games_valid=num_games_valid,
@@ -574,6 +628,22 @@ def _infer_config_template(run_id: str, resolved_config: dict[str, Any] | None) 
     parsed = _parse_run_id(run_id)
     if parsed is not None:
         return parsed[0]
+    return None
+
+
+def _infer_prompt_id(resolved_config: dict[str, Any] | None) -> str | None:
+    if not isinstance(resolved_config, dict):
+        return None
+    strategy = resolved_config.get("strategy")
+    if not isinstance(strategy, dict):
+        return None
+
+    effective = _as_str(strategy.get("system_prompt_id_effective"))
+    if effective:
+        return effective
+    configured = _as_str(strategy.get("system_prompt_id"))
+    if configured:
+        return configured
     return None
 
 

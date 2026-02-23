@@ -9,6 +9,7 @@ from typing import Any
 import yaml
 
 from zugzwang.experiments.config_schema import validate_config
+from zugzwang.strategy.prompts import DEFAULT_PROMPT_ID, resolve_system_prompt
 
 
 DEFAULTS_PATH = Path(__file__).resolve().parents[2] / "configs" / "defaults.yaml"
@@ -103,6 +104,7 @@ def resolve_config(
     resolved = apply_cli_overrides(resolved, cli_overrides)
 
     validate_config(resolved)
+    _inject_prompt_resolution_metadata(resolved)
     return resolved
 
 
@@ -119,3 +121,27 @@ def resolve_with_hash(
         defaults_path=defaults_path,
     )
     return resolved, config_hash(resolved)
+
+
+def _inject_prompt_resolution_metadata(config: dict[str, Any]) -> None:
+    strategy = config.get("strategy")
+    if not isinstance(strategy, dict):
+        return
+
+    raw_prompt_id = strategy.get("system_prompt_id", DEFAULT_PROMPT_ID)
+    requested_id = str(raw_prompt_id).strip() if isinstance(raw_prompt_id, str) else DEFAULT_PROMPT_ID
+    if not requested_id:
+        requested_id = DEFAULT_PROMPT_ID
+
+    resolution = resolve_system_prompt(
+        system_prompt_id=requested_id,
+        variables={},
+        custom_template=(strategy.get("system_prompt_template") if isinstance(strategy.get("system_prompt_template"), str) else None),
+    )
+    strategy["system_prompt_id_effective"] = resolution.effective_id
+
+    if resolution.fallback_applied:
+        strategy["system_prompt_id_requested"] = resolution.requested_id
+        strategy["system_prompt_id"] = resolution.effective_id
+    else:
+        strategy["system_prompt_id"] = resolution.requested_id

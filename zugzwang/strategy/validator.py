@@ -3,10 +3,18 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+import chess
+
 from zugzwang.strategy.phase import normalize_phase
 
 
-UCI_PATTERN = re.compile(r"\b[a-h][1-8][a-h][1-8][qrbn]?\b", flags=re.IGNORECASE)
+UCI_PATTERN = re.compile(r"\b([a-h][1-8][a-h][1-8][qrbn]?)\b", flags=re.IGNORECASE)
+UCI_DASHED_PATTERN = re.compile(
+    r"\b([a-h][1-8])-([a-h][1-8])([qrbn]?)\b", flags=re.IGNORECASE
+)
+UCI_SPACED_PATTERN = re.compile(
+    r"\b([a-h][1-8])\s+([a-h][1-8])([qrbn]?)\b", flags=re.IGNORECASE
+)
 
 
 @dataclass
@@ -18,14 +26,47 @@ class MoveValidationResult:
 
 
 def parse_first_uci(text: str) -> str | None:
-    match = UCI_PATTERN.search(text or "")
-    if not match:
+    return normalize_uci_response(text)
+
+
+def normalize_uci_response(raw_response: str, fen: str | None = None) -> str | None:
+    text = str(raw_response or "")
+
+    match = UCI_PATTERN.search(text)
+    if match:
+        return match.group(1).lower()
+
+    dashed = UCI_DASHED_PATTERN.search(text)
+    if dashed:
+        return f"{dashed.group(1)}{dashed.group(2)}{dashed.group(3)}".lower()
+
+    spaced = UCI_SPACED_PATTERN.search(text)
+    if spaced:
+        return f"{spaced.group(1)}{spaced.group(2)}{spaced.group(3)}".lower()
+
+    if not fen:
         return None
-    return match.group(0).lower()
+
+    board = _safe_board_from_fen(fen)
+    if board is None:
+        return None
+
+    # Last-resort SAN parsing when model emits SAN instead of UCI.
+    for san_candidate in _extract_san_candidates(text):
+        try:
+            move = board.parse_san(san_candidate)
+        except ValueError:
+            continue
+        return move.uci()
+    return None
 
 
-def validate_move_response(raw_response: str, legal_moves_uci: list[str]) -> MoveValidationResult:
-    move_uci = parse_first_uci(raw_response)
+def validate_move_response(
+    raw_response: str,
+    legal_moves_uci: list[str],
+    fen: str | None = None,
+) -> MoveValidationResult:
+    move_uci = normalize_uci_response(raw_response, fen=fen)
     if not move_uci:
         return MoveValidationResult(
             move_uci=None,
@@ -48,6 +89,23 @@ def validate_move_response(raw_response: str, legal_moves_uci: list[str]) -> Mov
         is_legal=True,
         error_code=None,
     )
+
+
+def _safe_board_from_fen(fen: str) -> chess.Board | None:
+    try:
+        return chess.Board(fen)
+    except ValueError:
+        return None
+
+
+def _extract_san_candidates(raw_response: str) -> list[str]:
+    tokens = str(raw_response or "").strip().split()
+    candidates: list[str] = []
+    for token in tokens:
+        candidate = token.strip().rstrip(",.;:!?")
+        if candidate:
+            candidates.append(candidate)
+    return candidates
 
 
 def build_retry_feedback(

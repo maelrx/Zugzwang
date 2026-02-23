@@ -4,6 +4,7 @@ from .evaluation_service import EvaluationService
 from .model_catalog_service import ModelCatalogService
 from .replay_service import ReplayService
 from .run_service import RunService
+from .scheduler_service import SchedulerService
 
 __all__ = [
     "ArtifactService",
@@ -12,5 +13,6 @@ __all__ = [
     "ModelCatalogService",
     "ReplayService",
     "RunService",
+    "SchedulerService",
 ]
 

@@ -37,12 +37,39 @@ def test_config_accepts_auto_player_color_mode() -> None:
     assert resolved["evaluation"]["auto"]["player_color"] == "auto"
 
 
+def test_config_accepts_research_strict_protocol_mode() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=["protocol.mode=research_strict"],
+    )
+    assert resolved["protocol"]["mode"] == "research_strict"
+
+
+def test_config_accepts_pgn_board_format() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=["strategy.board_format=pgn"],
+    )
+    assert resolved["strategy"]["board_format"] == "pgn"
+
+
 def test_config_rejects_invalid_evaluation_auto_player_color() -> None:
     config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
     with pytest.raises(ValueError, match="evaluation.auto.player_color"):
         resolve_config(
             experiment_config_path=config_path,
             cli_overrides=["evaluation.auto.player_color=green"],
+        )
+
+
+def test_config_rejects_invalid_board_format() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.board_format"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=["strategy.board_format=diagram"],
         )
 
 
@@ -191,5 +218,42 @@ def test_config_rejects_engine_uci_elo_without_limit_strength() -> None:
                 "players.white.type=engine",
                 "players.white.uci_limit_strength=false",
                 "players.white.uci_elo=1200",
+            ],
+        )
+
+
+def test_config_accepts_strategy_few_shot_builtin_source() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    resolved = resolve_config(
+        experiment_config_path=config_path,
+        cli_overrides=[
+            "strategy.few_shot.enabled=true",
+            "strategy.few_shot.source=builtin",
+            "strategy.few_shot.max_examples=3",
+        ],
+    )
+    few_shot = resolved["strategy"]["few_shot"]
+    assert few_shot["enabled"] is True
+    assert few_shot["source"] == "builtin"
+    assert few_shot["max_examples"] == 3
+
+
+def test_config_rejects_invalid_strategy_few_shot_source() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.few_shot.source"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=["strategy.few_shot.source=remote"],
+        )
+
+
+def test_config_rejects_enabled_config_source_without_examples() -> None:
+    config_path = ROOT / "configs" / "baselines" / "best_known_start.yaml"
+    with pytest.raises(ValueError, match="strategy.few_shot.by_phase"):
+        resolve_config(
+            experiment_config_path=config_path,
+            cli_overrides=[
+                "strategy.few_shot.enabled=true",
+                "strategy.few_shot.source=config",
             ],
         )

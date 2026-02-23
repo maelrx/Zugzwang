@@ -1119,6 +1119,7 @@ function buildStructuredOverrides(input: {
     `players.black.model=${input.model}`,
     `players.black.name=${safeModelName(input.provider, input.model)}`,
     `experiment.target_valid_games=${input.targetValidGames}`,
+    `experiment.max_games=${input.targetValidGames}`,
     `strategy.board_format=${input.boardFormat}`,
     `strategy.provide_legal_moves=${input.provideLegalMoves}`,
     `strategy.provide_history=${input.provideHistory}`,

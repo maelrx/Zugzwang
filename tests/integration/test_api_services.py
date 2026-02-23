@@ -28,6 +28,56 @@ def _wait_for_terminal_status(service: RunService | EvaluationService, job_id: s
     raise TimeoutError(f"job did not complete within {timeout_seconds}s: {job_id}")
 
 
+def _command_overrides(command: list[str]) -> list[str]:
+    overrides: list[str] = []
+    for index, token in enumerate(command):
+        if token == "--set" and index + 1 < len(command):
+            overrides.append(command[index + 1])
+    return overrides
+
+
+def test_run_service_adds_max_games_when_target_is_overridden(tmp_path: Path) -> None:
+    jobs_path = tmp_path / "jobs.jsonl"
+    service = RunService(jobs_path=jobs_path)
+    handle = service.start_run(
+        config_path=str(ROOT / "configs" / "baselines" / "best_known_start.yaml"),
+        mode="dry-run",
+        overrides=[
+            "experiment.target_valid_games=5",
+            "runtime.max_plies=4",
+            f"runtime.output_dir={tmp_path.as_posix()}",
+        ],
+    )
+    job = _wait_for_terminal_status(service, handle.job_id, timeout_seconds=30.0)
+    assert job["status"] == "completed"
+
+    overrides = _command_overrides(handle.command)
+    assert "experiment.target_valid_games=5" in overrides
+    assert "experiment.max_games=5" in overrides
+
+
+def test_run_service_preserves_explicit_max_games_override(tmp_path: Path) -> None:
+    jobs_path = tmp_path / "jobs.jsonl"
+    service = RunService(jobs_path=jobs_path)
+    handle = service.start_run(
+        config_path=str(ROOT / "configs" / "baselines" / "best_known_start.yaml"),
+        mode="dry-run",
+        overrides=[
+            "experiment.target_valid_games=5",
+            "experiment.max_games=7",
+            "runtime.max_plies=4",
+            f"runtime.output_dir={tmp_path.as_posix()}",
+        ],
+    )
+    job = _wait_for_terminal_status(service, handle.job_id, timeout_seconds=30.0)
+    assert job["status"] == "completed"
+
+    overrides = _command_overrides(handle.command)
+    assert "experiment.target_valid_games=5" in overrides
+    assert "experiment.max_games=7" in overrides
+    assert "experiment.max_games=5" not in overrides
+
+
 def test_run_service_play_job_completes(tmp_path: Path) -> None:
     jobs_path = tmp_path / "jobs.jsonl"
     service = RunService(jobs_path=jobs_path)

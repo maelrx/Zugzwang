@@ -117,6 +117,7 @@ def refresh_job(job_id: str, jobs_path: str | Path = DEFAULT_JOBS_PATH) -> dict[
         return job
 
     meta = dict(job.get("meta") or {})
+    cancel_requested = _cancel_requested(meta)
     status_path = meta.get("exit_code_path")
     exit_payload = _read_exit_payload(status_path) if status_path else None
 
@@ -125,7 +126,12 @@ def refresh_job(job_id: str, jobs_path: str | Path = DEFAULT_JOBS_PATH) -> dict[
 
     if exit_payload:
         exit_code = int(exit_payload.get("exit_code", 1))
-        new_status = "completed" if exit_code == 0 else "failed"
+        if exit_code == 0:
+            new_status = "completed"
+        elif cancel_requested:
+            new_status = "canceled"
+        else:
+            new_status = "failed"
         payload = exit_payload.get("payload")
 
         meta["exit"] = exit_payload
@@ -141,6 +147,8 @@ def refresh_job(job_id: str, jobs_path: str | Path = DEFAULT_JOBS_PATH) -> dict[
                 patch["run_dir"] = run_dir
             patch["result_payload"] = payload
     else:
+        if cancel_requested:
+            new_status = "canceled"
         patch["meta"] = meta
 
     update_job(job_id, new_status, patch=patch, jobs_path=jobs_path)
@@ -168,10 +176,19 @@ def cancel_job(job_id: str, jobs_path: str | Path = DEFAULT_JOBS_PATH) -> Cancel
             terminal_status = status
         return CancelResult(ok=False, message="job already finished", status=terminal_status)
 
+    current_status: JobStatus = "queued" if status == "queued" else "running"
+    meta = dict(job.get("meta") or {})
+    meta["cancel_requested_utc"] = timestamp_utc()
+    update_job(job_id, current_status, patch={"meta": meta}, jobs_path=jobs_path)
+
     pid = int(job.get("pid") or 0)
     if pid <= 0:
         update_job(job_id, "canceled", patch=None, jobs_path=jobs_path)
         return CancelResult(ok=True, message="job marked as canceled", status="canceled")
+
+    if not is_pid_running(pid):
+        update_job(job_id, "canceled", patch=None, jobs_path=jobs_path)
+        return CancelResult(ok=True, message="job already stopped and marked as canceled", status="canceled")
 
     ok = terminate_pid(pid)
     if ok:
@@ -191,5 +208,10 @@ def job_log_tail(job: dict[str, Any], max_chars: int = 8000) -> str:
             return f"{stdout}\n\n[stderr]\n{stderr}"
         return f"[stderr]\n{stderr}"
     return stdout
+
+
+def _cancel_requested(meta: dict[str, Any]) -> bool:
+    value = meta.get("cancel_requested_utc")
+    return isinstance(value, str) and bool(value.strip())
 
 

@@ -34,3 +34,12 @@ def test_resolve_preview_includes_run_metadata() -> None:
     assert preview.scheduled_games >= 1
     assert len(preview.config_hash) == 64
 
+
+def test_list_templates_returns_project_relative_paths() -> None:
+    service = ConfigService(config_root=ROOT / "configs")
+    templates = service.list_templates()
+    assert templates
+    for template in templates:
+        assert template.path.startswith("configs/")
+        assert "\\" not in template.path
+

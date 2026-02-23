@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 import math
 import random
 from dataclasses import dataclass
@@ -28,6 +29,7 @@ from zugzwang.infra.env import PROVIDER_ENV_KEYS, validate_environment
 from zugzwang.infra.ids import game_seed, make_run_id, timestamp_utc
 
 NON_VALID_TERMINATIONS = {"error", "timeout", "provider_failure"}
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -161,6 +163,13 @@ class ExperimentRunner:
         stopped_due_to_reliability = False
         reliability_stop_reason: str | None = None
 
+        logger.info(
+            "run_start run_id=%s scheduled_games=%s target_valid_games=%s resumed=%s",
+            resume_state.run_id,
+            prepared.scheduled_games,
+            target_valid,
+            resume_state.resumed,
+        )
         for game_number in range(resume_state.next_game_number, prepared.scheduled_games + 1):
             if valid_games >= target_valid:
                 break
@@ -173,10 +182,25 @@ class ExperimentRunner:
             if total_cost_usd >= budget_cap_usd:
                 stopped_due_to_budget = True
                 budget_stop_reason = "budget_cap_reached"
+                logger.warning(
+                    "run_budget_stop run_id=%s reason=%s total_cost_usd=%.6f budget_cap_usd=%.6f",
+                    resume_state.run_id,
+                    budget_stop_reason,
+                    total_cost_usd,
+                    budget_cap_usd,
+                )
                 break
             if projection_rate > 0 and projected_total_cost > budget_cap_usd:
                 stopped_due_to_budget = True
                 budget_stop_reason = "projected_budget_exceeded"
+                logger.warning(
+                    "run_budget_stop run_id=%s reason=%s total_cost_usd=%.6f projected_total_cost=%.6f budget_cap_usd=%.6f",
+                    resume_state.run_id,
+                    budget_stop_reason,
+                    total_cost_usd,
+                    projected_total_cost,
+                    budget_cap_usd,
+                )
                 break
 
             seed = game_seed(base_seed, game_number)
@@ -197,6 +221,14 @@ class ExperimentRunner:
             white_player = build_player(white_cfg, protocol_mode, strategy_cfg, rng)
             black_player = build_player(black_cfg, protocol_mode, strategy_cfg, rng)
 
+            logger.info(
+                "game_start run_id=%s game_number=%s seed=%s valid_games=%s total_games=%s",
+                resume_state.run_id,
+                game_number,
+                seed,
+                valid_games,
+                len(records),
+            )
             try:
                 record = play_game(
                     experiment_id=resume_state.run_id,
@@ -216,6 +248,15 @@ class ExperimentRunner:
             write_game_record(run_dir, record)
             records.append(record)
             total_cost_usd += record.cost_usd
+            logger.info(
+                "game_done run_id=%s game_number=%s result=%s termination=%s moves=%s cost_usd=%.6f",
+                resume_state.run_id,
+                game_number,
+                record.result,
+                record.termination,
+                len(record.moves),
+                record.cost_usd,
+            )
 
             if record.termination not in NON_VALID_TERMINATIONS:
                 valid_games += 1
@@ -229,6 +270,13 @@ class ExperimentRunner:
                     reliability_stop_reason = "provider_timeout_rate_exceeded"
                 else:
                     reliability_stop_reason = "completion_rate_below_threshold"
+                logger.warning(
+                    "run_reliability_stop run_id=%s reason=%s valid_games=%s observed_games=%s",
+                    resume_state.run_id,
+                    reliability_stop_reason,
+                    valid_games,
+                    len(records),
+                )
                 break
             if valid_games >= target_valid:
                 break
@@ -250,6 +298,14 @@ class ExperimentRunner:
             config=config,
             run_dir=run_dir,
             games_written=len(records),
+        )
+        logger.info(
+            "run_done run_id=%s games_written=%s valid_games=%s total_cost_usd=%.6f evaluation_status=%s",
+            resume_state.run_id,
+            len(records),
+            report.num_games_valid,
+            report.total_cost_usd,
+            str(evaluation_summary.get("status", "unknown")),
         )
 
         return {

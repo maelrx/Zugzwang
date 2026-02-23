@@ -1377,7 +1377,7 @@ function parseOverrideLine(line: string): { key: string; value: string } | null 
 
 function resolveTemplateBucket(category: string | null | undefined, path: string): TemplateBucket {
   const normalizedCategory = (category ?? "").toLowerCase();
-  const normalizedPath = path.toLowerCase();
+  const normalizedPath = normalizeConfigPath(path);
   if (normalizedCategory.includes("custom") || normalizedPath.includes("/custom/")) {
     return "custom";
   }
@@ -1398,7 +1398,15 @@ function resolveResearchPresetTemplatePath(candidates: readonly string[], templa
 }
 
 function normalizeConfigPath(value: string): string {
-  return value.replace(/\\/g, "/").replace(/^\.\/+/, "").toLowerCase();
+  const normalized = value.replace(/\\/g, "/").replace(/^\.\/+/, "").toLowerCase();
+  const configsIdx = normalized.lastIndexOf("/configs/");
+  if (configsIdx >= 0) {
+    return normalized.slice(configsIdx + 1);
+  }
+  if (normalized.startsWith("configs/")) {
+    return normalized;
+  }
+  return normalized;
 }
 
 function safeModelName(provider: string, model: string): string {

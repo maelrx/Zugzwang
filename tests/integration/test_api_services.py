@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 
@@ -54,6 +55,7 @@ def test_run_service_adds_max_games_when_target_is_overridden(tmp_path: Path) ->
     overrides = _command_overrides(handle.command)
     assert "experiment.target_valid_games=5" in overrides
     assert "experiment.max_games=5" in overrides
+    assert handle.command[:3] == [sys.executable, "-u", "-m"]
 
 
 def test_run_service_preserves_explicit_max_games_override(tmp_path: Path) -> None:
@@ -76,6 +78,7 @@ def test_run_service_preserves_explicit_max_games_override(tmp_path: Path) -> No
     assert "experiment.target_valid_games=5" in overrides
     assert "experiment.max_games=7" in overrides
     assert "experiment.max_games=5" not in overrides
+    assert handle.command[:3] == [sys.executable, "-u", "-m"]
 
 
 def test_run_service_play_job_completes(tmp_path: Path) -> None:
@@ -121,6 +124,7 @@ def test_evaluation_service_job_completes_when_stockfish_available(tmp_path: Pat
 
     eval_service = EvaluationService(jobs_path=jobs_path)
     eval_handle = eval_service.start_evaluation(run_dir=progress.run_dir, player_color="black")
+    assert eval_handle.command[:3] == [sys.executable, "-u", "-m"]
     eval_job = _wait_for_terminal_status(eval_service, eval_handle.job_id, timeout_seconds=180.0)
 
     assert eval_job["status"] == "completed"

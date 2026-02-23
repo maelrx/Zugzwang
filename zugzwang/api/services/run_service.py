@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any, Literal
 
@@ -9,6 +8,7 @@ import yaml
 
 from zugzwang.experiments.runner import ExperimentRunner
 from zugzwang.api.services.config_service import ConfigService
+from zugzwang.api.services.process_utils import python_executable
 from zugzwang.api.services.job_runtime import cancel_job, job_log_tail, refresh_all_jobs, refresh_job, start_job
 from zugzwang.api.services.paths import project_root
 from zugzwang.api.state.job_store import DEFAULT_JOBS_PATH, get_job, list_jobs
@@ -58,7 +58,8 @@ class RunService:
         run_dir = str(output_root_path / prepared.run_id)
 
         cmd: list[str] = [
-            sys.executable,
+            python_executable(),
+            "-u",
             "-m",
             self.cli_module,
         ]

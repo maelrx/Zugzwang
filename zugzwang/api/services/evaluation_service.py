@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any
 
 from zugzwang.api.services.job_runtime import job_log_tail, refresh_all_jobs, refresh_job, start_job
 from zugzwang.api.services.paths import project_root
+from zugzwang.api.services.process_utils import python_executable
 from zugzwang.api.state.job_store import DEFAULT_JOBS_PATH, get_job, list_jobs
 from zugzwang.api.types import EvalResult, JobHandle
 
@@ -23,7 +23,8 @@ class EvaluationService:
         output_filename: str = "experiment_report_evaluated.json",
     ) -> JobHandle:
         command: list[str] = [
-            sys.executable,
+            python_executable(),
+            "-u",
             "-m",
             self.cli_module,
             "evaluate",

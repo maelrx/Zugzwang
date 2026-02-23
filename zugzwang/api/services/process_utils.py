@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import os
 import subprocess
 import sys
@@ -15,12 +17,24 @@ def is_pid_running(pid: int) -> bool:
         return False
     if os.name == "nt":
         proc = subprocess.run(
-            ["tasklist", "/FI", f"PID eq {pid}"],
+            ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
             capture_output=True,
             text=True,
             check=False,
         )
-        return str(pid) in proc.stdout
+        if proc.returncode != 0:
+            return False
+        payload = proc.stdout.strip()
+        if not payload:
+            return False
+        rows = csv.reader(io.StringIO(payload))
+        for row in rows:
+            if len(row) < 2:
+                continue
+            raw_pid = row[1].strip()
+            if raw_pid.isdigit() and int(raw_pid) == pid:
+                return True
+        return False
     try:
         os.kill(pid, 0)
     except OSError:

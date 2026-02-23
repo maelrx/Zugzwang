@@ -23,7 +23,7 @@ class ConfigService:
                 templates.append(
                     ConfigTemplate(
                         name=config_path.stem,
-                        path=str(config_path),
+                        path=self._template_path_for_api(config_path),
                         category=category,
                     )
                 )
@@ -115,4 +115,12 @@ class ConfigService:
         if not stripped:
             return None
         return self._resolve_path(stripped)
+
+    def _template_path_for_api(self, config_path: Path) -> str:
+        project = project_root().resolve()
+        path = config_path.resolve()
+        try:
+            return path.relative_to(project).as_posix()
+        except ValueError:
+            return path.as_posix()
 

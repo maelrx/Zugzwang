@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -59,10 +59,10 @@ def _parse(path: Path, ref: str) -> KnowledgePacket:
     try:
         if path.suffix == ".json":
             loaded_json = json.loads(path.read_text(encoding="utf-8"))
-            data = loaded_json if isinstance(loaded_json, dict) else {}
+            data = cast(dict[str, Any], loaded_json) if isinstance(loaded_json, dict) else {}
         else:
             loaded_yaml = yaml.safe_load(path.read_text(encoding="utf-8"))
-            data = loaded_yaml if isinstance(loaded_yaml, dict) else {}
+            data = cast(dict[str, Any], loaded_yaml) if isinstance(loaded_yaml, dict) else {}
     except Exception as exc:
         raise ManifestValidationError(
             f"knowledge packet {ref!r} unreadable", technical_context=str(exc)

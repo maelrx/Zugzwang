@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, cast
 
 import chess
 
@@ -232,9 +232,87 @@ class StandardChessEnvironment:
             if encoding == "opaque_index":
                 observation["legal_actions"] = list(range(len(legal_set.actions)))
                 observation["legal_actions_hash"] = legal_set.legal_hash
+            elif encoding == "san":
+                observation["legal_actions"] = [
+                    self._san_for_uci(state, str(a)) for a in legal_set.actions
+                ]
+                observation["legal_actions_uci"] = [str(a) for a in legal_set.actions]
+                observation["legal_actions_hash"] = legal_set.legal_hash
             else:
                 observation["legal_actions"] = [str(a) for a in legal_set.actions]
+        image_settings = settings.get("image", {})
+        if isinstance(image_settings, dict) and image_settings.get("enabled", False):
+            observation.update(self._render_image(state, image_settings))
+        if settings.get("modality_authority") in {"text", "image"}:
+            observation["modality_authority"] = settings["modality_authority"]
         return observation
+
+    def _render_image(
+        self, state: ChessGameState, image_settings: dict[str, JsonValue]
+    ) -> dict[str, JsonValue]:
+        """Render the board PNG with explicit conflict provenance (FR-066)."""
+        from ..codecs.board_png import BoardRenderSpec, render_board_png
+        from ..codecs.fen import fen_from_state
+
+        source_fen = fen_from_state(state)
+        fen_override = image_settings.get("fen_override")
+        image_fen = (
+            str(fen_override) if isinstance(fen_override, str) and fen_override else source_fen
+        )
+        orientation_raw = str(image_settings.get("orientation", "white"))
+        orientation: Literal["white", "black"] = cast(
+            Literal["white", "black"],
+            orientation_raw if orientation_raw in {"white", "black"} else "white",
+        )
+        square_size_raw = image_settings.get("square_size_px", 60)
+        square_size = int(square_size_raw) if isinstance(square_size_raw, (int, float)) else 60
+        spec = BoardRenderSpec(
+            theme=str(image_settings.get("theme", "default")),
+            orientation=orientation,
+            coordinates=bool(image_settings.get("coordinates", True)),
+            square_size_px=square_size,
+        )
+        rendered = render_board_png(image_fen, spec)
+        image_payload: dict[str, JsonValue] = {
+            "mime": rendered.mime,
+            "width": rendered.width,
+            "height": rendered.height,
+            "content_sha256": rendered.content_sha256,
+            "data_base64": rendered.base64(),
+            "renderer": rendered.metadata,
+        }
+        observation: dict[str, JsonValue] = {"image": image_payload}
+        if image_fen != source_fen:
+            delta = self._board_delta(source_fen, image_fen)
+            observation["image_conflict"] = cast(
+                dict[str, JsonValue],
+                {
+                    "source_state_fen": source_fen,
+                    "image_fen": image_fen,
+                    "delta_squares": delta,
+                },
+            )
+        return observation
+
+    def _san_for_uci(self, state: ChessGameState, uci: str) -> str:
+        board = state.to_board()
+        move = chess.Move.from_uci(uci)
+        return str(board.san(move))
+
+    @staticmethod
+    def _board_delta(fen_a: str, fen_b: str) -> list[str]:
+        """Squares where two FEN board parts differ (empty -> piece or piece -> piece)."""
+        from zugzwang_chess.codecs.board_png import piece_symbols
+
+        symbols_a = piece_symbols(fen_a)
+        symbols_b = piece_symbols(fen_b)
+        delta: list[str] = []
+        for square in sorted(set(symbols_a) | set(symbols_b)):
+            piece_a = symbols_a.get(square, ".")
+            piece_b = symbols_b.get(square, ".")
+            if piece_a != piece_b:
+                delta.append(f"{square}:{piece_a}>{piece_b}")
+        return delta
 
     def legal_actions(
         self, state: ChessGameState, *, encoding: str = "canonical"
@@ -254,13 +332,17 @@ class StandardChessEnvironment:
         leakage = (
             ("uci_notation_leaks_geometry",)
             if encoding == "uci"
-            else ("opaque_indices_require_frozen_ordering",)
+            else (
+                ("san_notation_leaks_check_mate_and_capture",)
+                if encoding == "san"
+                else ("opaque_indices_require_frozen_ordering",)
+            )
         )
         return LegalActionSet(
             actions=actions,
             ordering_policy=ordering_policy,
             ordering_version=ordering_version,
-            encoding=encoding if encoding in {"uci", "opaque_index"} else "uci",
+            encoding=encoding if encoding in {"uci", "opaque_index", "san"} else "uci",
             legal_hash=legal_hash,
             leakage_annotations=leakage,
             source="rules_engine",

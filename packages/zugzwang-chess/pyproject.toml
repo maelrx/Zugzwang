@@ -11,6 +11,7 @@ license = "GPL-3.0-or-later"
 dependencies = [
     "zugzwang-core",
     "python-chess>=1.11",
+    "pillow>=10.0",
 ]
 
 [project.entry-points."zugzwang.environments"]

@@ -20,7 +20,6 @@ from zugzwang_core.ports.model import (
     MessageRole,
     ModelRequest,
     OutputConstraint,
-    TextPart,
 )
 from zugzwang_core.ports.strategy import (
     CallRecord,
@@ -30,6 +29,8 @@ from zugzwang_core.ports.strategy import (
     StrategyDescriptor,
     Verdict,
 )
+
+from ._image import build_message_parts
 
 
 def build_observation_text(observation: dict[str, JsonValue]) -> str:
@@ -97,10 +98,16 @@ class ChessDirectStrategy:
             if side_value is not None:
                 side = str(side_value)
         prompt_text = self._program.render(text)
+        parts, required_capabilities = build_message_parts(
+            cast(dict[str, JsonValue], observation),
+            prompt_text,
+            artifact_store=context.artifact_store,
+        )
         request = ModelRequest(
             model=context.model,
-            messages=(Message(role=MessageRole.USER, parts=(TextPart(text=prompt_text),)),),
+            messages=(Message(role=MessageRole.USER, parts=parts),),
             output_constraint=OutputConstraint(format="text"),
+            required_capabilities=required_capabilities,
             extensions={
                 "chess.strategy": "direct",
                 "chess.parse_json": self._parse_json,

@@ -1,0 +1,59 @@
+# REAL multimodal smoke (opt-in): opencode adapter + gpt-5.6-luna vision.
+# Requires: `opencode serve --port 4100` running locally, OPENCODE_GO_API_KEY in .env.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: real-opencode-rgb-move-selection
+  tags: [e2e, real-provider, multimodal, move-selection]
+
+spec:
+  seed: 20260816
+
+  task:
+    plugin: chess.tasks
+    config:
+      kind: move-selection
+      start_fen: rn1qkbnr/ppp1pppp/8/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3
+      backend_config:
+        base_url: http://127.0.0.1:4100
+        provider_id: opencode-go
+        timeout_seconds: 300
+        image_input: true
+
+  players:
+    white:
+      model:
+        backend: provider.opencode
+        provider: opencode-go
+        model: gpt-5.6-luna
+        strategy: chess.direct
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: none}
+      image: {enabled: true, orientation: white, coordinates: true}
+    retries:
+      transport: 1
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 5
+    max_concurrent_episodes: 1
+
+  evaluation:
+    - plugin: evaluator.stockfish
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

@@ -17,6 +17,7 @@ EXCLUDED_DIRS = {
     ".ruff_cache",
     ".pytest_cache",
     ".pyright",
+    ".git",
     "build",
     "dist",
     "__pycache__",

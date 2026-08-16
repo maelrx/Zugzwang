@@ -79,6 +79,19 @@ class RecordingBackend:
         return await self._inner.inspect_capabilities(model, required, preferred, on_unsupported)
 
     async def infer(self, request: ModelRequest, context: CallContext) -> ProviderResult:
+        if request.required_capabilities:
+            report = await self._inner.inspect_capabilities(
+                request.model,
+                required=request.required_capabilities,
+                preferred=request.preferred_capabilities,
+            )
+            if not report.satisfied:
+                from zugzwang_core.domain.errors import CapabilityMissingError
+
+                missing = ", ".join(sorted(str(c) for c in report.missing_required))
+                raise CapabilityMissingError(
+                    f"backend {self._inner.descriptor.backend_id} lacks required capabilities: {missing}"
+                )
         key = context.step_id or context.run_id
         ordinal = self._attempt_counter.get(key, 0)
         while True:

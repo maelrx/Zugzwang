@@ -536,6 +536,7 @@ class DurableRunCoordinator:
                 tools={},
                 seed=seed,
                 config={},
+                artifact_store=self._artifact_store,
             )
             observation = environment.observe(state, observation_policy)
             async with ledger_lock:
@@ -789,6 +790,7 @@ class DurableRunCoordinator:
             tools={},
             seed=seed,
             config={},
+            artifact_store=self._artifact_store,
         )
         observation = environment.observe(state, observation_policy)
         async with ledger_lock:

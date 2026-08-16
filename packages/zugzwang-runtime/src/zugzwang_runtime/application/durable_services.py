@@ -273,6 +273,7 @@ class DurableRunServices:
                     base_url=str(backend_config.get("base_url", "http://127.0.0.1:4100")),
                     provider_id=str(backend_config.get("provider_id", "opencode")),
                     timeout_seconds=float(backend_config.get("timeout_seconds", 300) or 300),
+                    image_input=bool(backend_config.get("image_input", False)),
                 )
             if backend_id == "provider.openai_compatible":
                 from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend
@@ -284,6 +285,7 @@ class DurableRunServices:
                     api_key=resolve_secret(
                         str(backend_config["api_key"]) if backend_config.get("api_key") else None
                     ),
+                    image_input=bool(backend_config.get("image_input", False)),
                 )
         return DeterministicModelBackend(rules=_default_fake_rules())
 

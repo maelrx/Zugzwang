@@ -206,6 +206,7 @@ class RunCoordinator:
                 tools={},
                 seed=seed,
                 config={},
+                artifact_store=self._artifact_store,
             )
             result: StepResult = await self._step_executor.execute(
                 run_id=run_id,

@@ -18,7 +18,6 @@ from zugzwang_core.ports.model import (
     MessageRole,
     ModelRequest,
     OutputConstraint,
-    TextPart,
 )
 from zugzwang_core.ports.strategy import (
     CallRecord,
@@ -29,6 +28,7 @@ from zugzwang_core.ports.strategy import (
     Verdict,
 )
 
+from ._image import build_message_parts
 from .direct import build_observation_text
 
 
@@ -74,11 +74,20 @@ class GroundedStrategy:
                 termination_reason="grounding_error",
             )
         encoding = "index" if all(isinstance(a, int) for a in legal_actions) else "uci"
+        if encoding == "uci" and all(isinstance(a, str) for a in legal_actions):
+            import re
+
+            if not all(re.fullmatch(r"[a-h][1-8][a-h][1-8][qrbn]?", str(a)) for a in legal_actions):
+                encoding = "san"
         prompt = self._prompt(obs, encoding)
+        parts, required_capabilities = build_message_parts(
+            obs, prompt, artifact_store=context.artifact_store
+        )
         request = ModelRequest(
             model=context.model,
-            messages=(Message(role=MessageRole.USER, parts=(TextPart(text=prompt),)),),
+            messages=(Message(role=MessageRole.USER, parts=parts),),
             output_constraint=OutputConstraint(format="text"),
+            required_capabilities=required_capabilities,
             extensions={"chess.strategy": "grounded", "encoding": encoding},
         )
         call_context = CallContext(
@@ -104,7 +113,7 @@ class GroundedStrategy:
         raw = response.text().strip()
         impact = AssistanceImpact(h=HClass.H3, source="legal_action_set")
         try:
-            action = self._resolve_action(raw, legal_actions, encoding)
+            action = self._resolve_action(raw, obs, legal_actions, encoding)
         except OutputParseError as exc:
             return DecisionTrace(
                 strategy_id=self.strategy_id,
@@ -141,7 +150,9 @@ class GroundedStrategy:
             assistance_impacts=(impact,),
         )
 
-    def _resolve_action(self, raw: str, legal_actions: list[Any], encoding: str) -> Any:
+    def _resolve_action(
+        self, raw: str, obs: dict[str, JsonValue], legal_actions: list[Any], encoding: str
+    ) -> Any:
         if encoding == "index":
             try:
                 index = int(raw)
@@ -152,6 +163,24 @@ class GroundedStrategy:
             if not 0 <= index < len(legal_actions):
                 raise OutputParseError(f"index {index} out of range (0..{len(legal_actions) - 1})")
             return index
+        if encoding == "san":
+            legal_san = {str(a).strip().rstrip("+#") for a in legal_actions}
+            parallel_uci = cast(list[Any], obs.get("legal_actions_uci") or [])
+            for token in raw.replace(",", " ").split():
+                candidate = token.strip().rstrip("+#")
+                if candidate in legal_san:
+                    index = next(
+                        (
+                            i
+                            for i, a in enumerate(legal_actions)
+                            if str(a).strip().rstrip("+#") == candidate
+                        ),
+                        -1,
+                    )
+                    if 0 <= index < len(parallel_uci):
+                        return str(parallel_uci[index])
+                    return candidate
+            raise OutputParseError(f"no legal SAN move found in {raw[:120]!r}")
         from ..codecs.uci import parse_uci
 
         for token in raw.replace(",", " ").split():

@@ -25,6 +25,7 @@ from zugzwang_core.ports.model import (
     CallContext,
     Capability,
     CapabilityReport,
+    ImagePart,
     MessageRole,
     ModelRef,
     ModelRequest,
@@ -55,11 +56,13 @@ class OpenAiCompatibleBackend:
         timeout_seconds: float = 60.0,
         profile: str = "openai-chat-completions",
         allow_private_network: bool = False,
+        image_input: bool = False,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._profile = profile
         self._allow_private_network = allow_private_network
+        self._image_input = image_input
         self._client = httpx.AsyncClient(
             base_url=self._base_url,
             transport=transport,
@@ -72,23 +75,25 @@ class OpenAiCompatibleBackend:
 
     @property
     def descriptor(self) -> BackendDescriptor:
+        capabilities = {
+            Capability.TEXT_INPUT,
+            Capability.JSON_SCHEMA_OUTPUT,
+            Capability.TOOL_CALLING,
+            Capability.USAGE_REPORTING,
+            Capability.SEED,
+        }
+        if self._image_input:
+            capabilities.add(Capability.MULTIMODAL_IMAGE)
         return BackendDescriptor(
             backend_id=self.backend_id,
             backend_version=self.backend_version,
             plugin_api=self.plugin_api,
-            default_capabilities=frozenset(
-                {
-                    Capability.TEXT_INPUT,
-                    Capability.JSON_SCHEMA_OUTPUT,
-                    Capability.TOOL_CALLING,
-                    Capability.USAGE_REPORTING,
-                    Capability.SEED,
-                }
-            ),
+            default_capabilities=frozenset(capabilities),
             known_models=(),
             limitations=(
                 f"profile={self._profile}",
                 "capabilities are profile defaults; probe before relying on them",
+                f"image input declared by operator: {self._image_input}",
             ),
         )
 
@@ -149,7 +154,22 @@ class OpenAiCompatibleBackend:
         for message in request.messages:
             role = self._role(message.role)
             text_parts = [p.text for p in message.parts if isinstance(p, TextPart)]
-            content: Any = "\n".join(text_parts)
+            image_parts = [p for p in message.parts if isinstance(p, ImagePart)]
+            if image_parts and not text_parts:
+                content: Any = [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": part.data_url()},
+                    }
+                    for part in image_parts
+                ]
+            elif image_parts:
+                content = [{"type": "text", "text": "\n".join(text_parts)}] + [
+                    {"type": "image_url", "image_url": {"url": part.data_url()}}
+                    for part in image_parts
+                ]
+            else:
+                content = "\n".join(text_parts)
             entry: dict[str, Any] = {"role": role, "content": content}
             messages.append(entry)
         payload: dict[str, Any] = {

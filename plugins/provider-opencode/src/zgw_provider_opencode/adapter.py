@@ -26,6 +26,7 @@ from zugzwang_core.ports.model import (
     CallContext,
     Capability,
     CapabilityReport,
+    ImagePart,
     ModelRef,
     ModelRequest,
     NormalizedResponse,
@@ -51,31 +52,35 @@ class OpenCodeBackend:
         provider_id: str = "opencode",
         transport: httpx.AsyncBaseTransport | None = None,
         timeout_seconds: float = 300.0,
+        image_input: bool = False,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._provider_id = provider_id
+        self._image_input = image_input
         self._client = httpx.AsyncClient(
             base_url=self._base_url, transport=transport, timeout=timeout_seconds
         )
 
     @property
     def descriptor(self) -> BackendDescriptor:
+        capabilities = {
+            Capability.TEXT_INPUT,
+            Capability.USAGE_REPORTING,
+        }
+        if self._image_input:
+            capabilities.add(Capability.MULTIMODAL_IMAGE)
         return BackendDescriptor(
             backend_id=self.backend_id,
             backend_version=self.backend_version,
             plugin_api=self.plugin_api,
-            default_capabilities=frozenset(
-                {
-                    Capability.TEXT_INPUT,
-                    Capability.USAGE_REPORTING,
-                }
-            ),
+            default_capabilities=frozenset(capabilities),
             known_models=(),
             limitations=(
                 f"opencode server at {self._base_url}",
                 "one session per call (context isolation)",
                 "no tool_calling via this adapter in v0.1",
                 "cost not claimed (GATE-009 pending)",
+                f"image input declared by operator: {self._image_input}",
             ),
         )
 
@@ -135,10 +140,25 @@ class OpenCodeBackend:
         context: CallContext,
         started: Any,
     ) -> ProviderResult:
-        parts: list[dict[str, str]] = []
+        parts: list[dict[str, Any]] = []
         for message in request.messages:
-            text = "\n".join(part.text for part in message.parts if isinstance(part, TextPart))
-            parts.append({"type": "text", "text": text})
+            for part in message.parts:
+                if isinstance(part, TextPart):
+                    parts.append({"type": "text", "text": part.text})
+                elif isinstance(part, ImagePart):
+                    parts.append(
+                        {
+                            "type": "file",
+                            "mime": part.mime,
+                            "filename": f"observation.{part.mime.split('/')[-1]}",
+                            "url": part.data_url(),
+                        }
+                    )
+                else:
+                    raise ProviderResponseError(
+                        f"unsupported part type {part.type!r} in opencode adapter",
+                        technical_context="parts are text or image only in v0.1",
+                    )
         try:
             response = await self._client.post(
                 f"/session/{session_id}/message",

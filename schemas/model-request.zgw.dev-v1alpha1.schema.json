@@ -20,6 +20,73 @@
       "title": "Capability",
       "type": "string"
     },
+    "ImagePart": {
+      "additionalProperties": false,
+      "description": "A rendered observation image (design §14.4, FR-056).\n\nBytes are immutable CAS artifacts: the canonical request carries the\nbase64 payload plus its content hash; adapters lower it to their native\nimage representation. No silent image-to-text fallback is allowed.",
+      "properties": {
+        "type": {
+          "const": "image",
+          "default": "image",
+          "title": "Type",
+          "type": "string"
+        },
+        "mime": {
+          "enum": [
+            "image/png",
+            "image/jpeg"
+          ],
+          "title": "Mime",
+          "type": "string"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "data_base64": {
+          "title": "Data Base64",
+          "type": "string"
+        },
+        "renderer": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Renderer",
+          "type": "object"
+        },
+        "artifact_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Ref"
+        }
+      },
+      "required": [
+        "mime",
+        "width",
+        "height",
+        "content_sha256",
+        "data_base64"
+      ],
+      "title": "ImagePart",
+      "type": "object"
+    },
     "InferenceSettings": {
       "additionalProperties": false,
       "properties": {
@@ -157,6 +224,9 @@
               },
               {
                 "$ref": "#/$defs/StatusPart"
+              },
+              {
+                "$ref": "#/$defs/ImagePart"
               }
             ]
           },

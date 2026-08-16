@@ -44,6 +44,7 @@ class DecisionContext(BaseModel):
     tools: dict[str, Any]
     seed: int
     config: dict[str, JsonValue] = {}
+    artifact_store: Any = None
 
 
 class Candidate(BaseModel):

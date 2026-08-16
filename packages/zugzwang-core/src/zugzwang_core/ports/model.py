@@ -91,7 +91,30 @@ class StatusPart(BaseModel):
     message: str
 
 
-MessagePart = TextPart | JsonDataPart | ToolCallPart | ToolResultPart | StatusPart
+class ImagePart(BaseModel):
+    """A rendered observation image (design §14.4, FR-056).
+
+    Bytes are immutable CAS artifacts: the canonical request carries the
+    base64 payload plus its content hash; adapters lower it to their native
+    image representation. No silent image-to-text fallback is allowed.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Literal["image"] = "image"
+    mime: Literal["image/png", "image/jpeg"]
+    width: int = Field(ge=1)
+    height: int = Field(ge=1)
+    content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    data_base64: str
+    renderer: dict[str, JsonValue] = Field(default_factory=dict)
+    artifact_ref: str | None = None
+
+    def data_url(self) -> str:
+        return f"data:{self.mime};base64,{self.data_base64}"
+
+
+MessagePart = TextPart | JsonDataPart | ToolCallPart | ToolResultPart | StatusPart | ImagePart
 
 
 class Message(BaseModel):

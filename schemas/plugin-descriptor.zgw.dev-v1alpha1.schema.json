@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "IsolationMode": {
+      "enum": [
+        "in_process",
+        "subprocess"
+      ],
+      "title": "IsolationMode",
+      "type": "string"
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "PluginKind": {
+      "enum": [
+        "provider",
+        "environment",
+        "task",
+        "strategy",
+        "policy",
+        "verifier",
+        "evaluator",
+        "reporter",
+        "codec"
+      ],
+      "title": "PluginKind",
+      "type": "string"
+    },
+    "TrustLevel": {
+      "enum": [
+        "first_party",
+        "third_party"
+      ],
+      "title": "TrustLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "plugin_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+      "title": "Plugin Id",
+      "type": "string"
+    },
+    "plugin_version": {
+      "title": "Plugin Version",
+      "type": "string"
+    },
+    "plugin_api": {
+      "default": "zgw.plugin/v1alpha1",
+      "title": "Plugin Api",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/PluginKind"
+    },
+    "config_schema": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Config Schema"
+    },
+    "capabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "license": {
+      "title": "License",
+      "type": "string"
+    },
+    "trust": {
+      "$ref": "#/$defs/TrustLevel",
+      "default": "first_party"
+    },
+    "isolation": {
+      "$ref": "#/$defs/IsolationMode",
+      "default": "in_process"
+    }
+  },
+  "required": [
+    "plugin_id",
+    "plugin_version",
+    "kind",
+    "license"
+  ],
+  "title": "PluginDescriptor",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/plugin-descriptor/v1alpha1"
+}

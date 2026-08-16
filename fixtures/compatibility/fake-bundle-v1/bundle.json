@@ -1,0 +1,24 @@
+{
+  "schema_version": "zgw.bundle/v1alpha1",
+  "bundle_id": "bundle_fixture_compat_1",
+  "run_id": "run_fixture1234567890123456",
+  "created_at": "2026-08-16T00:00:00.000Z",
+  "protocol_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "completeness": {
+    "events": true,
+    "metrics": true
+  },
+  "redactions": {
+    "policy": "standard/v1",
+    "content_removed": false
+  },
+  "reproducibility": {
+    "auditability": true,
+    "offline_replay": true,
+    "rerunnable": false,
+    "deterministic": false,
+    "limitations": []
+  },
+  "declared_assistance": "H2",
+  "effective_assistance": "H2"
+}

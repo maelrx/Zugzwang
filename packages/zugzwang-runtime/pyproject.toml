@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-runtime"
+version = "0.1.0.dev0"
+description = "Zugzwang runtime: application services, execution, persistence, artifacts and budgets."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "zugzwang-core",
+    "sqlalchemy>=2.0",
+    "alembic>=1.14",
+    "zstandard>=0.23",
+]
+
+[tool.uv.sources]
+zugzwang-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zugzwang_runtime"]

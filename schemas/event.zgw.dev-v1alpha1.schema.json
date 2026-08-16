@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "EventAssistance": {
+      "additionalProperties": false,
+      "properties": {
+        "h": {
+          "$ref": "#/$defs/HClass"
+        },
+        "k": {
+          "$ref": "#/$defs/KClass",
+          "default": 0
+        },
+        "source": {
+          "default": "unspecified",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "h"
+      ],
+      "title": "EventAssistance",
+      "type": "object"
+    },
+    "EventContext": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "condition_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition Id"
+        },
+        "episode_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Episode Id"
+        },
+        "step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Id"
+        },
+        "attempt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "correlation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Correlation Id"
+        },
+        "causation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Causation Id"
+        },
+        "trace_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trace Id"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "title": "EventContext",
+      "type": "object"
+    },
+    "EventStreamRef": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "experiment",
+            "run",
+            "episode",
+            "step",
+            "attempt"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "sequence"
+      ],
+      "title": "EventStreamRef",
+      "type": "object"
+    },
+    "HClass": {
+      "description": "Operational/strategic assistance class.",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "title": "HClass",
+      "type": "integer"
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "KClass": {
+      "description": "Knowledge axis: external chess knowledge injected (H and K are independent).",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "title": "KClass",
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "zgw.event/v1alpha1",
+      "default": "zgw.event/v1alpha1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "pattern": "^[a-z][a-z0-9_]+(\\.[a-z][a-z0-9_]+)*$",
+      "title": "Event Type",
+      "type": "string"
+    },
+    "event_version": {
+      "minimum": 1,
+      "title": "Event Version",
+      "type": "integer"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "stream": {
+      "$ref": "#/$defs/EventStreamRef"
+    },
+    "context": {
+      "$ref": "#/$defs/EventContext"
+    },
+    "payload": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Payload",
+      "type": "object"
+    },
+    "artifact_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "assistance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EventAssistance"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "occurred_at",
+    "stream",
+    "context"
+  ],
+  "title": "EventEnvelope",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/event/v1alpha1"
+}

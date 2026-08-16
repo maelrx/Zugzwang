@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-core"
+version = "0.1.0.dev0"
+description = "Zugzwang domain core: vocabulary, contracts, ports, events and manifests. No I/O."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = ["pydantic>=2.10"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zugzwang_core"]

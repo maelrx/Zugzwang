@@ -1,0 +1,57 @@
+schema_version: "0.1.0"
+experiment:
+  id: skill-001-minimal
+  title: Causal Expert Knowledge Injection
+  tags: [knowledge, causal-controls]
+task:
+  plugin: chess.move_selection
+  version: "0.1"
+factors:
+  mode: product
+  dimensions:
+    packet_condition: [baseline, persona, correct, wrong, irrelevant, adversarial]
+strategy:
+  plugin: strategy.knowledge_packet_ablation
+  version: "0.1"
+  regime: R3
+provider:
+  plugin: provider.openai_compatible
+  version: "0.1"
+  model: exact-model-snapshot
+  endpoint_ref: local-default
+  capabilities:
+    required: [text_input, structured_output]
+    preferred: [usage_reporting]
+    on_unsupported: fail
+protocol:
+  assistance:
+    declared_h: H2
+    declared_k: K4
+  knowledge_packets:
+    - kp://chess.iqp.plans/1.0.0
+    - kp://control.wrong-french-plans/1.0.0
+    - kp://control.irrelevant-token-matched/1.0.0
+  output:
+    action_notation: uci
+    schema: chess_move_v1
+  retries:
+    transport: 1
+    parse: 0
+    illegal: 0
+    strategic: 0
+budget:
+  max_calls: 3000
+  max_cost_usd: 30
+  per_call_timeout_seconds: 120
+evaluation:
+  live: []
+  posthoc:
+    - plugin: evaluator.stockfish
+      version: "0.1"
+      metric_set: move_quality_and_packet_adherence_v1
+artifacts:
+  retention_policy: full-research
+  bundle: true
+runtime:
+  concurrency: 4
+  seed: 44

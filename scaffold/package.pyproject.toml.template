@@ -1,0 +1,12 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ PACKAGE_NAME }}"
+version = "0.0.0"
+requires-python = "{{ PYTHON_REQUIRES }}"
+dependencies = [{{ DEPENDENCIES }}]
+
+[tool.uv.sources]
+{{ WORKSPACE_SOURCES }}

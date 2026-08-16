@@ -1,0 +1,36 @@
+schema_version: '1.0'
+artifact:
+  name: zugzwang-engine-foundation
+  version: 0.1.0
+  generated_at: '2026-08-12'
+  phase: pre-scaffold
+  language:
+    public_readme: en
+    engineering_canonical: pt-BR
+contents:
+  research: true
+  product: true
+  architecture: true
+  requirements: true
+  protocol_schemas: draft
+  adrs: 45
+  human_gates: 12
+  agent_skills: 20
+  roadmap_milestones: 7
+  bootstrap_backlog_items: 72
+blocking_before_runtime_scaffold:
+- GATE-001
+- GATE-002
+- GATE-004
+notes:
+- No LICENSE is included before the license/rules decision.
+- No uv.lock is included before the Python/package gates.
+- No runtime claims are made by this documentation-only foundation.
+inventory:
+  files_in_pack: 249
+  markdown_files: 212
+  approximate_markdown_words: 101179
+  draft_json_schemas: 6
+  validation_status: pass
+  validation_warnings: 0
+  validation_errors: 0

@@ -1,0 +1,17 @@
+schema_version: "1.0"
+required_gates:
+  - GATE-001
+  - GATE-002
+  - GATE-004
+outputs:
+  - pyproject.toml
+  - uv.lock
+  - packages/zugzwang-core/pyproject.toml
+  - packages/zugzwang-runtime/pyproject.toml
+  - packages/zugzwang-chess/pyproject.toml
+  - packages/zugzwang-cli/pyproject.toml
+validation:
+  - foundation
+  - lock
+  - import-boundaries
+  - fake-vertical-slice

@@ -1,0 +1,53 @@
+schema_version: "0.1.0"
+experiment:
+  id: mm-002-conflict
+  title: Cross Modal Conflict
+  tags: [multimodal, source-authority]
+task:
+  plugin: chess.source_conflict
+  version: "0.1"
+factors:
+  mode: product
+  dimensions:
+    authority: [none, fen, image, detect_only]
+    conflict: [single_piece, side_to_move, orientation]
+strategy:
+  plugin: strategy.source_authority
+  version: "0.1"
+  regime: R3
+provider:
+  plugin: provider.pydantic_ai_direct
+  version: "0.1"
+  model: exact-multimodal-model-snapshot
+  capabilities:
+    required: [text_input, image_input, structured_output]
+    preferred: [usage_reporting]
+    on_unsupported: fail
+protocol:
+  assistance:
+    declared_h: H2
+    declared_k: K0
+  observation:
+    conflict_policy: intentional
+  output:
+    schema: source_conflict_answer_v1
+  retries:
+    transport: 1
+    parse: 0
+    illegal: 0
+    strategic: 0
+budget:
+  max_calls: 1000
+  max_cost_usd: 20
+  per_call_timeout_seconds: 120
+evaluation:
+  live: []
+  posthoc:
+    - plugin: evaluator.source_authority
+      version: "0.1"
+artifacts:
+  retention_policy: full-research
+  bundle: true
+runtime:
+  concurrency: 4
+  seed: 45

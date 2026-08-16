@@ -1,0 +1,37 @@
+schema_version: "0.1.0"
+packet:
+  id: chess.iqp.plans
+  version: "1.0.0"
+  title: Isolated queen pawn middlegame plans
+  language: en
+  knowledge_class: K4
+  scope:
+    domain: chess
+    phases: [middlegame]
+    structures: [isolated_queen_pawn]
+  applicability:
+    required_features: [isolated_d_pawn]
+    contraindications: [immediate_forced_tactic]
+  content:
+    principles:
+      - Use the space and open lines before the isolated pawn becomes a static endgame weakness.
+      - Piece activity and control of the e5 and c5 squares usually matter more than immediate pawn defense.
+      - Avoid automatic exchanges when they remove attacking pieces without gaining a concrete concession.
+    candidate_plans:
+      - Prepare a central pawn advance when it opens lines with tempo.
+      - Place rooks on open or semi-open files and coordinate pieces toward the king.
+      - Convert to an endgame only when activity or tactical compensation survives.
+    failure_modes:
+      - Defending the pawn passively while allowing simplification.
+      - Advancing the pawn without calculating the resulting isolated squares and exchanges.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: curated_synthesis
+    curator: Zugzwang research team
+    sources: []
+    license: project-license-pending
+    created_at: "2026-08-12T00:00:00Z"

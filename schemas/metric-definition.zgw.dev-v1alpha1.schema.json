@@ -1,0 +1,149 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "description": "A verified reference to a content-addressed artifact.",
+      "properties": {
+        "algorithm": {
+          "const": "sha256",
+          "default": "sha256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "digest": {
+          "default": "",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "default": "application/octet-stream",
+          "title": "Media Type",
+          "type": "string"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Bytes"
+        },
+        "compression": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compression"
+        },
+        "redaction_policy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Redaction Policy"
+        }
+      },
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "MetricDirection": {
+      "enum": [
+        "lower_is_better",
+        "higher_is_better",
+        "none"
+      ],
+      "title": "MetricDirection",
+      "type": "string"
+    },
+    "MetricScope": {
+      "enum": [
+        "run",
+        "episode",
+        "step",
+        "attempt"
+      ],
+      "title": "MetricScope",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A versioned metric formula with complete provenance (design §16.2).",
+  "properties": {
+    "metric_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+      "title": "Metric Id",
+      "type": "string"
+    },
+    "version": {
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "title": "Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/MetricScope"
+    },
+    "unit": {
+      "title": "Unit",
+      "type": "string"
+    },
+    "direction": {
+      "$ref": "#/$defs/MetricDirection",
+      "default": "none"
+    },
+    "requires": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Requires",
+      "type": "array"
+    },
+    "formula_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "dimensions": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Dimensions",
+      "type": "array"
+    },
+    "provenance_source": {
+      "default": "computed",
+      "title": "Provenance Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "metric_id",
+    "version",
+    "scope",
+    "unit"
+  ],
+  "title": "MetricDefinition",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/metric-definition/v1alpha1"
+}

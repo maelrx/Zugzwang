@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/experiment-manifest/0.1.0",
+  "title": "Zugzwang Experiment Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment",
+    "task",
+    "strategy",
+    "provider",
+    "protocol",
+    "budget",
+    "evaluation",
+    "artifacts",
+    "runtime"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "task": {
+      "$ref": "#/$defs/pluginRef"
+    },
+    "factors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "product",
+            "zip"
+          ]
+        },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "strategy": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/pluginRef"
+        }
+      ],
+      "type": "object",
+      "properties": {
+        "regime": {
+          "type": "string",
+          "pattern": "^R[0-9]+$"
+        }
+      },
+      "required": [
+        "regime"
+      ]
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plugin",
+        "model",
+        "capabilities"
+      ],
+      "properties": {
+        "plugin": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "endpoint_ref": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "preferred",
+            "on_unsupported"
+          ],
+          "properties": {
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "preferred": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "on_unsupported": {
+              "enum": [
+                "fail",
+                "skip_condition",
+                "explicit_emulation"
+              ]
+            }
+          }
+        },
+        "settings": {
+          "type": "object"
+        }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assistance",
+        "output",
+        "retries"
+      ],
+      "properties": {
+        "assistance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "declared_h",
+            "declared_k"
+          ],
+          "properties": {
+            "declared_h": {
+              "$ref": "#/$defs/hClass"
+            },
+            "declared_k": {
+              "$ref": "#/$defs/kClass"
+            }
+          }
+        },
+        "observation": {
+          "type": "object"
+        },
+        "output": {
+          "type": "object"
+        },
+        "retries": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "transport": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "parse": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "illegal": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "strategic": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "knowledge_packets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_cost_usd": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "max_wall_time_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "per_call_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live",
+        "posthoc"
+      ],
+      "properties": {
+        "live": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pluginRef"
+          }
+        },
+        "posthoc": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pluginRef"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retention_policy",
+        "bundle"
+      ],
+      "properties": {
+        "retention_policy": {
+          "type": "string"
+        },
+        "bundle": {
+          "type": "boolean"
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "concurrency"
+      ],
+      "properties": {
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "workspace": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pluginRef": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "plugin"
+      ],
+      "properties": {
+        "plugin": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "hClass": {
+      "type": "string",
+      "pattern": "^H[0-7]$"
+    },
+    "kClass": {
+      "type": "string",
+      "pattern": "^K[0-7]$"
+    }
+  }
+}

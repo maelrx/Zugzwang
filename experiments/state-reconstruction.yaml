@@ -1,0 +1,51 @@
+# State reconstruction (M6, fake): predict FEN from move sequences.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: state-reconstruction
+  tags: [m6, suite, fake, state-reconstruction]
+
+spec:
+  seed: 20260816
+
+  task:
+    plugin: chess.tasks
+    config:
+      kind: state-reconstruction
+      move_sequences:
+        - [e2e4]
+        - [e2e4, e7e5, g1f3]
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: chess.reconstruct
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position: {fen: false}
+      history: {mode: full, plies: 0, notation: uci}
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 100
+    max_concurrent_episodes: 2
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

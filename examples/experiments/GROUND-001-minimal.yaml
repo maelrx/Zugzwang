@@ -1,0 +1,52 @@
+schema_version: "0.1.0"
+experiment:
+  id: ground-001-minimal
+  title: Reason First Constrain Later
+  tags: [grounding, legal-actions]
+task:
+  plugin: chess.move_selection
+  version: "0.1"
+factors:
+  mode: product
+  dimensions:
+    grounding: [free_uci, legal_first_uci, reason_first_legal_later, opaque_indices]
+strategy:
+  plugin: strategy.grounding_ablation
+  version: "0.1"
+  regime: R3
+provider:
+  plugin: provider.pydantic_ai_direct
+  version: "0.1"
+  model: exact-model-snapshot
+  capabilities:
+    required: [text_input, structured_output]
+    preferred: [usage_reporting]
+    on_unsupported: fail
+protocol:
+  assistance:
+    declared_h: H3
+    declared_k: K0
+  output:
+    action_notation: uci
+    schema: chess_move_v1
+  retries:
+    transport: 1
+    parse: 0
+    illegal: 0
+    strategic: 0
+budget:
+  max_calls: 2000
+  max_cost_usd: 20
+  per_call_timeout_seconds: 120
+evaluation:
+  live: []
+  posthoc:
+    - plugin: evaluator.stockfish
+      version: "0.1"
+      metric_set: move_quality_v1
+artifacts:
+  retention_policy: full-research
+  bundle: true
+runtime:
+  concurrency: 4
+  seed: 43

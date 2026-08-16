@@ -1,0 +1,21 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: {{ PYTHON_MATRIX_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --locked --all-groups
+      - run: uv run ruff check .
+      - run: uv run pyright
+      - run: uv run pytest -m "not e2e" --cov
+      - run: python scripts/validate_foundation.py --strict

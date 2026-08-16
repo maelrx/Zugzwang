@@ -1,0 +1,24 @@
+# Codex Agent Skills
+
+These skills are operational playbooks for the Zugzwang engineering agents. Each directory contains a progressively disclosed `SKILL.md`. Invoke the most specific skill explicitly in the work order. Skills never override human decision gates or root/nested `AGENTS.md`.
+
+- [`bootstrap-workspace`](bootstrap-workspace/SKILL.md): Scaffold the Zugzwang uv monorepo after the blocking human gates are ratified. Use for M0 workspace creation, package boundaries, tooling, lockfile, and the first fake-only vertical slice.
+- [`implement-domain-contract`](implement-domain-contract/SKILL.md): Implement or change a core domain value object, port, event, manifest model, or public protocol contract while preserving dependency direction and compatibility.
+- [`implement-runtime-state-machine`](implement-runtime-state-machine/SKILL.md): Implement run, episode, step, attempt, cancellation, checkpoint, budget, or resume behavior in the durable local runtime.
+- [`implement-provider-adapter`](implement-provider-adapter/SKILL.md): Add or update a model provider/backend adapter with explicit capabilities, raw evidence, normalized requests/responses, errors, usage, and no hidden agency.
+- [`implement-chess-environment`](implement-chess-environment/SKILL.md): Implement or modify the standard-chess environment, state/action codecs, legal transitions, renderers, tasks, opponents, or PGN export behind the chess port.
+- [`implement-decision-strategy`](implement-decision-strategy/SKILL.md): Implement an explicit R0-R7 decision strategy, candidate/critic flow, retry policy, or model-only orchestration without hiding calls or assistance.
+- [`implement-knowledge-packet`](implement-knowledge-packet/SKILL.md): Author or implement static expert KnowledgePacket support, including provenance, controls, token matching, leakage checks, and K-class assignment before dynamic RAG exists.
+- [`implement-multimodal-observation`](implement-multimodal-observation/SKILL.md): Implement typed image/state observations, deterministic chess rendering, multimodal provider lowering, redundancy or conflict conditions, and modality provenance.
+- [`implement-evaluator-metric`](implement-evaluator-metric/SKILL.md): Implement a deterministic evaluator or versioned metric with complete provenance, cache identity, slices, uncertainty inputs, and no live-decision leakage.
+- [`build-run-bundle`](build-run-bundle/SKILL.md): Implement, validate, import, redact, or evolve the self-contained run bundle and its checksummed evidence/analytical artifacts.
+- [`design-research-experiment`](design-research-experiment/SKILL.md): Design or preregister a Zugzwang experiment with causal hypotheses, controls, protocol coordinates, datasets, metrics, power, budgets, promotion gates, and claim limits.
+- [`audit-assistance-provenance`](audit-assistance-provenance/SKILL.md): Audit a run, strategy, tool, dataset, prompt, or report for hidden operational assistance H, knowledge assistance K, engine leakage, retries, and attribution errors.
+- [`test-fault-replay`](test-fault-replay/SKILL.md): Design and execute fault-injection, interruption, idempotency, migration, or replay tests for the runtime, persistence, provider and bundle boundaries.
+- [`architecture-boundary-review`](architecture-boundary-review/SKILL.md): Review a change for modular-monolith dependency violations, domain leakage, plugin trust, adapter coupling, premature distribution, and future API/UI compatibility.
+- [`write-or-update-adr`](write-or-update-adr/SKILL.md): Create, amend, supersede, or ratify an Architecture Decision Record with alternatives, direct/indirect impacts, reversibility, evidence, owner, and human gate linkage.
+- [`update-literature-map`](update-literature-map/SKILL.md): Research and integrate a new chess/LLM paper, benchmark, dataset, model, or relevant engineering source using primary evidence and explicit epistemic status.
+- [`prepare-human-decision-gate`](prepare-human-decision-gate/SKILL.md): Prepare a concise but complete evidence packet for a pending Mestre Mael decision without selecting or implementing the decision on the operator’s behalf.
+- [`code-review`](code-review/SKILL.md): Perform an independent, defect-first review of a Zugzwang change covering correctness, architecture, scientific integrity, persistence, security, tests, migrations, and documentation.
+- [`release-readiness`](release-readiness/SKILL.md): Audit and prepare a Zugzwang foundation, alpha, or scientific release across gates, tests, migrations, bundles, licensing, SBOM, documentation, compatibility, and claims.
+- [`database-migration`](database-migration/SKILL.md): Create or review an operational SQLite migration and any related event/bundle upcaster with interruption, compatibility, and evidence-preservation tests.

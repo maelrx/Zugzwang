@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-cli"
+version = "0.1.0.dev0"
+description = "Zugzwang CLI: thin Typer adapter over the application services."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "zugzwang-core",
+    "zugzwang-runtime",
+    "zugzwang-chess",
+    "typer>=0.15",
+    "rich>=13",
+]
+
+[project.scripts]
+zugzwang = "zugzwang_cli.main:run_cli"
+zgw = "zugzwang_cli.main:run_cli"
+
+[tool.uv.sources]
+zugzwang-core = { workspace = true }
+zugzwang-runtime = { workspace = true }
+zugzwang-chess = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zugzwang_cli"]

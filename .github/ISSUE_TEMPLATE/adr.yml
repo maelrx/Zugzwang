@@ -1,0 +1,23 @@
+name: Architecture decision
+description: Propose a new ADR or supersession.
+title: "[ADR]: "
+labels: [architecture, decision, triage]
+body:
+  - type: textarea
+    id: context
+    attributes: {label: Context and forces}
+    validations: {required: true}
+  - type: textarea
+    id: options
+    attributes: {label: Viable alternatives}
+    validations: {required: true}
+  - type: textarea
+    id: impacts
+    attributes: {label: Direct, indirect, internal and external impacts}
+    validations: {required: true}
+  - type: dropdown
+    id: human
+    attributes:
+      label: Is this human-owned or irreversible?
+      options: ["Yes", "No", "Unknown"]
+    validations: {required: true}

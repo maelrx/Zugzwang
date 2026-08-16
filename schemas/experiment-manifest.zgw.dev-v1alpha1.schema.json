@@ -1,0 +1,624 @@
+{
+  "$defs": {
+    "ArtifactsSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "raw_requests": {
+          "default": false,
+          "title": "Raw Requests",
+          "type": "boolean"
+        },
+        "raw_responses": {
+          "default": false,
+          "title": "Raw Responses",
+          "type": "boolean"
+        },
+        "redact": {
+          "default": "standard",
+          "enum": [
+            "none",
+            "standard",
+            "strict"
+          ],
+          "title": "Redact",
+          "type": "string"
+        }
+      },
+      "title": "ArtifactsSpec",
+      "type": "object"
+    },
+    "BudgetSpecManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Calls"
+        },
+        "max_input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Input Tokens"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "max_total_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Total Tokens"
+        },
+        "max_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Usd"
+        },
+        "max_wall_time_seconds": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Wall Time Seconds"
+        },
+        "max_failed_calls": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Failed Calls"
+        },
+        "max_concurrent_episodes": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Max Concurrent Episodes",
+          "type": "integer"
+        },
+        "max_attempts": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "per_call_timeout_seconds": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Per Call Timeout Seconds"
+        }
+      },
+      "title": "BudgetSpecManifest",
+      "type": "object"
+    },
+    "EvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "plugin": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+          "title": "Plugin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "config": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "default": {},
+          "title": "Config",
+          "type": "object"
+        }
+      },
+      "required": [
+        "plugin"
+      ],
+      "title": "EvaluationRef",
+      "type": "object"
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "MatrixSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "default": "product",
+          "enum": [
+            "product",
+            "zip"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "array"
+          },
+          "default": {},
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "title": "MatrixSpec",
+      "type": "object"
+    },
+    "Metadata": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Metadata",
+      "type": "object"
+    },
+    "PlayerModelSpec": {
+      "additionalProperties": false,
+      "description": "A player driven by a model through a decision strategy.",
+      "properties": {
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "backend": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Backend"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "strategy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Strategy"
+        },
+        "from_matrix": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "From Matrix",
+          "type": "array"
+        }
+      },
+      "title": "PlayerModelSpec",
+      "type": "object"
+    },
+    "PlayerPolicySpec": {
+      "additionalProperties": false,
+      "description": "A player driven by a fixed policy plugin (e.g. random legal).",
+      "properties": {
+        "plugin": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+          "title": "Plugin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "config": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "default": {},
+          "title": "Config",
+          "type": "object"
+        }
+      },
+      "required": [
+        "plugin"
+      ],
+      "title": "PlayerPolicySpec",
+      "type": "object"
+    },
+    "PlayerSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlayerModelSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlayerPolicySpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "PlayerSpec",
+      "type": "object"
+    },
+    "ProtocolSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "declared_assistance": {
+          "pattern": "^H[0-7]$",
+          "title": "Declared Assistance",
+          "type": "string"
+        },
+        "declared_knowledge": {
+          "default": "K0",
+          "pattern": "^K[0-7]$",
+          "title": "Declared Knowledge",
+          "type": "string"
+        },
+        "observation": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "default": {},
+          "title": "Observation",
+          "type": "object"
+        },
+        "retries": {
+          "$ref": "#/$defs/RetrySpec",
+          "default": {
+            "transport": 0,
+            "parse": 0,
+            "illegal": 0,
+            "strategic": 0,
+            "feedback": "legality_only"
+          }
+        },
+        "knowledge_packets": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Knowledge Packets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "declared_assistance"
+      ],
+      "title": "ProtocolSpec",
+      "type": "object"
+    },
+    "RetrySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "transport": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Transport",
+          "type": "integer"
+        },
+        "parse": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Parse",
+          "type": "integer"
+        },
+        "illegal": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Illegal",
+          "type": "integer"
+        },
+        "strategic": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Strategic",
+          "type": "integer"
+        },
+        "feedback": {
+          "default": "legality_only",
+          "title": "Feedback",
+          "type": "string"
+        }
+      },
+      "title": "RetrySpec",
+      "type": "object"
+    },
+    "Spec": {
+      "additionalProperties": false,
+      "properties": {
+        "seed": {
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "matrix": {
+          "$ref": "#/$defs/MatrixSpec",
+          "default": {
+            "mode": "product",
+            "parameters": {}
+          }
+        },
+        "task": {
+          "$ref": "#/$defs/TaskSpec"
+        },
+        "players": {
+          "additionalProperties": {
+            "$ref": "#/$defs/PlayerSpec"
+          },
+          "propertyNames": {
+            "enum": [
+              "white",
+              "black"
+            ]
+          },
+          "title": "Players",
+          "type": "object"
+        },
+        "protocol": {
+          "$ref": "#/$defs/ProtocolSpec"
+        },
+        "budget": {
+          "$ref": "#/$defs/BudgetSpecManifest",
+          "default": {
+            "max_calls": null,
+            "max_input_tokens": null,
+            "max_output_tokens": null,
+            "max_total_tokens": null,
+            "max_usd": null,
+            "max_wall_time_seconds": null,
+            "max_failed_calls": null,
+            "max_concurrent_episodes": 1,
+            "max_attempts": 1,
+            "per_call_timeout_seconds": null
+          }
+        },
+        "evaluation": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvaluationRef"
+          },
+          "title": "Evaluation",
+          "type": "array"
+        },
+        "artifacts": {
+          "$ref": "#/$defs/ArtifactsSpec",
+          "default": {
+            "raw_requests": false,
+            "raw_responses": false,
+            "redact": "standard"
+          }
+        }
+      },
+      "required": [
+        "seed",
+        "task",
+        "players",
+        "protocol"
+      ],
+      "title": "Spec",
+      "type": "object"
+    },
+    "TaskSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "plugin": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+          "title": "Plugin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "config": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "default": {},
+          "title": "Config",
+          "type": "object"
+        }
+      },
+      "required": [
+        "plugin"
+      ],
+      "title": "TaskSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The author-facing document. Frozen and hashable.",
+  "properties": {
+    "api_version": {
+      "const": "zgw.dev/v1alpha1",
+      "default": "zgw.dev/v1alpha1",
+      "title": "Api Version",
+      "type": "string"
+    },
+    "kind": {
+      "const": "Experiment",
+      "default": "Experiment",
+      "title": "Kind",
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/Spec"
+    }
+  },
+  "required": [
+    "metadata",
+    "spec"
+  ],
+  "title": "SourceManifest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/experiment-manifest/v1alpha1"
+}

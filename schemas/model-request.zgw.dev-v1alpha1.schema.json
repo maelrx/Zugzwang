@@ -1,0 +1,472 @@
+{
+  "$defs": {
+    "Capability": {
+      "enum": [
+        "text_input",
+        "json_schema_output",
+        "tool_calling",
+        "parallel_tool_calls",
+        "streaming",
+        "seed",
+        "reasoning_control",
+        "prompt_caching",
+        "usage_reporting",
+        "cost_reporting",
+        "logprobs",
+        "multimodal_image",
+        "batch",
+        "idempotency_key"
+      ],
+      "title": "Capability",
+      "type": "string"
+    },
+    "InferenceSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "stop": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Stop",
+          "type": "array"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Extensions",
+          "type": "object"
+        }
+      },
+      "title": "InferenceSettings",
+      "type": "object"
+    },
+    "JsonDataPart": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "json_data",
+          "default": "json_data",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Data",
+          "type": "object"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "JsonDataPart",
+      "type": "object"
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Message": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/MessageRole"
+        },
+        "parts": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextPart"
+              },
+              {
+                "$ref": "#/$defs/JsonDataPart"
+              },
+              {
+                "$ref": "#/$defs/ToolCallPart"
+              },
+              {
+                "$ref": "#/$defs/ToolResultPart"
+              },
+              {
+                "$ref": "#/$defs/StatusPart"
+              }
+            ]
+          },
+          "title": "Parts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "role",
+        "parts"
+      ],
+      "title": "Message",
+      "type": "object"
+    },
+    "MessageRole": {
+      "enum": [
+        "system",
+        "user",
+        "assistant",
+        "tool"
+      ],
+      "title": "MessageRole",
+      "type": "string"
+    },
+    "ModelRef": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "title": "Backend",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        }
+      },
+      "required": [
+        "backend",
+        "provider",
+        "model"
+      ],
+      "title": "ModelRef",
+      "type": "object"
+    },
+    "OutputConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "text",
+            "json_schema",
+            "json_object"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        }
+      },
+      "required": [
+        "format"
+      ],
+      "title": "OutputConstraint",
+      "type": "object"
+    },
+    "StatusPart": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "status",
+          "default": "status",
+          "title": "Type",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "refusal",
+            "error"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "message"
+      ],
+      "title": "StatusPart",
+      "type": "object"
+    },
+    "TextPart": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "text",
+          "default": "text",
+          "title": "Type",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TextPart",
+      "type": "object"
+    },
+    "ToolCallPart": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "tool_call",
+          "default": "tool_call",
+          "title": "Type",
+          "type": "string"
+        },
+        "tool_call_id": {
+          "title": "Tool Call Id",
+          "type": "string"
+        },
+        "tool_name": {
+          "title": "Tool Name",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Arguments",
+          "type": "object"
+        }
+      },
+      "required": [
+        "tool_call_id",
+        "tool_name",
+        "arguments"
+      ],
+      "title": "ToolCallPart",
+      "type": "object"
+    },
+    "ToolDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "ToolDefinition",
+      "type": "object"
+    },
+    "ToolResultPart": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "tool_result",
+          "default": "tool_result",
+          "title": "Type",
+          "type": "string"
+        },
+        "tool_call_id": {
+          "title": "Tool Call Id",
+          "type": "string"
+        },
+        "tool_name": {
+          "title": "Tool Name",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "is_error": {
+          "default": false,
+          "title": "Is Error",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "tool_call_id",
+        "tool_name",
+        "content"
+      ],
+      "title": "ToolResultPart",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Canonical request. Frozen; extensions are namespaced, not lowest-common.",
+  "properties": {
+    "schema_version": {
+      "const": "zgw.model-request/v1alpha1",
+      "default": "zgw.model-request/v1alpha1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelRef"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/Message"
+      },
+      "title": "Messages",
+      "type": "array"
+    },
+    "tools": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ToolDefinition"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "output_constraint": {
+      "$ref": "#/$defs/OutputConstraint",
+      "default": {
+        "format": "text",
+        "schema": null
+      }
+    },
+    "inference": {
+      "$ref": "#/$defs/InferenceSettings",
+      "default": {
+        "temperature": null,
+        "max_output_tokens": null,
+        "seed": null,
+        "stop": [],
+        "extensions": {}
+      }
+    },
+    "required_capabilities": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Capability"
+      },
+      "title": "Required Capabilities",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "preferred_capabilities": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Capability"
+      },
+      "title": "Preferred Capabilities",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "extensions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Extensions",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "model",
+    "messages"
+  ],
+  "title": "ModelRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/model-request/v1alpha1"
+}

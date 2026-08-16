@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-reporter-parquet"
+version = "0.1.0.dev0"
+description = "Zugzwang reporter: Parquet materialization and DuckDB-friendly analytics exports."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "zugzwang-core",
+    "zugzwang-runtime",
+    "pyarrow>=18",
+    "duckdb>=1.2",
+]
+
+[project.entry-points."zugzwang.reporters"]
+parquet = "zgw_reporter_parquet:plugin"
+
+[tool.uv.sources]
+zugzwang-core = { workspace = true }
+zugzwang-runtime = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zgw_reporter_parquet"]

@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite the exact Zugzwang release and the primary research methods or datasets used by your experiment."
+title: "Zugzwang Research Kernel"
+type: software
+authors:
+  - name: "Zugzwang contributors"
+repository-code: "https://github.com/maelrx/Zugzwang"
+url: "https://github.com/maelrx/Zugzwang"
+version: "0.1.0-foundation"
+date-released: "2026-08-12"
+keywords:
+  - large language models
+  - chess
+  - agent evaluation
+  - reproducibility
+  - decision systems
+  - benchmarks

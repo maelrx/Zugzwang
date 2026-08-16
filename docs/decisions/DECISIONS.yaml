@@ -1,0 +1,158 @@
+schema_version: '1.0'
+project: zugzwang-research-kernel
+updated_at: '2026-08-16'
+decision_owner:
+  name: Mestre Mael
+  role: human operator and final architecture authority
+rules:
+  pending_is_not_accepted: true
+  agents_may_not_select: true
+  selection_requires_rationale: true
+  architecture_or_code_must_not_bypass_blocking_gate: true
+gates:
+- id: GATE-001
+  title: Licença do kernel e substrato de regras
+  status: accepted
+  blocking: M0 scaffold público
+  adr: ADR-004
+  recommended: Apache-2.0 no kernel + substrato permissivo de regras atrás de port próprio
+  selected_option: GPL-3.0 + python-chess
+  selected_at: '2026-08-16'
+  rationale: 'Mestre Mael escolheu o caminho de menor engenharia inicial e maior fidelidade funcional. python-chess entrega regras maduras, SAN/FEN/PGN e UCI; o copyleft forte vale para todo o projeto. A fronteira core/chess permanece: core não importa biblioteca de xadrez concreta.'
+  approved_by: Mestre Mael
+  revisit_trigger: Antes de qualquer distribuição comercial ou embedding proprietário; ADR-004 revisada.
+  default_if_deferred: Bloquear publicação de pacote e criação de LICENSE.
+- id: GATE-002
+  title: Piso de Python e matriz de suporte
+  status: accepted
+  blocking: Criação de pyproject e lockfile
+  adr: ADR-003
+  recommended: Python >=3.13; CI em 3.13 e 3.14; desenvolvimento principal em 3.13 no primeiro ciclo
+  selected_option: Python >=3.13; CI 3.13/3.14; dev 3.13
+  selected_at: '2026-08-16'
+  rationale: Mestre Mael ratificou a recomendação. Sem ilha Rust no v0.1 (GATE-001 escolheu python-chess), o que remove wheel matrix de extensão nativa.
+  approved_by: Mestre Mael
+  revisit_trigger: Quando dependência científica importante não suportar 3.13.
+  default_if_deferred: Não gerar uv.lock nem metadados finais de pacote.
+- id: GATE-003
+  title: Retenção padrão de prompts, responses e reasoning
+  status: accepted
+  blocking: Defaults de artifact policy
+  adr: ADR-036
+  recommended: Captura integral local privada; export público exige política explícita de derivação/redação
+  selected_option: 'Captura integral local privada; export público bloqueado (GATE-005)'
+  selected_at: '2026-08-16'
+  rationale: 'Mestre Mael ordenou a execução de testes com providers reais via adapter opencode (deepseek-v4-flash-free). Evidência completa capturada localmente; nenhum bundle real é exportado publicamente enquanto GATE-005 estiver pendente.'
+  approved_by: Mestre Mael
+  revisit_trigger: Antes de export público de bundles reais (GATE-005).
+  default_if_deferred: Fake provider apenas; providers reais não podem executar.
+- id: GATE-004
+  title: Nome do CLI público
+  status: accepted
+  blocking: Publicação do entry point
+  adr: ADR-037
+  recommended: Comando canônico `zugzwang`; alias curto `zgw` quando não houver colisão
+  selected_option: zugzwang + zgw
+  selected_at: '2026-08-16'
+  rationale: 'Mestre Mael ratificou a recomendação. Dois entry points no package zugzwang-cli: `zugzwang` canônico e `zgw` alias.'
+  approved_by: Mestre Mael
+  revisit_trigger: Colisão de nome em PyPI ou decisão de produto maior.
+  default_if_deferred: Usar `python -m zugzwang_cli` internamente sem promessa pública.
+- id: GATE-005
+  title: Redistribuição de outputs e artefatos de providers
+  status: pending
+  blocking: Export público de bundles reais
+  adr: ADR-040
+  recommended: Registry de políticas por provider/modelo + confirmação explícita antes de export público
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Bundle marcado `private_only`; export externo bloqueado.
+- id: GATE-006
+  title: Aquisição e distribuição do Stockfish
+  status: accepted
+  blocking: UX do evaluator Stockfish
+  adr: ADR-039
+  recommended: Binário fornecido pelo usuário no v0.1; downloader separado e juridicamente auditado depois
+  selected_option: 'Binário fornecido pelo operador; download oficial local para testes'
+  selected_at: '2026-08-16'
+  rationale: 'Mestre Mael ordenou baixar o binário oficial (Stockfish 18, sse41-popcnt, sha256 f89b3b35...) para /home/mael/.local/bin/stockfish e usá-lo nos testes. Sem redistribuição: o binário não entra no repo nem em bundles.'
+  approved_by: Mestre Mael
+  revisit_trigger: Antes de empacotar/redistribuir qualquer binário.
+  default_if_deferred: Somente fake UCI e evaluator sem engine.
+- id: GATE-007
+  title: Estabilidade inicial da API de plugins
+  status: pending
+  blocking: Expectativa pública de compatibilidade
+  adr: ADR-043
+  recommended: Experimental até 0.3; compatibility window de uma minor; contracts explicitamente versionados
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Plugins first-party apenas, com warning de API instável.
+- id: GATE-008
+  title: Escopo de variantes enxadrísticas no primeiro release
+  status: pending
+  blocking: Contrato do environment
+  adr: ADR-042
+  recommended: Standard chess como happy path; variant_id no contrato; Chess960 apenas como capability futura
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Standard only; outros variant IDs rejeitados.
+- id: GATE-009
+  title: Governança do registry de custos
+  status: pending
+  blocking: Claims econômicos
+  adr: ADR-041
+  recommended: Snapshots manuais versionados por experimento; provider usage é fonte de verdade quando disponível
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Registrar usage e `cost_status=unknown`; proibir claim USD.
+- id: GATE-010
+  title: Idioma canônico da documentação
+  status: pending
+  blocking: Política de contribuição internacional
+  adr: ADR-038
+  recommended: README e contrato público em inglês; engenharia canônica inicialmente em PT-BR; tradução progressiva com source-of-truth
+    explícito
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Política atual deste foundation pack.
+- id: GATE-011
+  title: Matriz inaugural de modelos e orçamento científico
+  status: pending
+  blocking: Execução da primeira suite paga
+  adr: none
+  recommended: 2 modelos frontier + 2 open-weight/local + fake; orçamento piloto explícito antes de escalar
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Executar somente fake e smoke tests locais.
+- id: GATE-012
+  title: Topologia de publicação de packages
+  status: pending
+  blocking: Release PyPI
+  adr: ADR-045
+  recommended: Monorepo multi-package interno; publicar inicialmente uma distribuição agregadora e somente separar quando
+    houver consumidores reais
+  selected_option: null
+  selected_at: null
+  rationale: null
+  approved_by: null
+  revisit_trigger: null
+  default_if_deferred: Sem publicação PyPI; editable workspace apenas.

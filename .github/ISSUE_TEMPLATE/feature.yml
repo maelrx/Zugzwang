@@ -1,0 +1,28 @@
+name: Feature proposal
+description: Propose a bounded product or engineering capability.
+title: "[Feature]: "
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: job
+    attributes: {label: User/research job and problem}
+    validations: {required: true}
+  - type: textarea
+    id: proposal
+    attributes: {label: Proposed capability}
+    validations: {required: true}
+  - type: textarea
+    id: non_goals
+    attributes: {label: Non-goals}
+  - type: textarea
+    id: alternatives
+    attributes: {label: Alternatives and trade-offs}
+  - type: input
+    id: milestone
+    attributes: {label: Suggested milestone/requirement}
+  - type: dropdown
+    id: adr
+    attributes:
+      label: Does this change architecture/public protocol?
+      options: ["Yes", "No", "Unknown"]
+    validations: {required: true}

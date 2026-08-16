@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/provider-capabilities/0.1.0",
+  "title": "Zugzwang Provider Capability Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider_id",
+    "adapter_version",
+    "model",
+    "inspected_at",
+    "capabilities"
+  ],
+  "properties": {
+    "provider_id": {
+      "type": "string"
+    },
+    "adapter_version": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "resolved_model": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "inspected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "enum": [
+              "native",
+              "emulated",
+              "unsupported",
+              "unknown"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

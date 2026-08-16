@@ -1,0 +1,60 @@
+# Scientific suite (M6, fake): R0-R3 protocols over move-selection.
+# Every strategy runs with the SAME fake backend script, so any difference
+# comes from the protocol, never from the model.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: strategy-suite
+  tags: [m6, suite, fake, move-selection]
+
+spec:
+  seed: 20260816
+
+  matrix:
+    mode: product
+    parameters:
+      strategy: [chess.direct, chess.grounded, chess.repair, chess.structured]
+
+  task:
+    plugin: chess.tasks
+    config:
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        from_matrix: [strategy]
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H3
+    declared_knowledge: K0
+    observation:
+      position: {fen: true}
+      side_to_move: true
+      move_number: true
+      legal_actions: {exposure: always, encoding: uci}
+      history: {mode: none}
+    retries:
+      transport: 0
+      parse: 1
+      illegal: 0
+
+  budget:
+    max_calls: 500
+    max_concurrent_episodes: 2
+
+  evaluation:
+    - plugin: evaluator.stockfish
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

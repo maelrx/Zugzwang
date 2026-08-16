@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-evaluator-stockfish"
+version = "0.1.0.dev0"
+description = "Zugzwang post-hoc evaluator: UCI engine process boundary with provenance and caching."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "zugzwang-core",
+    "zugzwang-chess",
+]
+
+[project.entry-points."zugzwang.evaluators"]
+stockfish = "zgw_eval_stockfish:plugin"
+
+[tool.uv.sources]
+zugzwang-core = { workspace = true }
+zugzwang-chess = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zgw_eval_stockfish"]

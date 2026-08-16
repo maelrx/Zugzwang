@@ -1,0 +1,56 @@
+schema_version: "0.1.0"
+experiment:
+  id: rep-001-minimal
+  title: Representation Matrix 80/20
+  description: Compare FEN, image, and redundant FEN plus image.
+  tags: [representation, multimodal]
+task:
+  plugin: chess.move_selection
+  version: "0.1"
+factors:
+  mode: product
+  dimensions:
+    observation: [fen, image, fen_image]
+strategy:
+  plugin: strategy.direct
+  version: "0.1"
+  regime: R0
+provider:
+  plugin: provider.openai_compatible
+  version: "0.1"
+  model: exact-model-snapshot
+  endpoint_ref: local-default
+  capabilities:
+    required: [text_input]
+    preferred: [image_input, usage_reporting]
+    on_unsupported: skip_condition
+protocol:
+  assistance:
+    declared_h: H2
+    declared_k: K0
+  observation:
+    suite: suite://zugzwang/rep-v1
+  output:
+    action_notation: uci
+    schema: chess_move_v1
+  retries:
+    transport: 1
+    parse: 0
+    illegal: 0
+    strategic: 0
+budget:
+  max_calls: 1000
+  max_cost_usd: 10
+  per_call_timeout_seconds: 120
+evaluation:
+  live: []
+  posthoc:
+    - plugin: evaluator.stockfish
+      version: "0.1"
+      metric_set: move_quality_v1
+artifacts:
+  retention_policy: full-research
+  bundle: true
+runtime:
+  concurrency: 4
+  seed: 42

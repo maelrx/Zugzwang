@@ -1,0 +1,56 @@
+# Paired openings (M6, fake): each opening played with colors swapped.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: paired-openings
+  tags: [m6, suite, fake, full-game, paired]
+
+spec:
+  seed: 20260816
+
+  task:
+    plugin: chess.tasks
+    config:
+      kind: full-game
+      paired_colors: true
+      openings:
+        - rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+        - rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2
+      max_plies: 12
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: chess.direct
+    black:
+      policy:
+        plugin: chess.random-legal
+
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position: {fen: true}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 8, notation: uci}
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 500
+    max_concurrent_episodes: 2
+
+  evaluation:
+    - plugin: evaluator.stockfish
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/metric-observation/0.1.0",
+  "title": "Zugzwang Metric Observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "metric_id",
+    "metric_version",
+    "subject_ref",
+    "value",
+    "unit",
+    "dimensions",
+    "evaluator_id",
+    "evaluator_version",
+    "config_hash",
+    "source_artifacts"
+  ],
+  "properties": {
+    "metric_id": {
+      "type": "string"
+    },
+    "metric_version": {
+      "type": "string"
+    },
+    "subject_ref": {
+      "type": "string"
+    },
+    "value": {},
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dimensions": {
+      "type": "object"
+    },
+    "evaluator_id": {
+      "type": "string"
+    },
+    "evaluator_version": {
+      "type": "string"
+    },
+    "config_hash": {
+      "type": "string"
+    },
+    "source_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

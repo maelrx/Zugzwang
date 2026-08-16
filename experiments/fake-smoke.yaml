@@ -1,0 +1,54 @@
+# Zugzwang M0 vertical slice: fake-only smoke experiment.
+# No network, no database, no engine. Deterministic fake backend.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: fake-smoke
+  tags: [m0, smoke, fake]
+
+spec:
+  seed: 20260816
+
+  task:
+    plugin: fake.counter
+    version: "0.1"
+    config:
+      episodes: 2
+      start: 0
+      terminal_at: 3
+      max_steps: 6
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: fake.direct
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      representation: text
+      legal_actions: false
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 100
+    max_concurrent_episodes: 1
+
+  evaluation:
+    - plugin: fake.evaluator
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

@@ -1,0 +1,6 @@
+# Initial founder-led ownership. Expand only when real maintainers exist.
+* @maelrx
+/docs/decisions/ @maelrx
+/docs/adr/ @maelrx
+/schemas/ @maelrx
+/packages/zugzwang-core/ @maelrx

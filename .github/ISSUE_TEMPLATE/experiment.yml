@@ -1,0 +1,36 @@
+name: Research experiment
+description: Propose a preregistrable Zugzwang experiment.
+title: "[Experiment]: EXP-"
+labels: [research, experiment, triage]
+body:
+  - type: textarea
+    id: question
+    attributes: {label: Primary causal question}
+    validations: {required: true}
+  - type: textarea
+    id: prior
+    attributes: {label: Prior work and unresolved gap}
+    validations: {required: true}
+  - type: textarea
+    id: conditions
+    attributes: {label: Conditions with R/H/K and controls}
+    validations: {required: true}
+  - type: textarea
+    id: outcomes
+    attributes: {label: Primary outcomes, sampling unit and uncertainty}
+    validations: {required: true}
+  - type: textarea
+    id: contamination
+    attributes: {label: Contamination/leakage controls}
+  - type: input
+    id: budget
+    attributes: {label: Pilot and maximum budget}
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      options:
+        - label: Experiment Card will be created before paid execution
+          required: true
+        - label: Promotion/stopping rules will be frozen
+          required: true

@@ -1,0 +1,54 @@
+# Full game: model (white) vs random-legal opponent (black), capped plies.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: chess-full-game
+  tags: [m2, chess, full-game]
+
+spec:
+  seed: 20260816
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 8
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: chess.direct
+    black:
+      policy:
+        plugin: chess.random-legal
+
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 100
+    max_concurrent_episodes: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-suite:
+    name: offline suite (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install with locked dependencies
+        run: uv sync --all-packages --all-extras --locked
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format check
+        run: uv run ruff format --check .
+      - name: Type check (strict)
+        run: uv run pyright
+      - name: Offline tests (no network, no secrets, no engines)
+        run: uv run pytest -m "not e2e"
+      - name: Foundation strict validation
+        run: uv run python scripts/validate_foundation.py --strict
+
+  e2e-opt-in:
+    name: e2e (manual, secrets required)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --all-packages --all-extras --locked
+      - name: Opt-in e2e (real providers)
+        env:
+          ZGW_E2E_API_KEY: ${{ secrets.ZGW_E2E_API_KEY }}
+        run: uv run pytest -m "e2e" --maxfail=1

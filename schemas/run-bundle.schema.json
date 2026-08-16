@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/run-bundle/0.1.0",
+  "title": "Zugzwang Run Bundle Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundle_schema_version",
+    "bundle_id",
+    "created_at",
+    "producer",
+    "run_ids",
+    "protocol_fingerprints",
+    "retention",
+    "files"
+  ],
+  "properties": {
+    "bundle_schema_version": {
+      "const": "0.1.0"
+    },
+    "bundle_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "zugzwang"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "run_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "protocol_fingerprints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "retention": {
+      "type": "object"
+    },
+    "compatibility": {
+      "type": "object"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "sha256",
+          "size_bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*\\.\\.).+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

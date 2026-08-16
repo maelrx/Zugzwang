@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/knowledge-packet/0.1.0",
+  "title": "Zugzwang Knowledge Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "packet"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "title",
+        "language",
+        "knowledge_class",
+        "scope",
+        "content",
+        "leakage",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]+$"
+        },
+        "version": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "knowledge_class": {
+          "type": "string",
+          "pattern": "^K[0-7]$"
+        },
+        "scope": {
+          "type": "object",
+          "required": [
+            "domain"
+          ],
+          "properties": {
+            "domain": {
+              "const": "chess"
+            },
+            "phases": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "opening",
+                  "middlegame",
+                  "endgame"
+                ]
+              }
+            },
+            "structures": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "openings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "applicability": {
+          "type": "object"
+        },
+        "content": {
+          "type": "object",
+          "required": [
+            "principles"
+          ],
+          "properties": {
+            "principles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "candidate_plans": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "failure_modes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "leakage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_position_analysis",
+            "target_move",
+            "engine_evaluation",
+            "transposition_lookup"
+          ],
+          "properties": {
+            "current_position_analysis": {
+              "type": "boolean"
+            },
+            "target_move": {
+              "type": "boolean"
+            },
+            "engine_evaluation": {
+              "type": "boolean"
+            },
+            "transposition_lookup": {
+              "type": "boolean"
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "kind",
+            "curator",
+            "sources",
+            "license",
+            "created_at"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string"
+            },
+            "curator": {
+              "type": "string"
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "license": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  }
+}

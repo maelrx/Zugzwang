@@ -1,0 +1,35 @@
+schema_version: "0.1.0"
+packet:
+  id: control.irrelevant-token-matched
+  version: "1.0.0"
+  title: Token-matched generic tournament preparation
+  language: en
+  knowledge_class: K2
+  scope:
+    domain: chess
+    phases: [opening, middlegame, endgame]
+    structures: [generic_control]
+  applicability:
+    required_features: []
+    contraindications: []
+  content:
+    principles:
+      - Check the board carefully before committing to a decision.
+      - Allocate attention consistently and keep the final output concise.
+      - Reassess assumptions when the position contains unusual features.
+    candidate_plans:
+      - Compare several options before selecting one.
+      - Verify the requested notation.
+    failure_modes:
+      - Responding without inspecting the complete input.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: synthetic_placebo
+    curator: Zugzwang research team
+    sources: []
+    license: project-license-pending
+    created_at: "2026-08-12T00:00:00Z"

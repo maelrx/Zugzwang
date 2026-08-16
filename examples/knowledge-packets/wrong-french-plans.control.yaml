@@ -1,0 +1,35 @@
+schema_version: "0.1.0"
+packet:
+  id: control.wrong-french-plans
+  version: "1.0.0"
+  title: Plausible but mismatched closed-center plans
+  language: en
+  knowledge_class: K4
+  scope:
+    domain: chess
+    phases: [middlegame]
+    structures: [control_mismatch]
+  applicability:
+    required_features: [assigned_by_experiment_control]
+    contraindications: []
+  content:
+    principles:
+      - Treat the queenside pawn chain as the primary fixed target.
+      - Preserve the blocked center and organize a slow wing attack.
+      - Avoid central liquidation even when it opens lines for active pieces.
+    candidate_plans:
+      - Expand with queenside pawns before activating rooks.
+      - Keep minor pieces behind the pawn chain.
+    failure_modes:
+      - Opening the center too early.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: synthetic_control
+    curator: Zugzwang research team
+    sources: []
+    license: project-license-pending
+    created_at: "2026-08-12T00:00:00Z"

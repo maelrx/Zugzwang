@@ -1,0 +1,19 @@
+[project]
+name = "zugzwang"
+version = "0.0.0"
+requires-python = "{{ PYTHON_REQUIRES_FROM_GATE_002 }}"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["packages/*", "plugins/*"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "hypothesis>=6",
+  "ruff>=0.12",
+  "pyright>=1.1",
+]
+
+# Add tool configuration only after versions and package topology are ratified.

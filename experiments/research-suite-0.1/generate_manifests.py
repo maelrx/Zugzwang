@@ -10,7 +10,7 @@ Blocks (per operator design):
   MM-002:    consistent text+vision, single-piece conflict
 
 Text model:  opencode-go/deepseek-v4-flash (subscription)
-Vision model: opencode-go/gpt-5.6-luna (subscription, attachment=true)
+Vision model: opencode-go/mimo-v2.5 (subscription, attachment=true; operator directive 2026-08-16)
 """
 
 from __future__ import annotations
@@ -140,7 +140,7 @@ def main() -> None:
     vision_model = {
         "backend": "provider.opencode",
         "provider": "opencode-go",
-        "model": "gpt-5.6-luna",
+        "model": "mimo-v2.5",
     }
 
     fen_obs = {

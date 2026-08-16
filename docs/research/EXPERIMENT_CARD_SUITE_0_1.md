@@ -13,8 +13,8 @@
 |---|---|---|---|---|
 | REP-001 | FEN | `rep-001-fen.yaml` | deepseek-v4-flash | R0/H2/K0, fen |
 | REP-001 | PGN | `rep-001-pgn.yaml` | deepseek-v4-flash | R0/H2/K0, history full san |
-| REP-001 | RGB | `rep-001-rgb.yaml` | gpt-5.6-luna | R0/H2/K0, image only |
-| REP-001 | FEN+RGB | `rep-001-fen-rgb.yaml` | gpt-5.6-luna | R0/H2/K0, fen+image |
+| REP-001 | RGB | `rep-001-rgb.yaml` | mimo-v2.5 | R0/H2/K0, image only |
+| REP-001 | FEN+RGB | `rep-001-fen-rgb.yaml` | mimo-v2.5 | R0/H2/K0, fen+image |
 | GROUND-001 | free (G0) | `ground-001-free.yaml` | deepseek-v4-flash | R0/H2/K0, livre UCI |
 | GROUND-001 | legal-first (G2) | `ground-001-legal-first.yaml` | deepseek-v4-flash | R1/H3/K0, legal always |
 | GROUND-001 | reason-first (G4) | `ground-001-reason-first.yaml` | deepseek-v4-flash | R1/H3/K0, delayed 2 fases |
@@ -23,8 +23,8 @@
 | SKILL-001 | correct (S4) | `skill-001-correct.yaml` | deepseek-v4-flash | R0/H2/K4, packet najdorf |
 | SKILL-001 | wrong (S5) | `skill-001-wrong.yaml` | deepseek-v4-flash | R0/H2/K4, packet KID |
 | SKILL-001 | irrelevant (S6) | `skill-001-irrelevant.yaml` | deepseek-v4-flash | R0/H2/K1, token-matched |
-| MM-002 | consistent | `mm-002-consistent.yaml` | gpt-5.6-luna | fen+image idênticos |
-| MM-002 | conflict | `mm-002-conflict.yaml` | gpt-5.6-luna | fen ≠ image (1 peça), authority=text |
+| MM-002 | consistent | `mm-002-consistent.yaml` | mimo-v2.5 | fen+image idênticos |
+| MM-002 | conflict | `mm-002-conflict.yaml` | mimo-v2.5 | fen ≠ image (1 peça), authority=text |
 
 ## Hipóteses (resumo; detalhe na preregistration)
 
@@ -46,13 +46,13 @@
 ## Orçamento piloto (referência)
 
 - 14 condições × 10 posições × (1–2 calls) ≈ 210 calls; deepseek-v4-flash e
-  gpt-5.6-luna via assinatura OpenCode Go (sem custo marginal extra).
+  mimo-v2.5 via assinatura OpenCode Go (sem custo marginal extra).
 - Stockfish 18 local, 20k nodes por posição.
 
 ## Limitações declaradas
 
 1. **Modelo × condição é confundido** para RGB: texto usa deepseek-v4-flash,
-   imagem usa gpt-5.6-luna. Análise por bloco/condição, não ranking entre modelos.
+   imagem usa mimo-v2.5. Análise por bloco/condição, não ranking entre modelos.
 2. Budget pareado em calls, não em tokens de imagem (tokenização visual varia).
 3. Single-move selection; nenhum claim de Elo nem full-game neste batch.
 4. GATE-011 pendente: execução completa paga só após ratificação do operador.

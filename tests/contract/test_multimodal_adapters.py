@@ -39,7 +39,7 @@ IMAGE_PART = ImagePart(
     renderer={"renderer_id": "chess.board-png", "renderer_version": "0.1.0"},
 )
 
-MODEL = ModelRef(backend="provider.opencode", provider="opencode-go", model="gpt-5.6-luna")
+MODEL = ModelRef(backend="provider.opencode", provider="opencode-go", model="mimo-v2.5")
 
 
 def _request() -> ModelRequest:
@@ -69,7 +69,7 @@ class TestOpenCodeImageLowering:
                     json={
                         "info": {
                             "parentID": "msg_1",
-                            "modelID": "gpt-5.6-luna",
+                            "modelID": "mimo-v2.5",
                             "tokens": {"input": 12, "output": 3},
                         },
                         "parts": [{"type": "text", "text": "e2e4"}],
@@ -127,7 +127,7 @@ class TestOpenAiCompatibleImageLowering:
                 200,
                 json={
                     "id": "cmpl-1",
-                    "model": "gpt-5.6-luna",
+                    "model": "mimo-v2.5",
                     "choices": [
                         {
                             "index": 0,

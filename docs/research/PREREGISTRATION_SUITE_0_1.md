@@ -14,7 +14,7 @@ efetivo auditado por episódio; prompt/packets/observação entram no protocol h
 - Cada posição é um run independente; ação = 1 move-selection call
   (2 calls na condição G4). Stockfish 18 avalia pós-hoc (H5+ apenas na avaliação,
   nunca na decisão; GATE-006).
-- Modelos: `opencode-go/deepseek-v4-flash` (texto) e `opencode-go/gpt-5.6-luna`
+- Modelos: `opencode-go/deepseek-v4-flash` (texto) e `opencode-go/mimo-v2.5`
   (imagem) — assinatura do operador; ratificação formal em GATE-011.
 
 ## Hypotheses (preregistered)

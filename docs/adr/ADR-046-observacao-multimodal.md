@@ -36,12 +36,12 @@ silencioso imagem→texto.
 4. Bytes da imagem persistem como CAS artifact via `DecisionContext.artifact_store`;
    a part carrega payload base64 + hash para o request canônico.
 5. Lowering por adapter: opencode vira `FilePart` com data URL (validado por
-   probe real com gpt-5.6-luna); openai-compatible vira `content` do tipo
+   probe real com mimo-v2.5); openai-compatible vira `content` do tipo
    `image_url`. A capacidade MULTIMODAL_IMAGE é declarada pelo operador no
    `backend_config.image_input` e exigida por preflight antes do primeiro call.
 6. Modelo de texto principal (deepseek-v4-flash) tem `attachment=false`; as
    condições RGB usam modelo de visão ratificado em GATE-011
-   (candidato 80/20: `opencode-go/gpt-5.6-luna`, já na assinatura do operador).
+   (candidato 80/20: `opencode-go/mimo-v2.5`, já na assinatura do operador).
 
 ## Alternativas
 

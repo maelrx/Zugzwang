@@ -417,7 +417,7 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 A Research Suite 0.1 (14 condições × 10 posições congeladas) está pronta para
 execução. O bloco REP-001 RGB/MM-002 exige um modelo com visão; o
 `opencode-go/deepseek-v4-flash` tem `attachment=false`. Spike real confirmou
-que `opencode-go/gpt-5.6-luna` lê o tabuleiro via FilePart data URL e jogou
+que `opencode-go/mimo-v2.5` lê o tabuleiro via FilePart data URL e jogou
 lance legal no e2e.
 
 ### Fato relevante
@@ -430,7 +430,7 @@ o custo marginal da execução é zero além da assinatura já paga. Stockfish 1
 
 Matriz inaugural:
 - texto: `opencode-go/deepseek-v4-flash` (todas as condições textuais)
-- imagem: `opencode-go/gpt-5.6-luna` (REP-001 RGB/FEN+RGB, MM-002)
+- imagem: `opencode-go/mimo-v2.5` (REP-001 RGB/FEN+RGB, MM-002)
 - orçamento piloto: ~210 calls na assinatura existente; full batch n≥24 fica
   para depois da análise do piloto (n=10).
 
@@ -444,7 +444,7 @@ comparações são dentro de bloco, por posição pareada).
 
 ### Pergunta ao operador
 
-Ratifica `deepseek-v4-flash` + `gpt-5.6-luna` (assinatura OpenCode Go) como a
+Ratifica `deepseek-v4-flash` + `mimo-v2.5` (assinatura OpenCode Go) como a
 matriz inaugural da suite 0.1 com orçamento piloto de ~210 calls?
 
 ### Registro

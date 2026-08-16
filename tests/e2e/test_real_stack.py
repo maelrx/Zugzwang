@@ -153,7 +153,7 @@ async def test_real_full_game_vs_random_legal(workspace: Workspace) -> None:
 
 @pytest.mark.asyncio
 async def test_real_multimodal_rgb_move_selection(workspace: Workspace) -> None:
-    """One real image+text call through the opencode adapter (gpt-5.6-luna)."""
+    """One real image+text call through the opencode adapter (mimo-v2.5)."""
     if not _opencode_available():
         pytest.skip("opencode server not running on 127.0.0.1:4100")
     services = DurableRunServices(workspace, PluginRegistry())

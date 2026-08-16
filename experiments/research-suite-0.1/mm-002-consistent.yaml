@@ -40,7 +40,7 @@ spec:
       model:
         backend: provider.opencode
         provider: opencode-go
-        model: gpt-5.6-luna
+        model: mimo-v2.5
         strategy: chess.direct
     black:
       policy:

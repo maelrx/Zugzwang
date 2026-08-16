@@ -8,6 +8,7 @@ is R1. Parsing and legality stay separate verdicts.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, cast
 
 from zugzwang_core.domain.assistance import AssistanceImpact, HClass
@@ -143,8 +144,13 @@ class ChessDirectStrategy:
             )
         response = result.response
         raw = response.text().strip()
+        fen_hint: str | None = None
+        if isinstance(observation, dict):
+            fen_value = cast(dict[str, Any], observation).get("fen")
+            if isinstance(fen_value, str):
+                fen_hint = fen_value
         try:
-            move_uci = self._extract_move(raw)
+            move_uci = self._extract_move(raw, fen_hint)
         except OutputParseError as exc:
             return DecisionTrace(
                 strategy_id=self.strategy_id,
@@ -181,8 +187,8 @@ class ChessDirectStrategy:
             assistance_impacts=impacts,
         )
 
-    def _extract_move(self, raw: str) -> str:
-        """Extract a UCI move from raw text (or a JSON envelope)."""
+    def _extract_move(self, raw: str, fen: str | None = None) -> str:
+        """Extract a UCI move from raw text (JSON envelope, UCI or SAN)."""
         if self._parse_json:
             try:
                 payload = json.loads(raw)
@@ -197,14 +203,41 @@ class ChessDirectStrategy:
                 pass
         from ..codecs.uci import parse_uci
 
-        for token in raw.replace(",", " ").split():
+        tokens = [token.strip(' *`_.,;:()[]{}!"') for token in raw.replace(",", " ").split()]
+        for token in tokens:
             candidate = parse_uci(token, raise_on_invalid=False)
             if candidate is not None:
                 return candidate.uci
+        if fen is not None:
+            san_move = self._extract_san(raw, fen)
+            if san_move is not None:
+                return san_move
         raise OutputParseError(
             "no UCI move found in model output",
             technical_context=f"output={raw[:120]!r}",
         )
+
+    @staticmethod
+    def _extract_san(raw: str, fen: str) -> str | None:
+        """Try to parse a SAN token against the observation FEN (G1)."""
+        import chess
+
+        try:
+            board = chess.Board(fen)
+        except ValueError:
+            return None
+        for token in raw.replace(",", " ").split():
+            candidate = token.strip()
+            if not re.fullmatch(
+                r"[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](=[QRBN])?[+#]?|O-O(-O)?[+#]?", candidate
+            ):
+                continue
+            try:
+                move = board.parse_san(candidate)
+            except ValueError:
+                continue
+            return move.uci()
+        return None
 
     @staticmethod
     def _observation_text(observation: Any) -> str:

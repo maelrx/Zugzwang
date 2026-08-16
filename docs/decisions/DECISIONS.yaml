@@ -136,7 +136,7 @@ gates:
   status: pending
   blocking: Execução completa da primeira suite paga (pilot livre via assinatura do operador)
   adr: ADR-046
-  recommended: 'texto: opencode-go/deepseek-v4-flash; imagem: opencode-go/gpt-5.6-luna (assinatura existente, custo marginal zero); piloto ~210 calls n=10; full batch n>=24 após análise'
+  recommended: 'texto: opencode-go/deepseek-v4-flash; imagem: opencode-go/mimo-v2.5 (assinatura existente, custo marginal zero); piloto ~210 calls n=10; full batch n>=24 após análise'
   alternatives: 'qwen3-vl-30b via OpenRouter; adiar RGB'
   selected_option: null
   selected_at: null

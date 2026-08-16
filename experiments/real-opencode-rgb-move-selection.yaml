@@ -1,4 +1,4 @@
-# REAL multimodal smoke (opt-in): opencode adapter + gpt-5.6-luna vision.
+# REAL multimodal smoke (opt-in): opencode adapter + mimo-v2.5 vision.
 # Requires: `opencode serve --port 4100` running locally, OPENCODE_GO_API_KEY in .env.
 api_version: zgw.dev/v1alpha1
 kind: Experiment
@@ -26,7 +26,7 @@ spec:
       model:
         backend: provider.opencode
         provider: opencode-go
-        model: gpt-5.6-luna
+        model: mimo-v2.5
         strategy: chess.direct
     black:
       policy:

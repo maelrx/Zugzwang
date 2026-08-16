@@ -37,6 +37,12 @@ Uma escala única ordena coisas incomparáveis. Tags não permitem enforcement. 
 - protocol fingerprint muda;
 - leaderboards não agregam classes incompatíveis.
 
+## Emenda
+
+ADR-047 (2026-08-16) substitui a semântica das classes K do kernel pela
+taxonomia oficial K0-K7 documentada em PROTOCOL_TAXONOMY.md §3. A decisão
+original (eixos H e K independentes, declared vs effective) permanece.
+
 ## Reversibilidade
 
 Baixa após publicação de bundles, portanto entra antes do scaffold.

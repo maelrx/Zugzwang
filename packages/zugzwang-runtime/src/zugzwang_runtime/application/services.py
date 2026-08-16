@@ -38,6 +38,7 @@ from .commands import (
     ValidateManifestCommand,
     ValidateResult,
 )
+from .knowledge import load_knowledge_packets
 from .loader import load_source_manifest
 from .run_output import write_run_output
 
@@ -60,11 +61,15 @@ class ResolveExperimentService:
     def resolve(self, command: ResolveExperimentCommand) -> ResolvedManifest:
         manifest, _ = load_source_manifest(command.manifest_path)
         self._check_plugins(manifest)
+        packets = load_knowledge_packets(
+            command.manifest_path, tuple(manifest.spec.protocol.knowledge_packets)
+        )
         return resolve_manifest(
             manifest,
             patches=command.patches,
             plugin_snapshots=self._registry.snapshot(),
             warnings=_manifest_warnings(manifest),
+            knowledge_packets=packets,
         )
 
     def _check_plugins(self, manifest: SourceManifest) -> None:

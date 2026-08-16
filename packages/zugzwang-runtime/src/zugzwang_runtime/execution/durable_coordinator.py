@@ -153,6 +153,7 @@ class DurableRunCoordinator:
         max_concurrency = condition.budget.max_concurrent_episodes
         ledger = BudgetLedger(self._to_domain_budget(condition))
         ledger_lock = asyncio.Lock()
+        knowledge = resolved.packets_for(condition)
 
         if resume:
             pending_episodes = await self._resume_work_items(run_id, condition)
@@ -168,6 +169,7 @@ class DurableRunCoordinator:
                 try:
                     outcome = await self._run_episode(
                         run_id=run_id,
+                        knowledge=knowledge,
                         condition=condition,
                         work=work,
                         ledger=ledger,
@@ -351,6 +353,7 @@ class DurableRunCoordinator:
         self,
         *,
         run_id: str,
+        knowledge: tuple[Any, ...],
         condition: ResolvedCondition,
         work: dict[str, Any],
         ledger: BudgetLedger,
@@ -507,6 +510,7 @@ class DurableRunCoordinator:
             if task_kind == "state-reconstruction":
                 outcome = await self._reconstruction_step(
                     run_id=run_id,
+                    knowledge=knowledge,
                     episode_id=episode_id,
                     step_id=step_id,
                     ordinal=ordinal,
@@ -537,6 +541,7 @@ class DurableRunCoordinator:
                 seed=seed,
                 config={},
                 artifact_store=self._artifact_store,
+                knowledge=knowledge,
             )
             observation = environment.observe(state, observation_policy)
             async with ledger_lock:
@@ -763,6 +768,7 @@ class DurableRunCoordinator:
         self,
         *,
         run_id: str,
+        knowledge: tuple[Any, ...],
         episode_id: str,
         step_id: str,
         ordinal: int,
@@ -791,6 +797,7 @@ class DurableRunCoordinator:
             seed=seed,
             config={},
             artifact_store=self._artifact_store,
+            knowledge=knowledge,
         )
         observation = environment.observe(state, observation_policy)
         async with ledger_lock:

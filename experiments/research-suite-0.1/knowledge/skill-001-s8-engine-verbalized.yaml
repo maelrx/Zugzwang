@@ -1,0 +1,40 @@
+schema_version: 0.1.0
+packet:
+  id: skill-001-s8-engine-verbalized
+  version: 1.0.0
+  title: Engine-Verbalized Strategic Assessment (positive control, K7)
+  language: en
+  knowledge_class: K7
+  scope:
+    domain: chess
+    phases:
+    - middlegame
+    structures: []
+    openings: []
+  applicability: {}
+  content:
+    principles:
+    - 'Engine-verified assessment: in the analyzed Najdorf middlegame, the engine
+      rates queenside counterplay as Black''s most critical resource.'
+    - 'Engine-verified assessment: advancing the g-pawn before castling loses time
+      in this structure and is punished by central counterplay.'
+    - 'Engine-verified assessment: exchanging the dark-squared bishop favors White
+      here; Black should prefer to keep tension.'
+    candidate_plans:
+    - Prefer moves that support the queenside expansion plan; the engine confirms
+      this is the highest-ranked thematic strategy.
+    failure_modes:
+    - 'Passive play: the engine evaluates waiting moves as clearly worse than active
+      counterplay.'
+  leakage:
+    current_position_analysis: true
+    target_move: false
+    engine_evaluation: true
+    transposition_lookup: false
+  provenance:
+    kind: engine-verbalized
+    curator: Mestre Mael (operator) with Zugzwang ZGW-0074
+    sources:
+    - Stockfish 18 verbalized assessment (GATE-006)
+    license: CC-BY-SA-4.0 (authored for this experiment)
+    created_at: '2026-08-16T00:00:00Z'

@@ -1,0 +1,45 @@
+schema_version: 0.1.0
+packet:
+  id: skill-001-s2-gm-principles
+  version: 1.0.0
+  title: General Grandmaster Strategy Principles
+  language: en
+  knowledge_class: K2
+  scope:
+    domain: chess
+    phases:
+    - opening
+    - middlegame
+    - endgame
+    structures: []
+    openings: []
+  applicability: {}
+  content:
+    principles:
+    - Control the center with pawns and pieces; central control is the foundation
+      of any plan.
+    - Develop minor pieces toward their most active squares before launching attacks.
+    - 'King safety first: castle early and keep the pawn shield intact unless a clear
+      reason exists to advance it.'
+    - Improve your worst-placed piece; seek open files and outposts for rooks and
+      knights.
+    - Prefer moves with multiple purposes; avoid weakening pawn moves without compensation.
+    - Trade pieces when you have a material or positional advantage; keep tension
+      when attacking.
+    - In endings, activate the king and create passed pawns; rook activity outweighs
+      small pawn weaknesses.
+    candidate_plans: []
+    failure_modes:
+    - Move-making without a plan; weakening pawn moves in front of your king.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: curated-expert
+    curator: Mestre Mael (operator) with Zugzwang ZGW-0074
+    sources:
+    - curated general chess theory; no game transcriptions
+    license: CC-BY-SA-4.0 (authored for this experiment)
+    created_at: '2026-08-16T00:00:00Z'

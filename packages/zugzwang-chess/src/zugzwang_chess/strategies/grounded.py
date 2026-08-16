@@ -29,6 +29,7 @@ from zugzwang_core.ports.strategy import (
 )
 
 from ._image import build_message_parts
+from ._knowledge import knowledge_impacts, render_knowledge_section
 from .direct import build_observation_text
 
 
@@ -73,6 +74,7 @@ class GroundedStrategy:
                 final_action=None,
                 termination_reason="grounding_error",
             )
+        knowledge_section = render_knowledge_section(context.knowledge)
         encoding = "index" if all(isinstance(a, int) for a in legal_actions) else "uci"
         if encoding == "uci" and all(isinstance(a, str) for a in legal_actions):
             import re
@@ -80,6 +82,8 @@ class GroundedStrategy:
             if not all(re.fullmatch(r"[a-h][1-8][a-h][1-8][qrbn]?", str(a)) for a in legal_actions):
                 encoding = "san"
         prompt = self._prompt(obs, encoding)
+        if knowledge_section:
+            prompt = f"{prompt}\n\n{knowledge_section}"
         parts, required_capabilities = build_message_parts(
             obs, prompt, artifact_store=context.artifact_store
         )
@@ -112,6 +116,7 @@ class GroundedStrategy:
         response = result.response
         raw = response.text().strip()
         impact = AssistanceImpact(h=HClass.H3, source="legal_action_set")
+        impacts = (impact, *knowledge_impacts(context.knowledge))
         try:
             action = self._resolve_action(raw, obs, legal_actions, encoding)
         except OutputParseError as exc:
@@ -147,7 +152,7 @@ class GroundedStrategy:
             ),
             final_action=action,
             termination_reason="selected",
-            assistance_impacts=(impact,),
+            assistance_impacts=impacts,
         )
 
     def _resolve_action(

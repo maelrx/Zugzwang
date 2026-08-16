@@ -1,0 +1,50 @@
+schema_version: 0.1.0
+packet:
+  id: skill-001-s6-irrelevant
+  version: 1.0.0
+  title: 'Chess Tournament Etiquette and History Notes (control: no decision value)'
+  language: en
+  knowledge_class: K1
+  scope:
+    domain: chess
+    phases: []
+    structures: []
+    openings: []
+  applicability: {}
+  content:
+    principles:
+    - 'Touch-move rule: a player who deliberately touches a piece must move it if
+      a legal move exists.'
+    - In classical tournaments, the game score must be written after each move in
+      the player's own notation.
+    - The first international chess tournament took place in London in 1851, won by
+      Adolf Anderssen.
+    - Digital clocks with increment were introduced broadly in the late 1990s and
+      changed time management habits.
+    - Staunton-pattern pieces, introduced in 1849, remain the standard for tournament
+      play.
+    - Players shake hands before the game starts and after the game ends as a sign
+      of respect.
+    - Offer a draw only after making your move, never while it is your opponent's
+      turn.
+    - Tournament halls traditionally require silence near the top boards during the
+      final rounds.
+    - The fifty-move rule is one of several historic safeguards against never-ending
+      games.
+    - The title of International Master sits between FIDE Master and Grandmaster in
+      rank.
+    candidate_plans: []
+    failure_modes:
+    - Arriving late to the board loses clock time.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: curated-expert
+    curator: Mestre Mael (operator) with Zugzwang ZGW-0074
+    sources:
+    - curated general chess theory; no game transcriptions
+    license: CC-BY-SA-4.0 (authored for this experiment)
+    created_at: '2026-08-16T00:00:00Z'

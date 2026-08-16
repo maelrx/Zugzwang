@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .canonical import hash_canonical
 from .errors import ManifestValidationError, PatchApplicationError
 from .events import JsonValue
+from .knowledge import KnowledgePacket
 from .versions import MANIFEST_API
 
 NameStr = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._-]{1,127}$")]
@@ -282,6 +283,12 @@ class ResolvedManifest(BaseModel):
     pricing_snapshot: PricingSnapshot = PricingSnapshot()
     warnings: tuple[str, ...] = ()
     protocol_hash: str
+    knowledge_packets: tuple[KnowledgePacket, ...] = ()
+
+    def packets_for(self, condition: ResolvedCondition) -> tuple[KnowledgePacket, ...]:
+        """Resolved packets referenced by one condition, in declaration order."""
+        wanted = set(condition.protocol.knowledge_packets)
+        return tuple(p for p in self.knowledge_packets if p.id in wanted)
 
     def condition_by_id(self, condition_id: str) -> ResolvedCondition | None:
         for condition in self.conditions:
@@ -375,6 +382,7 @@ def resolve_manifest(
     plugin_snapshots: tuple[PluginSnapshot, ...] = (),
     pricing_snapshot: PricingSnapshot | None = None,
     warnings: tuple[str, ...] = (),
+    knowledge_packets: tuple[KnowledgePacket, ...] = (),
 ) -> ResolvedManifest:
     """Compile a source manifest into an immutable resolved manifest."""
     patched = source
@@ -388,6 +396,9 @@ def resolve_manifest(
         "pricing_registry_version": (
             pricing_snapshot.registry_version if pricing_snapshot is not None else "unset"
         ),
+        "knowledge_packets": [
+            {"id": p.id, "content_hash": p.content_hash} for p in knowledge_packets
+        ],
     }
     protocol_hash = hash_canonical(identity)
     return ResolvedManifest(
@@ -400,4 +411,5 @@ def resolve_manifest(
         pricing_snapshot=pricing_snapshot if pricing_snapshot is not None else PricingSnapshot(),
         warnings=warnings,
         protocol_hash=protocol_hash,
+        knowledge_packets=knowledge_packets,
     )

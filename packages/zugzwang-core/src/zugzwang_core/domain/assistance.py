@@ -30,13 +30,20 @@ class HClass(IntEnum):
 
 
 class KClass(IntEnum):
-    """Knowledge axis: external chess knowledge injected (H and K are independent)."""
+    """Knowledge axis: external chess knowledge injected (H and K are independent).
 
-    K0 = 0  # no knowledge packet
-    K1 = 1  # static general knowledge
-    K2 = 2  # static position-matched knowledge
-    K3 = 3  # dynamic (non-engine) retrieval
-    K4 = 4  # engine-derived knowledge, delivered statically
+    Semantics ratified in ADR-047 (emenda ADR-034); mirror of
+    docs/research/PROTOCOL_TAXONOMY.md §3.
+    """
+
+    K0 = 0  # no external knowledge (operational system prompt only)
+    K1 = 1  # generic instruction/persona ("play like a GM")
+    K2 = 2  # broad static principles (king safety, development)
+    K3 = 3  # phase-specific knowledge (opening/middlegame/endgame checklists)
+    K4 = 4  # domain/structure skill (IQP or Najdorf plans)
+    K5 = 5  # selected expert examples (paired games or rationales)
+    K6 = 6  # position-conditioned retrieval (no live engine search)
+    K7 = 7  # current-position expert/engine-derived analysis (verbalized PV, eval)
 
     def __str__(self) -> str:
         return self.name

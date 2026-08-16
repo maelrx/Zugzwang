@@ -1,0 +1,49 @@
+schema_version: 0.1.0
+packet:
+  id: skill-001-s5-wrong-plausible
+  version: 1.0.0
+  title: 'King''s Indian Defense Structure Plans (control: wrong structure)'
+  language: en
+  knowledge_class: K4
+  scope:
+    domain: chess
+    phases:
+    - opening
+    - middlegame
+    structures:
+    - kings-indian
+    openings:
+    - King's Indian Defense
+  applicability: {}
+  content:
+    principles:
+    - In the King's Indian, Black concedes the center and strikes back with ...e5
+      or ...c5 from a fianchetto setup.
+    - The f5-g4 pawn storm against the castled king is Black's main attacking idea
+      after the center closes.
+    - White's play runs through the queenside with c4-c5 and b4, while the black king
+      sits on g8.
+    - The e4 square is the battleground; a white knight there supports the whole position.
+    - If the center opens, the black bishops on g7 and (later) e6 gain power along
+      the long diagonals.
+    - The c4-d5 pawn pair can become a target after the d-file opens and exchanges occur.
+    - Classical games show ...f5 supported by ...g6 and ...Nh5 building pressure first.
+    - 'Typical piece play: Black''s f6-knight goes to d7 or e8 to clear f-pawn advance;
+      rooks come to f8.'
+    candidate_plans:
+    - 'Black: close the center, then storm on the kingside with ...f5-f4 and ...g5-g4.'
+    - 'White: play for c5, b4 and queenside expansion before Black''s attack develops.'
+    failure_modes:
+    - Opening the center when behind in development.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: curated-expert
+    curator: Mestre Mael (operator) with Zugzwang ZGW-0074
+    sources:
+    - curated general chess theory; no game transcriptions
+    license: CC-BY-SA-4.0 (authored for this experiment)
+    created_at: '2026-08-16T00:00:00Z'

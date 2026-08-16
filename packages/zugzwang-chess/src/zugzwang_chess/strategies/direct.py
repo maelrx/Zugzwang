@@ -31,6 +31,7 @@ from zugzwang_core.ports.strategy import (
 )
 
 from ._image import build_message_parts
+from ._knowledge import knowledge_impacts, render_knowledge_section
 
 
 def build_observation_text(observation: dict[str, JsonValue]) -> str:
@@ -92,6 +93,9 @@ class ChessDirectStrategy:
 
     async def decide(self, observation: Any, context: DecisionContext) -> DecisionTrace:
         text = self._observation_text(observation)
+        knowledge_section = render_knowledge_section(context.knowledge)
+        if knowledge_section:
+            text = f"{text}\n\n{knowledge_section}"
         side = "unknown"
         if isinstance(observation, dict):
             side_value = cast(dict[str, Any], observation).get("side_to_move")
@@ -156,6 +160,7 @@ class ChessDirectStrategy:
                 termination_reason="parse_error",
             )
         impact = AssistanceImpact(h=HClass.H0, source="formal_parser")
+        impacts = (impact, *knowledge_impacts(context.knowledge))
         return DecisionTrace(
             strategy_id=self.strategy_id,
             strategy_version=self.strategy_version,
@@ -171,7 +176,7 @@ class ChessDirectStrategy:
             verdicts=(Verdict(kind="parse_ok", message="uci parsed", assistance_impact=impact),),
             final_action=move_uci,
             termination_reason="selected",
-            assistance_impacts=(impact,),
+            assistance_impacts=impacts,
         )
 
     def _extract_move(self, raw: str) -> str:

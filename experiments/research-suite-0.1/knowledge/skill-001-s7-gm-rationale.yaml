@@ -1,0 +1,45 @@
+schema_version: 0.1.0
+packet:
+  id: skill-001-s7-gm-rationale
+  version: 1.0.0
+  title: Human Grandmaster Rationale on Sicilian Pawn Breaks
+  language: en
+  knowledge_class: K5
+  scope:
+    domain: chess
+    phases:
+    - opening
+    - middlegame
+    structures:
+    - najdorf
+    - open-sicilian
+    openings:
+    - Sicilian Defense
+  applicability: {}
+  content:
+    principles:
+    - 'GM principle: the player who achieves the d5 break in an Open Sicilian usually
+      equalizes fully; prepare it with ...e6 and ...Nbd7, not in one jump.'
+    - 'GM principle: a wing attack fails while the center is fluid; stabilize the
+      center before committing pawns on the flank.'
+    - 'GM principle: when your opponent has a queenside majority, the minority attack
+      with ...b5-b4 creates weaknesses even without material gain.'
+    - 'GM principle: the knight on d5 that cannot be exchanged is worth more than
+      a rook in the middlegame.'
+    candidate_plans:
+    - Coordinate ...d5 after clearing the e-file pin; avoid the break while White's
+      f3-knight can recapture comfortably.
+    failure_modes:
+    - Releasing central tension without a concrete follow-up.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: curated-expert
+    curator: Mestre Mael (operator) with Zugzwang ZGW-0074
+    sources:
+    - curated general chess theory; no game transcriptions
+    license: CC-BY-SA-4.0 (authored for this experiment)
+    created_at: '2026-08-16T00:00:00Z'

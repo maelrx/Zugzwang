@@ -1,0 +1,51 @@
+schema_version: 0.1.0
+packet:
+  id: skill-001-s4-najdorf-plans
+  version: 1.0.0
+  title: 'Sicilian Najdorf Structure: Thematic Plans'
+  language: en
+  knowledge_class: K4
+  scope:
+    domain: chess
+    phases:
+    - opening
+    - middlegame
+    structures:
+    - najdorf
+    - open-sicilian
+    openings:
+    - Sicilian Defense, Najdorf Variation
+  applicability: {}
+  content:
+    principles:
+    - In the Najdorf, Black fights for the d5 break; ...d5 equalizing the center is
+      the thematic goal.
+    - White usually castles queenside and attacks on the kingside with g4-g5 and h4-h5;
+      Black counters on the queenside with ...b5-b4 and rook pressure on the half-open
+      c-file.
+    - The e5 square is Black's key outpost after White pushes e5; a knight on e5 dominates.
+    - Black's dark-squared bishop on g7 (or fianchetto structures) coordinates with
+      ...e5 and pressure on d4.
+    - White's Be3 often meets ...Ng4; watch the ...Nxe3 trade that doubles White's
+      f-pawns.
+    - If White plays 6.Bg5, Black's typical counter is ...e6, ...Nbd7 and ...h6 to
+      gain time.
+    candidate_plans:
+    - 'Black: ...d5 break with piece support; or ...b5-b4 minority attack if White
+      has castled queenside.'
+    - 'White: English attack with f3, Qd2, O-O-O and g4; or positional Be2/O-O with
+      pressure on d5.'
+    failure_modes:
+    - Playing ...e5 too early when the d5 square becomes permanently weak.
+  leakage:
+    current_position_analysis: false
+    target_move: false
+    engine_evaluation: false
+    transposition_lookup: false
+  provenance:
+    kind: curated-expert
+    curator: Mestre Mael (operator) with Zugzwang ZGW-0074
+    sources:
+    - curated general chess theory; no game transcriptions
+    license: CC-BY-SA-4.0 (authored for this experiment)
+    created_at: '2026-08-16T00:00:00Z'

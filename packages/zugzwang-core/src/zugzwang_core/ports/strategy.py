@@ -45,6 +45,7 @@ class DecisionContext(BaseModel):
     seed: int
     config: dict[str, JsonValue] = {}
     artifact_store: Any = None
+    knowledge: tuple[Any, ...] = ()
 
 
 class Candidate(BaseModel):

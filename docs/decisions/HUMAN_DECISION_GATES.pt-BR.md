@@ -409,6 +409,56 @@ revisit_trigger: null
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
 
 
+
+## Decision packet: GATE-011 — Matriz inaugural de modelos e orçamento científico
+
+### Contexto
+
+A Research Suite 0.1 (14 condições × 10 posições congeladas) está pronta para
+execução. O bloco REP-001 RGB/MM-002 exige um modelo com visão; o
+`opencode-go/deepseek-v4-flash` tem `attachment=false`. Spike real confirmou
+que `opencode-go/gpt-5.6-luna` lê o tabuleiro via FilePart data URL e jogou
+lance legal no e2e.
+
+### Fato relevante
+
+Ambos os modelos candidatos estão na assinatura OpenCode Go do operador —
+o custo marginal da execução é zero além da assinatura já paga. Stockfish 18
+é local (GATE-006).
+
+### Recomendação
+
+Matriz inaugural:
+- texto: `opencode-go/deepseek-v4-flash` (todas as condições textuais)
+- imagem: `opencode-go/gpt-5.6-luna` (REP-001 RGB/FEN+RGB, MM-002)
+- orçamento piloto: ~210 calls na assinatura existente; full batch n≥24 fica
+  para depois da análise do piloto (n=10).
+
+Alternativa B: qwen3-vl-30b via OpenRouter (custo por token adicional).
+Alternativa C: adiar RGB.
+
+### Limitação registrada
+
+Modelo × condição é confundido para visão (não comparamos modelos entre si;
+comparações são dentro de bloco, por posição pareada).
+
+### Pergunta ao operador
+
+Ratifica `deepseek-v4-flash` + `gpt-5.6-luna` (assinatura OpenCode Go) como a
+matriz inaugural da suite 0.1 com orçamento piloto de ~210 calls?
+
+### Registro
+
+```yaml
+id: GATE-011
+selected_option: null
+rationale: null
+approved_by: null
+selected_at: null
+revisit_trigger: null
+```
+
+
 ## Ordem recomendada de decisão
 
 `GATE-001 → GATE-002 → GATE-004 → GATE-003 → GATE-006 → GATE-008 → GATE-007 → GATE-010 → GATE-009 → GATE-005 → GATE-011 → GATE-012`

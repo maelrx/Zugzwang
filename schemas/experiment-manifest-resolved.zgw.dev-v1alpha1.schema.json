@@ -1070,6 +1070,14 @@
           "default": {},
           "title": "Config",
           "type": "object"
+        },
+        "config_from_matrix": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Config From Matrix",
+          "type": "array"
         }
       },
       "required": [

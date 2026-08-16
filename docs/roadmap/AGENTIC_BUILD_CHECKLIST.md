@@ -222,6 +222,14 @@ Exit M6:
 - [x] evidência: lance real "e2e4"; attempt completed, 3988 ms, usage {input 98, output 5, source provider}
 - [x] gates offline continuam verdes (151 testes + pyright + ruff + foundation strict)
 
+## Research Suite 0.1 (ZGW-0073..0076, 2026-08-16)
+
+- [x] ZGW-0073 multimodal: ImagePart (CAS+sha256+renderer metadata), renderer Pillow byte-determinístico (tema/orientação/coordenadas/tamanho), observation.image + fen_override + modality_authority, image_conflict manifest (delta_squares), lowering opencode FilePart data-URL e openai-compatible image_url, preflight MULTIMODAL_IMAGE sem fallback silencioso (ADR-046); spike real gpt-5.6-luna lê tabuleiro
+- [x] ZGW-0074 knowledge: KClass K0-K7 (ADR-047 emenda ADR-034), KnowledgePacket estático (schema+loader+auditoria de leakage+hash na condition identity), injeção no prompt com K impact por episódio; packets SKILL-001 S2-S8 com token-matching S4≈S5≈S6
+- [x] ZGW-0075 grounding: chess.reason_then_ground G4 (2 fases, análise sem legal set, candidatos no trace), G3 SAN legal set + resolve UCI, protocol.prompt (persona/few-shot) no hash de protocolo, effective H/K por episódio (H3/K0 no G4)
+- [x] ZGW-0076 suite: corpus 10 posições congeladas (sha256), 14 manifests gerados deterministicamente, experiment card + preregistration, decision packet GATE-011, piloto e2e real (6 condições, 1 posição Najdorf) com Stockfish 18 pós-hoc
+- [x] gates: 190 offline + 8 e2e verdes; ruff/pyright/foundation strict verdes
+
 ## Estado da sessão
 
 - Início: 2026-08-16

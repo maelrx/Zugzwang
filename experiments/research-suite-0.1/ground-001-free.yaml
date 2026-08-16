@@ -1,0 +1,70 @@
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: ground-001-free
+  tags:
+  - e2e
+  - real-provider
+  - ground-001
+spec:
+  seed: 20260816
+  matrix:
+    mode: zip
+    parameters:
+      start_fen:
+      - rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2
+      - rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6
+      - r1bq1rk1/pp2bppp/2n1pn2/2pp4/2PP4/2N1PN2/PP2BPPP/R1BQ1RK1 w - - 2 8
+      - r1bqk2r/pp2bppp/2n1pn2/3p4/2PP4/2N2N2/PP2BPPP/R1BQ1RK1 w kq - 3 9
+      - r3kb1r/ppq2ppp/2n1b3/3p4/3N1n2/2N1B3/PP3PPP/R2QKB1R w KQkq - 1 11
+      - 2r1r1k1/pp1n1ppp/2p1p3/q1Pp1b2/3P1N2/2N1P1P1/PP1BQ1PP/2R2RK1 w - - 0 17
+      - 8/8/5k2/1R3p2/5P2/3r4/8/6K1 w - - 0 52
+      - 8/5k2/4p3/4P1p1/3p2Pp/3K3P/8/8 w - - 0 41
+      - 2rqkb1r/pbpn1ppp/1p1p4/4p3/2PP4/2N2NP1/PP2PPBP/R2QKB1R w KQkq - 0 9
+      - rnbqk2r/pp2pppp/3p1n2/8/2PP4/5N2/PP3PPP/RNBQKB1R b KQkq - 0 6
+  task:
+    plugin: chess.tasks
+    config:
+      kind: move-selection
+      start_fen: __matrix__
+      backend_config:
+        base_url: http://127.0.0.1:4100
+        provider_id: opencode-go
+        timeout_seconds: 300
+        image_input: false
+    config_from_matrix:
+    - start_fen
+  players:
+    white:
+      model:
+        backend: provider.opencode
+        provider: opencode-go
+        model: deepseek-v4-flash
+        strategy: chess.direct
+    black:
+      policy:
+        plugin: fake.stay
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position:
+        fen: true
+      side_to_move: true
+      move_number: true
+      history:
+        mode: none
+    retries:
+      transport: 1
+      parse: 0
+      illegal: 0
+    knowledge_packets: []
+  budget:
+    max_calls: 25
+    max_concurrent_episodes: 1
+  evaluation:
+  - plugin: evaluator.stockfish
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

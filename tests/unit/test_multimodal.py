@@ -183,3 +183,43 @@ class TestImagePartContract:
         part = image_part_from_observation(observation)
         assert part is not None
         assert part.mime == "image/png"
+
+
+class TestConflictTransform:
+    def test_displaces_exactly_one_piece(self) -> None:
+        from zugzwang_chess.codecs.board_png import piece_symbols
+        from zugzwang_chess.codecs.conflict import displace_one_minor_piece
+
+        for fen in (
+            "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6",
+            "8/8/5k2/1R3p2/5P2/3r4/8/6K1 w - - 0 52",
+            "8/5k2/4p3/4P1p1/3p2Pp/3K3P/8/8 w - - 0 41",
+        ):
+            displaced = displace_one_minor_piece(fen)
+            a = piece_symbols(fen)
+            b = piece_symbols(displaced)
+            changed = [sq for sq in sorted(set(a) | set(b)) if a.get(sq, ".") != b.get(sq, ".")]
+            assert len(changed) == 2, (fen, changed)
+
+    def test_conflict_observation_has_manifest(self) -> None:
+        from zugzwang_chess.environment.standard import ChessGameState, StandardChessEnvironment
+        from zugzwang_core.ports.environment import ObservationPolicy
+
+        env = StandardChessEnvironment()
+        state = ChessGameState(
+            fen="rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6"
+        )
+        policy = ObservationPolicy(
+            settings={
+                "position": {"fen": True},
+                "image": {"enabled": True, "fen_override": "__conflict_auto__"},
+                "modality_authority": "text",
+            }
+        )
+        observation = env.observe(state, policy)
+        conflict = observation["image_conflict"]
+        assert (
+            conflict["source_state_fen"].split(" ")[0]
+            == "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R"
+        )
+        assert conflict["delta_squares"]

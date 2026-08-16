@@ -256,9 +256,14 @@ class StandardChessEnvironment:
 
         source_fen = fen_from_state(state)
         fen_override = image_settings.get("fen_override")
-        image_fen = (
-            str(fen_override) if isinstance(fen_override, str) and fen_override else source_fen
-        )
+        if isinstance(fen_override, str) and fen_override == "__conflict_auto__":
+            from ..codecs.conflict import displace_one_minor_piece
+
+            image_fen = displace_one_minor_piece(source_fen)
+        else:
+            image_fen = (
+                str(fen_override) if isinstance(fen_override, str) and fen_override else source_fen
+            )
         orientation_raw = str(image_settings.get("orientation", "white"))
         orientation: Literal["white", "black"] = cast(
             Literal["white", "black"],

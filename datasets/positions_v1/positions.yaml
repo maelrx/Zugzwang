@@ -1,0 +1,58 @@
+# Zugzwang Research Suite 0.1 — frozen paired position corpus (ZGW-0076)
+# Immutable: any edit must bump corpus_version. Checksummed via sha256.
+schema_version: "1.0.0"
+corpus_version: "1.0.0"
+curator: "Mestre Mael (operator) with Zugzwang ZGW-0076"
+created_at: "2026-08-16"
+license: "CC-BY-SA-4.0"
+positions:
+  - pair_id: P01
+    fen: "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2"
+    phase: opening
+    kind: quiet
+    note: "Queen's Gambit tabiya after 1.d4 d5 2.c4"
+  - pair_id: P02
+    fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6"
+    phase: opening
+    kind: quiet
+    note: "Open Sicilian Najdorf tabiya (structure matches SKILL-001 S4)"
+  - pair_id: P03
+    fen: "r1bq1rk1/pp2bppp/2n1pn2/2pp4/2PP4/2N1PN2/PP2BPPP/R1BQ1RK1 w - - 2 8"
+    phase: middlegame
+    kind: quiet
+    note: "Closed symmetrical structure; slow maneuvering position"
+  - pair_id: P04
+    fen: "r1bqk2r/pp2bppp/2n1pn2/3p4/2PP4/2N2N2/PP2BPPP/R1BQ1RK1 w kq - 3 9"
+    phase: middlegame
+    kind: quiet
+    note: "Open center; pieces active on both sides"
+  - pair_id: P05
+    fen: "r3kb1r/ppq2ppp/2n1b3/3p4/3N1n2/2N1B3/PP3PPP/R2QKB1R w KQkq - 1 11"
+    phase: middlegame
+    kind: tactical
+    note: "Knight on f4 creates tactics; high branching"
+  - pair_id: P06
+    fen: "2r1r1k1/pp1n1ppp/2p1p3/q1Pp1b2/3P1N2/2N1P1P1/PP1BQ1PP/2R2RK1 w - - 0 17"
+    phase: middlegame
+    kind: tactical
+    note: "Queenside pressure; tactical pins along c-file"
+  - pair_id: P07
+    fen: "8/8/5k2/1R3p2/5P2/3r4/8/6K1 w - - 0 52"
+    phase: endgame
+    kind: quiet
+    note: "Rook endgame with passed pawn potential"
+  - pair_id: P08
+    fen: "8/5k2/4p3/4P1p1/3p2Pp/3K3P/8/8 w - - 0 41"
+    phase: endgame
+    kind: quiet
+    note: "Pawn endgame: king activity and reserve tempi decide"
+  - pair_id: P09
+    fen: "2rqkb1r/pbpn1ppp/1p1p4/4p3/2PP4/2N2NP1/PP2PPBP/R2QKB1R w KQkq - 0 9"
+    phase: ood
+    kind: quiet
+    note: "OOD slice: hedgehog-like unusual structure with rooks misplaced"
+  - pair_id: P10
+    fen: "rnbqk2r/pp2pppp/3p1n2/8/2PP4/5N2/PP3PPP/RNBQKB1R b KQkq - 0 6"
+    phase: ood
+    kind: quiet
+    note: "OOD slice: unusual move order, Black to move mid-transposition"

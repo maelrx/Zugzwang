@@ -60,6 +60,7 @@ class TaskSpec(BaseModel):
     plugin: NameStr
     version: str | None = None
     config: dict[str, JsonValue] = {}
+    config_from_matrix: tuple[str, ...] = ()
 
 
 class PlayerModelSpec(BaseModel):
@@ -358,7 +359,7 @@ def expand_matrix(experiment_name: str, spec: Spec) -> tuple[ResolvedCondition, 
                 condition_id=condition_id,
                 index=index,
                 parameters=parameters,
-                task=spec.task,
+                task=_bind_task_config(spec.task, parameters),
                 players=_bind_matrix_players(spec.players, parameters),
                 protocol=spec.protocol,
                 budget=spec.budget,
@@ -367,6 +368,17 @@ def expand_matrix(experiment_name: str, spec: Spec) -> tuple[ResolvedCondition, 
             )
         )
     return tuple(conditions)
+
+
+def _bind_task_config(task: TaskSpec, parameters: dict[str, JsonValue]) -> TaskSpec:
+    """Bind task config keys listed in ``config_from_matrix`` (FR-006)."""
+    if not task.config_from_matrix:
+        return task
+    config = dict(task.config)
+    for key in task.config_from_matrix:
+        if key in parameters:
+            config[key] = parameters[key]
+    return task.model_copy(update={"config": config})
 
 
 def _bind_matrix_players(

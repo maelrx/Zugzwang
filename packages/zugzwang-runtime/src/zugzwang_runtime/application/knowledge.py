@@ -55,20 +55,19 @@ def _load_one(manifest_dir: Path, ref: str) -> KnowledgePacket:
 
 
 def _parse(path: Path, ref: str) -> KnowledgePacket:
-    data: Any
+    data: dict[str, Any] = {}
     try:
         if path.suffix == ".json":
-            data = json.loads(path.read_text(encoding="utf-8"))
+            loaded_json = json.loads(path.read_text(encoding="utf-8"))
+            data = loaded_json if isinstance(loaded_json, dict) else {}
         else:
-            loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
-            data = loaded if isinstance(loaded, dict) else {}
+            loaded_yaml = yaml.safe_load(path.read_text(encoding="utf-8"))
+            data = loaded_yaml if isinstance(loaded_yaml, dict) else {}
     except Exception as exc:
         raise ManifestValidationError(
             f"knowledge packet {ref!r} unreadable", technical_context=str(exc)
         ) from exc
-    if not isinstance(data, dict):
-        raise ManifestValidationError(f"knowledge packet {ref!r} must be a mapping")
-    packet_raw = data.get("packet")
+    packet_raw: Any = data.get("packet")
     if not isinstance(packet_raw, dict):
         raise ManifestValidationError(f"knowledge packet {ref!r} missing 'packet' key")
     try:

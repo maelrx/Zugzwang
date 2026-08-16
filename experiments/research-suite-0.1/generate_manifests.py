@@ -171,20 +171,6 @@ def main() -> None:
     }
     grounded_obs = {**fen_obs, "legal_actions": {"exposure": "always", "encoding": "uci"}}
     reason_obs = {**fen_obs, "legal_actions": {"exposure": "delayed", "encoding": "uci"}}
-    conflict_obs = {
-        "position": {"fen": True},
-        "side_to_move": True,
-        "move_number": True,
-        "history": {"mode": "none"},
-        "image": {
-            "enabled": True,
-            "orientation": "white",
-            "coordinates": True,
-            "fen_override": "__matrix__",
-        },
-        "modality_authority": "text",
-    }
-
     manifests: dict[str, str] = {}
     manifests["rep-001-fen.yaml"] = build_manifest(
         "rep-001-fen",

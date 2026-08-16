@@ -26,6 +26,7 @@ chess_random_legal = "zugzwang_chess.plugins:CHESS_POLICY_ENTRY"
 [project.entry-points."zugzwang.strategies"]
 chess_direct = "zugzwang_chess.plugins:CHESS_STRATEGY_ENTRY"
 chess_grounded = "zugzwang_chess.plugins:CHESS_GROUNDED_STRATEGY_ENTRY"
+chess_reason_then_ground = "zugzwang_chess.plugins:CHESS_REASON_THEN_GROUND_STRATEGY_ENTRY"
 chess_repair = "zugzwang_chess.plugins:CHESS_REPAIR_STRATEGY_ENTRY"
 chess_structured = "zugzwang_chess.plugins:CHESS_STRUCTURED_STRATEGY_ENTRY"
 chess_reconstruct = "zugzwang_chess.plugins:CHESS_RECONSTRUCT_STRATEGY_ENTRY"

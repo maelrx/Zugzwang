@@ -30,6 +30,7 @@ from zugzwang_core.ports.strategy import (
 
 from ._image import build_message_parts
 from ._knowledge import knowledge_impacts, render_knowledge_section
+from ._prompt_hooks import apply_prompt_override_text
 from .direct import build_observation_text
 
 
@@ -81,9 +82,10 @@ class GroundedStrategy:
 
             if not all(re.fullmatch(r"[a-h][1-8][a-h][1-8][qrbn]?", str(a)) for a in legal_actions):
                 encoding = "san"
-        prompt = self._prompt(obs, encoding)
+        prompt = self.build_prompt(obs, encoding)
         if knowledge_section:
             prompt = f"{prompt}\n\n{knowledge_section}"
+        prompt = apply_prompt_override_text(prompt, context)
         parts, required_capabilities = build_message_parts(
             obs, prompt, artifact_store=context.artifact_store
         )
@@ -118,7 +120,7 @@ class GroundedStrategy:
         impact = AssistanceImpact(h=HClass.H3, source="legal_action_set")
         impacts = (impact, *knowledge_impacts(context.knowledge))
         try:
-            action = self._resolve_action(raw, obs, legal_actions, encoding)
+            action = self.resolve_action(raw, obs, legal_actions, encoding)
         except OutputParseError as exc:
             return DecisionTrace(
                 strategy_id=self.strategy_id,
@@ -155,7 +157,7 @@ class GroundedStrategy:
             assistance_impacts=impacts,
         )
 
-    def _resolve_action(
+    def resolve_action(
         self, raw: str, obs: dict[str, JsonValue], legal_actions: list[Any], encoding: str
     ) -> Any:
         if encoding == "index":
@@ -194,7 +196,7 @@ class GroundedStrategy:
                 return move.uci
         raise OutputParseError(f"no legal UCI move found in {raw[:120]!r}")
 
-    def _prompt(self, obs: dict[str, JsonValue], encoding: str) -> str:
+    def build_prompt(self, obs: dict[str, JsonValue], encoding: str) -> str:
         base = build_observation_text(obs)
         legal_raw = obs.get("legal_actions")
         legal: list[Any] = (

@@ -362,6 +362,8 @@ class DurableRunCoordinator:
     ) -> str:
         episode_id = work["episode_id"]
         seed = work["seed"]
+        effective_h = "H2"
+        effective_k = "K0"
         environment = self._environment_for(condition)
         strategy = self._strategy_for(condition)
         model = self._model_for(condition)
@@ -489,7 +491,13 @@ class DurableRunCoordinator:
                 ordinal += 1
                 if self._is_episode_complete(environment, state, ordinal, max_steps):
                     return await self._complete_episode(
-                        run_id, episode_id, environment, state, ordinal, "completed"
+                        run_id,
+                        episode_id,
+                        environment,
+                        state,
+                        ordinal,
+                        "completed",
+                        f"{effective_h}/{effective_k}",
                     )
                 continue
 
@@ -528,7 +536,13 @@ class DurableRunCoordinator:
                 if not outcome:
                     return "failed"
                 return await self._complete_episode(
-                    run_id, episode_id, environment, state, ordinal + 1, "completed"
+                    run_id,
+                    episode_id,
+                    environment,
+                    state,
+                    ordinal + 1,
+                    "completed",
+                    f"{effective_h}/{effective_k}",
                 )
 
             decision_context = DecisionContext(
@@ -539,7 +553,7 @@ class DurableRunCoordinator:
                 backend=recording_backend,
                 tools={},
                 seed=seed,
-                config={},
+                config=_decision_config(condition),
                 artifact_store=self._artifact_store,
                 knowledge=knowledge,
             )
@@ -572,6 +586,13 @@ class DurableRunCoordinator:
                 trace = None
             async with ledger_lock:
                 ledger.reconcile("calls", 1, 1)
+            if trace is not None:
+                from zugzwang_core.domain.assistance import HClass, KClass
+
+                h_levels = [HClass.H2] + [impact.h for impact in trace.assistance_impacts]
+                k_levels = [KClass.K0] + [impact.k for impact in trace.assistance_impacts]
+                effective_h = max(h_levels).name
+                effective_k = max(k_levels).name
 
             if trace is None or trace.final_action is None:
                 await self._fail_step(run_id, episode_id, step_id, "no_action")
@@ -643,11 +664,23 @@ class DurableRunCoordinator:
             ordinal += 1
             if transition.terminal:
                 return await self._complete_episode(
-                    run_id, episode_id, environment, state, ordinal, "completed"
+                    run_id,
+                    episode_id,
+                    environment,
+                    state,
+                    ordinal,
+                    "completed",
+                    f"{effective_h}/{effective_k}",
                 )
             if self._is_episode_complete(environment, state, ordinal, max_steps):
                 return await self._complete_episode(
-                    run_id, episode_id, environment, state, ordinal, "completed"
+                    run_id,
+                    episode_id,
+                    environment,
+                    state,
+                    ordinal,
+                    "completed",
+                    f"{effective_h}/{effective_k}",
                 )
 
     def _max_steps_for(self, condition: ResolvedCondition, task_kind: str) -> int:
@@ -674,6 +707,7 @@ class DurableRunCoordinator:
         state: Any,
         ordinal: int,
         outcome: str,
+        effective_assistance: str = "H2",
     ) -> str:
         snapshot_ref = self._artifact_store.put(environment.snapshot(state))
         self._writer.enqueue(
@@ -683,7 +717,7 @@ class DurableRunCoordinator:
                     "status": EpisodeState.COMPLETED.value,
                     "outcome": outcome,
                     "final_state_artifact_id": snapshot_ref.as_id(),
-                    "effective_assistance": "H2",
+                    "effective_assistance": effective_assistance,
                 },
                 envelope=self._episode_envelope(
                     run_id, episode_id, "episode.completed", {"steps": ordinal}
@@ -795,7 +829,7 @@ class DurableRunCoordinator:
             backend=recording_backend,
             tools={},
             seed=seed,
-            config={},
+            config=_decision_config(condition),
             artifact_store=self._artifact_store,
             knowledge=knowledge,
         )
@@ -1006,6 +1040,12 @@ class DurableRunCoordinator:
                     from zugzwang_chess.strategies.grounded import GroundedStrategy
 
                     return GroundedStrategy()
+                if player.model.strategy == "chess.reason_then_ground":
+                    from zugzwang_chess.strategies.reason_then_ground import (
+                        ReasonThenGroundStrategy,
+                    )
+
+                    return ReasonThenGroundStrategy()
                 if player.model.strategy == "chess.reconstruct":
                     from zugzwang_chess.strategies.reconstruct import ReconstructStrategy
 
@@ -1126,3 +1166,14 @@ def _coerce_action(action: Any, legal_actions: Any) -> Any:
         except Exception:
             return action
     return action
+
+
+def _decision_config(condition: ResolvedCondition) -> dict[str, Any]:
+    """Protocol prompt overrides become strategy context config (persona/few-shot)."""
+    prompt_spec = condition.protocol.prompt
+    return {
+        "prompt": {
+            "system_instructions": prompt_spec.system_instructions,
+            "examples": [dict(example) for example in prompt_spec.examples],
+        }
+    }

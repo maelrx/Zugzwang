@@ -32,6 +32,7 @@ from zugzwang_core.ports.strategy import (
 
 from ._image import build_message_parts
 from ._knowledge import knowledge_impacts, render_knowledge_section
+from ._prompt_hooks import apply_prompt_override
 
 
 def build_observation_text(observation: dict[str, JsonValue]) -> str:
@@ -101,7 +102,8 @@ class ChessDirectStrategy:
             side_value = cast(dict[str, Any], observation).get("side_to_move")
             if side_value is not None:
                 side = str(side_value)
-        prompt_text = self._program.render(text)
+        program = apply_prompt_override(self._program, context)
+        prompt_text = program.render(text)
         parts, required_capabilities = build_message_parts(
             cast(dict[str, JsonValue], observation),
             prompt_text,

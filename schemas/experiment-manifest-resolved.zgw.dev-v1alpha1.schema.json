@@ -216,6 +216,80 @@
         }
       ]
     },
+    "KnowledgePacket": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "language": {
+          "default": "en",
+          "title": "Language",
+          "type": "string"
+        },
+        "knowledge_class": {
+          "pattern": "^K[0-7]$",
+          "title": "Knowledge Class",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/PacketScope"
+        },
+        "applicability": {
+          "additionalProperties": true,
+          "title": "Applicability",
+          "type": "object"
+        },
+        "content": {
+          "$ref": "#/$defs/PacketContent"
+        },
+        "leakage": {
+          "$ref": "#/$defs/PacketLeakage",
+          "default": {
+            "current_position_analysis": false,
+            "target_move": false,
+            "engine_evaluation": false,
+            "transposition_lookup": false
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/PacketProvenance"
+        },
+        "content_hash": {
+          "default": "",
+          "pattern": "^([0-9a-f]{64})?$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "knowledge_class",
+        "scope",
+        "content",
+        "provenance"
+      ],
+      "title": "KnowledgePacket",
+      "type": "object"
+    },
     "ManifestPatch": {
       "additionalProperties": false,
       "properties": {
@@ -285,6 +359,142 @@
         "name"
       ],
       "title": "Metadata",
+      "type": "object"
+    },
+    "PacketContent": {
+      "additionalProperties": false,
+      "properties": {
+        "principles": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Principles",
+          "type": "array"
+        },
+        "candidate_plans": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Candidate Plans",
+          "type": "array"
+        },
+        "failure_modes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Failure Modes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "principles"
+      ],
+      "title": "PacketContent",
+      "type": "object"
+    },
+    "PacketLeakage": {
+      "additionalProperties": false,
+      "properties": {
+        "current_position_analysis": {
+          "default": false,
+          "title": "Current Position Analysis",
+          "type": "boolean"
+        },
+        "target_move": {
+          "default": false,
+          "title": "Target Move",
+          "type": "boolean"
+        },
+        "engine_evaluation": {
+          "default": false,
+          "title": "Engine Evaluation",
+          "type": "boolean"
+        },
+        "transposition_lookup": {
+          "default": false,
+          "title": "Transposition Lookup",
+          "type": "boolean"
+        }
+      },
+      "title": "PacketLeakage",
+      "type": "object"
+    },
+    "PacketProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "curator": {
+          "title": "Curator",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "license": {
+          "title": "License",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "curator",
+        "sources",
+        "license",
+        "created_at"
+      ],
+      "title": "PacketProvenance",
+      "type": "object"
+    },
+    "PacketScope": {
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "const": "chess",
+          "default": "chess",
+          "title": "Domain",
+          "type": "string"
+        },
+        "phases": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Phases",
+          "type": "array"
+        },
+        "structures": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Structures",
+          "type": "array"
+        },
+        "openings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Openings",
+          "type": "array"
+        }
+      },
+      "title": "PacketScope",
       "type": "object"
     },
     "PlayerModelSpec": {
@@ -549,6 +759,30 @@
       "title": "PricingSnapshot",
       "type": "object"
     },
+    "PromptOverrideSpec": {
+      "additionalProperties": false,
+      "description": "Protocol-level prompt controls: persona framing and few-shot examples.\n\nEnters the protocol identity hash; strategies apply it deterministically.",
+      "properties": {
+        "system_instructions": {
+          "default": "",
+          "title": "System Instructions",
+          "type": "string"
+        },
+        "examples": {
+          "default": [],
+          "items": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "title": "Examples",
+          "type": "array"
+        }
+      },
+      "title": "PromptOverrideSpec",
+      "type": "object"
+    },
     "ProtocolSpec": {
       "additionalProperties": false,
       "properties": {
@@ -588,6 +822,13 @@
           },
           "title": "Knowledge Packets",
           "type": "array"
+        },
+        "prompt": {
+          "$ref": "#/$defs/PromptOverrideSpec",
+          "default": {
+            "system_instructions": "",
+            "examples": []
+          }
         }
       },
       "required": [
@@ -900,6 +1141,14 @@
     "protocol_hash": {
       "title": "Protocol Hash",
       "type": "string"
+    },
+    "knowledge_packets": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/KnowledgePacket"
+      },
+      "title": "Knowledge Packets",
+      "type": "array"
     }
   },
   "required": [

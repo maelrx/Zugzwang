@@ -337,6 +337,14 @@ def _default_fake_rules():
         FakeBackendRule(when={"fingerprint_contains": "chess-grounded"}, output="e2e4"),
         FakeBackendRule(when={"fingerprint_contains": "chess-repair"}, output="e2e4"),
         FakeBackendRule(
+            when={"fingerprint_contains": "chess-reason-then-ground-analyze"},
+            output="Candidates:\ne2e4\ng1f3",
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-reason-then-ground-ground"},
+            output="e2e4",
+        ),
+        FakeBackendRule(
             when={"fingerprint_contains": "chess-structured"}, output=structured_output
         ),
         FakeBackendRule(

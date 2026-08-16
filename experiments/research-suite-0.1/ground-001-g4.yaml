@@ -1,0 +1,54 @@
+# GROUND-001 G4: reason-first / constrain-later (offline fake smoke)
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: ground-001-g4-reason-then-ground
+  tags: [offline, grounded, reason-first]
+
+spec:
+  seed: 20260816
+
+  task:
+    plugin: chess.tasks
+    config:
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: chess.reason_then_ground
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H3
+    declared_knowledge: K0
+    observation:
+      position: {fen: true}
+      side_to_move: true
+      move_number: true
+      history: {mode: none}
+      legal_actions: {exposure: delayed, encoding: uci}
+    prompt:
+      system_instructions: "You are playing standard chess as a careful Grandmaster."
+      examples:
+        - label: "example"
+          text: "Position: initial. Candidates: e2e4, d2d4, g1f3."
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 10
+    max_concurrent_episodes: 1
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true

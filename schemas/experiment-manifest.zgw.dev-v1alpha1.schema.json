@@ -397,6 +397,30 @@
       "title": "PlayerSpec",
       "type": "object"
     },
+    "PromptOverrideSpec": {
+      "additionalProperties": false,
+      "description": "Protocol-level prompt controls: persona framing and few-shot examples.\n\nEnters the protocol identity hash; strategies apply it deterministically.",
+      "properties": {
+        "system_instructions": {
+          "default": "",
+          "title": "System Instructions",
+          "type": "string"
+        },
+        "examples": {
+          "default": [],
+          "items": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "title": "Examples",
+          "type": "array"
+        }
+      },
+      "title": "PromptOverrideSpec",
+      "type": "object"
+    },
     "ProtocolSpec": {
       "additionalProperties": false,
       "properties": {
@@ -436,6 +460,13 @@
           },
           "title": "Knowledge Packets",
           "type": "array"
+        },
+        "prompt": {
+          "$ref": "#/$defs/PromptOverrideSpec",
+          "default": {
+            "system_instructions": "",
+            "examples": []
+          }
         }
       },
       "required": [

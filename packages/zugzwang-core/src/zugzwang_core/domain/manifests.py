@@ -107,6 +107,18 @@ class RetrySpec(BaseModel):
     feedback: str = "legality_only"
 
 
+class PromptOverrideSpec(BaseModel):
+    """Protocol-level prompt controls: persona framing and few-shot examples.
+
+    Enters the protocol identity hash; strategies apply it deterministically.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    system_instructions: str = ""
+    examples: tuple[dict[str, str], ...] = ()
+
+
 class ProtocolSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -115,6 +127,7 @@ class ProtocolSpec(BaseModel):
     observation: dict[str, JsonValue] = {}
     retries: RetrySpec = RetrySpec()
     knowledge_packets: tuple[str, ...] = ()
+    prompt: PromptOverrideSpec = PromptOverrideSpec()
 
 
 class BudgetSpecManifest(BaseModel):

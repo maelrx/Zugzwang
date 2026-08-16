@@ -44,6 +44,19 @@ class ChessGroundedStrategyDefinition:
         )
 
 
+class ChessReasonThenGroundStrategyDefinition:
+    @property
+    def descriptor(self) -> PluginDescriptor:
+        return PluginDescriptor(
+            plugin_id="chess.reason_then_ground",
+            plugin_version="0.1.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R1", "uci", "opaque_index", "san"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+
 class ChessRepairStrategyDefinition:
     @property
     def descriptor(self) -> PluginDescriptor:
@@ -114,6 +127,7 @@ CHESS_TASK_ENTRY = ChessTaskDefinition()
 CHESS_POLICY_ENTRY = ChessPolicyDefinition()
 CHESS_STRATEGY_ENTRY = ChessStrategyDefinition()
 CHESS_GROUNDED_STRATEGY_ENTRY = ChessGroundedStrategyDefinition()
+CHESS_REASON_THEN_GROUND_STRATEGY_ENTRY = ChessReasonThenGroundStrategyDefinition()
 CHESS_REPAIR_STRATEGY_ENTRY = ChessRepairStrategyDefinition()
 CHESS_STRUCTURED_STRATEGY_ENTRY = ChessStructuredStrategyDefinition()
 CHESS_RECONSTRUCT_STRATEGY_ENTRY = ChessReconstructStrategyDefinition()

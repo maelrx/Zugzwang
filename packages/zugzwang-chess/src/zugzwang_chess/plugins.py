@@ -96,6 +96,45 @@ class ChessReconstructStrategyDefinition:
         )
 
 
+class ChessBatchedTreeStrategyDefinition:
+    @property
+    def descriptor(self) -> PluginDescriptor:
+        return PluginDescriptor(
+            plugin_id="chess.r6_batched_tree",
+            plugin_version="0.1.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R6", "model-only-search", "uci"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+
+class ChessMultiAgentReviewStrategyDefinition:
+    @property
+    def descriptor(self) -> PluginDescriptor:
+        return PluginDescriptor(
+            plugin_id="chess.multi_agent_review",
+            plugin_version="0.1.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R5", "multi-agent-review", "uci"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+
+class ChessLegalTreeMemoryStrategyDefinition:
+    @property
+    def descriptor(self) -> PluginDescriptor:
+        return PluginDescriptor(
+            plugin_id="chess.legal_tree_memory",
+            plugin_version="0.1.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R7", "legal-action-set", "model-search", "memory", "uci"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+
 class ChessPolicyDefinition:
     @property
     def descriptor(self) -> PluginDescriptor:
@@ -131,3 +170,6 @@ CHESS_REASON_THEN_GROUND_STRATEGY_ENTRY = ChessReasonThenGroundStrategyDefinitio
 CHESS_REPAIR_STRATEGY_ENTRY = ChessRepairStrategyDefinition()
 CHESS_STRUCTURED_STRATEGY_ENTRY = ChessStructuredStrategyDefinition()
 CHESS_RECONSTRUCT_STRATEGY_ENTRY = ChessReconstructStrategyDefinition()
+CHESS_R6_BATCHED_TREE_STRATEGY_ENTRY = ChessBatchedTreeStrategyDefinition()
+CHESS_MULTI_AGENT_REVIEW_STRATEGY_ENTRY = ChessMultiAgentReviewStrategyDefinition()
+CHESS_LEGAL_TREE_MEMORY_STRATEGY_ENTRY = ChessLegalTreeMemoryStrategyDefinition()

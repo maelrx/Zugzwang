@@ -57,6 +57,12 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [Performance budgets](architecture/PERFORMANCE_BUDGETS.md)
 - [Technology radar](architecture/TECHNOLOGY_RADAR.md)
 - [Architecture alternatives matrix](architecture/ALTERNATIVES_MATRIX.md)
+- [Legality gateway](architecture/LEGALITY_GATEWAY.md)
+- [Decision evidence](architecture/DECISION_EVIDENCE.md)
+- [SearchWorkspace](architecture/SEARCH_WORKSPACE.md)
+- [Search Memory](architecture/SEARCH_MEMORY.md)
+- [Model-only search](architecture/MODEL_ONLY_SEARCH.md)
+- [Evaluation firewall](architecture/EVALUATION_FIREWALL.md)
 
 ## Requirements
 
@@ -98,7 +104,7 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [Database migration guide](engineering/DATABASE_MIGRATION_GUIDE.md)
 - [Work Order template](engineering/WORK_ORDER_TEMPLATE.md)
 - [Handoff template](engineering/HANDOFF_TEMPLATE.md)
-- [Codex skills catalog](../.agents/skills/README.md)
+- [Codex skills catalog](../AGENTS.md)
 
 ## Decisions and ADRs
 
@@ -109,6 +115,19 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [Candidate decision backlog](adr/CANDIDATE_DECISIONS.md)
 - [Decision record template](decisions/DECISION_RECORD_TEMPLATE.md)
 - [Decision log](decisions/DECISION_LOG.md)
+- [ADR-048 RulesKernel versus LegalityGateway](adr/ADR-048-ruleskernel-vs-legality-gateway.md)
+- [ADR-049 Legality exposure profiles](adr/ADR-049-legality-exposure-profiles.md)
+- [ADR-050 Capability leases](adr/ADR-050-capability-leases.md)
+- [ADR-051 Decision evidence model](adr/ADR-051-decision-evidence-model.md)
+- [ADR-052 Raw wire retention](adr/ADR-052-raw-wire-retention.md)
+- [ADR-053 Reasoning telemetry](adr/ADR-053-reasoning-telemetry.md)
+- [ADR-054 EvaluationRun separation](adr/ADR-054-evaluation-run-separation.md)
+- [ADR-055 SearchWorkspace immutable DAG](adr/ADR-055-searchworkspace-immutable-dag.md)
+- [ADR-056 Endogenous Search Memory](adr/ADR-056-endogenous-search-memory.md)
+- [ADR-057 R6 model-only search](adr/ADR-057-r6-model-only-search.md)
+- [ADR-058 Post-hoc engine firewall](adr/ADR-058-posthoc-engine-firewall.md)
+- [ADR-059 R5 multi-agent review por lance](adr/ADR-059-multi-agent-review.md)
+- [ADR-060 Legal tree e ablação de memória por episódio](adr/ADR-060-turn-scoped-legality-and-memory-ablation.md)
 
 ## Roadmap
 
@@ -149,3 +168,11 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [Governance](../GOVERNANCE.md)
 - [Security](../SECURITY.md)
 - [Foundation report](../FOUNDATION_REPORT.md)
+
+## Execution reports
+
+- [Real pipeline — MuseSpark 1.3 Free and Stockfish](reports/REAL-PIPELINE-2026-09-04.md)
+- [Bateria MuseSpark 1.3 contra Stockfish](reports/MUSESPARK-STOCKFISH-BATTERY-2026-09-04.md)
+- [Validacao real pos-mudancas](reports/REAL-VALIDATION-2026-09-04.md)
+- [Relatorio completo da run R5 multiagente](reports/R5-MULTI-AGENT-RUN-2026-09-04.md)
+- [Run R7 legal tree e memoria persistida](reports/R7-LEGAL-TREE-MEMORY-RUN-2026-09-04.md)

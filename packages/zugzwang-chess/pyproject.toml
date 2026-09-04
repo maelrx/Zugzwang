@@ -30,6 +30,9 @@ chess_reason_then_ground = "zugzwang_chess.plugins:CHESS_REASON_THEN_GROUND_STRA
 chess_repair = "zugzwang_chess.plugins:CHESS_REPAIR_STRATEGY_ENTRY"
 chess_structured = "zugzwang_chess.plugins:CHESS_STRUCTURED_STRATEGY_ENTRY"
 chess_reconstruct = "zugzwang_chess.plugins:CHESS_RECONSTRUCT_STRATEGY_ENTRY"
+chess_r6_batched_tree = "zugzwang_chess.plugins:CHESS_R6_BATCHED_TREE_STRATEGY_ENTRY"
+chess_multi_agent_review = "zugzwang_chess.plugins:CHESS_MULTI_AGENT_REVIEW_STRATEGY_ENTRY"
+chess_legal_tree_memory = "zugzwang_chess.plugins:CHESS_LEGAL_TREE_MEMORY_STRATEGY_ENTRY"
 
 [tool.uv.sources]
 zugzwang-core = { workspace = true }

@@ -1928,6 +1928,20 @@ class DurableRunCoordinator:
                     return LegalTreeMemoryStrategy(
                         memory_mode=str(config.get("memory_mode", "episodic")),
                     )
+                if player.model.strategy == "chess.single_agent_tree":
+                    from zugzwang_chess.strategies.single_agent_tree import (
+                        SingleAgentTreeStrategy,
+                    )
+
+                    search_config = condition.task.config.get("search")
+                    config = (
+                        cast(dict[str, Any], search_config)
+                        if isinstance(search_config, dict)
+                        else {}
+                    )
+                    return SingleAgentTreeStrategy(
+                        memory_mode=str(config.get("memory_mode", "episodic")),
+                    )
                 if player.model.strategy == "chess.structured":
                     from zugzwang_chess.strategies.structured import StructuredStrategy
 
@@ -2175,6 +2189,8 @@ def _search_memory_mode(condition: ResolvedCondition) -> str:
 
 
 def _search_algorithm(strategy: DecisionStrategy) -> str:
+    if strategy.descriptor.strategy_id == "chess.single_agent_tree":
+        return "R7-SingleAgentTree"
     if strategy.descriptor.declared_regime == "R7":
         return "R7-LegalTreeMemory"
     return "R6-BatchedTree"

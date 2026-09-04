@@ -128,6 +128,7 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [ADR-058 Post-hoc engine firewall](adr/ADR-058-posthoc-engine-firewall.md)
 - [ADR-059 R5 multi-agent review por lance](adr/ADR-059-multi-agent-review.md)
 - [ADR-060 Legal tree e ablação de memória por episódio](adr/ADR-060-turn-scoped-legality-and-memory-ablation.md)
+- [ADR-061 Bateria controlada de agente único](adr/ADR-061-single-agent-tree-hypothesis-battery.md)
 
 ## Roadmap
 

@@ -447,11 +447,12 @@ def _protocol_incompatibilities(condition: ResolvedCondition) -> tuple[str, ...]
 
 
 def _has_episode_search_memory(condition: ResolvedCondition) -> bool:
-    """K6 may be supplied by the explicit endogenous R7 memory fabric."""
+    """K6 may be supplied by an explicit endogenous R7 memory fabric."""
     search = condition.task.config.get("search")
-    if not isinstance(search, dict) or search.get("memory_mode") != "persistent":
+    if not isinstance(search, dict):
         return False
     return any(
-        player.model is not None and player.model.strategy == "chess.legal_tree_memory"
+        player.model is not None
+        and player.model.strategy in {"chess.legal_tree_memory", "chess.single_agent_tree"}
         for player in condition.players.values()
     )

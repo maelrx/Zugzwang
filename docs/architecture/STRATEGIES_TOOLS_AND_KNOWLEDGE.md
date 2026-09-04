@@ -37,6 +37,12 @@ bounded SearchMemory projection. Candidate roots and replies are tested in an
 immutable SearchWorkspace. Episodic memory starts empty per turn; persistent
 memory is reseeded only from the latest committed graph in the same episode.
 
+The experimental chess.single_agent_tree strategy compresses those
+capabilities into one model call per turn. The call receives legal root moves,
+legal replies for formal child states and the retrieval projection, then
+returns candidates, variants, illegal probes and one root move. The five-game
+battery changes only the declared search hypothesis.
+
 ## 3. Tool descriptor
 
 ```yaml

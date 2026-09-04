@@ -40,6 +40,7 @@ runs = Table(
     Column("protocol_hash", String(64), nullable=False),
     Column("declared_assistance", String(8), nullable=False),
     Column("effective_assistance", String(8), nullable=True),
+    Column("assistance_violated", Integer, nullable=False, default=0),
     Column("started_at", String(32), nullable=True),
     Column("finished_at", String(32), nullable=True),
     Column("failure_code", String(64), nullable=True),
@@ -59,6 +60,7 @@ episodes = Table(
     Column("initial_state_artifact_id", String(128), nullable=True),
     Column("final_state_artifact_id", String(128), nullable=True),
     Column("effective_assistance", String(8), nullable=True),
+    Column("assistance_violated", Integer, nullable=False, default=0),
     Column("config_json", JSON, nullable=True),
 )
 
@@ -71,6 +73,11 @@ steps = Table(
     Column("actor_id", String(128), nullable=False),
     Column("status", String(24), nullable=False),
     Column("observation_artifact_id", String(128), nullable=True),
+    Column("decision_trace_artifact_id", String(128), nullable=True),
+    Column("search_session_id", String(32), nullable=True),
+    Column("search_graph_artifact_id", String(128), nullable=True),
+    Column("assistance_violated", Integer, nullable=False, default=0),
+    Column("effective_assistance", String(8), nullable=True),
     Column("action_json", JSON, nullable=True),
     Column("transition_artifact_id", String(128), nullable=True),
     Column("committed_at", String(32), nullable=True),
@@ -85,7 +92,10 @@ attempts = Table(
     Column("ordinal", Integer, nullable=False),
     Column("status", String(32), nullable=False),
     Column("request_artifact_id", String(128), nullable=True),
+    Column("wire_request_artifact_id", String(128), nullable=True),
+    Column("wire_response_artifact_id", String(128), nullable=True),
     Column("response_artifact_id", String(128), nullable=True),
+    Column("reasoning_telemetry_artifact_id", String(128), nullable=True),
     Column("failure_code", String(64), nullable=True),
     Column("outcome_unknown", Integer, nullable=False, default=0),
     Column("latency_ms", Integer, nullable=True),
@@ -130,6 +140,7 @@ metric_observations = Table(
     metadata,
     Column("metric_observation_id", String(32), primary_key=True),
     Column("run_id", String(32), nullable=False),
+    Column("evaluation_run_id", String(32), nullable=True),
     Column("episode_id", String(32), nullable=True),
     Column("step_id", String(32), nullable=True),
     Column("metric_definition_id", String(128), nullable=False),
@@ -142,6 +153,83 @@ metric_observations = Table(
     Column("provenance_artifact_id", String(128), nullable=True),
     Column("evaluator_id", String(128), nullable=False),
     Column("evaluator_version", String(16), nullable=False),
+)
+
+evaluation_runs = Table(
+    "evaluation_runs",
+    metadata,
+    Column("evaluation_run_id", String(32), primary_key=True),
+    Column("source_run_id", String(32), nullable=False),
+    Column("evaluator_id", String(128), nullable=False),
+    Column("evaluator_version", String(32), nullable=False),
+    Column("engine_json", JSON, nullable=False),
+    Column("config_json", JSON, nullable=False),
+    Column("status", String(24), nullable=False),
+    Column("created_at", String(32), nullable=False),
+    Column("finished_at", String(32), nullable=True),
+    Column("failure_code", String(128), nullable=True),
+)
+
+search_sessions = Table(
+    "search_sessions",
+    metadata,
+    Column("search_session_id", String(32), primary_key=True),
+    Column("run_id", String(32), nullable=False),
+    Column("episode_id", String(32), nullable=True),
+    Column("step_id", String(32), nullable=True),
+    Column("algorithm", String(128), nullable=False),
+    Column("algorithm_version", String(32), nullable=False),
+    Column("namespace", String(32), nullable=False),
+    Column("root_node_id", String(128), nullable=False),
+    Column("budgets_json", JSON, nullable=False),
+    Column("stats_json", JSON, nullable=False),
+    Column("status", String(24), nullable=False),
+    Column("created_at", String(32), nullable=False),
+    Column("finished_at", String(32), nullable=True),
+)
+
+search_nodes = Table(
+    "search_nodes",
+    metadata,
+    Column("node_id", String(128), primary_key=True),
+    Column("search_session_id", String(32), nullable=False),
+    Column("parent_id", String(128), nullable=True),
+    Column("position_key", String(128), nullable=False),
+    Column("trajectory_key", String(128), nullable=False),
+    Column("state_ref", String(256), nullable=False),
+    Column("action_from_parent", String(32), nullable=True),
+    Column("root_action", String(32), nullable=True),
+    Column("depth", Integer, nullable=False),
+    Column("side_to_move", String(8), nullable=True),
+    Column("terminal", Integer, nullable=False),
+    Column("created_by", String(128), nullable=False),
+    Column("analysis_ref", String(256), nullable=True),
+    Column("status", String(24), nullable=False),
+)
+
+search_edges = Table(
+    "search_edges",
+    metadata,
+    Column("edge_id", String(128), primary_key=True),
+    Column("search_session_id", String(32), nullable=False),
+    Column("parent_node_id", String(128), nullable=False),
+    Column("child_node_id", String(128), nullable=True),
+    Column("proposed_action", String(32), nullable=False),
+    Column("legal", Integer, nullable=False),
+    Column("rejection_reason", String(128), nullable=True),
+    Column("created_by", String(128), nullable=False),
+)
+
+search_retrieval_events = Table(
+    "search_retrieval_events",
+    metadata,
+    Column("retrieval_event_id", String(32), primary_key=True),
+    Column("search_session_id", String(32), nullable=False),
+    Column("node_id", String(128), nullable=False),
+    Column("retriever", String(128), nullable=False),
+    Column("budget_json", JSON, nullable=False),
+    Column("result_refs_json", JSON, nullable=False),
+    Column("created_at", String(32), nullable=False),
 )
 
 budget_ledger = Table(
@@ -177,6 +265,11 @@ TABLES = (
     events,
     artifacts,
     metric_observations,
+    evaluation_runs,
+    search_sessions,
+    search_nodes,
+    search_edges,
+    search_retrieval_events,
     budget_ledger,
     checkpoints,
 )

@@ -165,3 +165,12 @@ The release is useful when an independent contributor can implement a provider p
 - scientific vocabulary being reduced to marketing badges.
 
 Mitigations are tracked in the [risk register](../roadmap/RISK_REGISTER.md).
+
+## 9. Research-kernel additions
+
+The implemented foundation adds a read-only `trace step` command, direct CAS
+references for each observation and decision, provider wire/telemetry capture,
+explicit legality exposure profiles, EvaluationRun generations and a bounded
+R6 model-only SearchWorkspace. These additions preserve the product boundary:
+Stockfish metrics remain post-hoc unless a manifest declares an assisted
+opponent condition.

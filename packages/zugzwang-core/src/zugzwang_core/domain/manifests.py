@@ -14,6 +14,7 @@ from typing import Annotated, Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from ..ports.rules import LegalityGatewayConfig
 from .canonical import hash_canonical
 from .errors import ManifestValidationError, PatchApplicationError
 from .events import JsonValue
@@ -105,7 +106,17 @@ class RetrySpec(BaseModel):
     parse: int = Field(default=0, ge=0)
     illegal: int = Field(default=0, ge=0)
     strategic: int = Field(default=0, ge=0)
-    feedback: str = "legality_only"
+    feedback: str = "binary"
+    retry_profile: (
+        Literal[
+            "no_retry",
+            "parse_only",
+            "binary_legality",
+            "legality_reason",
+            "enumerate_after_failure",
+        ]
+        | None
+    ) = None
 
 
 class PromptOverrideSpec(BaseModel):
@@ -127,6 +138,17 @@ class ProtocolSpec(BaseModel):
     declared_knowledge: KStr = "K0"
     observation: dict[str, JsonValue] = {}
     retries: RetrySpec = RetrySpec()
+    retry_profile: (
+        Literal[
+            "no_retry",
+            "parse_only",
+            "binary_legality",
+            "legality_reason",
+            "enumerate_after_failure",
+        ]
+        | None
+    ) = None
+    legality: LegalityGatewayConfig = LegalityGatewayConfig()
     knowledge_packets: tuple[str, ...] = ()
     prompt: PromptOverrideSpec = PromptOverrideSpec()
 

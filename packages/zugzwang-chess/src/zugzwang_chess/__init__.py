@@ -8,6 +8,7 @@ from .environment.standard import (
     ChessGameState,
     ChessMove,
     StandardChessEnvironment,
+    StandardChessRulesKernel,
     TerminationKind,
 )
 from .export.pgn import export_pgn_mainline
@@ -20,6 +21,7 @@ __all__ = [
     "SanMove",
     "ScriptedOpponent",
     "StandardChessEnvironment",
+    "StandardChessRulesKernel",
     "TerminationKind",
     "export_pgn_mainline",
     "fen_from_state",

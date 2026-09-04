@@ -166,7 +166,11 @@ def validate_adrs(r):
 
 
 def validate_skills(r):
-    dirs = list((ROOT / ".agents/skills").glob("*/SKILL.md"))
+    skill_root = ROOT / ".agents/skills"
+    if not skill_root.exists():
+        r.ok("skills catalog supplied by host; no vendored skills to validate")
+        return
+    dirs = list(skill_root.glob("*/SKILL.md"))
     names = set()
     for p in dirs:
         fm = parse_frontmatter(p.read_text(encoding="utf-8"))
@@ -215,8 +219,23 @@ def validate_markdown_links(r):
 
 def validate_no_control_chars(r):
     bad = []
+    binary_suffixes = {
+        ".db",
+        ".sqlite",
+        ".sqlite3",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".otf",
+        ".zip",
+    }
     for p in _iter_files(ROOT, "*"):
-        if not p.is_file() or p.suffix.lower() in {".zip", ".png", ".jpg", ".jpeg", ".webp"}:
+        if not p.is_file() or p.suffix.lower() in binary_suffixes | {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".webp",
+        }:
             continue
         data = p.read_bytes()
         for b in data:

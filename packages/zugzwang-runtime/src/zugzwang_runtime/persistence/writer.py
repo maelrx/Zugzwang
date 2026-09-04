@@ -25,6 +25,10 @@ from .repositories import (
     EventRepository,
     MetricObservationRepository,
     RunRepository,
+    SearchEdgeRepository,
+    SearchNodeRepository,
+    SearchRetrievalEventRepository,
+    SearchSessionRepository,
     StepRepository,
 )
 
@@ -91,6 +95,32 @@ class InsertCheckpointCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class InsertSearchSessionCommand:
+    row: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateSearchSessionCommand:
+    search_session_id: str
+    values: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class InsertSearchNodeCommand:
+    row: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class InsertSearchEdgeCommand:
+    row: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class InsertSearchRetrievalEventCommand:
+    row: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
 class CommitStepCommand:
     """Atomic commit unit: step projection + episode projection + checkpoint + event."""
 
@@ -131,6 +161,11 @@ PersistenceCommand = (
     | CommitStepCommand
     | FinalizeEpisodeCommand
     | FinalizeRunCommand
+    | InsertSearchSessionCommand
+    | UpdateSearchSessionCommand
+    | InsertSearchNodeCommand
+    | InsertSearchEdgeCommand
+    | InsertSearchRetrievalEventCommand
 )
 
 
@@ -146,6 +181,10 @@ class PersistenceWriter:
     _metrics: MetricObservationRepository = field(init=False)
     _checkpoints: CheckpointRepository = field(init=False)
     _artifacts: ArtifactRepository | None = field(init=False, default=None)
+    _search_sessions: SearchSessionRepository = field(init=False)
+    _search_nodes: SearchNodeRepository = field(init=False)
+    _search_edges: SearchEdgeRepository = field(init=False)
+    _search_retrieval_events: SearchRetrievalEventRepository = field(init=False)
     _queue: asyncio.Queue[PersistenceCommand] = field(init=False)
     _task: asyncio.Task[None] | None = field(init=False, default=None)
     _stop: asyncio.Event = field(init=False)
@@ -173,6 +212,11 @@ class PersistenceWriter:
         self._metrics = metrics
         self._checkpoints = checkpoints
         self._artifacts = artifacts_repo
+        engine = runs.engine  # repositories share the same SQLAlchemy engine
+        self._search_sessions = SearchSessionRepository(engine)
+        self._search_nodes = SearchNodeRepository(engine)
+        self._search_edges = SearchEdgeRepository(engine)
+        self._search_retrieval_events = SearchRetrievalEventRepository(engine)
         self._queue = asyncio.Queue(maxsize=queue_size)
         self._task = None
         self._stop = asyncio.Event()
@@ -269,6 +313,21 @@ class PersistenceWriter:
             return
         if isinstance(command, InsertCheckpointCommand):
             self._checkpoints.insert(command.row, connection)
+            return
+        if isinstance(command, InsertSearchSessionCommand):
+            self._search_sessions.insert(command.row, connection)
+            return
+        if isinstance(command, UpdateSearchSessionCommand):
+            self._search_sessions.update(command.search_session_id, command.values, connection)
+            return
+        if isinstance(command, InsertSearchNodeCommand):
+            self._search_nodes.insert(command.row, connection)
+            return
+        if isinstance(command, InsertSearchEdgeCommand):
+            self._search_edges.insert(command.row, connection)
+            return
+        if isinstance(command, InsertSearchRetrievalEventCommand):
+            self._search_retrieval_events.insert(command.row, connection)
             return
         if isinstance(command, CommitStepCommand):
             self._steps.update_step(command.step_id, command.step_values, connection)

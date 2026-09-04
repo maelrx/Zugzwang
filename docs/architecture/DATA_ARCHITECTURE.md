@@ -112,3 +112,18 @@ GC is mark-and-sweep:
 ## 8. Postgres trigger
 
 Adopt Postgres only when measured requirements include multiple writer processes/hosts, remote workers, tenancy, network storage, or query contention that SQLite cannot meet.
+
+## 9. Research evidence projections
+
+Migration `0003` adds direct step and attempt references for observation,
+decision trace, wire request, wire response and reasoning telemetry artifacts.
+It also adds `evaluation_runs`, so metric rows identify the exact post-hoc
+generation that produced them.
+
+Migration `0004` adds `search_sessions`, `search_nodes`, `search_edges` and
+`search_retrieval_events`. Migration `0005` records whether declared
+assistance was exceeded at run, episode and step level. Migration `0006` stores
+the effective H/K string on each committed step.
+
+The graph and provider payloads remain in CAS. SQLite stores references and
+indexed metadata only.

@@ -56,3 +56,12 @@ Store provider-reported usage and locally estimated cost separately. Pricing sna
 ## Clock
 
 Use UTC wall time for audit and monotonic time for durations.
+
+## Per-decision evidence
+
+Durable chess runs now persist an observation artifact and a decision trace for
+each model step. Provider attempts link directly to canonical, lowered-wire,
+normalized and provider-exposed telemetry artifacts when those payloads exist.
+
+`zugzwang trace step STEP_ID` reads that chain without executing a provider or
+an evaluator. Evaluation generations are shown separately.

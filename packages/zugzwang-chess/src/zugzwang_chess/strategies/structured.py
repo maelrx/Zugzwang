@@ -31,6 +31,7 @@ from zugzwang_core.ports.strategy import (
     Verdict,
 )
 
+from ._prompt_hooks import append_retry_feedback
 from .direct import build_observation_text
 
 OUTPUT_SCHEMA: dict[str, JsonValue] = {
@@ -46,12 +47,14 @@ OUTPUT_SCHEMA: dict[str, JsonValue] = {
                     "score": {"type": "number"},
                     "rationale": {"type": "string"},
                 },
-                "required": ["move"],
+                "required": ["move", "score", "rationale"],
+                "additionalProperties": False,
             },
         },
         "chosen_move": {"type": "string"},
     },
     "required": ["analysis", "candidates", "chosen_move"],
+    "additionalProperties": False,
 }
 
 
@@ -87,6 +90,7 @@ class StructuredStrategy:
             "\nRespond with JSON only: analysis, up to "
             f"{self._max_candidates} candidate moves with scores, and your chosen move."
         )
+        prompt = append_retry_feedback(prompt, context)
         request = ModelRequest(
             model=context.model,
             messages=(Message(role=MessageRole.USER, parts=(TextPart(text=prompt),)),),

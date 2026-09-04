@@ -290,6 +290,112 @@
       "title": "KnowledgePacket",
       "type": "object"
     },
+    "LegalityEnumerationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "LegalityEnumerationSpec",
+      "type": "object"
+    },
+    "LegalityGatewayConfig": {
+      "additionalProperties": false,
+      "description": "Manifest-level exposure policy for formal rules.",
+      "properties": {
+        "parse_feedback": {
+          "default": true,
+          "title": "Parse Feedback",
+          "type": "boolean"
+        },
+        "validation": {
+          "$ref": "#/$defs/LegalityValidationSpec",
+          "default": {
+            "enabled": true,
+            "feedback": "binary"
+          }
+        },
+        "enumerate": {
+          "$ref": "#/$defs/LegalityEnumerationSpec",
+          "default": {
+            "enabled": false
+          }
+        },
+        "transition_sandbox": {
+          "default": true,
+          "title": "Transition Sandbox",
+          "type": "boolean"
+        },
+        "limits": {
+          "$ref": "#/$defs/LegalityLimits",
+          "default": {
+            "validations": 64,
+            "transitions": 64,
+            "depth_plies": 6,
+            "branch_states": 64
+          }
+        }
+      },
+      "title": "LegalityGatewayConfig",
+      "type": "object"
+    },
+    "LegalityLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "validations": {
+          "default": 64,
+          "minimum": 0,
+          "title": "Validations",
+          "type": "integer"
+        },
+        "transitions": {
+          "default": 64,
+          "minimum": 0,
+          "title": "Transitions",
+          "type": "integer"
+        },
+        "depth_plies": {
+          "default": 6,
+          "minimum": 0,
+          "title": "Depth Plies",
+          "type": "integer"
+        },
+        "branch_states": {
+          "default": 64,
+          "minimum": 0,
+          "title": "Branch States",
+          "type": "integer"
+        }
+      },
+      "title": "LegalityLimits",
+      "type": "object"
+    },
+    "LegalityValidationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "feedback": {
+          "default": "binary",
+          "enum": [
+            "none",
+            "binary",
+            "reason_category",
+            "enumerated"
+          ],
+          "title": "Feedback",
+          "type": "string"
+        }
+      },
+      "title": "LegalityValidationSpec",
+      "type": "object"
+    },
     "ManifestPatch": {
       "additionalProperties": false,
       "properties": {
@@ -812,7 +918,47 @@
             "parse": 0,
             "illegal": 0,
             "strategic": 0,
-            "feedback": "legality_only"
+            "feedback": "binary",
+            "retry_profile": null
+          }
+        },
+        "retry_profile": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_retry",
+                "parse_only",
+                "binary_legality",
+                "legality_reason",
+                "enumerate_after_failure"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Profile"
+        },
+        "legality": {
+          "$ref": "#/$defs/LegalityGatewayConfig",
+          "default": {
+            "parse_feedback": true,
+            "validation": {
+              "enabled": true,
+              "feedback": "binary"
+            },
+            "enumerate": {
+              "enabled": false
+            },
+            "transition_sandbox": true,
+            "limits": {
+              "branch_states": 64,
+              "depth_plies": 6,
+              "transitions": 64,
+              "validations": 64
+            }
           }
         },
         "knowledge_packets": {
@@ -930,9 +1076,28 @@
           "type": "integer"
         },
         "feedback": {
-          "default": "legality_only",
+          "default": "binary",
           "title": "Feedback",
           "type": "string"
+        },
+        "retry_profile": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_retry",
+                "parse_only",
+                "binary_legality",
+                "legality_reason",
+                "enumerate_after_failure"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Profile"
         }
       },
       "title": "RetrySpec",

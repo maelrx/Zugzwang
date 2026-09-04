@@ -271,7 +271,7 @@ python scripts/validate_foundation.py
 # Explicitly invoke the bootstrap-workspace skill.
 ```
 
-No `uv.lock` is included because dependency resolution should occur only after the Python and licensing gates are ratified. The proposed workspace templates are documented, not falsely presented as an implemented runtime.
+The local runtime, providers, chess environment, evidence artifacts, post-hoc evaluator and model-only R6 search are implemented. Real provider data remains local and public raw-output export remains gated.
 
 ## Quality policy
 

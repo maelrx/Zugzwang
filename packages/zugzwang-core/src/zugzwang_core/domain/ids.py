@@ -25,6 +25,8 @@ _IdPrefix = Literal[
     "art",
     "bun",
     "evl",
+    "eval",
+    "ses",
 ]
 
 
@@ -52,5 +54,18 @@ def new_id(prefix: _IdPrefix) -> Id:
 
 
 PREFIXES: Final[frozenset[str]] = frozenset(
-    {"exp", "cnd", "run", "ep", "stp", "att", "evt", "art", "bun", "evl"}
+    {
+        "exp",
+        "cnd",
+        "run",
+        "ep",
+        "stp",
+        "att",
+        "evt",
+        "art",
+        "bun",
+        "evl",
+        "eval",
+        "ses",
+    }
 )

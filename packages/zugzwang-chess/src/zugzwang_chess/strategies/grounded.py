@@ -19,6 +19,7 @@ from zugzwang_core.ports.model import (
     ModelRequest,
     OutputConstraint,
 )
+from zugzwang_core.ports.rules import ActionHandle
 from zugzwang_core.ports.strategy import (
     CallRecord,
     Candidate,
@@ -30,7 +31,7 @@ from zugzwang_core.ports.strategy import (
 
 from ._image import build_message_parts
 from ._knowledge import knowledge_impacts, render_knowledge_section
-from ._prompt_hooks import apply_prompt_override_text
+from ._prompt_hooks import append_retry_feedback, apply_prompt_override_text
 from .direct import build_observation_text
 
 
@@ -86,6 +87,7 @@ class GroundedStrategy:
         if knowledge_section:
             prompt = f"{prompt}\n\n{knowledge_section}"
         prompt = apply_prompt_override_text(prompt, context)
+        prompt = append_retry_feedback(prompt, context)
         parts, required_capabilities = build_message_parts(
             obs, prompt, artifact_store=context.artifact_store
         )
@@ -169,7 +171,10 @@ class GroundedStrategy:
                 ) from exc
             if not 0 <= index < len(legal_actions):
                 raise OutputParseError(f"index {index} out of range (0..{len(legal_actions) - 1})")
-            return index
+            return ActionHandle(
+                index=index,
+                ordering_hash=str(obs.get("legal_actions_hash") or ""),
+            )
         if encoding == "san":
             legal_san = {str(a).strip().rstrip("+#") for a in legal_actions}
             parallel_uci = cast(list[Any], obs.get("legal_actions_uci") or [])

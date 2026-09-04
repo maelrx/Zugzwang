@@ -35,6 +35,13 @@ class EngineScore:
     kind: str  # "cp" | "mate"
     value: int
     multipv: int = 1
+    wdl: tuple[int, int, int] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EngineLine:
+    score: EngineScore
+    pv: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +50,7 @@ class EngineAnalysis:
     bestmove: str | None = None
     ponder: str | None = None
     raw_transcript: tuple[str, ...] = ()
+    lines: tuple[EngineLine, ...] = ()
 
 
 class UciEngineClient:
@@ -95,6 +103,7 @@ class UciEngineClient:
         bestmove = None
         ponder = None
         transcript: list[str] = []
+        latest_lines: dict[int, EngineLine] = {}
         while True:
             line = await self._readline()
             transcript.append(line)
@@ -102,6 +111,10 @@ class UciEngineClient:
                 score = _parse_info_score(line, multipv)
                 if score is not None:
                     scores.append(score)
+                    latest_lines[score.multipv] = EngineLine(
+                        score=score,
+                        pv=_parse_info_pv(line),
+                    )
             elif line.startswith("bestmove"):
                 parts = line.split()
                 if len(parts) >= 2:
@@ -110,7 +123,11 @@ class UciEngineClient:
                     ponder = parts[3]
                 break
         return EngineAnalysis(
-            scores=tuple(scores), bestmove=bestmove, ponder=ponder, raw_transcript=tuple(transcript)
+            scores=tuple(scores),
+            bestmove=bestmove,
+            ponder=ponder,
+            raw_transcript=tuple(transcript),
+            lines=tuple(latest_lines[index] for index in sorted(latest_lines)),
         )
 
     async def quit(self) -> None:
@@ -145,6 +162,7 @@ def _parse_info_score(line: str, default_multipv: int) -> EngineScore | None:
     multipv = default_multipv
     kind: str | None = None
     value: int | None = None
+    wdl: tuple[int, int, int] | None = None
     index = 0
     while index < len(parts):
         token = parts[index]
@@ -155,11 +173,29 @@ def _parse_info_score(line: str, default_multipv: int) -> EngineScore | None:
         if token == "score" and index + 2 < len(parts):
             kind = parts[index + 1]
             value = int(parts[index + 2])
-            break
+            index += 3
+            continue
+        if token == "wdl" and index + 3 < len(parts):
+            try:
+                values = tuple(int(parts[index + offset]) for offset in range(1, 4))
+                wdl = (values[0], values[1], values[2])
+            except ValueError:
+                wdl = None
+            index += 4
+            continue
         index += 1
     if kind is None or value is None:
         return None
-    return EngineScore(kind=kind, value=value, multipv=multipv)
+    return EngineScore(kind=kind, value=value, multipv=multipv, wdl=wdl)
+
+
+def _parse_info_pv(line: str) -> tuple[str, ...]:
+    parts = line.split()
+    try:
+        start = parts.index("pv") + 1
+    except ValueError:
+        return ()
+    return tuple(parts[start:])
 
 
 class FakeUciEngineServer:

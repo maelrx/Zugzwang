@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -46,6 +46,39 @@ class WireFidelity(StrEnum):
     PARTIAL = "partial"
     RECONSTRUCTED = "reconstructed"
     UNAVAILABLE = "unavailable"
+
+
+class ReasoningAvailability(BaseModel):
+    """What the provider exposed, independently of private model reasoning."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    reasoning_tokens: bool = False
+    reasoning_items: bool = False
+    reasoning_summary: bool = False
+
+
+class ReasoningTelemetry(BaseModel):
+    """Provider-exposed reasoning metadata.
+
+    Empty/null fields mean unavailable.  The contract deliberately does not
+    call this chain-of-thought and never infers private reasoning from token
+    counts.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal["zgw.reasoning-telemetry/v1"] = "zgw.reasoning-telemetry/v1"
+    provider: str
+    model: str
+    reasoning_effort: str | None = None
+    reasoning_tokens: int | None = Field(default=None, ge=0)
+    usage: dict[str, Any] = Field(default_factory=dict)
+    reasoning_items: tuple[dict[str, Any], ...] = ()
+    reasoning_summary: str | None = None
+    availability: ReasoningAvailability = ReasoningAvailability()
+    wire_fidelity: WireFidelity = WireFidelity.UNAVAILABLE
+    provider_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class MessageRole(StrEnum):
@@ -260,6 +293,10 @@ class ProviderResult(BaseModel):
 
     response: NormalizedResponse
     plugin_events: tuple[dict[str, JsonValue], ...] = ()
+    wire_request: dict[str, Any] | None = None
+    wire_response: dict[str, Any] | None = None
+    reasoning_telemetry: ReasoningTelemetry | None = None
+    wire_fidelity: WireFidelity = WireFidelity.UNAVAILABLE
 
 
 @runtime_checkable

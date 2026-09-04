@@ -19,12 +19,14 @@ from zugzwang_runtime.application.evaluation import EvaluateRunService, ReportRu
 from zugzwang_runtime.execution import PluginRegistry
 from zugzwang_runtime.persistence.repositories import (
     ArtifactRepository,
+    EvaluationRunRepository,
     MetricObservationRepository,
 )
 from zugzwang_runtime.workspace import Workspace
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = REPO_ROOT / "experiments" / "chess-move-selection.yaml"
+R6_MANIFEST = REPO_ROOT / "experiments" / "pure-search-v1.yaml"
 
 
 @pytest.fixture
@@ -44,6 +46,80 @@ async def _run_chess(workspace: Workspace) -> str:
 @pytest.mark.integration
 class TestPostHocEvaluation:
     @pytest.mark.asyncio
+    async def test_each_decision_has_direct_evidence_links(self, workspace: Workspace) -> None:
+        run_id = await _run_chess(workspace)
+        connection = sqlite3.connect(workspace.data_dir / "state.db")
+        step = connection.execute(
+            "SELECT observation_artifact_id, decision_trace_artifact_id "
+            "FROM steps WHERE episode_id IN (SELECT episode_id FROM episodes WHERE run_id=?)",
+            (run_id,),
+        ).fetchone()
+        assert step is not None
+        observation_ref, trace_ref = step
+        assert observation_ref and trace_ref
+        attempt = connection.execute(
+            "SELECT request_artifact_id, response_artifact_id FROM attempts "
+            "WHERE step_id IN (SELECT step_id FROM steps WHERE observation_artifact_id=?)",
+            (observation_ref,),
+        ).fetchone()
+        assert attempt is not None
+        assert attempt[0] and attempt[1]
+        trace_events = connection.execute(
+            "SELECT count(*) FROM events WHERE run_id=? AND event_type='step.decided' "
+            "AND artifact_refs_json LIKE ?",
+            (run_id, f"%{trace_ref}%"),
+        ).fetchone()[0]
+        assert trace_events == 1
+        import json
+
+        services = DurableRunServices(workspace, PluginRegistry())
+        trace_artifact = ArtifactRepository(services.database_engine).get(trace_ref)
+        assert trace_artifact is not None
+        trace_data = json.loads(
+            (workspace.objects_dir() / trace_artifact["relative_path"]).read_text(encoding="utf-8")
+        )
+        assert trace_data["calls"][0]["request_artifact_ref"]
+        assert trace_data["artifact_refs"]
+
+    @pytest.mark.asyncio
+    async def test_r6_search_is_persisted_and_declared_model_only(
+        self, workspace: Workspace
+    ) -> None:
+        services = DurableRunServices(workspace, PluginRegistry())
+        result = await services.start(StartRunCommand(manifest_path=R6_MANIFEST), asyncio.Event())
+        assert result.status == "COMPLETED"
+        connection = sqlite3.connect(workspace.data_dir / "state.db")
+        step = connection.execute(
+            "SELECT search_session_id, search_graph_artifact_id, action_json FROM steps "
+            "WHERE status='COMMITTED'"
+        ).fetchone()
+        assert step is not None
+        assert step[0] and step[1]
+        assert '"action": "e2e4"' in step[2]
+        session = connection.execute(
+            "SELECT algorithm, namespace, status, stats_json FROM search_sessions "
+            "WHERE search_session_id=?",
+            (step[0],),
+        ).fetchone()
+        assert session is not None
+        assert session[:3] == ("R6-BatchedTree", "search://", "COMPLETED")
+        assert '"branch_nodes_created": 4' in session[3]
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM search_edges WHERE search_session_id=? AND legal=0",
+                (step[0],),
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM search_retrieval_events WHERE search_session_id=?",
+                (step[0],),
+            ).fetchone()[0]
+            == 2
+        )
+
+    @pytest.mark.asyncio
     async def test_fake_engine_evaluates_run(self, workspace: Workspace) -> None:
         from zgw_eval_stockfish.evaluator import StockfishEvaluator
         from zgw_eval_stockfish.uci import FakeUciEngine
@@ -61,13 +137,46 @@ class TestPostHocEvaluation:
             metrics=MetricObservationRepository(services.database_engine),
             cas=services.cas,
         ).evaluate(run_id, evaluator, evaluator_id="evaluator.stockfish")
-        assert summary.observations == 2  # move_class + agreement (CPL needs a prior ply)
+        assert summary.observations >= 10  # precise scores, move metadata and new analysis fields
         assert "chess.move_class" in summary.metrics
+        assert "chess.engine_best_move" in summary.metrics
         connection = sqlite3.connect(workspace.data_dir / "state.db")
         stored = connection.execute(
             "SELECT count(*) FROM metric_observations WHERE run_id=?", (run_id,)
         ).fetchone()[0]
-        assert stored == 2
+        assert stored == summary.observations
+        episode_id = connection.execute(
+            "SELECT episode_id FROM metric_observations WHERE run_id=? LIMIT 1", (run_id,)
+        ).fetchone()[0]
+        assert episode_id is not None
+        evaluation_runs = EvaluationRunRepository(services.database_engine).for_run(run_id)
+        assert len(evaluation_runs) == 1
+        assert evaluation_runs[0]["status"] == "COMPLETED"
+        evaluation_run_id = evaluation_runs[0]["evaluation_run_id"]
+        import json
+
+        engine_metadata = evaluation_runs[0]["engine_json"]
+        if isinstance(engine_metadata, str):
+            engine_metadata = json.loads(engine_metadata)
+        assert engine_metadata["engine"]["binary"]["binary"] == "fake-engine"
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM metric_observations WHERE evaluation_run_id=? "
+                "AND provenance_artifact_id IS NOT NULL",
+                (evaluation_run_id,),
+            ).fetchone()[0]
+            == summary.observations
+        )
+        assert all(
+            row["evaluation_run_id"] == evaluation_run_id
+            for row in MetricObservationRepository(services.database_engine).for_run(run_id)
+        )
+        event_types = [
+            row[0]
+            for row in connection.execute("SELECT event_type FROM events WHERE run_id=?", (run_id,))
+        ]
+        assert "evaluation.run.started" in event_types
+        assert "evaluation.run.completed" in event_types
 
     @pytest.mark.asyncio
     async def test_cpl_on_multi_step_game(self, workspace: Workspace) -> None:
@@ -113,7 +222,7 @@ class TestPostHocEvaluation:
             cas=services.cas,
         ).evaluate(run_id, evaluator, evaluator_id="evaluator.stockfish")
         assert evaluator._cache_hits >= 1
-        assert engine.requests == 1, "cached evaluations must not hit the engine again"
+        assert engine.requests == 2, "cached before/after evaluations must not repeat"
 
 
 @pytest.mark.integration
@@ -139,6 +248,7 @@ class TestBundleRoundtrip:
         assert (bundle_dir / "bundle.json").exists()
         assert (bundle_dir / "events.jsonl").exists()
         assert (bundle_dir / "checksums.sha256").exists()
+        assert (bundle_dir / "evaluation_runs.json").exists()
 
         second_ws = Workspace.from_root(tmp_path / "ws2")
         second_ws.ensure_layout()

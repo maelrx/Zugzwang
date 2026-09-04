@@ -241,6 +241,9 @@ def cancel(
 runs_app = typer.Typer(help="Run queries.", no_args_is_help=True)
 app.add_typer(runs_app, name="runs")
 
+trace_app = typer.Typer(help="Read-only decision evidence.", no_args_is_help=True)
+app.add_typer(trace_app, name="trace")
+
 
 @runs_app.command("list")
 def runs_list(
@@ -277,6 +280,40 @@ def runs_show(
     resolved_workspace = _resolve_workspace(workspace)
     services = DurableRunServices(resolved_workspace, PluginRegistry())
     print_result(services.summary(run_id), _fmt())
+
+
+@trace_app.command("step")
+def trace_step(
+    step_id: Annotated[str, typer.Argument(help="step id")],
+    workspace: Annotated[
+        Path | None,
+        typer.Option("--workspace", help="workspace root (default: discovered from cwd)"),
+    ] = None,
+    output: _OutputOption = "human",
+    quiet: _QuietOption = False,
+) -> None:
+    """Show live decision evidence and separate post-hoc evaluation."""
+    _set_globals(output, quiet)
+    from zugzwang_runtime.application.trace import TraceStepService
+    from zugzwang_runtime.persistence.repositories import (
+        AttemptRepository,
+        MetricObservationRepository,
+    )
+
+    resolved_workspace = _resolve_workspace(workspace)
+    services = __import__(
+        "zugzwang_runtime.application.durable_services",
+        fromlist=["DurableRunServices"],
+    ).DurableRunServices(resolved_workspace, PluginRegistry())
+    result = TraceStepService(
+        runs=services.runs,
+        steps=services.steps,
+        attempts=AttemptRepository(services.database_engine),
+        events=services.events,
+        metrics=MetricObservationRepository(services.database_engine),
+        cas=services.cas,
+    ).trace(step_id)
+    print_result(result, _fmt())
 
 
 db_app = typer.Typer(help="Operational database management.", no_args_is_help=True)
@@ -403,7 +440,7 @@ def report(
 @app.command()
 def export(
     run_id: Annotated[str, typer.Argument(help="run id to export")],
-    output_dir: Annotated[Path, typer.Option("--output", "-o", help="bundle directory")],
+    output_dir: Annotated[Path, typer.Option("--output-dir", help="bundle directory")],
     workspace: Annotated[
         Path | None,
         typer.Option("--workspace", help="workspace root (default: discovered from cwd)"),

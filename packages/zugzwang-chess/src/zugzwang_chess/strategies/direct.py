@@ -33,7 +33,7 @@ from zugzwang_core.ports.strategy import (
 
 from ._image import build_message_parts
 from ._knowledge import knowledge_impacts, render_knowledge_section
-from ._prompt_hooks import apply_prompt_override
+from ._prompt_hooks import append_retry_feedback, apply_prompt_override
 
 
 def build_observation_text(observation: dict[str, JsonValue]) -> str:
@@ -105,6 +105,7 @@ class ChessDirectStrategy:
                 side = str(side_value)
         program = apply_prompt_override(self._program, context)
         prompt_text = program.render(text)
+        prompt_text = append_retry_feedback(prompt_text, context)
         parts, required_capabilities = build_message_parts(
             cast(dict[str, JsonValue], observation),
             prompt_text,

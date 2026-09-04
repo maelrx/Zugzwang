@@ -85,3 +85,10 @@ Reporters consume metric tables. They do not write domain truth. Statistical cod
 ## Re-evaluation
 
 A bundle can acquire new metric observations under a new evaluation namespace without mutating original events.
+
+The Stockfish evaluator also emits explicit `cp_before`, `cp_after_chosen`,
+WDL loss, MultiPV top-k, chosen rank, principal variation and mate-transition
+metrics. Mate scores stay mate scores. They do not become fake centipawn
+values.
+
+Every pass has an `evaluation_run_id`, and reports select one completed pass.

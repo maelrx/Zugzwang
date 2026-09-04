@@ -243,3 +243,13 @@ Exit M6:
 - M2 concluído: 30 testes unitários de xadrez + 3 integração verdes; perft Kiwipete/CPW depth 1-2; full-game vs random-legal com 8 plies; ação ilegal nunca aplicada (teste dedicado)
 - M1 concluído: 81 testes offline, fault suite verde (5), resume sem duplicação comprovado, CLI runs/list/show/resume/cancel/db funcionais
 - M0 concluído: 69 testes offline verdes, pyright strict 0 erros, foundation strict PASS 9
+
+## ZGW-0079 evidence and model-only search
+
+- [x] ObservationArtifact and DecisionTraceArtifact are stored per model step
+- [x] provider wire request/response and reasoning telemetry have direct attempt references
+- [x] binary versus enumerated legality exposure is explicit and audited
+- [x] EvaluationRun separates post-hoc generations
+- [x] SearchWorkspace persists immutable nodes, edges and endogenous retrievals
+- [x] R6-BatchedTree completes with the same model as candidate generator and judge
+- [x] real proxy, Stockfish opponent and post-hoc evaluation were exercised without a fake model

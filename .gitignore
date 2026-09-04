@@ -21,3 +21,4 @@ runs/
 .DS_Store
 .idea/
 .vscode/
+graphify-out/

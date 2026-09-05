@@ -2,6 +2,12 @@
 
 O roadmap é ordenado por redução de risco, não por aparência de produto. O kernel só sobe de camada depois de provar a camada anterior com fakes, contratos e replay. Web UI, serviço remoto e treinamento não pertencem ao caminho crítico do v0.1.
 
+## Estado de integração em 2026-09-05
+
+Existe runtime funcional e suíte offline. Extensões R5/R7, evidências e viewer estão em PRs e branches de pesquisa; isso não ratifica gates nem conclui M5/M6. A manutenção atual consolida a main e mantém questões científicas e de compatibilidade abertas. Consulte o [mapa operacional](../engineering/REPOSITORY_STATUS.md).
+
+O viewer experimental permanece em revisão separada. Sua incorporação ao produto exige registrar escopo e critérios; esta atualização não altera o anti-roadmap.
+
 ## Sequência executiva
 
 ```mermaid

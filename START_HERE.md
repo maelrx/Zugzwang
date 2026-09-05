@@ -20,7 +20,9 @@ Este corpus contém:
 - skills reutilizáveis para agentes Codex;
 - material-fonte arquivado e manifesto de proveniência.
 
-Não contém um runtime funcional. Os diretórios `packages/` e `plugins/` representam fronteiras e instruções, não uma implementação disfarçada.
+O kernel Python está implementado em `packages/` e `plugins/`, com `uv.lock`, CLI, SQLite/CAS e testes offline. Este corpus também preserva propostas e documentos históricos; implementação não equivale a todos os exit gates concluídos.
+
+Antes de começar trabalho novo, consulte o [estado operacional e fila de PRs](docs/engineering/REPOSITORY_STATUS.md). As estratégias experimentais em branches não devem ser confundidas com a main.
 
 ## 2. Ordem de leitura humana
 
@@ -46,20 +48,22 @@ A leitura completa continua pelo [índice documental](docs/INDEX.md).
 8. Atualizar requisitos, ADRs e traceability quando o contrato mudar.
 9. Produzir um change report com evidência de testes e riscos residuais.
 
-## 4. Gates antes do scaffold
+## 4. Gates e execução
 
-Os gates bloqueantes para o scaffold M0 são:
+Os gates do scaffold M0 foram aceitos em 2026-08-16:
 
 - `GATE-001`: licença e rules substrate;
 - `GATE-002`: matriz Python;
 - `GATE-004`: nome do CLI.
 
-`GATE-003` bloqueia providers reais no M3, mas não o vertical slice fake-only de M0. Os demais possuem comportamento conservador documentado e precisam ser ratificados antes do milestone ou release que afetem.
+`GATE-003` e `GATE-006` também estão aceitos para captura privada e engine fornecido pelo operador. Gates 005 e 007-012 permanecem pendentes, com os defaults de DECISIONS.yaml. Esta organização não autoriza novos runs pagos, redistribuição de outputs ou publicação de packages.
 
 ## 5. Validação do pacote
 
 ```bash
-python scripts/validate_foundation.py
+uv sync --all-packages --all-extras --locked
+uv run python scripts/validate_foundation.py --strict
+uv run pytest -m "not e2e"
 ```
 
 O script confere:

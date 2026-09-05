@@ -1,5 +1,7 @@
 # Documentation index
 
+Current entry point: [repository status and integration queue](engineering/REPOSITORY_STATUS.md). Historical design documents do not supersede accepted gates or the current PR state.
+
 The canonical documentation language for the foundation release is Portuguese, with an English public README. This policy is itself a human decision gate for later releases.
 
 ## Product

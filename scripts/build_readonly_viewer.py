@@ -9,6 +9,7 @@ redacted before serialization.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,6 +35,26 @@ _SECRET_KEY_NAMES = {
     "authorization",
     "bearer",
 }
+
+#: Cap for projected ``value_json`` payloads (e.g. MultiPV ranked lines).
+#: The viewer is a static snapshot; large blobs stay in CAS/Parquet.
+_VALUE_JSON_MAX_CHARS = 4000
+_VALUE_JSON_MAX_ITEMS = 20
+
+
+def _truncate(value: Any, *, max_chars: int = _VALUE_JSON_MAX_CHARS) -> Any:
+    """Cap the serialized size of a redacted JSON value (reporter-only)."""
+    if isinstance(value, str) and len(value) > max_chars:
+        return value[:max_chars] + "…[truncated]"
+    if isinstance(value, list):
+        if len(value) > _VALUE_JSON_MAX_ITEMS:
+            return [_truncate(item) for item in value[:_VALUE_JSON_MAX_ITEMS]] + [
+                f"…[{len(value) - _VALUE_JSON_MAX_ITEMS} more truncated]"
+            ]
+        return [_truncate(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _truncate(item) for key, item in value.items()}
+    return value
 
 
 def _redact(value: Any) -> Any:
@@ -273,6 +294,9 @@ def _build_run(services: DurableRunServices, run: dict[str, Any]) -> dict[str, A
             "version": row.get("metric_version"),
             "valueNum": row.get("value_num"),
             "valueText": row.get("value_text"),
+            "valueJson": _truncate(_redact(row.get("value_json")))
+            if row.get("value_json") is not None
+            else None,
             "unit": row.get("unit"),
             "dimensions": _redact(row.get("dimensions_json") or {}),
             "evaluator": row.get("evaluator_id"),
@@ -333,17 +357,28 @@ def _build_run(services: DurableRunServices, run: dict[str, Any]) -> dict[str, A
     }
 
 
-def build_snapshot(workspace_root: Path, *, completed_only: bool = False) -> dict[str, Any]:
+def build_snapshot(
+    workspace_root: Path, *, completed_only: bool = False, limit: int = 200
+) -> dict[str, Any]:
     services = DurableRunServices(Workspace.from_root(workspace_root), PluginRegistry())
-    run_rows = services.runs.list_runs(limit=200)
+    run_rows = services.runs.list_runs(limit=limit)
     if completed_only:
         run_rows = [run for run in run_rows if run.get("status") == "COMPLETED"]
     runs = [_build_run(services, run) for run in run_rows]
+    evaluated = sum(1 for run in runs if run.get("metrics"))
     return {
         "generatedAt": datetime.now(UTC).isoformat(),
         "workspace": str(workspace_root.resolve()),
         "readOnly": True,
+        "builder": "scripts/build_readonly_viewer.py",
+        "workOrder": "ZGW-0077",
         "runs": runs,
+        "summary": {
+            "runs": len(runs),
+            "evaluatedRuns": evaluated,
+            "completedOnly": completed_only,
+            "limit": limit,
+        },
     }
 
 
@@ -364,22 +399,46 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("viewer/data.js"))
     parser.add_argument("--pieces", type=Path, default=Path("viewer/pieces.js"))
     parser.add_argument(
+        "--meta",
+        type=Path,
+        default=Path("viewer/meta.json"),
+        help="write a tiny polling manifest (generatedAt, runs, sha256 of data.js)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=200,
+        help="max runs projected into the snapshot (default: 200)",
+    )
+    parser.add_argument(
         "--completed-only",
         action="store_true",
         help="include only completed runs in the browser snapshot",
     )
     args = parser.parse_args()
-    snapshot = build_snapshot(args.workspace.resolve(), completed_only=args.completed_only)
+    snapshot = build_snapshot(
+        args.workspace.resolve(), completed_only=args.completed_only, limit=args.limit
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
+    payload = (
         "window.ZUGZWANG_DATA = "
         + json.dumps(snapshot, ensure_ascii=False, separators=(",", ":"))
-        + ";\n",
-        encoding="utf-8",
+        + ";\n"
     )
+    args.output.write_text(payload, encoding="utf-8")
     write_piece_asset(args.pieces)
+    meta = {
+        "generatedAt": snapshot["generatedAt"],
+        "runs": len(snapshot["runs"]),
+        "evaluatedRuns": snapshot["summary"]["evaluatedRuns"],
+        "sha256": hashlib.sha256(payload.encode("utf-8")).hexdigest(),
+        "readOnly": True,
+    }
+    args.meta.parent.mkdir(parents=True, exist_ok=True)
+    args.meta.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
-        f"viewer snapshot: {len(snapshot['runs'])} runs -> {args.output}; pieces -> {args.pieces}"
+        f"viewer snapshot: {len(snapshot['runs'])} runs -> {args.output}; "
+        f"pieces -> {args.pieces}; meta -> {args.meta}"
     )
 
 

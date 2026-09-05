@@ -21,3 +21,8 @@ runs/
 .DS_Store
 .idea/
 .vscode/
+graphify-out/
+
+# Local read-only viewer snapshots; keep the UI source, ignore generated data.
+viewer/data.js
+viewer/pieces.js

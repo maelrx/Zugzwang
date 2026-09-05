@@ -13,3 +13,15 @@ O PR documental não corrige nem aprova os mecanismos experimentais em revisão.
 ## Preservação e próximos trabalhos
 
 Alterações locais foram copiadas para evidência privada. Nenhuma branch não mergeada, worktree ativa, resultado falho ou artefato privado foi removido. ZGW-0084 permanece com Hermes. Resolver #13 antes de avançar na pilha; #14 exige contratos/amendments; #15 exige reprodução independente. O GitHub registra a situação atual dos PRs.
+
+## Checks do PR documental
+
+- Lockfile instalado em clone/venv isolados.
+- Pytest offline: 190 passed, 1 skipped, 6 deselected em 13.58 s.
+- Ruff: passou; format: 354 files already formatted.
+- Pyright: 0 errors, 0 warnings com `uv run --no-sync pyright`.
+- Foundation strict: PASS 9, WARN 0, ERROR 0.
+- CI remoto inicial do PR [#16](https://github.com/maelrx/Zugzwang/pull/16): Python 3.13/3.14 e validator verdes; e2e excluído.
+- Novas fontes em drafts #17/#18/#19: diff e sintaxe conferidos; build/QA visual e execução real não repetidos.
+
+Os PRs #9-#12 têm comentários de bloqueio e descrições atualizadas. O commit final documental deve ter seus próprios checks remotos verdes antes de merge.

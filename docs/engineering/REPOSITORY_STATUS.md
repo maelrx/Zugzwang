@@ -19,12 +19,22 @@ Comece trabalho independente em branch/worktree da main atualizada. Trabalho que
 
 Contagens de testes dos corpos antigos foram obtidas no branch integrado, não certificam os heads anteriores isolados. MERGEABLE significa ausência de conflito Git, não correção científica.
 
+## Fontes locais agora em PRs separados
+
+| PR | Branch | Base | Revisão pendente |
+|---|---|---|---|
+| [#17](https://github.com/maelrx/Zugzwang/pull/17) | codex/zgw-viewer-next-review | codex/zgw-validation-evidence | Viewer/engine visual, lint, escopo e dados; fixture vazia no lugar do snapshot |
+| [#18](https://github.com/maelrx/Zugzwang/pull/18) | codex/zgw-overnight-experiments-review | codex/zgw-single-agent-tree-experiments | Manifestos históricos e log corrigido por aviso explícito; depende de #14/ZGW-0084 |
+| [#19](https://github.com/maelrx/Zugzwang/pull/19) | codex/zgw-local-overlays-review | codex/zgw-single-agent-tree-experiments | Alternativas locais de migration/builder/viewer e replicações; reconciliar antes de integrar |
+
+Esses PRs são drafts. Preservam fontes selecionadas do commit overnight `18c98ae` ou dos overlays locais; não enviam o histórico local completo contendo snapshots privados. O histórico original permanece localmente preservado.
+
 ## Trabalho local preservado
 
 - `overnight/h3-runs`, worktree `Zugzwang-night`: ZGW-0083 e viewer, com correções ZGW-0084 em andamento pelo Hermes. Não rebasear nem incorporar arquivos ainda mudando.
 - Commit local da main `3085f3b`: exclusões de graphify e snapshots incorporadas à organização documental.
-- Migrações 0003/0004/0005 soltas na main são idênticas às da fundação. Outros overlays, manifests de replicação e fontes de viewer mantêm origem explícita; não usar `git add .` na main.
-- Links de `.agents/skills/` são configuração do host. Não publicar symlinks de caminhos absolutos.
+- Migrações 0003/0004/0005 soltas na main são idênticas às da fundação. Outros overlays, manifests de replicação e fontes de viewer foram preservados no #19 para reconciliação; não usar `git add .` na main.
+- Links locais de `.agents/skills/` são configuração do host. Skills canônicas também existem versionadas, embora possam estar ocultas pelo sparse checkout. Não publicar symlinks de caminhos absolutos nem ignorar todo o catálogo canônico.
 - Bancos, CAS e snapshots `viewer/data*` são evidência privada. Não são publicados ou apagados pela organização.
 
 ## Pendências

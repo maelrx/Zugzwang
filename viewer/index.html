@@ -12,7 +12,6 @@
         font-style: normal;
         font-weight: 100 900;
       }
-
       @font-face {
         font-family: "Geist Mono";
         src: url("fonts/GeistMono.woff2") format("woff2");
@@ -22,1779 +21,912 @@
       }
 
       :root {
-        --ink: #0d1118;
-        --ink-2: #131a23;
-        --panel: rgba(22, 29, 39, 0.86);
-        --panel-2: rgba(28, 37, 49, 0.72);
-        --line: rgba(226, 235, 230, 0.12);
-        --line-bright: rgba(226, 235, 230, 0.22);
-        --paper: #f2eee4;
-        --muted: #97a5ae;
-        --orange: #f5a65b;
-        --orange-soft: rgba(245, 166, 91, 0.13);
-        --mint: #7de2c5;
-        --mint-soft: rgba(125, 226, 197, 0.12);
-        --red: #ee8278;
-        --blue: #8eaae9;
-        --analysis-blue-soft: rgba(142, 170, 233, 0.1);
-        --board-light: #f0d9b5;
-        --board-dark: #b58863;
-        --board-highlight: #cdd26a;
-        --shadow: 0 28px 80px rgba(0, 0, 0, 0.3);
+        --ink: #0e1116;
+        --ink-2: #141920;
+        --panel: #171d26;
+        --panel-2: #1d242f;
+        --line: rgba(226, 235, 230, 0.10);
+        --line-bright: rgba(226, 235, 230, 0.20);
+        --paper: #edf1ee;
+        --muted: #8fa0a9;
+        --faint: #7d8b94;
+        --accent: #e8a865;
+        --accent-soft: rgba(232, 168, 101, 0.14);
+        --ok: #6fd3ab;
+        --ok-soft: rgba(111, 211, 171, 0.13);
+        --warn: #e8c268;
+        --warn-soft: rgba(232, 194, 104, 0.14);
+        --err: #ef8b80;
+        --err-soft: rgba(239, 139, 128, 0.14);
+        --info: #8eaae9;
+        --info-soft: rgba(142, 170, 233, 0.13);
+        --board-light: #e9d9bd;
+        --board-dark: #a88967;
+        --board-hl: #cdd26a;
         --sans: "Geist Sans", "Noto Sans", "Segoe UI", sans-serif;
-        --mono: "Geist Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
-        --display: "Geist Sans", "Noto Sans", "Segoe UI", sans-serif;
+        --mono: "Geist Mono", "DejaVu Sans Mono", monospace;
+        --r-s: 6px;
+        --r-m: 10px;
+        --gap: 14px;
       }
 
       * { box-sizing: border-box; }
-
       html { color-scheme: dark; background: var(--ink); }
-
       body {
-        min-width: 320px;
         margin: 0;
+        min-width: 320px;
         color: var(--paper);
-        background:
-          radial-gradient(circle at 77% 7%, rgba(66, 113, 101, 0.17), transparent 28rem),
-          radial-gradient(circle at 13% 93%, rgba(245, 166, 91, 0.08), transparent 24rem),
-          var(--ink);
+        background: var(--ink);
         font-family: var(--sans);
-        font-size: 15px;
-        line-height: 1.55;
+        font-size: 14px;
+        line-height: 1.5;
         font-variant-numeric: tabular-nums;
       }
-
-      body::before {
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-        pointer-events: none;
-        content: "";
-        opacity: 0.22;
-        background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-        background-size: 44px 44px;
-        mask-image: linear-gradient(to bottom, black, transparent 82%);
-      }
-
-      button, input, select { font: inherit; touch-action: manipulation; }
-
-      button { color: inherit; }
-
-      button:focus-visible, input:focus-visible, select:focus-visible {
-        outline: 2px solid var(--orange);
-        outline-offset: 3px;
-      }
-
-      .skip-link {
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 20;
-        padding: 9px 12px;
-        border: 1px solid var(--orange);
-        color: var(--ink);
-        background: var(--orange);
-        font-family: var(--mono);
-        font-size: 11px;
-        transform: translateY(-160%);
-        transition: transform 160ms ease-out;
-      }
-
-      .skip-link:focus { transform: translateY(0); }
-
-      .app-shell {
-        display: grid;
-        grid-template-columns: 300px minmax(0, 1fr);
-        min-height: 100vh;
-      }
-
-      .rail {
-        position: sticky;
-        top: 0;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        padding: 29px 20px 20px;
-        border-right: 1px solid var(--line);
-        background: rgba(11, 15, 22, 0.76);
-        backdrop-filter: blur(18px);
-      }
-
-      .brand {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 28px;
-      }
-
-      .brand-mark {
-        display: grid;
-        width: 38px;
-        height: 38px;
-        place-items: center;
-        border: 1px solid rgba(245, 166, 91, 0.5);
-        color: var(--orange);
-        font-size: 18px;
-        transform: rotate(45deg);
-      }
-
-      .brand-mark span { transform: rotate(-45deg); }
-
-      .eyebrow {
-        margin: 0 0 7px;
-        color: var(--orange);
-        font-family: var(--mono);
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-      }
-
-      h1, h2, h3, p { margin-top: 0; }
-
-      h1 {
-        margin-bottom: 0;
-        color: var(--paper);
-        font-family: var(--display);
-        font-size: clamp(30px, 3vw, 42px);
-        font-weight: 650;
-        letter-spacing: -0.055em;
-        line-height: 0.92;
-      }
-
-      .brand-copy { padding-top: 2px; }
-
-      .brand-subtitle {
-        margin: 10px 0 0;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      .readonly-stamp {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 9px;
-        border: 1px solid rgba(125, 226, 197, 0.24);
-        color: var(--mint);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-      }
-
-      .readonly-stamp::before {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--mint);
-        box-shadow: 0 0 0 4px var(--mint-soft);
-        content: "";
-      }
-
-      .search-box {
-        position: relative;
-        margin-bottom: 13px;
-      }
-
-      .search-box::before {
-        position: absolute;
-        top: 10px;
-        left: 11px;
-        color: var(--muted);
-        content: "⌕";
-        font-size: 17px;
-      }
-
-      .search-box input {
-        width: 100%;
-        padding: 11px 11px 11px 32px;
-        border: 1px solid var(--line);
-        outline: none;
-        color: var(--paper);
-        background: rgba(255, 255, 255, 0.035);
-        font-family: var(--mono);
-        font-size: 12px;
-        transition: border-color 160ms ease, background 160ms ease;
-      }
-
-      .search-box input:focus {
-        border-color: rgba(245, 166, 91, 0.6);
-        background: rgba(255, 255, 255, 0.06);
-      }
-
-      .search-box input:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
-
-      .filter-bar {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 14px;
-      }
-
-      .filter-btn {
-        padding: 5px 8px;
-        border: 1px solid var(--line);
-        cursor: pointer;
-        color: var(--muted);
-        background: transparent;
-        font-family: var(--mono);
-        font-size: 10px;
-        text-transform: uppercase;
-        transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
-      }
-
-      .filter-btn:hover, .filter-btn.active {
-        border-color: rgba(245, 166, 91, 0.52);
-        color: var(--orange);
-        background: var(--orange-soft);
-      }
-
-      .run-count {
-        display: flex;
-        justify-content: space-between;
-        margin: 0 3px 8px;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 10px;
-        text-transform: uppercase;
-      }
-
-      .run-list {
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        gap: 5px;
-        min-height: 0;
-        overflow: auto;
-        padding-right: 3px;
-      }
-
-      .run-card {
-        position: relative;
-        width: 100%;
-        padding: 12px 12px 11px;
-        border: 1px solid transparent;
-        cursor: pointer;
-        text-align: left;
-        background: transparent;
-        transition: border-color 160ms ease, background 160ms ease;
-      }
-
-      .run-card:hover { background: rgba(255, 255, 255, 0.045); }
-      .run-card.active {
-        border-color: rgba(245, 166, 91, 0.38);
-        background: linear-gradient(105deg, rgba(245, 166, 91, 0.14), rgba(245, 166, 91, 0.02));
-      }
-
-      .run-card.active::before {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: -1px;
-        width: 2px;
-        background: var(--orange);
-        content: "";
-      }
-
-      .run-card-top, .run-card-bottom {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-
-      .run-card-title {
-        overflow: hidden;
-        color: var(--paper);
-        font-size: 13px;
-        font-weight: 700;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .run-card-id {
-        margin-top: 4px;
-        overflow: hidden;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 10px;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .run-card-bottom { margin-top: 9px; }
-
-      .run-card-meta { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-
-      .status-dot {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .status-dot::before {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--muted);
-        content: "";
-      }
-
-      .status-dot.completed { color: var(--mint); }
-      .status-dot.completed::before { background: var(--mint); }
-      .status-dot.failed { color: var(--red); }
-      .status-dot.failed::before { background: var(--red); }
-
-      .rail-footer {
-        padding-top: 15px;
-        border-top: 1px solid var(--line);
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 10px;
-      }
-
-      .rail-footer strong { color: var(--paper); font-weight: 500; }
-
-      .content {
-        min-width: 0;
-        padding: 30px clamp(18px, 4vw, 58px) 60px;
+      button, input, select { font: inherit; color: inherit; }
+      button { cursor: pointer; background: none; border: none; }
+      button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
       .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
         display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 25px;
-        margin-bottom: 27px;
-      }
-
-      .topbar h2 {
-        max-width: 760px;
-        margin-bottom: 0;
-        color: var(--paper);
-        font-family: var(--display);
-        font-size: clamp(27px, 4.5vw, 58px);
-        font-weight: 520;
-        letter-spacing: -0.055em;
-        line-height: 0.97;
-        text-wrap: balance;
-      }
-
-      .topbar-meta {
-        flex: 0 0 auto;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 11px;
-        line-height: 1.7;
-        text-align: right;
-      }
-
-      .topbar-meta strong { color: var(--paper); font-weight: 500; }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 0;
-        margin-bottom: 18px;
-      }
-
-      .stat {
-        position: relative;
-        min-height: 92px;
-        padding: 13px 16px 12px 0;
-        overflow: hidden;
-        border-top: 1px solid var(--line-bright);
+        align-items: center;
+        gap: 16px;
+        padding: 10px 20px;
         border-bottom: 1px solid var(--line);
-        background: transparent;
+        background: rgba(14, 17, 22, 0.92);
+        backdrop-filter: blur(8px);
       }
-
-      .stat::after { display: none; }
-
-      .stat-label {
+      .brand { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+      .brand strong { font-size: 15px; letter-spacing: 0.02em; }
+      .brand span { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
+      .layer-switch {
+        display: flex;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: var(--r-s);
+        background: var(--ink-2);
+      }
+      .layer-switch button {
+        padding: 5px 14px;
+        border-radius: 4px;
         color: var(--muted);
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
+        font-size: 12.5px;
       }
-
-      .stat-value {
-        position: relative;
-        z-index: 1;
-        margin-top: 9px;
-        color: var(--paper);
-        font-family: var(--sans);
-        font-size: 24px;
+      .layer-switch button[aria-pressed="true"] {
+        color: var(--ink);
+        background: var(--paper);
         font-weight: 600;
-        line-height: 1;
       }
+      .layer-switch button:not([aria-pressed="true"]):hover { color: var(--paper); }
+      .layer-hint { font-size: 11.5px; color: var(--faint); }
+      .topbar .spacer { flex: 1; }
+      .snapshot-meta { font-family: var(--mono); font-size: 10.5px; color: var(--faint); text-align: right; }
+      .snapshot-meta button { color: var(--accent); font-family: var(--mono); font-size: 10.5px; }
+      .snapshot-meta button:hover { text-decoration: underline; }
 
-      .stat-value.accent { color: var(--orange); }
-      .stat-value.mint { color: var(--mint); }
-
-      .stage-grid {
+      .layout {
         display: grid;
-        grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.78fr);
-        gap: 18px;
-        align-items: start;
+        grid-template-columns: 296px minmax(0, 1fr);
+        min-height: calc(100vh - 45px);
       }
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: 1fr; }
+        .rail { position: static; height: auto; max-height: 40vh; }
+      }
+
+      .rail {
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 45px;
+        height: calc(100vh - 45px);
+        border-right: 1px solid var(--line);
+        background: var(--ink-2);
+      }
+      .rail-head { padding: 14px 16px 10px; }
+      .rail-head input {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid var(--line);
+        border-radius: var(--r-s);
+        background: var(--ink);
+        font-size: 13px;
+      }
+      .rail-head input::placeholder { color: var(--faint); }
+      .rail-summary {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 16px 10px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--faint);
+      }
+      .run-list { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
+      .run-card {
+        display: block;
+        width: 100%;
+        margin-bottom: 4px;
+        padding: 9px 10px;
+        border: 1px solid transparent;
+        border-radius: var(--r-s);
+        text-align: left;
+      }
+      .run-card:hover { background: var(--panel); }
+      .run-card.active { border-color: var(--line-bright); background: var(--panel); }
+      .run-card .rc-top { display: flex; align-items: center; gap: 8px; }
+      .run-card .rc-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+      }
+      .run-card .rc-sub {
+        margin-top: 3px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--faint);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.03em;
+      }
+      .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+      .badge.b-completed { color: var(--ok); background: var(--ok-soft); }
+      .badge.b-completed::before { background: var(--ok); }
+      .badge.b-running { color: var(--warn); background: var(--warn-soft); }
+      .badge.b-running::before { background: var(--warn); animation: pulse 1.6s ease-in-out infinite; }
+      .badge.b-failed { color: var(--err); background: var(--err-soft); }
+      .badge.b-failed::before { background: var(--err); }
+      @keyframes pulse { 50% { opacity: 0.35; } }
+      @media (prefers-reduced-motion: reduce) { .badge.b-running::before { animation: none; } }
+
+      .content { padding: 18px 22px 60px; min-width: 0; }
+
+      /* ---------- L0 ---------- */
+      .kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--gap);
+        margin-bottom: var(--gap);
+      }
+      .kpi {
+        padding: 13px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--r-m);
+        background: var(--panel);
+      }
+      .kpi label {
+        display: block;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+      .kpi strong { display: block; margin-top: 4px; font-size: 24px; font-weight: 600; }
+      .kpi small { font-size: 11.5px; color: var(--muted); }
 
       .panel {
         border: 1px solid var(--line);
+        border-radius: var(--r-m);
         background: var(--panel);
-        box-shadow: var(--shadow);
-      }
-
-      .panel-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 16px 18px 14px;
-        border-bottom: 1px solid var(--line);
-      }
-
-      .panel-head h3 {
-        margin-bottom: 0;
-        color: var(--paper);
-        font-family: var(--display);
-        font-size: 20px;
-        font-weight: 600;
-        letter-spacing: -0.035em;
-      }
-
-      .panel-head small { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-
-      .episode-select {
-        max-width: 190px;
-        padding: 7px 9px;
-        border: 1px solid var(--line-bright);
-        outline: none;
-        cursor: pointer;
-        color: var(--paper);
-        background: var(--ink-2);
-        font-family: var(--mono);
-        font-size: 10px;
-      }
-
-      .episode-select:focus { border-color: rgba(245,166,91,0.6); }
-      .episode-select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
-
-      .board-panel { overflow: hidden; }
-
-      .board-stage {
-        display: grid;
-        place-items: center;
-        padding: clamp(16px, 4vw, 34px);
-        background:
-          linear-gradient(130deg, rgba(125, 226, 197, 0.035), transparent 48%),
-          rgba(7, 10, 15, 0.26);
-      }
-
-      .board-wrap {
-        width: min(100%, 600px);
-        padding: 10px;
-        border: 1px solid rgba(242, 238, 228, 0.17);
-        border-radius: 4px;
-        background: #2a302f;
-        box-shadow: 0 22px 50px rgba(0,0,0,0.38), 0 0 0 5px rgba(255,255,255,0.025);
-      }
-
-      .board {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        grid-template-rows: repeat(8, minmax(0, 1fr));
-        width: 100%;
-        aspect-ratio: 1;
         overflow: hidden;
       }
-
-      .square {
-        position: relative;
-        display: grid;
-        place-items: center;
-        width: 100%;
-        height: 100%;
-        min-width: 0;
-        min-height: 0;
-        aspect-ratio: 1;
-        line-height: 1;
-        user-select: none;
-      }
-
-      .square.light { background: var(--board-light); }
-      .square.dark { background: var(--board-dark); }
-
-      .square::after {
-        position: absolute;
-        left: 5px;
-        bottom: 3px;
-        color: rgba(13, 17, 24, 0.46);
-        font-family: var(--sans);
-        font-size: clamp(7px, 1.1vw, 10px);
-        font-weight: 700;
-        content: attr(data-label);
-      }
-
-      .square.dark::after { color: rgba(242,238,228,0.38); }
-
-      .square::before {
-        position: absolute;
-        right: 5px;
-        bottom: 3px;
-        color: rgba(13, 17, 24, 0.46);
-        font-family: var(--sans);
-        font-size: clamp(7px, 1.1vw, 10px);
-        font-weight: 700;
-        content: attr(data-file);
-      }
-
-      .square.dark::before { color: rgba(242,238,228,0.38); }
-
-      .square .piece {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        width: 80%;
-        height: 80%;
-        place-items: center;
-      }
-
-      .piece-svg { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; overflow: visible; }
-      .piece-svg.white { color: #f8f1df; filter: drop-shadow(0 2px 1px rgba(38, 29, 23, 0.68)); }
-      .piece-svg.black { color: #252a2e; filter: drop-shadow(0 1px 1px rgba(255, 248, 228, 0.24)); }
-
-      .square.from, .square.to { background: var(--board-highlight); }
-      .square.to { box-shadow: inset 0 0 0 4px rgba(72, 87, 47, 0.34); }
-
-      .replay-bar {
-        padding: 15px 18px 18px;
-        border-top: 1px solid var(--line);
-      }
-
-      .replay-current {
+      .panel + .panel, .grid + .panel, .panel + .grid { margin-top: var(--gap); }
+      .panel-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 15px;
-        margin-bottom: 13px;
-      }
-
-      .replay-current h4 {
-        margin: 0;
-        color: var(--paper);
-        font-family: var(--display);
-        font-size: 21px;
-        font-weight: 600;
-        letter-spacing: -0.035em;
-      }
-
-      .replay-current p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
-
-      .ply-counter {
-        color: var(--orange);
-        font-size: 11px;
-        white-space: nowrap;
-      }
-
-      .range {
-        width: 100%;
-        height: 4px;
-        margin: 0 0 13px;
-        accent-color: var(--orange);
-        cursor: pointer;
-      }
-
-      .transport {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .transport button {
-        min-width: 34px;
-        height: 31px;
-        padding: 0 10px;
-        border: 1px solid var(--line-bright);
-        cursor: pointer;
-        color: var(--paper);
-        background: rgba(255,255,255,0.035);
-        transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
-      }
-
-      .transport button:hover:not(:disabled) {
-        border-color: var(--orange);
-        color: var(--orange);
-        background: var(--orange-soft);
-      }
-
-      .transport button:disabled { cursor: default; opacity: 0.32; }
-      .transport .play-btn { min-width: 84px; color: var(--orange); }
-
-      .side-stack { display: grid; gap: 18px; }
-
-      .metric-body, .facts-body, .events-body { padding: 17px 18px; }
-
-      .metric-hero {
-        display: grid;
-        grid-template-columns: 1.1fr 1fr 1fr;
-        gap: 7px;
-        margin-bottom: 14px;
-      }
-
-      .metric-box {
-        min-height: 80px;
-        padding: 12px 11px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.025);
-      }
-
-      .metric-box label {
-        display: block;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .metric-box strong {
-        display: block;
-        margin-top: 8px;
-        color: var(--paper);
-        font-family: var(--sans);
-        font-size: 23px;
-        font-weight: 600;
-      }
-
-      .metric-box strong.good { color: var(--mint); }
-      .metric-box strong.warn { color: var(--orange); }
-      .metric-box strong.bad { color: var(--red); }
-
-      .metric-list { display: grid; gap: 1px; }
-
-      .metric-row, .fact-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(226,235,230,0.08);
-      }
-
-      .metric-row:last-child, .fact-row:last-child { border-bottom: 0; }
-      .metric-row span, .fact-row span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
-      .metric-row strong, .fact-row strong { color: var(--paper); font-size: 12px; font-weight: 600; text-align: right; }
-
-      .fact-row strong { max-width: 67%; overflow-wrap: anywhere; }
-
-      .player-card {
-        display: grid;
-        grid-template-columns: 38px minmax(0, 1fr);
-        gap: 10px;
-        align-items: center;
-        margin-bottom: 11px;
-        padding: 10px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.025);
-      }
-
-      .player-side {
-        display: grid;
-        width: 38px;
-        height: 38px;
-        place-items: center;
-        border: 1px solid var(--line-bright);
-        color: var(--orange);
-        font-family: var(--display);
-        font-size: 18px;
-      }
-
-      .player-card:last-child { margin-bottom: 14px; }
-      .player-name { color: var(--paper); font-size: 13px; font-weight: 700; }
-      .player-detail { margin-top: 3px; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
-
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        min-height: 20px;
-        padding: 2px 6px;
-        border: 1px solid var(--line-bright);
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 9px;
-        line-height: 1.3;
-      }
-
-      .tag.orange { border-color: rgba(245,166,91,0.38); color: var(--orange); background: var(--orange-soft); }
-      .tag.mint { border-color: rgba(125,226,197,0.34); color: var(--mint); background: var(--mint-soft); }
-      .tag.red { border-color: rgba(238,130,120,0.34); color: var(--red); background: rgba(238,130,120,0.09); }
-
-      .lower-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
-        gap: 18px;
-        margin-top: 18px;
-      }
-
-      .move-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 5px;
-        max-height: 380px;
-        overflow: auto;
-        padding: 15px 18px 18px;
-      }
-
-      .move-item {
-        display: grid;
-        grid-template-columns: 34px 48px minmax(0, 1fr) auto auto;
-        gap: 8px;
-        align-items: center;
-        min-width: 0;
-        padding: 9px 10px;
-        border: 1px solid transparent;
-        cursor: pointer;
-        text-align: left;
-        background: rgba(255,255,255,0.025);
-        transition: border-color 150ms ease, background 150ms ease;
-      }
-
-      .move-item:hover { border-color: var(--line-bright); }
-      .move-item.active { border-color: rgba(245,166,91,0.48); background: var(--orange-soft); }
-      .move-number { color: var(--muted); font-size: 10px; }
-      .move-number, .move-side, .move-eval { font-family: var(--mono); }
-      .move-side { color: var(--orange); font-size: 10px; }
-      .move-san { overflow: hidden; color: var(--paper); font-family: var(--sans); font-size: 17px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-      .move-uci { color: var(--muted); font-size: 9px; }
-      .move-eval { color: var(--muted); font-size: 9px; white-space: nowrap; }
-      .move-eval.good { color: var(--mint); }
-      .move-eval.warn { color: var(--orange); }
-      .move-eval.bad { color: var(--red); }
-
-      .events-list {
-        display: grid;
-        gap: 1px;
-        max-height: 380px;
-        overflow: auto;
-      }
-
-      .event-item {
-        display: grid;
-        grid-template-columns: 9px minmax(0, 1fr);
-        gap: 9px;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(226,235,230,0.08);
-      }
-
-      .event-item::before {
-        width: 5px;
-        height: 5px;
-        margin-top: 6px;
-        border-radius: 50%;
-        background: var(--mint);
-        content: "";
-      }
-
-      .event-name { color: var(--paper); font-size: 12px; }
-      .event-meta { margin-top: 2px; color: var(--muted); font-size: 10px; }
-      .event-meta, .event-payload { font-family: var(--mono); }
-      .event-payload { margin: 8px 0 0; max-height: 180px; overflow: auto; color: #b9c4ca; font-size: 10px; white-space: pre-wrap; }
-
-      .event-details summary {
-        cursor: pointer;
-        list-style: none;
-      }
-
-      .event-details summary::-webkit-details-marker { display: none; }
-      .event-details summary::after { float: right; color: var(--muted); content: "+"; }
-      .event-details[open] summary::after { content: "-"; }
-
-      .empty-state {
-        display: grid;
-        min-height: 170px;
-        place-items: center;
-        padding: 30px;
-        color: var(--muted);
-        text-align: center;
-      }
-
-      .empty-state strong { display: block; margin-bottom: 6px; color: var(--paper); font-family: var(--sans); font-size: 22px; font-weight: 600; }
-
-      .footnote {
-        margin-top: 22px;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 10px;
-        text-align: right;
-      }
-
-      .footnote code { color: var(--orange); }
-
-      .topbar-actions {
-        display: flex;
-        align-items: flex-end;
-        gap: 14px;
-      }
-
-      .view-btn {
-        min-height: 34px;
-        padding: 8px 11px;
-        border: 1px solid rgba(142, 170, 233, 0.42);
-        cursor: pointer;
-        color: var(--blue);
-        background: var(--analysis-blue-soft, rgba(142, 170, 233, 0.1));
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
-      }
-
-      .view-btn:hover {
-        border-color: var(--blue);
-        color: var(--paper);
-        background: rgba(142, 170, 233, 0.18);
-      }
-
-      .view-btn[aria-pressed="true"] {
-        border-color: rgba(125, 226, 197, 0.45);
-        color: var(--mint);
-        background: var(--mint-soft);
-      }
-
-      .analysis-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        margin-bottom: 19px;
-      }
-
-      .analysis-toolbar p { margin: 0; color: var(--muted); font-size: 13px; }
-
-      .analysis-kpis {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 1px;
-        margin-bottom: 18px;
-        border: 1px solid var(--line);
-        background: var(--line);
-      }
-
-      .analysis-kpi {
-        min-height: 92px;
-        padding: 14px 15px;
-        background: var(--panel);
-      }
-
-      .analysis-kpi-label {
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-      }
-
-      .analysis-kpi-value {
-        display: block;
-        margin-top: 10px;
-        color: var(--paper);
-        font-size: 25px;
-        font-weight: 650;
-        line-height: 1;
-      }
-
-      .analysis-kpi-value.blue { color: var(--blue); }
-      .analysis-kpi-value.orange { color: var(--orange); }
-      .analysis-kpi-value.red { color: var(--red); }
-      .analysis-kpi-value.mint { color: var(--mint); }
-
-      .analysis-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.62fr);
-        gap: 18px;
-        align-items: start;
-      }
-
-      .analysis-panel {
-        min-width: 0;
-        border: 1px solid var(--line);
-        background: var(--panel);
-        box-shadow: var(--shadow);
-      }
-
-      .analysis-panel-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 16px 18px 14px;
+        gap: 12px;
+        padding: 11px 16px;
         border-bottom: 1px solid var(--line);
       }
-
-      .analysis-panel-head h3 {
+      .panel-head .eyebrow {
         margin: 0;
-        color: var(--paper);
-        font-size: 19px;
-        font-weight: 620;
-        letter-spacing: -0.025em;
-      }
-
-      .analysis-panel-head small { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-
-      .analysis-panel-body { padding: 17px 18px; }
-
-      .chart-wrap { min-height: 310px; padding: 6px 0 0; }
-
-      .cpl-chart {
-        display: block;
-        width: 100%;
-        height: auto;
-        overflow: visible;
-      }
-
-      .cpl-chart .grid-line { stroke: rgba(226, 235, 230, 0.1); stroke-width: 1; }
-      .cpl-chart .axis-label { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .cpl-chart .bar { shape-rendering: crispEdges; }
-      .cpl-chart .bar.good { fill: rgba(125, 226, 197, 0.74); }
-      .cpl-chart .bar.inaccuracy { fill: rgba(142, 170, 233, 0.82); }
-      .cpl-chart .bar.mistake { fill: rgba(245, 166, 91, 0.88); }
-      .cpl-chart .bar.blunder { fill: rgba(238, 130, 120, 0.92); }
-      .cpl-chart .baseline { stroke: rgba(226, 235, 230, 0.35); stroke-width: 1; }
-
-      .chart-caption {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-top: 11px;
-        color: var(--muted);
         font-family: var(--mono);
         font-size: 10px;
-      }
-
-      .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; }
-
-      .legend-item { display: inline-flex; align-items: center; gap: 5px; }
-      .legend-swatch { width: 8px; height: 8px; }
-      .legend-swatch.good { background: var(--mint); }
-      .legend-swatch.inaccuracy { background: var(--blue); }
-      .legend-swatch.mistake { background: var(--orange); }
-      .legend-swatch.blunder { background: var(--red); }
-
-      .analysis-side { display: grid; gap: 18px; }
-
-      .incident-list { display: grid; gap: 6px; }
-
-      .incident-item {
-        display: grid;
-        grid-template-columns: 36px minmax(0, 1fr) auto;
-        gap: 10px;
-        align-items: center;
-        width: 100%;
-        padding: 10px;
-        border: 1px solid var(--line);
-        cursor: pointer;
-        text-align: left;
-        background: rgba(255, 255, 255, 0.025);
-        transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
-      }
-
-      .incident-item:hover {
-        border-color: rgba(238, 130, 120, 0.48);
-        background: rgba(238, 130, 120, 0.08);
-        transform: translateY(-1px);
-      }
-
-      .incident-ply {
-        display: grid;
-        min-height: 31px;
-        place-items: center;
-        color: var(--red);
-        background: rgba(238, 130, 120, 0.1);
-        font-family: var(--mono);
-        font-size: 10px;
-      }
-
-      .incident-main { min-width: 0; }
-      .incident-move { overflow: hidden; color: var(--paper); font-size: 15px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
-      .incident-meta { margin-top: 2px; color: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .incident-cpl { color: var(--red); font-family: var(--mono); font-size: 12px; font-weight: 650; white-space: nowrap; }
-
-      .analysis-summary { display: grid; gap: 1px; }
-
-      .analysis-summary-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 9px 0;
-        border-bottom: 1px solid rgba(226, 235, 230, 0.08);
-      }
-
-      .analysis-summary-row:last-child { border-bottom: 0; }
-      .analysis-summary-row span { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .analysis-summary-row strong { color: var(--paper); font-size: 12px; font-weight: 620; text-align: right; }
-      .analysis-summary-row strong.red { color: var(--red); }
-      .analysis-summary-row strong.orange { color: var(--orange); }
-      .analysis-summary-row strong.mint { color: var(--mint); }
-
-      .engine-proof {
-        display: grid;
-        gap: 9px;
-        padding: 13px;
-        border: 1px solid rgba(142, 170, 233, 0.22);
-        background: rgba(142, 170, 233, 0.06);
-      }
-
-      .engine-proof-title { color: var(--blue); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
-      .engine-proof-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
-      .engine-proof-row span { color: var(--muted); }
-      .engine-proof-row strong { color: var(--paper); font-weight: 600; text-align: right; }
-      .engine-proof-note { margin: 1px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
-
-      .analysis-table-wrap { overflow-x: auto; }
-
-      .analysis-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
-
-      .analysis-table th {
-        padding: 9px 10px;
-        border-bottom: 1px solid var(--line-bright);
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 9px;
-        font-weight: 500;
-        letter-spacing: 0.08em;
-        text-align: left;
+        letter-spacing: 0.07em;
         text-transform: uppercase;
-        white-space: nowrap;
+        color: var(--faint);
       }
+      .panel-head h3 { margin: 1px 0 0; font-size: 14px; font-weight: 600; }
+      .panel-head small { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
+      .panel-body { padding: 14px 16px; }
 
-      .analysis-table td {
-        padding: 10px;
-        border-bottom: 1px solid rgba(226, 235, 230, 0.08);
-        color: var(--paper);
-        white-space: nowrap;
-      }
-
-      .analysis-table tr:last-child td { border-bottom: 0; }
-      .analysis-table tr[data-analysis-ply] { cursor: pointer; transition: background 150ms ease; }
-      .analysis-table tr[data-analysis-ply]:hover { background: rgba(255, 255, 255, 0.045); }
-      .analysis-table .muted { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .analysis-table .move-link { color: var(--paper); font-weight: 620; }
-      .analysis-table .cpl { color: var(--muted); font-family: var(--mono); }
-      .analysis-table .cpl.warn { color: var(--orange); }
-      .analysis-table .cpl.bad { color: var(--red); }
-      .analysis-table .cpl.good { color: var(--mint); }
-
-      .analysis-empty {
-        display: grid;
-        min-height: 230px;
-        place-items: center;
-        padding: 30px;
-        text-align: center;
-      }
-
-      .analysis-empty.compact { min-height: 125px; }
-
-      .analysis-empty strong { display: block; margin-bottom: 7px; color: var(--paper); font-size: 18px; font-weight: 620; }
-      .analysis-empty p { max-width: 48ch; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-
-      .analysis-note {
-        margin: 14px 0 0;
-        color: var(--muted);
+      .runs-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .runs-table th {
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
         font-family: var(--mono);
         font-size: 10px;
-        line-height: 1.55;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--faint);
+        font-weight: 500;
       }
+      .runs-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+      .runs-table tr:last-child td { border-bottom: none; }
+      .runs-table tbody tr { cursor: pointer; }
+      .runs-table tbody tr:hover { background: var(--panel-2); }
+      .runs-table .num { text-align: right; font-family: var(--mono); font-size: 11.5px; }
+      .runs-table .dim { color: var(--muted); }
+      .mono { font-family: var(--mono); font-size: 11px; }
 
-      @media (max-width: 1150px) {
-        .analysis-grid { grid-template-columns: 1fr; }
-        .analysis-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: var(--gap); }
+      @media (max-width: 1200px) { .grid-2 { grid-template-columns: 1fr; } }
+
+      .chart-wrap { position: relative; width: 100%; }
+      .chart-wrap svg { display: block; width: 100%; height: auto; }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 0 16px 12px;
+        font-size: 11px;
+        color: var(--muted);
       }
+      .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+      .legend .swatch { width: 10px; height: 10px; border-radius: 2px; }
 
-      @media (max-width: 760px) {
-        .topbar-actions { align-items: flex-start; flex-direction: column-reverse; gap: 10px; }
-        .topbar-actions, .topbar-meta { width: 100%; }
-        .analysis-toolbar { align-items: flex-start; flex-direction: column; }
-        .analysis-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .analysis-kpi:last-child { grid-column: span 2; }
-        .analysis-side { grid-template-columns: 1fr; }
-        .chart-wrap { min-height: 250px; }
-        .chart-caption { align-items: flex-start; flex-direction: column; }
+      /* ---------- L1 ---------- */
+      .game-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: var(--gap);
       }
-
-      .fade-in { animation: rise 420ms ease both; }
-      @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-      @media (max-width: 1150px) {
-        .app-shell { grid-template-columns: 255px minmax(0, 1fr); }
-        .stage-grid, .lower-grid { grid-template-columns: 1fr; }
-        .side-stack { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      .game-head h2 { margin: 0; font-size: 18px; font-weight: 600; }
+      .game-head .meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+      .game-head .spacer { flex: 1; }
+      .btn {
+        padding: 6px 13px;
+        border: 1px solid var(--line);
+        border-radius: var(--r-s);
+        background: var(--panel);
+        font-size: 12.5px;
       }
+      .btn:hover { border-color: var(--line-bright); }
+      .btn.primary { background: var(--paper); border-color: var(--paper); color: var(--ink); font-weight: 600; }
 
-      @media (max-width: 760px) {
-        .app-shell { display: block; }
-        .rail { position: relative; height: auto; min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
-        .run-list { max-height: 260px; }
-        .content { padding: 25px 14px 42px; }
-        .topbar { align-items: flex-start; flex-direction: column; gap: 12px; }
-        .topbar h2 { max-width: 100%; font-size: 37px; white-space: normal; }
-        .topbar-meta { text-align: left; }
-        .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .stats-grid .stat:last-child { grid-column: span 2; }
-        .side-stack { grid-template-columns: 1fr; }
-        .move-list { grid-template-columns: 1fr; }
-        .board-stage { padding: 16px 10px; }
-        .replay-current { align-items: flex-start; flex-direction: column; gap: 5px; }
+      .game-grid {
+        display: grid;
+        grid-template-columns: minmax(340px, 480px) minmax(0, 1fr);
+        gap: var(--gap);
+        align-items: start;
       }
+      @media (max-width: 1100px) { .game-grid { grid-template-columns: 1fr; } }
 
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      .board-wrap { position: relative; width: 100%; }
+      .board { display: grid; grid-template-columns: repeat(8, 1fr); border: 1px solid var(--line-bright); border-radius: 4px; overflow: hidden; }
+      .square { position: relative; aspect-ratio: 1; }
+      .square.light { background: var(--board-light); }
+      .square.dark { background: var(--board-dark); }
+      .square .pc { position: absolute; inset: 6%; }
+      .square .pc svg { width: 100%; height: 100%; }
+      .square.hl-from::after, .square.hl-to::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--board-hl);
+        opacity: 0.45;
       }
+      .coord { position: absolute; font-family: var(--mono); font-size: 9px; color: rgba(0,0,0,0.55); }
+      .coord.file { right: 3px; bottom: 1px; }
+      .coord.rank { left: 3px; top: 1px; }
+      .square.dark .coord { color: rgba(255,255,255,0.7); }
+
+      .transport { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+      .transport .btn { padding: 5px 10px; font-family: var(--mono); font-size: 12px; }
+      .transport .range { flex: 1; accent-color: var(--accent); }
+      .ply-label { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 64px; text-align: right; }
+
+      .move-list { max-height: 300px; overflow-y: auto; font-family: var(--mono); font-size: 12px; }
+      .move-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 8px; padding: 3px 12px; align-items: baseline; }
+      .move-row:hover { background: var(--panel-2); }
+      .move-row.cur { background: var(--accent-soft); }
+      .move-row .n { color: var(--faint); }
+      .move-row .who { color: var(--muted); }
+      .move-row .lat { color: var(--faint); font-size: 10.5px; }
+      .move-row .lat.warn { color: var(--warn); }
+      .move-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+      .move-dot.d-ok { background: var(--ok); }
+      .move-dot.d-repaired { background: var(--warn); }
+      .move-dot.d-failed { background: var(--err); }
+
+      /* ---------- L2 ---------- */
+      .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 22px; }
+      .fact label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+      .fact div { font-size: 12.5px; margin-top: 2px; overflow-wrap: anywhere; }
+      .events { max-height: 380px; overflow-y: auto; font-family: var(--mono); font-size: 11px; }
+      .ev-row { display: grid; grid-template-columns: 74px 210px 1fr; gap: 10px; padding: 3px 12px; border-bottom: 1px solid var(--line); }
+      .ev-row:hover { background: var(--panel-2); }
+      .ev-row .t { color: var(--faint); }
+      .ev-row .ty { color: var(--info); }
+      .ev-row .ty.warn { color: var(--warn); }
+      .ev-row .ty.err { color: var(--err); }
+      .ev-row .pl { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      .empty { padding: 60px 20px; text-align: center; color: var(--muted); }
+      .toast {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        border: 1px solid var(--line-bright);
+        border-radius: var(--r-s);
+        background: var(--panel-2);
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+      }
+      .toast.show { opacity: 1; }
     </style>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><strong>Zugzwang Match Desk</strong><span>observabilidade · somente leitura</span></div>
+      <nav class="layer-switch" role="group" aria-label="Camada de observabilidade">
+        <button id="tab-l0" aria-pressed="true">Operação</button>
+        <button id="tab-l1" aria-pressed="false">Partida</button>
+        <button id="tab-l2" aria-pressed="false">Profundo</button>
+      </nav>
+      <span class="layer-hint" id="layer-hint">visão de operador: todas as partidas, sinais vitais</span>
+      <div class="spacer"></div>
+      <div class="snapshot-meta">
+        <div id="meta-generated">snapshot —</div>
+        <button id="btn-reload" type="button">recarregar dados</button>
+      </div>
+    </header>
+
+    <div class="layout">
       <aside class="rail">
-        <div class="brand">
-          <div class="brand-copy">
-            <p class="eyebrow">Zugzwang · laboratório local</p>
-            <h1>Match<br />Desk</h1>
-            <p class="brand-subtitle">partidas + evidência</p>
-          </div>
-          <div class="brand-mark" aria-hidden="true"><span>♞</span></div>
+        <div class="rail-head">
+          <input id="search" type="search" placeholder="filtrar por run, modelo, condição…" autocomplete="off" aria-label="Filtrar partidas" />
         </div>
-
-        <div class="readonly-stamp">snapshot somente leitura</div>
-
-        <div class="search-box" style="margin-top: 21px">
-          <input id="search" name="run-search" type="search" aria-label="Buscar partida ou modelo" placeholder="buscar partida ou modelo…" autocomplete="off" />
-        </div>
-        <div class="filter-bar" aria-label="Filtrar runs">
-          <button class="filter-btn active" data-filter="all">todos</button>
-          <button class="filter-btn" data-filter="COMPLETED">verdes</button>
-          <button class="filter-btn" data-filter="FAILED">falhas</button>
-        </div>
-        <div class="run-count"><span>partidas no recorte</span><span id="run-count">0</span></div>
-        <div id="run-list" class="run-list"></div>
-
-        <div class="rail-footer">
-          <strong>sem escrita</strong><br />
-          gerado de SQLite + CAS · sem requests brutos
-        </div>
+        <div class="rail-summary"><span>partidas</span><span id="run-count">0</span></div>
+        <div class="run-list" id="run-list" role="list"></div>
       </aside>
-
-      <main id="main-content" class="content">
-        <header class="topbar fade-in">
-          <div>
-            <p id="view-kicker" class="eyebrow">replay local</p>
-            <h2 id="run-title">Carregando recorte…</h2>
-          </div>
-          <div class="topbar-actions">
-            <button id="analysis-btn" class="view-btn" type="button" aria-pressed="false">análise da partida</button>
-            <div id="snapshot-meta" class="topbar-meta"></div>
-          </div>
-        </header>
-
-        <div id="app"></div>
-      </main>
+      <main class="content" id="content" tabindex="-1"></main>
     </div>
 
+    <div class="toast" id="toast" role="status"></div>
+
+    <script src="data.js"></script>
     <script src="pieces.js"></script>
-    <script src="data.js?source=real-validation-20260904-v10"></script>
     <script>
-      (() => {
-        const DATA = window.ZUGZWANG_DATA || { runs: [], readOnly: true };
-        const state = { query: "", filter: "all", runId: null, episodeIndex: 0, ply: 0, view: "replay", playing: false, timer: null };
-        const PIECES = window.ZUGZWANG_PIECES || {};
-        const PIECE_NAMES = { K: "rei branco", Q: "dama branca", R: "torre branca", B: "bispo branco", N: "cavalo branco", P: "peão branco", k: "rei preto", q: "dama preta", r: "torre preta", b: "bispo preto", n: "cavalo preto", p: "peão preto" };
-        const $ = (selector) => document.querySelector(selector);
-        const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
-        const formatNumber = (value) => new Intl.NumberFormat("pt-BR").format(Number(value || 0));
-        const formatDate = (value) => value ? new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "n/a";
-        const shortId = (value) => String(value || "").replace(/^run_/, "").slice(0, 15);
+      "use strict";
+      const DATA = window.ZUGZWANG_DATA || { runs: [] };
+      const PIECES = window.ZUGZWANG_PIECES || {};
+      const $ = (sel, el = document) => el.querySelector(sel);
 
-        function prettyExperiment(value) {
-          const name = String(value || "run");
-          const known = {
-            "local-musespark-1-3-free-grounded-vs-stockfish": "MuseSpark 1.3 Free · Stockfish 1500 · grounded",
-            "local-musespark-1-3-free-vs-stockfish-1000": "MuseSpark 1.3 Free · Stockfish 1000",
-            "local-musespark-1-3-free-vs-stockfish-black": "MuseSpark 1.3 Free · Stockfish de brancas",
-            "local-musespark-1-3-free-vs-stockfish": "MuseSpark 1.3 Free · Stockfish",
-            "local-musespark-1-3-free-self-play-probe": "MuseSpark 1.3 Free · self-play",
-            "local-musespark-1-3-free-full-game-vs-random-white": "MuseSpark 1.3 Free · random de pretas",
-            "local-musespark-1-3-free-full-game-vs-random-black": "MuseSpark 1.3 Free · random de brancas",
-            "local-musespark-1-3-free-strategy-suite": "MuseSpark 1.3 Free · estratégias",
-            "local-musespark-1-3-free-state-reconstruction": "MuseSpark 1.3 Free · reconstrução",
-            "local-musespark-1-3-free-rgb-move-selection": "MuseSpark 1.3 Free · tabuleiro RGB",
-            "local-musespark-1-3-free-smoke": "MuseSpark 1.3 Free · smoke",
-            "local-musespark-1-3-free-r2-binary": "MuseSpark 1.3 Free · R2 · reparo binário",
-            "local-musespark-1-3-free-r6-batched-tree": "MuseSpark 1.3 Free · R6 · árvore em lote",
-            "local-musespark-1-3-go-multi-agent-review": "MuseSpark 1.3 Go · R5 · revisão multiagente",
-            "local-musespark-1-3-go-multi-agent-review-full-game": "MuseSpark 1.3 Go · R5 · partida completa",
-            "local-musespark-1-3-free-stockfish-battery-01-baseline-fen-uci": "MuseSpark 1.3 Free · SF 1000 · baseline FEN/UCI",
-            "local-musespark-1-3-free-stockfish-battery-02-legal-grounding": "MuseSpark 1.3 Free · SF 1000 · grounding legal",
-            "local-musespark-1-3-free-stockfish-battery-03-reason-then-ground": "MuseSpark 1.3 Free · SF 1000 · reason then ground",
-            "local-musespark-1-3-free-stockfish-battery-04-formal-repair": "MuseSpark 1.3 Free · SF 1000 · reparo formal",
-            "local-musespark-1-3-free-stockfish-battery-05-structured-output": "MuseSpark 1.3 Free · SF 1000 · saída estruturada",
-            "local-musespark-1-3-free-stockfish-battery-06-ascii-board": "MuseSpark 1.3 Free · SF 1000 · tabuleiro ASCII",
-            "local-musespark-1-3-free-stockfish-battery-07-full-uci-history": "MuseSpark 1.3 Free · SF 1000 · histórico UCI",
-            "local-musespark-1-3-free-stockfish-battery-08-full-san-history": "MuseSpark 1.3 Free · SF 1000 · histórico SAN",
-            "local-musespark-1-3-free-stockfish-battery-09-rgb-board": "MuseSpark 1.3 Free · SF 1000 · tabuleiro RGB",
-            "local-musespark-1-3-free-stockfish-battery-10-tactical-checklist": "MuseSpark 1.3 Free · SF 1000 · checklist tático",
-            "fake-smoke": "Smoke fake",
-          };
-          return known[name] || name.replace(/-/g, " ");
-        }
+      const LAYER_HINTS = {
+        L0: "visão de operador: todas as partidas, sinais vitais",
+        L1: "uma partida: replay, ritmo e consumo por lance",
+        L2: "drill-down: configuração, eventos brutos, proveniência",
+      };
 
-        function shortActor(value) {
-          const actor = String(value || "");
-          if (actor.includes("muse-spark-1.3-contributor-free")) return "MuseSpark 1.3 Free";
-          if (actor.startsWith("chess.stockfish")) return "Stockfish";
-          if (actor.startsWith("model-opponent/")) return "MuseSpark · self-play";
-          if (actor.startsWith("chess.random")) return "random legal";
-          return actor;
-        }
+      const state = {
+        layer: "L0",
+        runId: null,
+        episodeIndex: 0,
+        ply: 0,
+        playing: false,
+        playTimer: null,
+        query: "",
+      };
 
-        function currentRun() {
-          return DATA.runs.find((run) => run.id === state.runId) || DATA.runs[0] || null;
-        }
+      /* ---------- helpers ---------- */
+      function esc(s) {
+        return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+        }[c]));
+      }
+      function fmtNum(n) {
+        if (n == null) return "—";
+        return n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : String(n);
+      }
+      function fmtMs(ms) {
+        if (ms == null) return "—";
+        return ms >= 60000 ? (ms / 60000).toFixed(1) + " min" : ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : ms + " ms";
+      }
+      function fmtDur(a, b) {
+        if (!a || !b) return "—";
+        const ms = new Date(b) - new Date(a);
+        return fmtMs(ms);
+      }
+      function hhmm(ts) {
+        return ts ? new Date(ts).toISOString().slice(11, 16) : "—";
+      }
+      function toast(msg) {
+        const el = $("#toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove("show"), 1800);
+      }
 
-        function currentEpisode(run) {
-          return run?.episodes?.[state.episodeIndex] || run?.episodes?.[0] || { positions: [{ ply: 0, fen: null }], moves: [] };
-        }
-
-        function syncUrl() {
-          const params = new URLSearchParams();
-          if (state.runId) params.set("run", state.runId);
-          if (state.view === "analysis") params.set("view", "analysis");
-          if (state.episodeIndex) params.set("episode", String(state.episodeIndex));
-          if (state.ply) params.set("ply", String(state.ply));
-          if (state.query) params.set("q", state.query);
-          if (state.filter !== "all") params.set("status", state.filter);
-          const query = params.toString();
-          history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
-        }
-
-        function restoreUrlState(defaultRunId) {
-          const params = new URLSearchParams(location.search);
-          const requestedRun = params.get("run");
-          state.runId = DATA.runs.some((run) => run.id === requestedRun) ? requestedRun : defaultRunId;
-          state.query = params.get("q") || "";
-          const requestedFilter = params.get("status");
-          state.filter = ["all", "COMPLETED", "FAILED"].includes(requestedFilter) ? requestedFilter : "all";
-          state.view = params.get("view") === "analysis" ? "analysis" : "replay";
-          state.episodeIndex = Math.max(0, Number(params.get("episode") || 0));
-          state.ply = Math.max(0, Number(params.get("ply") || 0));
-          $("#search").value = state.query;
-          document.querySelectorAll("[data-filter]").forEach((button) => button.classList.toggle("active", button.dataset.filter === state.filter));
-        }
-
-        function statusHtml(status) {
-          const normalized = String(status || "desconhecido").toLowerCase();
-          return `<span class="status-dot ${normalized}">${escapeHtml(status || "desconhecido")}</span>`;
-        }
-
-        function filteredRuns() {
-          const query = state.query.trim().toLowerCase();
-          return DATA.runs.filter((run) => {
-            const matchesFilter = state.filter === "all" || run.status === state.filter;
-            const haystack = [run.id, run.experiment, run.conditionId, run.model?.model, run.model?.provider, ...(run.tags || [])].join(" ").toLowerCase();
-            return matchesFilter && (!query || haystack.includes(query));
-          });
-        }
-
-        function renderRunList() {
-          const runs = filteredRuns();
-          $("#run-count").textContent = `${runs.length}/${DATA.runs.length}`;
-          $("#run-list").innerHTML = runs.length ? runs.map((run, index) => `
-            <button class="run-card ${run.id === state.runId ? "active" : ""}" data-run-id="${escapeHtml(run.id)}" style="animation-delay:${Math.min(index * 24, 300)}ms">
-              <div class="run-card-top"><span class="run-card-title">${escapeHtml(prettyExperiment(run.experiment))}</span>${statusHtml(run.status)}</div>
-              <div class="run-card-id">${escapeHtml(shortId(run.id))}</div>
-              <div class="run-card-bottom"><span class="run-card-meta">${formatNumber(run.episodes?.reduce((sum, episode) => sum + (episode.stepsCommitted || 0), 0))} plies</span><span class="run-card-meta">${formatDate(run.startedAt)}</span></div>
-            </button>`).join("") : `<div class="empty-state"><div><strong>nenhum run</strong>ajuste a busca ou filtro.</div></div>`;
-          document.querySelectorAll("[data-run-id]").forEach((button) => button.addEventListener("click", () => {
-            state.runId = button.dataset.runId;
-            state.episodeIndex = 0;
-            state.ply = 0;
-            stopPlayback();
-            renderAll();
-            syncUrl();
-          }));
-        }
-
-        function parseFen(fen) {
-          if (!fen) return Array.from({ length: 8 }, () => Array(8).fill(null));
-          const rows = String(fen).split(" ")[0].split("/");
-          return rows.map((row) => {
-            const squares = [];
-            for (const token of row) {
-              if (/\d/.test(token)) for (let i = 0; i < Number(token); i += 1) squares.push(null);
-              else squares.push(token);
-            }
-            return squares.slice(0, 8);
-          });
-        }
-
-        function pieceSvg(piece) {
-          const color = piece === piece.toUpperCase() ? "white" : "black";
-          return `<svg class="piece-svg ${color}" role="img" aria-label="${PIECE_NAMES[piece] || "peça"}" viewBox="0 0 45 45" preserveAspectRatio="xMidYMid meet">${PIECES[piece] || ""}</svg>`;
-        }
-
-        function renderBoard(episode) {
-          const position = episode.positions?.[Math.min(state.ply, (episode.positions || []).length - 1)] || episode.positions?.[0] || {};
-          const matrix = parseFen(position.fen);
-          const selectedMove = episode.moves?.[state.ply - 1];
-          const from = selectedMove?.uci?.slice(0, 2);
-          const to = selectedMove?.uci?.slice(2, 4);
-          const squares = [];
-          for (let row = 0; row < 8; row += 1) {
-            for (let file = 0; file < 8; file += 1) {
-              const square = `${String.fromCharCode(97 + file)}${8 - row}`;
-              const piece = matrix[row]?.[file];
-              const classes = [((row + file) % 2 === 0 ? "light" : "dark")];
-              if (square === from) classes.push("from");
-              if (square === to) classes.push("to");
-              if (piece && piece === piece.toUpperCase()) classes.push("white-piece");
-              if (piece && piece === piece.toLowerCase()) classes.push("black-piece");
-              squares.push(`<div class="square ${classes.join(" ")}" data-label="${file === 0 ? 8 - row : ""}" data-file="${row === 7 ? String.fromCharCode(97 + file) : ""}" aria-label="${square}${piece ? `, ${PIECE_NAMES[piece] || "peça"}` : ", vazio"}"><span class="piece">${piece ? pieceSvg(piece) : ""}</span></div>`);
-            }
+      function modelMoveProviders(episode) {
+        // per model-move provider stats + cumulative tokens, only for model actor moves
+        const out = [];
+        let cumIn = 0, cumOut = 0;
+        for (const m of episode.moves || []) {
+          const isModel = m.actorKind === "Model";
+          if (isModel && m.provider) {
+            cumIn += m.provider.tokensIn || 0;
+            cumOut += m.provider.tokensOut || 0;
+            out.push({
+              ply: m.ply,
+              san: m.san || m.display,
+              latencyMs: m.provider.latencyMs,
+              attempts: m.provider.attempts,
+              status: m.provider.status,
+              tokensIn: m.provider.tokensIn || 0,
+              tokensOut: m.provider.tokensOut || 0,
+              cumIn,
+              cumOut,
+            });
           }
-          $("#board").innerHTML = squares.join("");
         }
+        return out;
+      }
 
-        function metricsForStep(run, stepId) {
-          return (run.metrics || []).filter((metric) => metric.stepId === stepId);
-        }
+      function episodeResultBadge(ep) {
+        const map = { checkmate: ["b-failed", "mate"], capped: ["b-running", "cap"], in_progress: ["b-running", "ao vivo"], stalemate: ["b-completed", "afogamento"], completed: ["b-completed", "completo"], failed: ["b-failed", "falhou"] };
+        const [cls, label] = map[ep.result] || ["b-completed", ep.result || ep.status || "n/a"];
+        return `<span class="badge ${cls}">${esc(label)}</span>`;
+      }
 
-        function firstMetric(metrics, name) {
-          return metrics.find((metric) => metric.metric === name);
-        }
-
-        function metricValue(metric, fallback = "n/a") {
-          if (!metric) return fallback;
-          if (metric.valueNum !== null && metric.valueNum !== undefined) return Number(metric.valueNum).toFixed(metric.unit === "centipawn" ? 0 : 2);
-          return metric.valueText || fallback;
-        }
-
-        function metricClass(value) {
-          if (value === "blunder") return "bad";
-          if (value === "mistake" || value === "inaccuracy") return "warn";
-          if (value === "best_or_good") return "good";
-          return "";
-        }
-
-        function renderReplay(run, episode) {
-          const maxPly = episode.moves?.length || 0;
-          state.ply = Math.min(Math.max(Number(state.ply), 0), maxPly);
-          const move = episode.moves?.[state.ply - 1];
-          const metrics = move ? metricsForStep(run, move.stepId) : [];
-          const cpl = firstMetric(metrics, "chess.cpl");
-          const moveClass = firstMetric(metrics, "chess.move_class");
-          const agreement = firstMetric(metrics, "chess.best_move_agreement");
-          $("#board").innerHTML = "";
-          renderBoard(episode);
-          $("#ply-range").max = String(maxPly);
-          $("#ply-range").value = String(state.ply);
-          $("#ply-counter").textContent = `${String(state.ply).padStart(2, "0")} / ${String(maxPly).padStart(2, "0")}`;
-          $("#move-title").textContent = move ? `${move.side} · ${move.san || move.display}` : "Posição inicial";
-          $("#move-subtitle").textContent = move ? `${move.actorKind} · ${shortActor(move.actor)}` : `${episode.id || "episódio"} · estado inicial`;
-          $("#metric-cpl").textContent = metricValue(cpl);
-          $("#metric-cpl").className = `metric-value ${cpl && Number(cpl.valueNum) > 100 ? "warn" : "good"}`;
-          $("#metric-class").textContent = metricValue(moveClass);
-          $("#metric-class").className = `metric-value ${metricClass(moveClass?.valueText)}`;
-          $("#metric-agreement").textContent = agreement ? (Number(agreement.valueNum) === 1 ? "sim" : "não") : "n/a";
-          $("#metric-agreement").className = `metric-value ${agreement && Number(agreement.valueNum) === 1 ? "good" : agreement ? "warn" : ""}`;
-          $("#btn-first").disabled = state.ply === 0;
-          $("#btn-prev").disabled = state.ply === 0;
-          $("#btn-next").disabled = state.ply >= maxPly;
-          $("#btn-last").disabled = state.ply >= maxPly;
-          $("#play-btn").textContent = state.playing ? "pausar" : "reproduzir";
-          $("#step-eval-detail").textContent = move ? `${metrics.length} observações ligadas a este registro` : "escolha um lance para ver a avaliação";
-        }
-
-        function runAggregate(run) {
-          const episodes = run.episodes || [];
-          const moves = episodes.flatMap((episode) => episode.moves || []);
-          const modelMoves = moves.filter((move) => move.actorKind === "Model");
-          const engineMoves = moves.filter((move) => move.actorKind === "Stockfish");
-          const cpls = (run.metrics || []).filter((metric) => metric.metric === "chess.cpl" && metric.valueNum !== null).map((metric) => Number(metric.valueNum));
-          const classes = (run.metrics || []).filter((metric) => metric.metric === "chess.move_class").reduce((acc, metric) => { acc[metric.valueText] = (acc[metric.valueText] || 0) + 1; return acc; }, {});
-          const agreements = (run.metrics || []).filter((metric) => metric.metric === "chess.best_move_agreement" && metric.valueNum !== null);
-          return { episodes, moves, modelMoves, engineMoves, cpls, classes, agreements };
-        }
-
-        function analysisRows(run, episode) {
-          return (episode?.moves || []).filter((move) => ["Model", "Model opponent"].includes(move.actorKind)).map((move) => {
-            const metrics = metricsForStep(run, move.stepId);
-            const cplMetric = firstMetric(metrics, "chess.cpl");
-            const classMetric = firstMetric(metrics, "chess.move_class");
-            const agreementMetric = firstMetric(metrics, "chess.best_move_agreement");
-            const cplValue = cplMetric && cplMetric.valueNum !== null && cplMetric.valueNum !== undefined ? Number(cplMetric.valueNum) : null;
-            const classValue = classMetric?.valueText || null;
-            return {
-              ...move,
-              cpl: Number.isFinite(cplValue) ? cplValue : null,
-              moveClass: classValue,
-              agreement: agreementMetric && agreementMetric.valueNum !== null ? Number(agreementMetric.valueNum) === 1 : null,
-              engineBestMove: firstMetric(metrics, "chess.engine_best_move")?.valueText || null,
-              engineScoreBefore: firstMetric(metrics, "chess.engine_score_before")?.valueNum ?? null,
-              engineScoreAfter: firstMetric(metrics, "chess.engine_score_after")?.valueNum ?? null,
-            };
-          });
-        }
-
-        function classTone(moveClass) {
-          return ({ blunder: "bad", mistake: "warn", inaccuracy: "warn", best_or_good: "good" })[moveClass] || "";
-        }
-
-        function classLabel(moveClass) {
-          return ({ blunder: "blunder", mistake: "erro", inaccuracy: "imprecisão", best_or_good: "bom / melhor" })[moveClass] || "sem classe";
-        }
-
-        function cplLabel(value) {
-          return value === null || value === undefined ? "n/a" : `${formatNumber(Math.round(value))} cp`;
-        }
-
-        function analysisSummary(rows) {
-          const cpls = rows.map((row) => row.cpl).filter((value) => value !== null);
-          const sorted = [...cpls].sort((a, b) => a - b);
-          const classes = rows.reduce((counts, row) => {
-            if (row.moveClass) counts[row.moveClass] = (counts[row.moveClass] || 0) + 1;
-            return counts;
-          }, {});
-          const agreements = rows.map((row) => row.agreement).filter((value) => value !== null);
-          return {
-            cpls,
-            classes,
-            average: cpls.length ? cpls.reduce((sum, value) => sum + value, 0) / cpls.length : null,
-            median: sorted.length ? sorted[Math.floor(sorted.length / 2)] : null,
-            worst: cpls.length ? Math.max(...cpls) : null,
-            agreements,
-            agreementRate: agreements.length ? agreements.filter(Boolean).length / agreements.length : null,
-          };
-        }
-
-        function stockfishProof(run, episode) {
-          const stockfishMove = episode?.moves?.find((move) => move.actorKind === "Stockfish" && move.policy);
-          const opponent = (run.opponents || []).find((player) => player.policy?.plugin === "chess.stockfish");
-          const config = opponent?.policy?.config || {};
-          const policy = stockfishMove?.policy || {};
-          const options = policy.options || {};
-          const limit = policy.limit || {};
-          const binary = policy.binary_sha256 || policy.binary || "n/a";
-          return {
-            name: policy.engine_name || "Stockfish",
-            target: policy.requested_elo ?? config.elo ?? "n/a",
-            effective: policy.effective_uci_elo ?? "n/a",
-            mode: policy.strength_mode || (policy.approximate ? "aproximado" : "não informado"),
-            nodes: limit.nodes ?? config.nodes ?? "n/a",
-            threads: options.Threads ?? config.Threads ?? "n/a",
-            hash: options.Hash ?? config.Hash ?? "n/a",
-            binary: String(binary),
-            evaluator: [...new Set((run.metrics || []).map((metric) => metric.evaluator).filter(Boolean))].join(", ") || "não executado",
-          };
-        }
-
-        function cplChart(rows) {
-          const points = rows.filter((row) => row.cpl !== null);
-          if (!points.length) {
-            return `<div class="analysis-empty"><div><strong>Sem avaliação Stockfish</strong><p>Este recorte tem a partida registrada, mas ainda não tem observações CPL por lance. O gráfico aparece quando um evaluator.stockfish real for anexado ao run.</p></div></div>`;
+      /* ---------- board ---------- */
+      function fenToBoard(fen) {
+        const rows = (fen.split(" ")[0] || "").split("/");
+        const squares = [];
+        for (let r = 0; r < 8; r++) {
+          let file = 0;
+          for (const ch of rows[r] || "") {
+            if (/\d/.test(ch)) { for (let i = 0; i < +ch; i++) { squares.push({ sq: null, light: (r + file) % 2 === 0 }); file++; } }
+            else { squares.push({ piece: ch, light: (r + file) % 2 === 0, rank: 8 - r, file: file }); file++; }
           }
-          const width = 960;
-          const height = 290;
-          const left = 48;
-          const right = 12;
-          const top = 20;
-          const bottom = 35;
-          const plotWidth = width - left - right;
-          const plotHeight = height - top - bottom;
-          const maxCpl = Math.max(300, Math.ceil(Math.max(...points.map((point) => point.cpl)) / 100) * 100);
-          const slot = plotWidth / Math.max(rows.length, 1);
-          const barWidth = Math.max(4, Math.min(20, slot * 0.64));
-          const yFor = (value) => top + plotHeight - (value / maxCpl) * plotHeight;
-          const grid = [0, maxCpl / 2, maxCpl].map((value) => `<line class="grid-line" x1="${left}" x2="${width - right}" y1="${yFor(value)}" y2="${yFor(value)}"></line><text class="axis-label" x="${left - 8}" y="${yFor(value) + 4}" text-anchor="end">${Math.round(value)}</text>`).join("");
-          const bars = rows.map((row, index) => {
-            if (row.cpl === null) return "";
-            const x = left + index * slot + (slot - barWidth) / 2;
-            const y = yFor(row.cpl);
-            const barHeight = Math.max(2, top + plotHeight - y);
-            const tone = row.moveClass === "blunder" ? "blunder" : row.moveClass === "mistake" ? "mistake" : row.moveClass === "inaccuracy" ? "inaccuracy" : "good";
-            return `<rect class="bar ${tone}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1"><title>ply ${row.ply}, ${escapeHtml(row.san || row.display)}, ${cplLabel(row.cpl)}, ${escapeHtml(classLabel(row.moveClass))}</title></rect>`;
-          }).join("");
-          const labels = rows.map((row, index) => {
-            const shouldShow = rows.length <= 18 || index === 0 || index === rows.length - 1 || index % Math.ceil(rows.length / 9) === 0;
-            if (!shouldShow) return "";
-            const x = left + index * slot + slot / 2;
-            return `<text class="axis-label" x="${x.toFixed(2)}" y="${height - 10}" text-anchor="middle">${row.ply}</text>`;
-          }).join("");
-          return `<div class="chart-wrap"><svg class="cpl-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfico de perda em centipawns por lance do modelo"><title>CPL por lance do modelo</title>${grid}<line class="baseline" x1="${left}" x2="${width - right}" y1="${top + plotHeight}" y2="${top + plotHeight}"></line>${bars}${labels}</svg><div class="chart-caption"><span>ply do modelo · perda em centipawns</span><span>${points.length}/${rows.length} lances com CPL</span></div></div>`;
         }
+        return squares;
+      }
+      const SQUARE_NAME = (i) => "abcdefgh"[i % 8] + (8 - Math.floor(i / 8));
+      function renderBoard(fen, lastMove) {
+        const squares = fenToBoard(fen);
+        const hlFrom = lastMove ? lastMove.slice(0, 2) : null;
+        const hlTo = lastMove ? lastMove.slice(2, 4) : null;
+        return `<div class="board" aria-label="posição">${squares.map((s, i) => {
+          const name = SQUARE_NAME(i);
+          const hl = name === hlFrom ? " hl-from" : name === hlTo ? " hl-to" : "";
+          const piece = s.piece ? `<span class="pc">${PIECES[s.piece] || ""}</span>` : "";
+          const coord = i % 8 === 7 ? `<span class="coord file">${"abcdefgh"[i % 8]}</span>` : "";
+          const coordR = Math.floor(i / 8) === 7 ? `<span class="coord rank">${8 - Math.floor(i / 8)}</span>` : "";
+          return `<div class="square ${s.light ? "light" : "dark"}${hl}" title="${name}">${piece}${coord}${coordR}</div>`;
+        }).join("")}</div>`;
+      }
 
-        function incidentList(rows) {
-          const incidents = rows.filter((row) => row.cpl !== null && ["blunder", "mistake", "inaccuracy"].includes(row.moveClass)).sort((a, b) => b.cpl - a.cpl).slice(0, 8);
-          if (!incidents.length) {
-            return `<div class="analysis-empty compact"><div><strong>Nenhum erro classificado</strong><p>As classificações de blunder, erro e imprecisão aparecem aqui quando o evaluator publica CPL.</p></div></div>`;
-          }
-          return `<div class="incident-list">${incidents.map((row) => `<button class="incident-item" type="button" data-analysis-ply="${row.ply}"><span class="incident-ply">${row.ply}</span><span class="incident-main"><span class="incident-move">${escapeHtml(row.san || row.display)}</span><span class="incident-meta">${escapeHtml(classLabel(row.moveClass))} · ${row.side === "White" ? "brancas" : "pretas"}${row.engineBestMove ? ` · melhor ${escapeHtml(row.engineBestMove)}` : ""}</span></span><span class="incident-cpl">${escapeHtml(cplLabel(row.cpl))}</span></button>`).join("")}</div>`;
+      /* ---------- inline charts (SVG, sem dependências) ---------- */
+      function sparkline(points, { w = 560, h = 120, color = "var(--accent)", zeroLine = false, yLabel } = {}) {
+        if (!points.length) return `<div class="empty">sem dados</div>`;
+        const vals = points.map((p) => p.v);
+        let min = Math.min(...vals, zeroLine ? 0 : Infinity);
+        let max = Math.max(...vals, zeroLine ? 0 : -Infinity);
+        if (max === min) { max += 1; min -= 1; }
+        const pad = 8;
+        const x = (i) => pad + (i / Math.max(1, points.length - 1)) * (w - 2 * pad);
+        const y = (v) => pad + (1 - (v - min) / (max - min)) * (h - 2 * pad);
+        const path = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+        const area = `${path}L${x(points.length - 1).toFixed(1)},${h - pad}L${x(0).toFixed(1)},${h - pad}Z`;
+        const zero = zeroLine && min < 0 && max > 0 ? `<line x1="${pad}" x2="${w - pad}" y1="${y(0)}" y2="${y(0)}" stroke="var(--faint)" stroke-dasharray="3 4"/>` : "";
+        const label = yLabel ? `<text x="${pad}" y="12" fill="var(--faint)" font-size="9" font-family="var(--mono)">${esc(yLabel)}</text>` : "";
+        return `<div class="chart-wrap"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(yLabel || "série")}">
+          ${label}${zero}
+          <path d="${area}" fill="${color}" opacity="0.12"/>
+          <path d="${path}" fill="none" stroke="${color}" stroke-width="1.6"/>
+          ${points.map((p, i) => p.hl ? `<circle cx="${x(i)}" cy="${y(p.v)}" r="2.6" fill="${p.hlColor || color}"/>` : "").join("")}
+        </svg></div>`;
+      }
+
+      function bars(data, { w = 560, h = 120, color = "var(--info)", yLabel } = {}) {
+        if (!data.length) return `<div class="empty">sem dados</div>`;
+        const max = Math.max(...data.map((d) => d.v), 1);
+        const pad = 8;
+        const bw = (w - 2 * pad) / data.length;
+        const label = yLabel ? `<text x="${pad}" y="12" fill="var(--faint)" font-size="9" font-family="var(--mono)">${esc(yLabel)}</text>` : "";
+        return `<div class="chart-wrap"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(yLabel || "barras")}">${label}
+          ${data.map((d, i) => {
+            const bh = Math.max(1, (d.v / max) * (h - 2 * pad));
+            return `<rect x="${(pad + i * bw + bw * 0.15).toFixed(1)}" y="${(h - pad - bh).toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${bh.toFixed(1)}" rx="1.5" fill="${d.c || color}" ${d.title ? `<title>${esc(d.title)}</title>` : ""}/>`;
+          }).join("")}
+        </svg></div>`;
+      }
+
+      function dualArea(points, { w = 560, h = 130 } = {}) {
+        if (!points.length) return `<div class="empty">sem dados</div>`;
+        const maxIn = Math.max(...points.map((p) => p.cumIn), 1);
+        const maxOut = Math.max(...points.map((p) => p.cumOut), 1);
+        const max = Math.max(maxIn, maxOut);
+        const pad = 8;
+        const x = (i) => pad + (i / Math.max(1, points.length - 1)) * (w - 2 * pad);
+        const y = (v) => pad + (1 - v / max) * (h - 2 * pad);
+        const line = (key, color) => {
+          const path = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join("");
+          return `<path d="${path}L${x(points.length - 1)},${h - pad}L${x(0)},${h - pad}Z" fill="${color}" opacity="0.12"/><path d="${path}" fill="none" stroke="${color}" stroke-width="1.6"/>`;
+        };
+        return `<div class="chart-wrap"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="tokens acumulados">
+          ${line("cumIn", "var(--info)")}${line("cumOut", "var(--accent)")}
+        </svg></div>`;
+      }
+
+      /* ---------- data shaping ---------- */
+      function runStats(run) {
+        const eps = run.episodes || [];
+        const moves = eps.flatMap((e) => e.moves || []);
+        const modelMoves = moves.filter((m) => m.actorKind === "Model");
+        const provs = modelMoves.map((m) => m.provider).filter(Boolean);
+        return {
+          eps,
+          plies: moves.length,
+          modelMoves: modelMoves.length,
+          calls: provs.length,
+          attempts: provs.reduce((s, p) => s + p.attempts, 0),
+          repaired: provs.filter((p) => p.status === "repaired").length,
+          timeouts: provs.filter((p) => p.status === "timeout_unknown").length,
+          tokensIn: provs.reduce((s, p) => s + (p.tokensIn || 0), 0) || run.provider?.tokens?.input || 0,
+          tokensOut: provs.reduce((s, p) => s + (p.tokensOut || 0), 0) || run.provider?.tokens?.output || 0,
+          latencies: provs.map((p) => p.latencyMs).filter((v) => v != null),
+        };
+      }
+
+      function filteredRuns() {
+        const q = state.query.trim().toLowerCase();
+        if (!q) return DATA.runs;
+        return DATA.runs.filter((r) =>
+          [r.id, r.experiment, r.conditionId, r.model?.model, r.status, ...(r.tags || [])]
+            .join(" ").toLowerCase().includes(q));
+      }
+
+      function selectRun(id, layer) {
+        state.runId = id;
+        state.episodeIndex = 0;
+        state.ply = 0;
+        stopPlay();
+        setLayer(layer || (state.layer === "L0" ? "L1" : state.layer));
+      }
+
+      /* ---------- layers ---------- */
+      function setLayer(layer) {
+        state.layer = layer;
+        for (const [id, key] of [["tab-l0", "L0"], ["tab-l1", "L1"], ["tab-l2", "L2"]]) {
+          $("#" + id).setAttribute("aria-pressed", String(key === layer));
         }
+        $("#layer-hint").textContent = LAYER_HINTS[layer];
+        if (layer !== "L0" && !state.runId && DATA.runs.length) state.runId = DATA.runs[0].id;
+        render();
+      }
 
-        function analysisTable(rows) {
-          if (!rows.length) {
-            return `<div class="analysis-empty compact"><div><strong>Sem lances do modelo</strong><p>Este episódio não tem um lance do modelo que possa ser comparado ao Stockfish.</p></div></div>`;
-          }
-          const signedCp = (value) => value === null || value === undefined ? "n/a" : `${Number(value) > 0 ? "+" : ""}${formatNumber(Math.round(Number(value)))} cp`;
-          return `<div class="analysis-table-wrap"><table class="analysis-table"><thead><tr><th scope="col">ply</th><th scope="col">lance</th><th scope="col">CPL</th><th scope="col">classe</th><th scope="col">melhor lance</th><th scope="col">SF antes → depois</th></tr></thead><tbody>${rows.map((row) => `<tr data-analysis-ply="${row.ply}"><td class="muted">${row.ply}</td><td class="move-link">${escapeHtml(row.san || row.display)}</td><td class="cpl ${classTone(row.moveClass)}">${escapeHtml(cplLabel(row.cpl))}</td><td><span class="tag ${row.moveClass === "blunder" ? "red" : row.moveClass === "mistake" || row.moveClass === "inaccuracy" ? "orange" : row.moveClass === "best_or_good" ? "mint" : ""}">${escapeHtml(classLabel(row.moveClass))}</span></td><td class="muted">${row.engineBestMove ? `${escapeHtml(row.engineBestMove)} · ` : ""}${row.agreement === null ? "n/a" : row.agreement ? "acordo" : "alternativa"}</td><td class="muted">${escapeHtml(signedCp(row.engineScoreBefore))} → ${escapeHtml(signedCp(row.engineScoreAfter))}</td></tr>`).join("")}</tbody></table></div>`;
+      function render() {
+        stopPlay();
+        if (state.layer === "L0") renderL0();
+        else if (state.layer === "L1") renderL1();
+        else renderL2();
+      }
+
+      /* ---------- L0 ---------- */
+      function renderL0() {
+        const runs = filteredRuns();
+        const totals = runs.reduce((acc, r) => {
+          const s = runStats(r);
+          acc.plies += s.plies; acc.calls += s.calls; acc.tokensIn += s.tokensIn; acc.tokensOut += s.tokensOut;
+          if (r.status === "RUNNING") acc.running++;
+          if (r.status === "COMPLETED") acc.completed++;
+          return acc;
+        }, { plies: 0, calls: 0, tokensIn: 0, tokensOut: 0, running: 0, completed: 0 });
+
+        const rows = runs.map((r) => {
+          const s = runStats(r);
+          const dur = fmtDur(r.startedAt, r.finishedAt || DATA.generatedAt);
+          const lastEp = s.eps[s.eps.length - 1];
+          return `<tr data-run="${esc(r.id)}" tabindex="0">
+            <td>${r.status === "RUNNING" ? '<span class="badge b-running">live</span>' : r.status === "COMPLETED" ? '<span class="badge b-completed">ok</span>' : '<span class="badge b-failed">' + esc(r.status.toLowerCase()) + "</span>"}</td>
+            <td><div>${esc((r.experiment || "").slice(0, 34))}</div><small class="mono dim">${esc(r.id.slice(4, 14))} · ${esc(r.model?.model || "?")}</small></td>
+            <td>${lastEp ? episodeResultBadge(lastEp) : "—"}</td>
+            <td class="num">${s.plies}</td>
+            <td class="num">${s.calls}</td>
+            <td class="num">${fmtNum(s.tokensIn)}/${fmtNum(s.tokensOut)}</td>
+            <td class="num dim">${dur}</td>
+          </tr>`;
+        }).join("");
+
+        const byExp = {};
+        for (const r of DATA.runs) {
+          const key = (r.experiment || "?").slice(0, 22);
+          byExp[key] = (byExp[key] || 0) + runStats(r).plies;
         }
+        const expBars = Object.entries(byExp).sort((a, b) => b[1] - a[1]).slice(0, 8)
+          .map(([k, v]) => ({ v, title: `${k}: ${v} lances`, c: "var(--info)" }));
 
-        function renderAnalysis(run) {
-          const episode = currentEpisode(run);
-          const rows = analysisRows(run, episode);
-          const summary = analysisSummary(rows);
-          const proof = stockfishProof(run, episode);
-          const modelMoves = rows.length;
-          const analyzedMoves = summary.cpls.length;
-          const classTotal = Object.values(summary.classes).reduce((sum, value) => sum + value, 0);
-          const engineResult = episode.result === "checkmate" ? `mate · ${episode.winner || "lado não identificado"}` : episode.result || "em andamento";
-          const medianLabel = summary.median === null ? "n/a" : cplLabel(summary.median);
-          const agreementLabel = summary.agreementRate === null ? "n/a" : `${Math.round(summary.agreementRate * 100)}%`;
-          $("#app").innerHTML = `
-            <section class="analysis-toolbar fade-in"><div><p>Uma leitura por lance da atuação do modelo contra o engine.</p></div><button id="analysis-back" class="view-btn" type="button">voltar ao replay</button></section>
-            <section class="analysis-kpis fade-in">
-              <div class="analysis-kpi"><span class="analysis-kpi-label">CPL médio</span><strong class="analysis-kpi-value blue">${escapeHtml(cplLabel(summary.average))}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">pior lance</span><strong class="analysis-kpi-value red">${escapeHtml(cplLabel(summary.worst))}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">blunders</span><strong class="analysis-kpi-value red">${formatNumber(summary.classes.blunder || 0)}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">melhor lance</span><strong class="analysis-kpi-value mint">${escapeHtml(agreementLabel)}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">resultado</span><strong class="analysis-kpi-value orange">${escapeHtml(engineResult)}</strong></div>
+        const tok = runs.map((r) => {
+          const s = runStats(r);
+          return { v: s.tokensIn + s.tokensOut, title: `${r.id.slice(4, 14)}: ${fmtNum(s.tokensIn + s.tokensOut)} tokens` };
+        }).sort((a, b) => b.v - a.v).slice(0, 8).map((d) => ({ ...d, c: "var(--accent)" }));
+
+        $("#content").innerHTML = `
+          <section class="kpi-strip">
+            <div class="kpi"><label>partidas no recorte</label><strong>${runs.length}</strong><small>${totals.running} live · ${totals.completed} completas</small></div>
+            <div class="kpi"><label>lances totais</label><strong>${totals.plies}</strong><small>todos os episódios</small></div>
+            <div class="kpi"><label>calls ao modelo</label><strong>${totals.calls}</strong><small>uma por decisão</small></div>
+            <div class="kpi"><label>tokens in/out</label><strong>${fmtNum(totals.tokensIn)}/${fmtNum(totals.tokensOut)}</strong><small>somados sobre todos os runs</small></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head"><div><p class="eyebrow">operador · tudo</p><h3>Partidas</h3></div><small>clique para abrir na camada Partida</small></div>
+            <table class="runs-table">
+              <thead><tr><th></th><th>run / modelo</th><th>resultado</th><th class="num">plies</th><th class="num">calls</th><th class="num">tokens i/o</th><th class="num">duração</th></tr></thead>
+              <tbody>${rows || '<tr><td colspan="7" class="dim">nenhuma partida no recorte</td></tr>'}</tbody>
+            </table>
+          </section>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">distribuição</p><h3>Lances por experimento</h3></div><small>top 8</small></div>
+              <div class="panel-body">${bars(expBars, { yLabel: "plies" })}</div>
+              <div class="legend"><span class="key"><span class="swatch" style="background:var(--info)"></span>lances acumulados</span></div>
             </section>
-            <section class="analysis-grid">
-              <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">perda por decisão</p><h3>CPL ao longo da partida</h3></div><small>${escapeHtml(episode.id || "episódio")}</small></div><div class="analysis-panel-body">${cplChart(rows)}<div class="chart-legend"><span class="legend-item"><i class="legend-swatch good"></i>bom</span><span class="legend-item"><i class="legend-swatch inaccuracy"></i>imprecisão</span><span class="legend-item"><i class="legend-swatch mistake"></i>erro</span><span class="legend-item"><i class="legend-swatch blunder"></i>blunder</span></div></div></article>
-              <div class="analysis-side">
-                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">pontos críticos</p><h3>Piores lances</h3></div><small>top 8</small></div><div class="analysis-panel-body">${incidentList(rows)}</div></article>
-                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">cobertura</p><h3>Resumo do diagnóstico</h3></div><small>${escapeHtml(run.status || "n/a")}</small></div><div class="analysis-panel-body"><div class="analysis-summary"><div class="analysis-summary-row"><span>lances do modelo</span><strong>${formatNumber(modelMoves)}</strong></div><div class="analysis-summary-row"><span>lances com CPL</span><strong>${formatNumber(analyzedMoves)} / ${formatNumber(modelMoves)}</strong></div><div class="analysis-summary-row"><span>mediana CPL</span><strong>${escapeHtml(medianLabel)}</strong></div><div class="analysis-summary-row"><span>bom / melhor</span><strong class="mint">${formatNumber(summary.classes.best_or_good || 0)}</strong></div><div class="analysis-summary-row"><span>imprecisões</span><strong>${formatNumber(summary.classes.inaccuracy || 0)}</strong></div><div class="analysis-summary-row"><span>erros</span><strong class="orange">${formatNumber(summary.classes.mistake || 0)}</strong></div><div class="analysis-summary-row"><span>lances classificados</span><strong>${formatNumber(classTotal)}</strong></div></div></div></article>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">consumo</p><h3>Tokens por run</h3></div><small>top 8 · in+out</small></div>
+              <div class="panel-body">${bars(tok, { yLabel: "tokens" })}</div>
+              <div class="legend"><span class="key"><span class="swatch" style="background:var(--accent)"></span>tokens somados</span></div>
+            </section>
+          </div>`;
+
+        for (const tr of $("#content").querySelectorAll("tr[data-run]")) {
+          const open = () => selectRun(tr.dataset.run, "L1");
+          tr.addEventListener("click", open);
+          tr.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+        }
+      }
+
+      /* ---------- L1 ---------- */
+      function renderL1() {
+        const run = DATA.runs.find((r) => r.id === state.runId) || DATA.runs[0];
+        if (!run) { $("#content").innerHTML = '<div class="empty">sem runs</div>'; return; }
+        const ep = (run.episodes || [])[state.episodeIndex] || run.episodes?.[0];
+        if (!ep) { $("#content").innerHTML = '<div class="empty">sem episódios</div>'; return; }
+        const s = runStats(run);
+        const prov = modelMoveProviders(ep);
+        const move = ep.moves?.[state.ply - 1];
+        const fen = state.ply === 0 ? ep.positions?.[0]?.fen : move?.fenAfter || ep.positions?.[state.ply]?.fen;
+        const lastUci = move?.uci;
+        const curMove = ep.moves?.[state.ply - 1];
+
+        const sanLines = [];
+        for (let i = 0; i < (ep.moves || []).length; i += 2) {
+          const w = ep.moves[i], b = ep.moves[i + 1];
+          sanLines.push(`${i / 2 + 1}. ${esc(w?.san || "?")} ${esc(b?.san || "")}`);
+        }
+
+        const latPts = prov.map((p) => ({ v: p.latencyMs / 1000, hl: p.status !== "ok", hlColor: p.status === "repaired" ? "var(--warn)" : "var(--err)" }));
+        const tokPts = prov.map((p) => ({ v: p.cumOut }));
+
+        $("#content").innerHTML = `
+          <div class="game-head">
+            <h2>${esc((run.experiment || "").slice(0, 44))}</h2>
+            <span class="meta">${esc(run.id)}</span>
+            ${r_STATUS(run)}
+            <div class="spacer"></div>
+            <button class="btn" id="btn-l0">← operação</button>
+            <button class="btn primary" id="btn-l2">profundo →</button>
+          </div>
+          <div class="game-grid">
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">posição</p><h3>Tabuleiro</h3></div>
+                <select id="ep-select" class="btn" aria-label="Episódio">${(run.episodes || []).map((e, i) => `<option value="${i}" ${i === state.episodeIndex ? "selected" : ""}>ep ${i + 1} · ${esc(e.result || e.status || "?")}</option>`).join("")}</select>
               </div>
-            </section>
-            <article class="analysis-panel fade-in" style="margin-top:18px"><div class="analysis-panel-head"><div><p class="eyebrow">proveniência</p><h3>Configuração do Stockfish</h3></div><small>evaluator real</small></div><div class="analysis-panel-body"><div class="engine-proof"><div class="engine-proof-title">parâmetros registrados no run</div><div class="analysis-summary"><div class="engine-proof-row"><span>engine</span><strong>${escapeHtml(proof.name)}</strong></div><div class="engine-proof-row"><span>força solicitada / efetiva</span><strong>${escapeHtml(proof.target)} / ${escapeHtml(proof.effective)}</strong></div><div class="engine-proof-row"><span>limite</span><strong>${escapeHtml(proof.nodes)} nodes · ${escapeHtml(proof.threads)} threads · ${escapeHtml(proof.hash)} MB</strong></div><div class="engine-proof-row"><span>modo</span><strong>${escapeHtml(proof.mode)}</strong></div><div class="engine-proof-row"><span>evaluator</span><strong>${escapeHtml(proof.evaluator)}</strong></div><div class="engine-proof-row"><span>binário</span><strong>${escapeHtml(proof.binary.slice(0, 24))}</strong></div></div><p class="engine-proof-note">CPL mede a perda em centipawns atribuída ao lance do modelo. "n/a" significa que o evaluator não publicou observação para aquele registro.</p></div></div></article>
-            <article class="analysis-panel fade-in" style="margin-top:18px"><div class="analysis-panel-head"><div><p class="eyebrow">auditoria lance a lance</p><h3>Decisões do modelo</h3></div><small>${formatNumber(rows.length)} registros</small></div>${analysisTable(rows)}</article>
-            <p class="analysis-note">Clique em um ponto crítico ou em uma linha para voltar ao replay exatamente naquele ply. A tela é somente leitura e não recalcula o engine no navegador.</p>`;
-          $("#analysis-back")?.addEventListener("click", () => { state.view = "replay"; stopPlayback(); renderAll(); syncUrl(); window.scrollTo({ top: 0, behavior: "smooth" }); });
-          document.querySelectorAll("[data-analysis-ply]").forEach((element) => element.addEventListener("click", () => {
-            state.ply = Number(element.dataset.analysisPly);
-            state.view = "replay";
-            stopPlayback();
-            renderAll();
-            syncUrl();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }));
-        }
-
-        function renderStats(run) {
-          const aggregate = runAggregate(run);
-          const totalPlies = aggregate.moves.length;
-          const cplAvg = aggregate.cpls.length ? (aggregate.cpls.reduce((a, b) => a + b, 0) / aggregate.cpls.length).toFixed(1) : "n/a";
-          const agreement = aggregate.agreements.length ? `${Math.round(100 * aggregate.agreements.reduce((a, m) => a + Number(m.valueNum), 0) / aggregate.agreements.length)}%` : "n/a";
-          const status = run.status === "COMPLETED" ? "COMPLETED" : run.status || "n/a";
-          $("#stats").innerHTML = `
-            <div class="stat"><div class="stat-label">status</div><div class="stat-value ${run.status === "COMPLETED" ? "mint" : "accent"}">${escapeHtml(status)}</div></div>
-            <div class="stat"><div class="stat-label">plies / episódios</div><div class="stat-value">${formatNumber(totalPlies)} <small style="font: 12px var(--sans); color:var(--muted)">/ ${aggregate.episodes.length}</small></div></div>
-            <div class="stat"><div class="stat-label">chamadas ao provider</div><div class="stat-value accent">${formatNumber(run.provider?.calls || 0)}</div></div>
-            <div class="stat"><div class="stat-label">tokens de entrada / saída</div><div class="stat-value">${formatNumber(run.provider?.tokens?.input || 0)} <small style="font: 12px var(--sans); color:var(--muted)">/ ${formatNumber(run.provider?.tokens?.output || 0)}</small></div></div>
-            <div class="stat"><div class="stat-label">CPL médio / acordo SF</div><div class="stat-value">${cplAvg} <small style="font: 12px var(--sans); color:var(--muted)">/ ${agreement}</small></div></div>`;
-        }
-
-        function renderFacts(run) {
-          const model = run.model || {};
-          const opponent = (run.opponents || []).map((player) => player.policy?.plugin || "oponente").join(", ") || "n/a";
-          const strategy = model.strategy || "n/a";
-          const task = run.task || {};
-          const policyConfig = (run.opponents || []).find((player) => player.policy?.plugin === "chess.stockfish")?.policy?.config || {};
-          const stockfishMove = run.episodes?.flatMap((episode) => episode.moves || []).find((move) => move.actorKind === "Stockfish");
-          const policy = stockfishMove?.policy || {};
-          const requestedElo = policy.requested_elo ?? policyConfig.elo;
-          const effectiveElo = policy.effective_uci_elo;
-          const modelSide = (run.players || []).find((player) => player.model)?.side?.slice(0, 1) || "?";
-          const opponentLabel = opponent.includes("stockfish") ? "Stockfish" : opponent.replace(/^chess\./, "");
-          $("#facts").innerHTML = `
-            <div class="player-card"><div class="player-side">${escapeHtml(modelSide)}</div><div><div class="player-name">${escapeHtml(model.model || "modelo não identificado")}</div><div class="player-detail">${escapeHtml(model.provider || "provider?")} · ${escapeHtml(strategy)}</div></div></div>
-            <div class="player-card"><div class="player-side">${opponent.includes("stockfish") ? "♞" : "B"}</div><div><div class="player-name">${escapeHtml(opponentLabel)}</div><div class="player-detail">${requestedElo ? `target ${escapeHtml(requestedElo)} · efetivo ${escapeHtml(effectiveElo || "n/a")}` : "política registrada no run"}</div></div></div>
-            <div class="fact-row"><span>backend</span><strong>${escapeHtml(model.backend || "n/a")}</strong></div>
-            <div class="fact-row"><span>run</span><strong>${escapeHtml(prettyExperiment(run.experiment || "n/a"))}</strong></div>
-            <div class="fact-row"><span>tarefa / limite</span><strong>${escapeHtml(task.kind || "n/a")} · ${escapeHtml(task.max_plies ?? "n/a")} plies</strong></div>
-            <div class="fact-row"><span>assistência</span><strong>${escapeHtml(run.declaredAssistance || "n/a")} → ${escapeHtml(run.effectiveAssistance || "n/a")}</strong></div>
-            <div class="fact-row"><span>custo</span><strong>${run.provider?.costStatus === "reported" ? "reportado" : "não calculado"}</strong></div>`;
-        }
-
-        function renderMoveList(run, episode) {
-          const moves = episode.moves || [];
-          $("#move-list").innerHTML = moves.length ? moves.map((move, index) => {
-            const stepMetrics = metricsForStep(run, move.stepId);
-            const cpl = firstMetric(stepMetrics, "chess.cpl");
-            const moveClass = firstMetric(stepMetrics, "chess.move_class");
-            const cplText = cpl ? `${Number(cpl.valueNum).toFixed(0)} cp` : "n/a";
-            const cplClass = moveClass ? metricClass(moveClass.valueText) : "";
-            return `
-            <button class="move-item ${index + 1 === state.ply ? "active" : ""}" data-ply="${index + 1}">
-              <span class="move-number">${String(move.moveNumber || Math.floor(index / 2) + 1).padStart(2, "0")}</span>
-              <span class="move-side">${move.side === "White" ? "W" : "B"}</span>
-              <span class="move-san">${escapeHtml(move.san || move.display)}</span>
-              <span class="move-eval ${cplClass}">${escapeHtml(cplText)}</span>
-              <span class="tag ${move.actorKind === "Stockfish" ? "orange" : move.actorKind === "Model" ? "mint" : ""}">${escapeHtml(move.actorKind)}</span>
-            </button>`;
-          }).join("") : `<div class="empty-state" style="grid-column:1/-1"><div><strong>sem lances</strong>este episódio não tem lances confirmados.</div></div>`;
-          document.querySelectorAll("[data-ply]").forEach((button) => button.addEventListener("click", () => { state.ply = Number(button.dataset.ply); updatePly(); }));
-        }
-
-        function renderEvents(run) {
-          const events = (run.events || []).slice().reverse().slice(0, 24);
-          $("#events").innerHTML = events.length ? events.map((event) => {
-            const payload = event.payload || {};
-            const payloadHtml = Object.keys(payload).length ? `<details class="event-details"><summary><span class="event-name">${escapeHtml(event.type)}</span><span class="event-meta">${escapeHtml(formatDate(event.at))} · ${event.artifactCount || 0} artefatos</span></summary><pre class="event-payload">${escapeHtml(JSON.stringify(payload, null, 2))}</pre></details>` : `<div class="event-details"><div class="event-name">${escapeHtml(event.type)}</div><div class="event-meta">${escapeHtml(formatDate(event.at))} · ${event.artifactCount || 0} artefatos</div></div>`;
-            return `<div class="event-item"><div>${payloadHtml}</div></div>`;
-          }).join("") : `<div class="empty-state"><div><strong>sem eventos</strong>não há eventos neste recorte.</div></div>`;
-        }
-
-        function updateMoveSelection() {
-          document.querySelectorAll("[data-ply]").forEach((button) => button.classList.toggle("active", Number(button.dataset.ply) === state.ply));
-        }
-
-        function updatePly() {
-          const run = currentRun();
-          if (!run) return;
-          const episode = currentEpisode(run);
-          renderReplay(run, episode);
-          updateMoveSelection();
-          syncUrl();
-        }
-
-        function renderMain(run) {
-          if (!run) {
-            $("#run-title").textContent = "Nenhum run disponível";
-            $("#view-kicker").textContent = "snapshot local";
-            $("#snapshot-meta").innerHTML = `<strong>snapshot vazio</strong>`;
-            $("#app").innerHTML = `<div class="panel empty-state"><div><strong>Sem dados de partida</strong>gere o recorte com <code>uv run python scripts/build_readonly_viewer.py</code>.</div></div>`;
-            return;
-          }
-          const episode = currentEpisode(run);
-          $("#view-kicker").textContent = state.view === "analysis" ? "análise da partida" : "replay local";
-          $("#run-title").textContent = prettyExperiment(run.experiment || run.id);
-          $("#snapshot-meta").innerHTML = `<strong>${escapeHtml(shortId(run.id))}</strong><br />${escapeHtml(formatDate(run.startedAt))} → ${escapeHtml(formatDate(run.finishedAt))}<br /><span class="tag mint">somente leitura</span>`;
-          $("#analysis-btn").textContent = state.view === "analysis" ? "voltar ao replay" : "análise da partida";
-          $("#analysis-btn").setAttribute("aria-pressed", state.view === "analysis" ? "true" : "false");
-          if (state.view === "analysis") {
-            renderAnalysis(run);
-            return;
-          }
-          $("#app").innerHTML = `
-            <section id="stats" class="stats-grid fade-in"></section>
-            <section class="stage-grid">
-              <article class="panel board-panel fade-in">
-                <div class="panel-head"><div><p class="eyebrow">posição</p><h3>Tabuleiro</h3></div><select id="episode-select" class="episode-select" aria-label="Selecionar episódio">${(run.episodes || []).map((item, index) => `<option value="${index}" ${index === state.episodeIndex ? "selected" : ""}>episódio ${index + 1} · ${escapeHtml(item.result || item.status || "n/a")}</option>`).join("")}</select></div>
-                <div class="board-stage"><div class="board-wrap"><div id="board" class="board" aria-label="Tabuleiro de xadrez"></div></div></div>
-                <div class="replay-bar">
-                  <div class="replay-current"><div><h4 id="move-title" aria-live="polite">Posição inicial</h4><p id="move-subtitle" aria-live="polite">estado inicial</p></div><div id="ply-counter" class="ply-counter" aria-live="polite">00 / 00</div></div>
-                  <input id="ply-range" class="range" type="range" min="0" max="0" value="0" aria-label="Selecionar ply" />
-                  <div class="transport"><button id="btn-first" aria-label="Ir para o primeiro lance" title="Primeiro ply">|◀</button><button id="btn-prev" aria-label="Voltar um lance" title="Ply anterior">◀</button><button id="play-btn" class="play-btn" aria-label="Reproduzir ou pausar a partida">reproduzir</button><button id="btn-next" aria-label="Avançar um lance" title="Próximo ply">▶</button><button id="btn-last" aria-label="Ir para o último lance" title="Último ply">▶|</button></div>
+              <div class="panel-body">
+                ${renderBoard(fen, lastUci)}
+                <div class="transport">
+                  <button class="btn" id="b-first" title="primeiro">|◀</button>
+                  <button class="btn" id="b-prev" title="anterior">◀</button>
+                  <button class="btn primary" id="b-play">${state.playing ? "pausar" : "reproduzir"}</button>
+                  <button class="btn" id="b-next" title="próximo">▶</button>
+                  <button class="btn" id="b-last" title="último">▶|</button>
+                  <input class="range" id="ply-range" type="range" min="0" max="${(ep.moves || []).length}" value="${state.ply}" aria-label="ply"/>
+                  <span class="ply-label" id="ply-label">${state.ply}/${(ep.moves || []).length}</span>
                 </div>
-              </article>
-              <div class="side-stack">
-                <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">avaliação do engine</p><h3>Avaliação</h3></div><small id="step-eval-detail">n/a</small></div><div class="metric-body"><div class="metric-hero"><div class="metric-box"><label>CPL</label><strong id="metric-cpl" class="metric-value">n/a</strong></div><div class="metric-box"><label>classe</label><strong id="metric-class" class="metric-value">n/a</strong></div><div class="metric-box"><label>acordo SF</label><strong id="metric-agreement" class="metric-value">n/a</strong></div></div><div class="metric-list"><div class="metric-row"><span>observações nesta partida</span><strong>${formatNumber(run.metrics?.length || 0)}</strong></div><div class="metric-row"><span>avaliadores</span><strong>${escapeHtml([...new Set((run.metrics || []).map((metric) => metric.evaluator).filter(Boolean))].join(", ") || "n/a")}</strong></div><div class="metric-row"><span>resultado do episódio</span><strong>${escapeHtml(episode.result || "n/a")}${episode.winner ? ` · ${escapeHtml(episode.winner)}` : ""}</strong></div></div></div></article>
-                <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">jogadores e origem</p><h3>Quem jogou</h3></div><small>${escapeHtml(run.status || "n/a")}</small></div><div id="facts" class="facts-body"></div></article>
+                <div style="margin-top:8px" id="move-caption">
+                  ${state.ply === 0 ? '<small class="dim">posição inicial</small>' : `<small class="mono">${esc(curMove?.side || "")} · ${esc(curMove?.san || curMove?.display || "")} · ${esc(curMove?.actorKind || "")}</small>`}
+                </div>
               </div>
             </section>
-            <section class="lower-grid">
-              <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">lances confirmados</p><h3>Lances</h3></div><small>${escapeHtml(episode.id || "episódio")}</small></div><div id="move-list" class="move-list"></div></article>
-              <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">linha de eventos</p><h3>Eventos</h3></div><small>últimos 24 eventos</small></div><div class="events-body"><div id="events" class="events-list"></div></div></article>
+
+            <div style="display:grid; gap:var(--gap); min-width:0">
+              <section class="panel">
+                <div class="panel-head"><div><p class="eyebrow">ritmo do modelo</p><h3>Latência por decisão</h3></div><small>${prov.length} decisões · pico ${fmtMs(Math.max(0, ...prov.map((p) => p.latencyMs || 0)))}</small></div>
+                <div class="panel-body">${sparkline(latPts, { color: "var(--info)", yLabel: "segundos por call do modelo" })}</div>
+                <div class="legend">
+                  <span class="key"><span class="swatch" style="background:var(--info)"></span>latência</span>
+                  <span class="key"><span class="swatch" style="background:var(--warn)"></span>reparada</span>
+                  <span class="key"><span class="swatch" style="background:var(--err)"></span>falha/timeout</span>
+                </div>
+              </section>
+              <section class="panel">
+                <div class="panel-head"><div><p class="eyebrow">consumo acumulado</p><h3>Tokens por decisão</h3></div><small>in ${fmtNum(prov.reduce((a, p) => a + p.tokensIn, 0))} · out ${fmtNum(prov.reduce((a, p) => a + p.tokensOut, 0))}</small></div>
+                <div class="panel-body">${dualArea(prov)}</div>
+                <div class="legend">
+                  <span class="key"><span class="swatch" style="background:var(--info)"></span>tokens in acumulados</span>
+                  <span class="key"><span class="swatch" style="background:var(--accent)"></span>tokens out acumulados</span>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">partida</p><h3>Lances</h3></div><small>${sanLines.length} lances do modelo</small></div>
+              <div class="move-list" id="move-list">${(ep.moves || []).map((m, i) => `
+                <div class="move-row ${i === state.ply - 1 ? "cur" : ""}" data-ply="${i + 1}" tabindex="0">
+                  <span class="n">${Math.floor(i / 2) + 1}${m.side === "White" ? "." : "…"}</span>
+                  <span><span class="move-dot ${m.provider ? "d-" + (m.provider.status === "ok" ? "ok" : m.provider.status === "repaired" ? "repaired" : "failed") : ""}" title="${esc(m.actorKind)}"></span>${esc(m.san || m.display)}</span>
+                  <span class="who">${esc(m.actorKind === "Model" ? "modelo" : m.actorKind === "Stockfish" ? "SF" : "—")}</span>
+                  <span class="lat ${m.provider && m.provider.latencyMs > 60000 ? "warn" : ""}">${m.provider ? fmtMs(m.provider.latencyMs) : ""}</span>
+                </div>`).join("")}</div>
             </section>
-            <p class="footnote">Recorte gerado em <code>${escapeHtml(DATA.generatedAt || "n/a")}</code> · atualizar: <code>uv run python scripts/build_readonly_viewer.py --completed-only</code></p>`;
-          renderStats(run);
-          renderFacts(run);
-          renderMoveList(run, episode);
-          renderEvents(run);
-          renderReplay(run, episode);
-          bindTransport(episode);
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">notação</p><h3>PGN curto</h3></div><small>cópia rápida</small></div>
+              <div class="panel-body"><div class="mono" style="line-height:1.9; word-spacing:4px">${sanLines.join(" ")}</div></div>
+              <div class="panel-head"><div><p class="eyebrow">episódio</p><h3>Sinais</h3></div><small>${episodeResultBadge(ep)}</small></div>
+              <div class="panel-body">
+                <div class="facts">
+                  <div class="fact"><label>resultado</label><div>${esc(ep.result || "—")}${ep.winner ? " · vence " + esc(ep.winner) : ""}</div></div>
+                  <div class="fact"><label>duração</label><div>${fmtDur(run.startedAt, run.finishedAt || DATA.generatedAt)}</div></div>
+                  <div class="fact"><label>calls do modelo</label><div>${s.calls} (attempts ${s.attempts})</div></div>
+                  <div class="fact"><label>reparos / timeouts</label><div>${s.repaired} / ${s.timeouts}</div></div>
+                  <div class="fact"><label>tokens in/out</label><div>${fmtNum(s.tokensIn)} / ${fmtNum(s.tokensOut)}</div></div>
+                  <div class="fact"><label>protocolo</label><div class="mono">${esc((run.protocolHash || "").slice(0, 12))}…</div></div>
+                </div>
+              </div>
+            </section>
+          </div>`;
+
+        wireGame(run, ep);
+      }
+
+      function r_STATUS(run) {
+        return run.status === "RUNNING" ? '<span class="badge b-running">live</span>' : run.status === "COMPLETED" ? '<span class="badge b-completed">completa</span>' : `<span class="badge b-failed">${esc(run.status.toLowerCase())}</span>`;
+      }
+
+      function wireGame(run, ep) {
+        const max = (ep.moves || []).length;
+        const goto = (p) => { state.ply = Math.max(0, Math.min(max, p)); render(); };
+        $("#b-first").onclick = () => goto(0);
+        $("#b-prev").onclick = () => goto(state.ply - 1);
+        $("#b-next").onclick = () => goto(state.ply + 1);
+        $("#b-last").onclick = () => goto(max);
+        $("#b-play").onclick = () => { state.playing = !state.playing; if (state.playing) { state.playTimer = setInterval(() => { if (state.ply >= max) { stopPlay(); render(); } else { state.ply++; render(); } }, 900); } else stopPlay(); render(); };
+        $("#ply-range").oninput = (e) => goto(+e.target.value);
+        $("#ep-select").onchange = (e) => { state.episodeIndex = +e.target.value; state.ply = 0; render(); };
+        $("#btn-l0").onclick = () => setLayer("L0");
+        $("#btn-l2").onclick = () => setLayer("L2");
+        for (const row of $("#move-list").querySelectorAll("[data-ply]")) {
+          row.addEventListener("click", () => goto(+row.dataset.ply));
+          row.addEventListener("keydown", (e) => { if (e.key === "Enter") goto(+row.dataset.ply); });
         }
+      }
+      function stopPlay() {
+        if (state.playTimer) { clearInterval(state.playTimer); state.playTimer = null; }
+        state.playing = false;
+      }
 
-        function bindTransport(episode) {
-          $("#episode-select")?.addEventListener("change", (event) => {
-            state.episodeIndex = Number(event.target.value);
-            state.ply = 0;
-            const scrollTop = window.scrollY;
-            renderMain(currentRun());
-            window.scrollTo(0, scrollTop);
-            syncUrl();
-          });
-          $("#ply-range").addEventListener("input", (event) => { state.ply = Number(event.target.value); updatePly(); });
-          $("#btn-first").addEventListener("click", () => { state.ply = 0; updatePly(); });
-          $("#btn-prev").addEventListener("click", () => { state.ply = Math.max(0, state.ply - 1); updatePly(); });
-          $("#btn-next").addEventListener("click", () => { state.ply = Math.min(episode.moves.length, state.ply + 1); updatePly(); });
-          $("#btn-last").addEventListener("click", () => { state.ply = episode.moves.length; updatePly(); });
-          $("#play-btn").addEventListener("click", () => state.playing ? stopPlayback() : startPlayback());
+      /* ---------- L2 ---------- */
+      function renderL2() {
+        const run = DATA.runs.find((r) => r.id === state.runId) || DATA.runs[0];
+        if (!run) { $("#content").innerHTML = '<div class="empty">sem runs</div>'; return; }
+        const s = runStats(run);
+        const events = (run.events || []).slice(-140).reverse();
+        const evClass = (t) => t.includes("failed") || t.includes("illegal") || t.includes("timeout") ? "err" : t.includes("completed") ? "" : "warn";
+
+        $("#content").innerHTML = `
+          <div class="game-head">
+            <h2>Profundo · ${esc((run.experiment || "").slice(0, 34))}</h2>
+            <span class="meta">${esc(run.id)}</span>
+            <div class="spacer"></div>
+            <button class="btn" id="btn-l1">← partida</button>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head"><div><p class="eyebrow">proveniência</p><h3>Quem jogou o quê</h3></div><small>${esc(run.status)}</small></div>
+            <div class="panel-body"><div class="facts">
+              <div class="fact"><label>run</label><div class="mono">${esc(run.id)}</div></div>
+              <div class="fact"><label>condição</label><div class="mono">${esc(run.conditionId || "")}</div></div>
+              <div class="fact"><label>protocol hash</label><div class="mono">${esc(run.protocolHash || "")}</div></div>
+              <div class="fact"><label>assistência</label><div>${esc(run.declaredAssistance || "—")} declarada · ${esc(run.effectiveAssistance || "—")} efetiva</div></div>
+              <div class="fact"><label>janela</label><div>${hhmm(run.startedAt)} → ${hhmm(run.finishedAt)} UTC</div></div>
+              <div class="fact"><label>modelo</label><div class="mono">${esc(run.model?.model || JSON.stringify(run.model || {}))}</div></div>
+              <div class="fact"><label>oponente</label><div class="mono">${esc(JSON.stringify(run.opponents?.[0]?.policy || {}).slice(0, 90))}</div></div>
+              <div class="fact"><label>orçamento</label><div class="mono">max_calls ${esc(run.budget?.max_calls ?? "null")}</div></div>
+              <div class="fact"><label>custo</label><div>${esc(run.provider?.costStatus || "unknown")}</div></div>
+              <div class="fact"><label>tags</label><div>${(run.tags || []).map((t) => `<span class="mono">${esc(t)}</span>`).join(" · ") || "—"}</div></div>
+            </div></div>
+          </section>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">configuração efetiva</p><h3>Task & strategy</h3></div><small>redigido</small></div>
+              <div class="panel-body"><pre class="mono" style="white-space:pre-wrap; margin:0">${esc(JSON.stringify(run.task, null, 1))}</pre></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">sinais operacionais</p><h3>Resumo técnico</h3></div></div>
+              <div class="panel-body"><div class="facts">
+                <div class="fact"><label>lances / episódios</label><div>${s.plies} / ${s.eps.length}</div></div>
+                <div class="fact"><label>provider calls ok</label><div>${s.calls}</div></div>
+                <div class="fact"><label>attempts totais</label><div>${s.attempts}</div></div>
+                <div class="fact"><label>latência média (modelo)</label><div>${s.latencies.length ? fmtMs(s.latencies.reduce((a, b) => a + b, 0) / s.latencies.length) : "—"}</div></div>
+                <div class="fact"><label>latência p95 (modelo)</label><div>${s.latencies.length ? fmtMs(s.latencies.slice().sort((a, b) => a - b)[Math.floor(s.latencies.length * 0.95)] ) : "—"}</div></div>
+                <div class="fact"><label>eventos</label><div>${(run.events || []).length}</div></div>
+              </div></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head"><div><p class="eyebrow">linha do tempo</p><h3>Eventos brutos</h3></div><small>últimos 140 · mais recentes primeiro</small></div>
+            <div class="events">${events.map((e) => `
+              <div class="ev-row"><span class="t">${hhmm(e.at)}</span><span class="ty ${evClass(e.type)}">${esc(e.type)}</span><span class="pl">${esc(JSON.stringify(e.payload || {}).slice(0, 120))}</span></div>`).join("") || '<div class="empty">sem eventos</div>'}</div>
+          </section>`;
+
+        $("#btn-l1").onclick = () => setLayer("L1");
+      }
+
+      /* ---------- rail ---------- */
+      function renderRail() {
+        const runs = filteredRuns();
+        $("#run-count").textContent = runs.length;
+        $("#run-list").innerHTML = runs.map((r, i) => `
+          <button class="run-card ${r.id === state.runId ? "active" : ""}" data-run-id="${esc(r.id)}" role="listitem">
+            <div class="rc-top">${r.status === "RUNNING" ? '<span class="badge b-running">live</span>' : r.status === "COMPLETED" ? '<span class="badge b-completed">ok</span>' : '<span class="badge b-failed">!</span>'}<span class="rc-name">${esc((r.experiment || "?").slice(0, 26))}</span></div>
+            <div class="rc-sub">${esc(r.id.slice(4, 16))} · ${esc(r.model?.model || "?")}</div>
+          </button>`).join("");
+        for (const card of $("#run-list").querySelectorAll("[data-run-id]")) {
+          card.addEventListener("click", () => selectRun(card.dataset.runId));
         }
+      }
 
-        function startPlayback() {
-          const episode = currentEpisode(currentRun());
-          if (!episode.moves?.length) return;
-          state.playing = true;
-          state.timer = setInterval(() => {
-            if (state.ply >= episode.moves.length) { stopPlayback(); return; }
-            state.ply += 1;
-            updatePly();
-          }, 900);
-          updatePly();
+      /* ---------- boot ---------- */
+      $("#meta-generated").textContent = "snapshot " + (DATA.generatedAt || "").slice(0, 16).replace("T", " ") + "Z";
+      $("#btn-reload").addEventListener("click", () => location.reload());
+      $("#search").addEventListener("input", (e) => { state.query = e.target.value; renderRail(); if (state.layer === "L0") renderL0(); });
+      for (const [id, layer] of [["tab-l0", "L0"], ["tab-l1", "L1"], ["tab-l2", "L2"]]) {
+        $("#" + id).addEventListener("click", () => setLayer(layer));
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+        if (state.layer === "L1") {
+          if (e.key === "ArrowLeft") { state.ply = Math.max(0, state.ply - 1); render(); }
+          if (e.key === "ArrowRight") { state.ply = Math.min((DATA.runs.find((r) => r.id === state.runId)?.episodes?.[state.episodeIndex]?.moves || []).length, state.ply + 1); render(); }
+          if (e.key === " ") { e.preventDefault(); $("#b-play")?.click(); }
+          if (e.key === "Escape") setLayer("L0");
         }
-
-        function stopPlayback() {
-          state.playing = false;
-          if (state.timer) clearInterval(state.timer);
-          state.timer = null;
-          if ($("#play-btn")) $("#play-btn").textContent = "reproduzir";
-        }
-
-        function renderAll() {
-          renderRunList();
-          renderMain(currentRun());
-        }
-
-        $("#search").addEventListener("input", (event) => { state.query = event.target.value; renderRunList(); syncUrl(); });
-        document.querySelectorAll("[data-filter]").forEach((button) => button.addEventListener("click", () => {
-          state.filter = button.dataset.filter;
-          document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === button));
-          renderRunList();
-          syncUrl();
-        }));
-        $("#analysis-btn").addEventListener("click", () => {
-          state.view = state.view === "analysis" ? "replay" : "analysis";
-          stopPlayback();
-          renderAll();
-          syncUrl();
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        });
-        document.addEventListener("keydown", (event) => {
-          if (event.target.matches("input")) return;
-          if (event.key === "ArrowLeft") { state.ply = Math.max(0, state.ply - 1); updatePly(); }
-          if (event.key === "ArrowRight") { const episode = currentEpisode(currentRun()); state.ply = Math.min(episode.moves.length, state.ply + 1); updatePly(); }
-          if (event.key === " ") { event.preventDefault(); state.playing ? stopPlayback() : startPlayback(); }
-        });
-
-        const defaultRunId = DATA.runs.find((run) => run.status === "COMPLETED" && !String(run.experiment || "").startsWith("fake-"))?.id || DATA.runs.find((run) => run.status === "COMPLETED")?.id || DATA.runs[0]?.id || null;
-        restoreUrlState(defaultRunId);
-        renderAll();
-      })();
+      });
+      renderRail();
+      render();
     </script>
   </body>
 </html>

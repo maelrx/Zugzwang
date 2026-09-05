@@ -115,13 +115,50 @@ def _actor_kind(actor: str, policy: dict[str, Any] | None) -> str:
     return "Model"
 
 
+def _provider_stats(attempts: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Aggregate provider attempt stats for one step (calls, latency, tokens).
+
+    Attempts with kind != provider are ignored. usage_json/cost_json are
+    redacted dicts; latency_ms is integer milliseconds or None.
+    """
+    provider_attempts = [a for a in attempts if str(a.get("kind") or "") == "provider"]
+    if not provider_attempts:
+        return None
+    tokens_in = 0
+    tokens_out = 0
+    total_ms = 0
+    saw_usage = False
+    for attempt in provider_attempts:
+        total_ms += int(attempt.get("latency_ms") or 0)
+        usage = attempt.get("usage_json")
+        if isinstance(usage, dict):
+            saw_usage = True
+            tokens_in += int(usage.get("input_tokens") or usage.get("prompt_tokens") or 0)
+            tokens_out += int(usage.get("output_tokens") or usage.get("completion_tokens") or 0)
+    status = "ok"
+    if any(str(a.get("status") or "") == "timeout_unknown" for a in provider_attempts):
+        status = "timeout_unknown"
+    failed = [a for a in provider_attempts if str(a.get("status") or "") == "failed"]
+    if failed:
+        status = "repaired" if len(provider_attempts) > 1 else "failed"
+    return {
+        "attempts": len(provider_attempts),
+        "status": status,
+        "latencyMs": total_ms,
+        "tokensIn": tokens_in if saw_usage else None,
+        "tokensOut": tokens_out if saw_usage else None,
+    }
+
+
 def _episode_snapshot(
     services: DurableRunServices,
     episode: dict[str, Any],
     step_rows: list[dict[str, Any]],
+    attempts_by_step: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     initial = _artifact_json(services, episode.get("initial_state_artifact_id"))
     initial_fen = initial.get("fen") if isinstance(initial.get("fen"), str) else None
+    local_attempts_by_step: dict[str, list[dict[str, Any]]] = dict(attempts_by_step or {})
     positions: list[dict[str, Any]] = [
         {
             "ply": 0,
@@ -162,6 +199,10 @@ def _episode_snapshot(
                 "stepId": row.get("step_id"),
                 "fenAfter": fen_after,
                 "terminal": bool(after.get("terminal", False)),
+                "committedAt": row.get("committed_at"),
+                "provider": _provider_stats(
+                    local_attempts_by_step.get(str(row.get("step_id") or ""), [])
+                ),
             }
         )
         positions.append(
@@ -186,6 +227,9 @@ def _episode_snapshot(
             result = "stalemate"
         elif episode.get("status") == "FAILED":
             result = "failed"
+        elif episode.get("status") not in ("COMPLETED",):
+            # RUNNING (or any non-terminal state): game still going, not capped.
+            result = "in_progress"
         else:
             result = "capped"
     except (ValueError, chess.InvalidFenError):
@@ -282,19 +326,29 @@ def _build_run(services: DurableRunServices, run: dict[str, Any]) -> dict[str, A
         for row in selected_metrics
     ]
 
-    attempt_repo = AttemptRepository(services.database_engine)
-    cost_entries: list[dict[str, Any]] = []
-    for step in all_steps:
-        for attempt in attempt_repo.for_step(str(step["step_id"])):
-            if attempt.get("cost_json"):
-                cost_entries.append(_redact(attempt["cost_json"]))
-
     task = condition.get("task") if isinstance(condition.get("task"), dict) else {}
     task_config = task.get("config") if isinstance(task.get("config"), dict) else {}
     model_players = [p for p in _players(condition) if p.get("model")]
     policy_players = [p for p in _players(condition) if p.get("policy")]
     source = _artifact_json(services, run.get("resolved_manifest_artifact_id"))
     source_meta = source.get("source", {}).get("metadata", {}) if isinstance(source, dict) else {}
+
+    attempt_repo = AttemptRepository(services.database_engine)
+    attempts_by_step: dict[str, list[dict[str, Any]]] = {}
+    cost_entries: list[dict[str, Any]] = []
+    for step in all_steps:
+        step_attempts = attempt_repo.for_step(str(step["step_id"]))
+        attempts_by_step[str(step["step_id"])] = list(step_attempts)
+        for attempt in step_attempts:
+            if attempt.get("cost_json"):
+                cost_entries.append(_redact(attempt["cost_json"]))
+    episodes = [
+        _episode_snapshot(services, episode, rows, attempts_by_step)
+        for episode, rows in (
+            (episode, services.steps.for_episode(str(episode["episode_id"])))
+            for episode in services.episodes.for_run(str(run["run_id"]))
+        )
+    ]
 
     return {
         "id": run.get("run_id"),
@@ -377,9 +431,14 @@ def main() -> None:
         + ";\n",
         encoding="utf-8",
     )
+    json_output = args.output.with_name("data.json")
+    json_output.write_text(
+        json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
     write_piece_asset(args.pieces)
     print(
-        f"viewer snapshot: {len(snapshot['runs'])} runs -> {args.output}; pieces -> {args.pieces}"
+        f"viewer snapshot: {len(snapshot['runs'])} runs -> {args.output}, {json_output}; pieces -> {args.pieces}"
     )
 
 

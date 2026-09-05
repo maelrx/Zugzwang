@@ -22,3 +22,9 @@ runs/
 .idea/
 .vscode/
 graphify-out/
+
+# Generated private viewer snapshots; the tracked data.js is an empty fixture.
+viewer/data.json
+viewer/meta.json
+viewer-next/public/data/
+node_modules/

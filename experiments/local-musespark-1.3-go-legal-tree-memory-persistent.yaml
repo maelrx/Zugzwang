@@ -58,13 +58,6 @@ spec:
       move_number: true
       history: {mode: full, plies: 0, notation: uci}
       legal_actions: {exposure: delayed, encoding: uci}
-    legality:
-      parse_feedback: true
-      validation: {enabled: true, feedback: enumerated}
-      enumerate: {enabled: false}
-      transition_sandbox: true
-      limits: {validations: 64, transitions: 32, depth_plies: 2, branch_states: 24}
-    retry_profile: enumerate_after_failure
     retries: {transport: 2, parse: 0, illegal: 3, feedback: enumerated}
 
   budget:

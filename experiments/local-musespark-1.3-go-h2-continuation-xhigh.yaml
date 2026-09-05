@@ -1,0 +1,87 @@
+# ZGW-0083: continuation of the two failed xhigh games from their exact death
+# positions (new runs — FAILED episodes are terminal and cannot resume).
+# B died at move 14 (white to move), C at move 13 (white to move).
+# Same H2 setup (persistent-all standard, single_agent_tree, xhigh) with
+# hardened robustness (timeout 600s, transport 4) and NO ply cap.
+# Caveats (disclosed): new run_ids/episodes; persistent search memory does NOT
+# carry over; in-episode history restarts at the death position. The original
+# failed runs are preserved untouched as evidence.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: local-musespark-1-3-go-h2-continuation-xhigh
+  tags: [local, opencode-go, zgw-0083, h2-continuation, single-agent-tree, persistent-all, no-ply-cap, effort-xhigh, hardened]
+
+spec:
+  seed: 20260912
+
+  matrix:
+    mode: zip
+    parameters:
+      search:
+        - {hypothesis_id: h2-continue-b, memory_mode: persistent, reply_scope: all, prompt_mode: standard, max_root_branches: 4, max_affordance_roots: 256, max_variant_branches: 6, max_nodes: 256, max_depth_plies: 2, max_validation_queries: 512, max_transition_queries: 256}
+        - {hypothesis_id: h2-continue-c, memory_mode: persistent, reply_scope: all, prompt_mode: standard, max_root_branches: 4, max_affordance_roots: 256, max_variant_branches: 6, max_nodes: 256, max_depth_plies: 2, max_validation_queries: 512, max_transition_queries: 256}
+      backend_config:
+        - {base_url: http://127.0.0.1:8788/v1, provider_id: opencode-router, timeout_seconds: 600, profile: openai-responses, allow_private_network: true, reasoning_effort: xhigh, default_max_output_tokens: 32768}
+        - {base_url: http://127.0.0.1:8788/v1, provider_id: opencode-router, timeout_seconds: 600, profile: openai-responses, allow_private_network: true, reasoning_effort: xhigh, default_max_output_tokens: 32768}
+      start_fen:
+        - r3kb1r/p1p2ppq/b1N1pn2/7p/8/3P2N1/PPP2PPP/R1BQ1RK1 w kq - 0 14
+        - r2qk2r/1p1b1pp1/p1nPpb1p/3p4/3P4/2PB1N2/PP3PPP/R2Q1RK1 w kq - 0 13
+
+  task:
+    config_from_matrix: [search, backend_config, start_fen]
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      search: {}
+      backend_config: {}
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor
+        strategy: chess.single_agent_tree
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1000
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K6
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: full, plies: 0, notation: uci}
+      legal_actions: {exposure: delayed, encoding: uci}
+    retries: {transport: 4, parse: 0, illegal: 3, feedback: enumerated}
+
+  budget:
+    max_calls: 600
+    max_input_tokens: null
+    max_output_tokens: null
+    max_total_tokens: null
+    max_usd: null
+    max_wall_time_seconds: null
+    max_failed_calls: null
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

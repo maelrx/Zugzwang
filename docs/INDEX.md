@@ -177,3 +177,4 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [Validacao real pos-mudancas](reports/REAL-VALIDATION-2026-09-04.md)
 - [Relatorio completo da run R5 multiagente](reports/R5-MULTI-AGENT-RUN-2026-09-04.md)
 - [Run R7 legal tree e memoria persistida](reports/R7-LEGAL-TREE-MEMORY-RUN-2026-09-04.md)
+- [Partida H3 do agente unico — relatorio cientifico](reports/R7-SINGLE-AGENT-TREE-GAME-H3-2026-09-05.md)

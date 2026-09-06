@@ -174,9 +174,16 @@ def test_plan_across_turns_correct_scope(store) -> None:
     assert view.episode_id == "ep-1"
     assert view.perspective == "black"
     assert view.premises["center_open"] == "false"
+    # Changed premise escalates past the requested status (TEST-048).
+    assert view.status == "needs_review"
     reread = memory.view_plan("plan-t")
-    assert reread.status == "revised"
+    assert reread.status == "needs_review"
     assert reread.revision == 1
+    assert reread.premises == {"center_open": "false"}
+    # Unchanged premises keep the requested status.
+    calm = memory.revise_plan(plan_id="plan-t", status="revised", premises={"center_open": "false"})
+    assert calm.status == "revised"
+    assert calm.revision == 2
 
 
 def test_predicate_fixtures_false_unknown(store) -> None:

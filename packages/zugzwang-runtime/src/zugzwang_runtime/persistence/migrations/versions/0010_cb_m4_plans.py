@@ -53,6 +53,15 @@ _DDL = [
     )
     """,
     """
+    CREATE TABLE cb_plan_premises (
+        plan_id TEXT NOT NULL REFERENCES cb_plans(plan_id),
+        premise_name TEXT NOT NULL,
+        premise_state TEXT NOT NULL CHECK (premise_state IN ('true','false','unknown')),
+        revision INTEGER NOT NULL CHECK (revision >= 0),
+        PRIMARY KEY(plan_id, premise_name, revision)
+    )
+    """,
+    """
     CREATE TRIGGER cb_plan_episode_guard BEFORE INSERT ON cb_plans
     WHEN NEW.episode_id <> (
      SELECT steps.episode_id FROM cb_decisions JOIN steps ON cb_decisions.step_id = steps.step_id
@@ -62,6 +71,7 @@ _DDL = [
 ]
 
 _DROP_ORDER = [
+    "cb_plan_premises",
     "cb_plans",
     "cb_investigations",
 ]

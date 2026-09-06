@@ -23,17 +23,6 @@ from sqlalchemy.exc import IntegrityError
 from ..persistence.database import Database
 
 _PLAN_STATUS = frozenset({"active", "needs_review", "revised", "abandoned", "achieved"})
-_INVESTIGATION_STATUS = frozenset(
-    {
-        "open",
-        "investigating",
-        "provisionally_answered",
-        "needs_review",
-        "budget_exhausted",
-        "abandoned",
-    }
-)
-_PERSPECTIVES = frozenset({"white", "black", "neutral"})
 _PREMISE_STATES = frozenset({"true", "false", "unknown"})
 
 
@@ -202,8 +191,23 @@ class PlanStore:
             ).fetchone()
             if row is None:
                 raise PlanError("SEMANTICS_MISMATCH", f"unknown plan {plan_id!r}")
-            episode_id, perspective, current, revision = row[0], row[1], row[2], int(row[2 + 1])
-            del current
+            episode_id, perspective, _current, revision = row[0], row[1], row[2], int(row[3])
+            stored = {
+                r[0]: r[1]
+                for r in conn.execute(
+                    sa.text(
+                        "SELECT premise_name, premise_state FROM cb_plan_premises "
+                        "WHERE plan_id = :id AND revision = :revision"
+                    ),
+                    {"id": plan_id, "revision": revision},
+                ).fetchall()
+            }
+            incoming = dict(premises or {})
+            changed = {k for k in set(stored) | set(incoming) if stored.get(k) != incoming.get(k)}
+            if changed and status not in {"needs_review", "abandoned"}:
+                # A changed premise escalates: the plan cannot stay active —
+                # it moves to needs_review (TEST-048), never a refutation.
+                status = "needs_review"
             conn.execute(
                 sa.text(
                     "UPDATE cb_plans SET status = :status, revision = :revision, "
@@ -220,6 +224,20 @@ class PlanStore:
                     "id": plan_id,
                 },
             )
+            for name, state in incoming.items():
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_plan_premises (plan_id, premise_name, "
+                        "premise_state, revision) VALUES (:plan_id, :name, :state, "
+                        ":revision)"
+                    ),
+                    {
+                        "plan_id": plan_id,
+                        "name": name,
+                        "state": state,
+                        "revision": revision + 1,
+                    },
+                )
             conn.commit()
         return PlanView(
             plan_id=plan_id,
@@ -227,7 +245,7 @@ class PlanStore:
             perspective=perspective,
             status=status,
             revision=revision + 1,
-            premises=dict(premises or {}),
+            premises=incoming,
         )
 
     def premise_delta(
@@ -251,13 +269,24 @@ class PlanStore:
                 ),
                 {"id": plan_id},
             ).fetchone()
-            conn.commit()
-        if row is None:
-            raise PlanError("SEMANTICS_MISMATCH", f"unknown plan {plan_id!r}")
+            if row is None:
+                raise PlanError("SEMANTICS_MISMATCH", f"unknown plan {plan_id!r}")
+            episode_id, perspective, status, revision = row[0], row[1], row[2], int(row[3])
+            stored = {
+                r[0]: r[1]
+                for r in conn.execute(
+                    sa.text(
+                        "SELECT premise_name, premise_state FROM cb_plan_premises "
+                        "WHERE plan_id = :id AND revision = :revision"
+                    ),
+                    {"id": plan_id, "revision": revision},
+                ).fetchall()
+            }
         return PlanView(
             plan_id=plan_id,
-            episode_id=row[0],
-            perspective=row[1],
-            status=row[2],
-            revision=int(row[3]),
+            episode_id=episode_id,
+            perspective=perspective,
+            status=status,
+            revision=revision,
+            premises=stored,
         )

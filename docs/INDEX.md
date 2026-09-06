@@ -130,6 +130,7 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [ADR-058 Post-hoc engine firewall](adr/ADR-058-posthoc-engine-firewall.md)
 - [ADR-059 R5 multi-agent review por lance](adr/ADR-059-multi-agent-review.md)
 - [ADR-060 Legal tree e ablação de memória por episódio](adr/ADR-060-turn-scoped-legality-and-memory-ablation.md)
+- [ADR-061 Bateria controlada de agente único](adr/ADR-061-single-agent-tree-hypothesis-battery.md)
 
 ## Roadmap
 
@@ -173,6 +174,9 @@ The canonical documentation language for the foundation release is Portuguese, w
 
 ## Execution reports
 
-Overnight execution reports (R5/R7, MuseSpark battery, real pipeline) are preserved
-locally and will be indexed here when their documentation PR is integrated; the
-reports are not part of this branch's tree.
+- [Real pipeline — MuseSpark 1.3 Free and Stockfish](reports/REAL-PIPELINE-2026-09-04.md)
+- [Bateria MuseSpark 1.3 contra Stockfish](reports/MUSESPARK-STOCKFISH-BATTERY-2026-09-04.md)
+- [Validacao real pos-mudancas](reports/REAL-VALIDATION-2026-09-04.md)
+- [Relatorio completo da run R5 multiagente](reports/R5-MULTI-AGENT-RUN-2026-09-04.md)
+- [Run R7 legal tree e memoria persistida](reports/R7-LEGAL-TREE-MEMORY-RUN-2026-09-04.md)
+- [Partida H3 do agente unico — relatorio cientifico](reports/R7-SINGLE-AGENT-TREE-GAME-H3-2026-09-05.md)

@@ -135,6 +135,26 @@ class ChessLegalTreeMemoryStrategyDefinition:
         )
 
 
+class ChessSingleAgentTreeStrategyDefinition:
+    @property
+    def descriptor(self) -> PluginDescriptor:
+        return PluginDescriptor(
+            plugin_id="chess.single_agent_tree",
+            plugin_version="0.1.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=(
+                "R7",
+                "single-agent",
+                "legal-action-set",
+                "model-search",
+                "memory",
+                "uci",
+            ),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+
 class ChessPolicyDefinition:
     @property
     def descriptor(self) -> PluginDescriptor:
@@ -173,3 +193,4 @@ CHESS_RECONSTRUCT_STRATEGY_ENTRY = ChessReconstructStrategyDefinition()
 CHESS_R6_BATCHED_TREE_STRATEGY_ENTRY = ChessBatchedTreeStrategyDefinition()
 CHESS_MULTI_AGENT_REVIEW_STRATEGY_ENTRY = ChessMultiAgentReviewStrategyDefinition()
 CHESS_LEGAL_TREE_MEMORY_STRATEGY_ENTRY = ChessLegalTreeMemoryStrategyDefinition()
+CHESS_SINGLE_AGENT_TREE_STRATEGY_ENTRY = ChessSingleAgentTreeStrategyDefinition()

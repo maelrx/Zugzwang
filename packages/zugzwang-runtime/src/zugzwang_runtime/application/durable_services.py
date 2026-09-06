@@ -451,6 +451,33 @@ def _default_fake_rules():
         ),
         FakeBackendRule(
             when={
+                "call_index": 0,
+                "fingerprint_contains": "chess-single-agent-tree:single-agent",
+            },
+            output=_json.dumps(
+                {
+                    "critical_map": "opening development",
+                    "hanging_pieces": [],
+                    "tactical_ideas": ["control the center"],
+                    "candidate_moves": ["e2e4"],
+                    "illegal_probes": ["e2e5"],
+                    "variants": [
+                        {
+                            "root_move": "e2e4",
+                            "reply_move": "e7e5",
+                            "illegal_reply_probes": ["e2e6"],
+                            "assessment": "central contest",
+                            "risks": [],
+                        }
+                    ],
+                    "move": "e2e4",
+                    "analysis": "legal central move",
+                    "confidence": 0.9,
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
                 "call_index": 1,
                 "fingerprint_contains": "chess-legal-tree-memory:variant-analyst",
             },

@@ -16,7 +16,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.engine import Connection
 
-from zugzwang_core.domain.cognition import observation_id_v2
+from zugzwang_core.domain.cognition import observation_id_v3
 
 from .database import Database
 
@@ -781,7 +781,8 @@ class CognitionJournal:
                     {"decision_id": decision_id},
                 ).fetchone()
                 exposure_sequence = int(row[0]) + 1 if row is not None else 1
-                observation_id = observation_id_v2(
+                observation_id = observation_id_v3(
+                    decision_id,
                     str(observation["semantic_hash"]),
                     int(observation["round_ordinal"]),
                     exposure_sequence,

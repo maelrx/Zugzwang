@@ -23,7 +23,7 @@ from typing import Any, cast
 import sqlalchemy as sa
 
 from zugzwang_core.domain.canonical import sha256_hex
-from zugzwang_core.domain.cognition import observation_id_v2
+from zugzwang_core.domain.cognition import observation_id_v3
 
 from ..persistence.cognition import CognitionJournal
 
@@ -275,9 +275,13 @@ def recover_missing_exposures(
         result_bytes = loader(str(artifact_id)) or b""
         semantic_hash = sha256_hex(result_bytes)
         kind = _TOOL_KIND_BY_NAME.get(str(tool_name), "view")
+        # One sequence allocation per recovered exposure: the id and the row
+        # must carry the SAME number (two MAX+1 calls with no insert between
+        # them return the same value, which is consistent but fragile).
+        exposure_sequence = journal.next_exposure_sequence(decision_id)
         journal.record_observation(
-            observation_id=observation_id_v2(
-                semantic_hash, int(ordinal or 0), journal.next_exposure_sequence(decision_id)
+            observation_id=observation_id_v3(
+                decision_id, semantic_hash, int(ordinal or 0), exposure_sequence
             ),
             decision_id=decision_id,
             node_id=node_id,
@@ -287,7 +291,7 @@ def recover_missing_exposures(
             payload_artifact_id=str(artifact_id),
             semantic_hash=semantic_hash,
             policy_hash=str(policy[0]),
-            exposure_sequence=journal.next_exposure_sequence(decision_id),
+            exposure_sequence=exposure_sequence,
             available_before_selection=True,
         )
         recovered += 1

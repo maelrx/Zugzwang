@@ -106,20 +106,27 @@ def _perception() -> ChessPerception:
     )
 
 
-def _open_session(harness, decision_id="dec-test-0001", remaining=32) -> DecisionSession:
+def _open_session(
+    harness,
+    decision_id="dec-test-0001",
+    remaining=32,
+    decision_ordinal=0,
+    search_session_id="sess-1",
+    node_name="node-root",
+) -> DecisionSession:
     database, engine, cas = harness
     journal = CognitionJournal(database)
     return DecisionSession.open(
         decision_id=decision_id,
         step_id="st-1",
-        decision_ordinal=0,
-        search_session_id="sess-1",
+        decision_ordinal=decision_ordinal,
+        search_session_id=search_session_id,
         strategy_id="chess.grounded",
         strategy_version="0.1.0",
         interaction_mode="native_tools",
         policy_hash=POLICY_HASH,
         config=dict(CONFIG),
-        states={"node-root": ChessGameState()},
+        states={node_name: ChessGameState()},
         journal=journal,
         perception=_perception(),
         cas=cas,
@@ -719,3 +726,63 @@ def test_invalid_payload_settles_failed_not_committed(harness, monkeypatch) -> N
     assert observations == 1, "the failure exposure exists (error artifact), not the result"
     # No partial expansion happened either: the malformed body produced no child.
     assert CognitionJournal(database).bound_node_ids("dec-test-0001") == ["node-root"]
+
+
+def test_identical_exposures_across_decisions_do_not_collide(harness, monkeypatch) -> None:
+    """Pilot regression (real run 2026-09-06, step 12): two decisions settling
+    the same (bytes, round ordinal, exposure) triple must both journal.
+    observation_id_v2 omitted the decision id, so the second settlement died
+    with UNIQUE constraint failed on cb_observations.observation_id and the
+    step went TERMINAL_FAILURE/decision_error. v3 namescopes by decision.
+
+    Both decisions fail inside _execute_tool with the SAME static exception,
+    so both error envelopes — and therefore both exposure triples — are
+    byte-identical: the only thing keeping the ids apart is the decision.
+    """
+    from zugzwang_runtime.cognition.broker import CognitionToolBroker
+
+    def _boom(self, tool, arguments):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(CognitionToolBroker, "_execute_tool", _boom)
+    _, engine, _ = harness
+    with engine.connect() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO search_sessions (search_session_id, run_id, algorithm, "
+                "algorithm_version, namespace, root_node_id, budgets_json, stats_json, "
+                "status, created_at) VALUES ('sess-2', 'run-1', 'alg', '0.1', 'ns', "
+                "'node-root', '{}', '{}', 'RUNNING', '2026-09-06T00:00:00Z')"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO search_nodes (node_id, search_session_id, position_key, "
+                "trajectory_key, state_ref, depth, terminal, created_by, status) "
+                "VALUES ('node-root-2', 'sess-2', 'pos:root', 'traj:root', 'cas://root', "
+                "0, 0, 'perception', 'OPEN')"
+            )
+        )
+        conn.commit()
+    first = _open_session(harness, decision_id="dec-collide-a", decision_ordinal=0)
+    second = _open_session(
+        harness,
+        decision_id="dec-collide-b",
+        decision_ordinal=1,
+        search_session_id="sess-2",
+        node_name="node-root-2",
+    )
+    for session, node, key in (
+        (first, "node-root", "ka"),
+        (second, "node-root-2", "kb"),
+    ):
+        envelope = session.execute("board_observe", {"node_id": node}, idempotency_key=key)
+        assert envelope.ok is False
+        assert envelope.error is not None
+        assert envelope.error.code == "OUTPUT_CONTRACT_VIOLATION"
+    first_obs = _observations(engine, "dec-collide-a")
+    second_obs = _observations(engine, "dec-collide-b")
+    assert len(first_obs) == 1 and len(second_obs) == 1
+    assert first_obs[0][0].startswith("observation_id:v3:")
+    assert second_obs[0][0].startswith("observation_id:v3:")
+    assert first_obs[0][0] != second_obs[0][0]

@@ -22,7 +22,7 @@
 </div>
 
 > [!IMPORTANT]
-> v0.1 of the kernel is implemented: uv workspace, core/runtime/chess/cli packages, SQLite+WAL, CAS, durable runs with interrupt/resume, R0-R3 strategies, two provider adapters, post-hoc Stockfish evaluation (fake UCI offline), bundles, Parquet/DuckDB and an offline scientific suite. Human gates GATE-001/002/004 are ratified (GPL-3.0-or-later, Python >=3.13, `zugzwang` + `zgw`); the remaining gates keep conservative defaults (fake-only execution, no USD claims, no public redistribution).
+> The experimental kernel is implemented: uv workspace, CLI, SQLite/CAS, R0-R3 strategies, provider adapters and offline tests. Independent bundle reproduction and scientific acceptance still have open work. Gates 001/002/003/004/006 are accepted; the remaining gates retain their documented conservative defaults. See the [integration queue](docs/engineering/REPOSITORY_STATUS.md) before choosing a branch.
 
 ## Quick start
 
@@ -208,22 +208,9 @@ Static expert knowledge enters through versioned `KnowledgePacket` artifacts. Th
 
 ## Project status
 
-The foundation pack is complete enough to start the scaffold, but several human-owned decisions deliberately block irreversible code choices:
+The runtime and lockfile exist. Experimental R5/R7, reports and viewer work remain in a stacked review queue. Implementation and passing smoke tests do not certify independent reproduction or a scientific benchmark.
 
-1. license and chess rules substrate;
-2. Python support floor;
-3. default raw prompt/response retention;
-4. final CLI command name;
-5. redistribution policy for provider outputs;
-6. Stockfish acquisition and redistribution;
-7. initial plugin API stability;
-8. first-release variant scope;
-9. cost registry governance;
-10. documentation language policy;
-11. inaugural paid model/budget matrix;
-12. package publication topology.
-
-See the [Mestre Mael Decision Console](docs/decisions/HUMAN_DECISION_GATES.pt-BR.md).
+Gates 001/002/003/004/006 are accepted. Gates 005 and 007-012 remain pending. Consult [DECISIONS.yaml](docs/decisions/DECISIONS.yaml) and the [repository status](docs/engineering/REPOSITORY_STATUS.md).
 
 ## Repository map
 
@@ -252,27 +239,17 @@ See the [Mestre Mael Decision Console](docs/decisions/HUMAN_DECISION_GATES.pt-BR
 └── .github/                     # contribution templates and docs CI
 ```
 
-## Starting the scaffold
+## Starting new work
 
-Do not implement around unresolved gates. The intended sequence is:
+Read [START_HERE.md](START_HERE.md), the [integration queue](docs/engineering/REPOSITORY_STATUS.md) and the applicable work order. Create an isolated branch/worktree from the correct base and install the locked workspace. Preserve active runs and other agents' environments.
 
 ```bash
-# 1. Read the operating map
-cat START_HERE.md
-cat docs/decisions/HUMAN_DECISION_GATES.pt-BR.md
-
-# 2. Record human decisions
-# Edit docs/decisions/DECISIONS.yaml and the affected ADR status.
-
-# 3. Validate the documentation corpus
-python scripts/validate_foundation.py
-
-# 4. Start M0 with the Codex workflow
-# Explicitly invoke the bootstrap-workspace skill.
+uv sync --all-packages --all-extras --locked
+uv run python scripts/validate_foundation.py --strict
+uv run pytest -m "not e2e"
 ```
 
 The local runtime, providers, chess environment, evidence artifacts, post-hoc evaluator and model-only R6 search are implemented. Real provider data remains local and public raw-output export remains gated.
-
 ## Quality policy
 
 A result is not publishable unless it records:
@@ -312,7 +289,7 @@ The project is designed for research engineers, model authors, benchmark maintai
 
 ## License
 
-A license has intentionally not been selected in this foundation pack. The choice is coupled to the chess rules substrate and downstream embedding strategy. Until [ADR-004](docs/adr/ADR-004-licenca-e-biblioteca-de-regras.md) is accepted and a `LICENSE` file is committed, the repository should not be advertised as legally open source.
+Mestre Mael selected GPL-3.0-or-later with python-chess on 2026-08-16. See [LICENSE](LICENSE), [ADR-004](docs/adr/ADR-004-licenca-e-biblioteca-de-regras.md) and [LICENSE-DECISION.md](LICENSE-DECISION.md). Provider-output redistribution remains a separate pending decision under GATE-005.
 
 ## Citation
 

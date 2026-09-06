@@ -63,8 +63,13 @@ flowchart TD
 
 ### Fase 4 — Persistência e executor
 
-- [ ] **CB-WO-04** — persistência e journal (§38.5) → ZGW-0091 · pending
-- [ ] **CB-WO-05** — facade e tools (§38.6) → pending (depende W3+W4)
+- [x] **CB-WO-04** — persistência e journal (§38.5) → **ZGW-0091** · PR [#29](https://github.com/maelrx/Zugzwang/pull/29) (empilhado no #28, incorpora a fundação #25)
+  - [x] Migration 0007 (CB-M1 intermediário): cb_state_snapshots/cb_decisions/cb_node_bindings/cb_rounds/cb_provider_links/cb_tool_operations/cb_observations/cb_budget_reservations/cb_budget_entries + 12 triggers do DDL-alvo
+  - [x] Writer repository único: transições §12.2 validadas, operações idempotentes (replay divergente rejeitado), observações, journal de budget append-only com reconcile por unidade
+  - [x] Upgrade de cópia baseline (0001→0007) e rollback de feature ensaiados; rollback recusa DROP com dados (§23.3)
+  - [x] Correção da nomenclatura de término: SEVENTYFIVE_MOVE + TERMINATION_MAPPING_VERSION v2 (FIFTY_MOVE preservado para claims; registros antigos não reescritos)
+  - [x] Integridade referencial e idempotência testadas; 328 offline
+- [ ] **CB-WO-05** — facade e tools (§38.6) → pending (depende W3+W4; inclui codec textual da view básica e broker de exposição com TEST-007)
 - [ ] **CB-WO-06** — providers round-trip (§38.7) → pending (depende W2)
 
 ### Fase 5 — Loop
@@ -108,3 +113,4 @@ flowchart TD
 | 2026-09-06 | Tracking | ZGW-0088 | este PR | Este checklist |
 | 2026-09-06 | Fase 2 — contratos | ZGW-0089 | [#27](https://github.com/maelrx/Zugzwang/pull/27) | Contratos de cognição fiéis ao §42.6/§12.2/§15; 34 testes de contrato; review aplicado |
 | 2026-09-06 | Fase 3 — percepção | ZGW-0090 | [#28](https://github.com/maelrx/Zugzwang/pull/28) | Percepção L0 + delta reconstrutível; TEST-005–017; review aplicado; empilhado no #27 |
+| 2026-09-06 | Fase 4 — persistência | ZGW-0091 | [#29](https://github.com/maelrx/Zugzwang/pull/29) | CB-M1 (migration 0007 + writer + budget journal) + término v2; review aplicado; empilhado no #28 |

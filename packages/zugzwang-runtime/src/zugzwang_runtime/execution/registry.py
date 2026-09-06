@@ -39,6 +39,13 @@ _KIND_BY_GROUP: dict[str, PluginKind] = {
     "zugzwang.codecs": PluginKind.CODEC,
 }
 
+
+def _cognitive_entry() -> Any:
+    from ..cognition.navigation import COGNITIVE_NAVIGATION_STRATEGY_ENTRY
+
+    return COGNITIVE_NAVIGATION_STRATEGY_ENTRY
+
+
 _BUILTIN_DEFINITIONS: tuple[Any, ...] = (
     FAKE_BACKEND_ENTRY,
     FAKE_ENVIRONMENT_ENTRY,
@@ -86,7 +93,7 @@ class PluginRegistry:
         self._discover()
 
     def _load_builtins(self) -> None:
-        for definition in _BUILTIN_DEFINITIONS:
+        for definition in (*_BUILTIN_DEFINITIONS, _cognitive_entry()):
             self._loaded[definition.descriptor.plugin_id] = definition
             self._distributions[definition.descriptor.plugin_id] = "zugzwang-runtime"
 

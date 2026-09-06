@@ -525,6 +525,17 @@ class CognitionToolBroker:
         """The decision-scoped tool-operation pool."""
         return self._budget
 
+    def action_id_for(self, node_id: str, uci: str) -> str | None:
+        """action_id of a UCI at one node (complete legal set; None if illegal)."""
+        state = self._states.get(node_id)
+        if state is None:
+            return None
+        index = self._full_legal_index(state)
+        for action_id, candidate in index.items():
+            if candidate == uci:
+                return action_id
+        return None
+
     def resolve_action(self, node_id: str, action_ref: str) -> str | None:
         """Resolve an action reference (action_id or UCI) at one node.
 

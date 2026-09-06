@@ -618,9 +618,7 @@ def test_readonly_export_never_touches_source(tmp_path: Path) -> None:
         "journal": conn.execute("PRAGMA journal_mode").fetchone()[0],
         "synchronous": conn.execute("PRAGMA synchronous").fetchone()[0],
         "rows": conn.execute("SELECT * FROM t").fetchall(),
-        "schema": conn.execute(
-            "SELECT sql FROM sqlite_master WHERE name='t'"
-        ).fetchone()[0],
+        "schema": conn.execute("SELECT sql FROM sqlite_master WHERE name='t'").fetchone()[0],
         "size": source.stat().st_size,
         "bytes": source.read_bytes(),
     }
@@ -631,9 +629,11 @@ def test_readonly_export_never_touches_source(tmp_path: Path) -> None:
     engine = database.open()
     with engine.connect() as read:
         assert read.execute(sa.text("SELECT v FROM t")).fetchone()[0] == "hello"
-        with pytest.raises(Exception, match="(?i)read.?only|attempt to write"):
-            with engine.begin() as write:
-                write.execute(sa.text("INSERT INTO t VALUES (2,'hack')"))
+    with (
+        pytest.raises(Exception, match=r"(?i)read.?only|attempt to write"),
+        engine.begin() as write,
+    ):
+        write.execute(sa.text("INSERT INTO t VALUES (2,'hack')"))
     database.close()
 
     conn = sqlite3.connect(str(source))
@@ -641,9 +641,7 @@ def test_readonly_export_never_touches_source(tmp_path: Path) -> None:
         "journal": conn.execute("PRAGMA journal_mode").fetchone()[0],
         "synchronous": conn.execute("PRAGMA synchronous").fetchone()[0],
         "rows": conn.execute("SELECT * FROM t").fetchall(),
-        "schema": conn.execute(
-            "SELECT sql FROM sqlite_master WHERE name='t'"
-        ).fetchone()[0],
+        "schema": conn.execute("SELECT sql FROM sqlite_master WHERE name='t'").fetchone()[0],
     }
     conn.close()
     assert after == {k: before[k] for k in after}

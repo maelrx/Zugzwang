@@ -281,7 +281,7 @@ class CognitiveLoop:
                 request_artifact_id=request_artifact_id,
             )
 
-            proposals = self._parse_proposals(normalized, ordinal)
+            proposals = self._parse_proposals(normalized, ordinal, broker)
             trace.note_proposal(ordinal, proposals=proposals)
 
             finalize_proposal = next((p for p in proposals if p.tool == FINALIZE_TOOL), None)
@@ -364,10 +364,13 @@ class CognitiveLoop:
     def _call_context_for(self, ordinal: int) -> CallContext:
         if self._call_context is not None:
             return self._call_context
+        broker = self._broker_factory(f"{self.decision_id}:ctx-{ordinal:04d}", ordinal)
+        root = broker.root_node_id or ""
         return CallContext(
             run_id=self.decision_id,
             step_id=f"{self.decision_id}:round-{ordinal:04d}",
             attempt_id=f"{self.decision_id}:{ordinal:04d}",
+            fingerprint=f"cognitive-navigation:{self.decision_id}:{root}",
         )
 
     # -- request building (§12.4: what the model receives) -----------------------
@@ -452,7 +455,9 @@ class CognitiveLoop:
 
     # -- response parsing (native tools vs JSON commands, §12.1) ------------------
 
-    def _parse_proposals(self, response: NormalizedResponse, ordinal: int) -> list[_Proposal]:
+    def _parse_proposals(
+        self, response: NormalizedResponse, ordinal: int, broker: CognitionToolBroker
+    ) -> list[_Proposal]:
         proposals: list[_Proposal] = []
         for index, call in enumerate(response.tool_calls):
             tool = call.tool_name
@@ -470,14 +475,66 @@ class CognitiveLoop:
                 command = _parse_json_command(text)
                 if command is not None:
                     synthetic_id = f"{self.decision_id}:r{ordinal:04d}:json:0"
-                    proposals.append(
-                        _Proposal(
-                            provider_tool_call_id=synthetic_id,
-                            tool=str(command.get("command", "")),
-                            arguments=cast(dict[str, Any], command.get("arguments") or {}),
-                        )
+                    tool = str(command.get("command", ""))
+                    raw_arguments: Any = command.get("arguments") or {}
+                    arguments = (
+                        dict(cast("dict[str, Any]", raw_arguments))
+                        if isinstance(raw_arguments, dict)
+                        else {}
                     )
+                    resolved = self._resolve_json_arguments(broker, tool, arguments)
+                    if resolved is None:
+                        proposals.append(
+                            _Proposal(
+                                provider_tool_call_id=synthetic_id,
+                                tool="board_observe",
+                                arguments={"node_id": ""},
+                            )
+                        )
+                    else:
+                        proposals.append(
+                            _Proposal(
+                                provider_tool_call_id=synthetic_id,
+                                tool=tool,
+                                arguments=resolved,
+                            )
+                        )
         return proposals
+
+    def _resolve_json_arguments(
+        self, broker: CognitionToolBroker, tool: str, arguments: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Resolve compact JSON-command arguments against the REAL graph.
+
+        ``node_id`` (or ``node``) defaults to the decision root; a bare
+        ``action`` (UCI) is resolved to the root-bound action_id over the
+        complete legal set. Unknown tools fail the parse: an unresolvable
+        proposal is a protocol error, never a silent substitution.
+        """
+        if tool not in {
+            "board_observe",
+            "board_inspect",
+            "board_expand",
+            "board_finalize",
+        }:
+            return None
+        root = broker.root_node_id or ""
+        node = arguments.get("node_id") or arguments.get("node") or root
+        if not isinstance(node, str) or not node:
+            return None
+        resolved = dict(arguments)
+        resolved["node_id"] = node
+        action = arguments.get("action")
+        if isinstance(action, str) and action:
+            action_id = broker.action_id_for(node, action)
+            if action_id is None:
+                return None
+            resolved["action_id"] = action_id
+            if tool == "board_expand" and "action_ids" not in resolved:
+                resolved["action_ids"] = [action_id]
+            if tool == "board_finalize":
+                resolved["action"] = action
+        return resolved
 
     # -- execution ----------------------------------------------------------------
 

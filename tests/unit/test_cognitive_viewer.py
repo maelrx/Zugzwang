@@ -264,9 +264,7 @@ def test_exporter_snapshot_loads_real_bundle(tmp_path) -> None:
         cas=cas,
         engine=engine,
     )
-    probe = session.execute(
-        "board_observe", {"node_id": "node-root"}, idempotency_key="v-obs"
-    )
+    probe = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="v-obs")
     assert probe.ok
     action_id = probe.result["packet"]["legal_actions"]["items"][0]["action_id"]
     expand = session.execute(

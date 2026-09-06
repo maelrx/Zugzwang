@@ -891,6 +891,10 @@ class DurableRunCoordinator:
             max_strategy_calls = max(1, strategy.descriptor.max_model_calls)
             decision_session: Any = None
             if getattr(strategy, "requires_decision_session", False):
+                # The decision row references the step row: flush the queued
+                # step/episode writes before opening the session, or the FK
+                # fails against rows still sitting in the writer queue.
+                await self._writer.flush()
                 decision_session = self._open_cognitive_session(
                     run_id=run_id,
                     episode_id=episode_id,
@@ -898,6 +902,7 @@ class DurableRunCoordinator:
                     decision_ordinal=ordinal,
                     state=state,
                     strategy=strategy,
+                    condition=condition,
                 )
             while True:
                 decision_context = DecisionContext(
@@ -1955,6 +1960,7 @@ class DurableRunCoordinator:
         decision_ordinal: int,
         state: Any,
         strategy: DecisionStrategy,
+        condition: ResolvedCondition,
     ) -> Any:
         """Open one CognitiveBoard decision session for a step (§26.1).
 
@@ -1967,6 +1973,10 @@ class DurableRunCoordinator:
                 f"strategy {getattr(strategy, 'strategy_id', '?')!r} requires a "
                 "cognitive session factory (DurableRunServices provides one)"
             )
+        raw_mode = condition.task.config.get("cognitive_interaction_mode", "native_tools")
+        interaction_mode = (
+            str(raw_mode) if raw_mode in {"native_tools", "json_commands"} else "native_tools"
+        )
         return self._cognitive_session_factory(
             run_id=run_id,
             episode_id=episode_id,
@@ -1974,6 +1984,7 @@ class DurableRunCoordinator:
             decision_ordinal=decision_ordinal,
             state=state,
             strategy=strategy,
+            interaction_mode=interaction_mode,
         )
 
     def _strategy_for(self, condition: ResolvedCondition) -> DecisionStrategy:

@@ -121,9 +121,7 @@ def build_snapshot(
     return _redact(snapshot)
 
 
-def _snapshot_state_loader(
-    journal: CognitionJournal, cas: ContentAddressedStore
-):
+def _snapshot_state_loader(journal: CognitionJournal, cas: ContentAddressedStore):
     """Restore FENs for the snapshot from the durable state artifacts."""
     from zugzwang_chess.environment.standard import StandardChessEnvironment
     from zugzwang_core.domain.artifacts import ArtifactPayload
@@ -137,10 +135,7 @@ def _snapshot_state_loader(
             import sqlalchemy as sa
 
             row = conn.execute(
-                sa.text(
-                    "SELECT state_artifact_id FROM cb_state_snapshots "
-                    "WHERE state_key = :k"
-                ),
+                sa.text("SELECT state_artifact_id FROM cb_state_snapshots WHERE state_key = :k"),
                 {"k": state_key},
             ).fetchone()
         if row is None:
@@ -149,17 +144,13 @@ def _snapshot_state_loader(
         if data is None:
             return None
         return environment.restore(
-            ArtifactPayload(
-                media_type="application/x-zugzwang-chess-state+json", data=data
-            )
+            ArtifactPayload(media_type="application/x-zugzwang-chess-state+json", data=data)
         )
 
     return load
 
 
-def _eligible_memories(
-    journal: CognitionJournal, decision_id: str
-) -> list[dict[str, Any]]:
+def _eligible_memories(journal: CognitionJournal, decision_id: str) -> list[dict[str, Any]]:
     """Eligible memories bound to THIS decision (TEST-052 direction).
 
     Reads the decision's own memory binding, then lists what the eligibility
@@ -169,9 +160,7 @@ def _eligible_memories(
 
     with journal.connect() as conn:
         binding = conn.execute(
-            sa.text(
-                "SELECT memory_snapshot_id FROM cb_decisions WHERE decision_id = :id"
-            ),
+            sa.text("SELECT memory_snapshot_id FROM cb_decisions WHERE decision_id = :id"),
             {"id": decision_id},
         ).fetchone()
     if binding is None or binding[0] is None:
@@ -180,7 +169,7 @@ def _eligible_memories(
     from zugzwang_runtime.cognition.memory import ScopedMemoryStore
 
     store = ScopedMemoryStore.__new__(ScopedMemoryStore)
-    store._database = journal._database  # noqa: SLF001 — same-package reader
+    store._database = journal._database
     recalled = store.recall(
         snapshot_id=snapshot_id,
         scope_kind="episode",

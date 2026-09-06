@@ -255,3 +255,27 @@ class CognitiveNavigationStrategy:
                 )
             )
         return out
+
+
+class CognitiveNavigationStrategyDefinition:
+    """Plugin entry exposing chess.cognitive_navigation (installed by runtime)."""
+
+    @property
+    def descriptor(self):  # type: ignore[no-untyped-def]
+        from zugzwang_core.ports.plugin import PluginDescriptor, PluginKind, TrustLevel
+
+        return PluginDescriptor(
+            plugin_id="chess.cognitive_navigation",
+            plugin_version="0.2.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R7", "cognitive"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+    def create(self, **kwargs: Any) -> CognitiveNavigationStrategy:
+        rounds: Any = kwargs.get("max_rounds", 4)
+        return CognitiveNavigationStrategy(max_rounds=int(rounds) if isinstance(rounds, int) else 4)
+
+
+COGNITIVE_NAVIGATION_STRATEGY_ENTRY = CognitiveNavigationStrategyDefinition()

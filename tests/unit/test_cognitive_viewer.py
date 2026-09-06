@@ -130,13 +130,17 @@ def _decision_harness(tmp_path):
 
 
 def _snapshot(tmp_path) -> dict:
-    import sys
+    import importlib.util
 
-    sys.path.insert(0, "scripts")
-    from build_cognitive_viewer import build_snapshot
+    spec = importlib.util.spec_from_file_location(
+        "build_cognitive_viewer", "scripts/build_cognitive_viewer.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
     database, cas = _decision_harness(tmp_path)
-    return build_snapshot(database, cas, "dec-view-0001")
+    return module.build_snapshot(database, cas, "dec-view-0001")
 
 
 def test_snapshot_is_post_hoc_without_engine(tmp_path) -> None:
@@ -147,9 +151,7 @@ def test_snapshot_is_post_hoc_without_engine(tmp_path) -> None:
     assert snapshot["engine"] is None
     assert _parse_snapshot(snapshot) is snapshot
     # No engine import anywhere on the export path.
-    import scripts.build_cognitive_viewer as builder
-
-    with open(builder.__file__) as handle:
+    with open("scripts/build_cognitive_viewer.py") as handle:
         source = handle.read()
     assert "stockfish" not in source.lower()
     assert "localEngine" not in source
@@ -163,8 +165,13 @@ def test_timeline_cites_journal_bytes(tmp_path) -> None:
     assert len(ops) >= 1
     for op in ops:
         assert op["operation_id"].startswith("operation_id:v2:")
+        assert op["result_artifact_id"].startswith("sha256:")
     assert snapshot["audit"]["artifacts_verified"] >= 1
     assert snapshot["audit"]["artifacts_failed"] == []
+    # Real state vs focus are distinct sections; memories key exists.
+    assert snapshot["real_state"]["status"] == snapshot["status"]
+    assert snapshot["focus"]["node_id"] == "node-root"
+    assert snapshot["eligible_memories"] == []
 
 
 def test_bundle_import_without_script(tmp_path) -> None:

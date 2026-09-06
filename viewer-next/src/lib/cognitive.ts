@@ -13,7 +13,18 @@ export interface CognitiveOperation {
   tool: string;
   status: "PREPARED" | "COMMITTED" | "REJECTED" | "FAILED";
   error_code: string | null;
+  result_artifact_id: string | null;
   artifact_verified?: boolean;
+}
+
+export interface DecisionFocus {
+  node_id: string | null;
+  bound_nodes: string[];
+}
+
+export interface EligibleMemory {
+  memory_id: string;
+  eligibility_reason: string;
 }
 
 export interface CognitiveSnapshot {
@@ -26,6 +37,15 @@ export interface CognitiveSnapshot {
   operations_open: string[];
   exposure_watermark: number;
   budget_balance: Record<string, { reserved: number; used: number; remaining: number }>;
+  real_state: {
+    status: string;
+    selected_action: string | null;
+    operations_settled: number;
+    operations_open: string[];
+    exposure_watermark: number;
+  };
+  focus: DecisionFocus;
+  eligible_memories: EligibleMemory[];
   audit: {
     decision_id: string;
     status: string;
@@ -53,6 +73,10 @@ export function parseSnapshot(raw: unknown): CognitiveSnapshot {
   }
   if (snap["engine"] !== null && snap["engine"] !== undefined) {
     throw new Error("refusing snapshot with engine reference");
+  }
+  const audit = snap["audit"] as { operations?: unknown } | undefined;
+  if (!audit || !Array.isArray(audit.operations)) {
+    throw new Error("snapshot audit.operations is not an array");
   }
   return snap as unknown as CognitiveSnapshot;
 }

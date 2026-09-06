@@ -69,21 +69,37 @@ def build_snapshot(
     plan = resume_decision(journal, decision_id)
     report = audit_decision(journal, cas, decision_id)
     exported = export_report(report)
+    focus = _decision_focus(journal, decision_id)
     snapshot = {
         "schema_version": SNAPSHOT_SCHEMA,
         "decision_id": decision_id,
         "status": plan.status,
         "selected_action": plan.selected_action,
+        "real_state": {
+            "status": plan.status,
+            "selected_action": plan.selected_action,
+            "operations_settled": plan.operations_settled,
+            "operations_open": plan.operations_open,
+            "exposure_watermark": plan.exposure_watermark,
+        },
+        "focus": focus,
         "next_round_ordinal": plan.next_round_ordinal,
         "operations_settled": plan.operations_settled,
         "operations_open": plan.operations_open,
         "exposure_watermark": plan.exposure_watermark,
         "budget_balance": plan.budget_balance,
+        "eligible_memories": [],
         "audit": exported,
         "mode": "post_hoc",
         "engine": None,
     }
     return _redact(snapshot)
+
+
+def _decision_focus(journal: CognitionJournal, decision_id: str) -> dict[str, Any]:
+    """Focus node (first bound) vs real decision state (§38.11)."""
+    nodes = journal.bound_node_ids(decision_id)
+    return {"node_id": nodes[0] if nodes else None, "bound_nodes": nodes}
 
 
 def main(argv: list[str] | None = None) -> int:

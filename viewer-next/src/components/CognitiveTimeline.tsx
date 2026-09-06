@@ -68,6 +68,17 @@ export default function CognitiveTimeline({ snapshot }: Props): JSX.Element {
           {snapshot.selected_action ? ` · selected ${snapshot.selected_action}` : ""}
         </p>
       </header>
+      <section aria-label="Real state versus focus">
+        <h3>real state vs focus</h3>
+        <dl>
+          <dt>real status</dt>
+          <dd>{snapshot.real_state.status}</dd>
+          <dt>focus node</dt>
+          <dd>{snapshot.focus.node_id ?? "none"}</dd>
+          <dt>bound nodes</dt>
+          <dd>{snapshot.focus.bound_nodes.join(", ") || "none"}</dd>
+        </dl>
+      </section>
       <ol>
         {ops.map((op, index) => (
           <li
@@ -82,6 +93,8 @@ export default function CognitiveTimeline({ snapshot }: Props): JSX.Element {
               <dl>
                 <dt>operation_id</dt>
                 <dd>{op.operation_id}</dd>
+                <dt>result artifact</dt>
+                <dd>{op.result_artifact_id ?? "none"}</dd>
                 <dt>artifact verified</dt>
                 <dd>{String(op.artifact_verified ?? "unknown")}</dd>
               </dl>
@@ -89,6 +102,18 @@ export default function CognitiveTimeline({ snapshot }: Props): JSX.Element {
           </li>
         ))}
       </ol>
+      {snapshot.eligible_memories.length > 0 ? (
+        <section aria-label="Eligible memories">
+          <h3>eligible memories</h3>
+          <ul>
+            {snapshot.eligible_memories.map((memory) => (
+              <li key={memory.memory_id}>
+                {memory.memory_id} · {memory.eligibility_reason}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {units.length > 0 ? (
         <table aria-label="Budget balance">
           <thead>

@@ -122,6 +122,7 @@ def audit_decision(
             "tool": tool_name,
             "status": status,
             "error_code": error_code,
+            "result_artifact_id": result_artifact,
         }
         if result_artifact is not None and verify_payloads:
             ok, _ = _verify_artifact(cas, result_artifact)

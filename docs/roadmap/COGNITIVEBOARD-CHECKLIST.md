@@ -43,13 +43,13 @@ flowchart TD
 
 ### Fase 2 — Contratos
 
-- [ ] **CB-WO-02** — contratos e manifest (§38.3) → **ZGW-0089** · pending
-  - [ ] Módulo `core/cognition`: DTOs (StateIdentity, PositionPacket, PositionDelta, DecisionContext, ToolEnvelope, DecisionState)
-  - [ ] Port de identidade de estado + canonicalização v2 (state/position/move keys)
-  - [ ] Extensão opcional do DecisionContext
-  - [ ] Envelope de tools com catálogo de erros (§42.6)
-  - [ ] Schemas JSON regenerados (zugzwang schema)
-  - [ ] Aceitação: validação de exemplos, rejection de campos desconhecidos, testes de import, compatibilidade com descriptors antigos
+- [x] **CB-WO-02** — contratos e manifest (§38.3) → **ZGW-0089** · PR [#27](https://github.com/maelrx/Zugzwang/pull/27)
+  - [x] DTOs de cognição em `core/domain/cognition.py`: chaves §7.2 (state/position/trajectory/node/action/packet/observation/operation — sha256 integral, canonical JSON), máquina de estados §12.2 (agregados + fases internas + transições legais), config delimitada com flags default-off (G-CB-08), DecisionManifest com content hash
+  - [x] Envelope de tools fiel ao §42.6 (meta com 11 campos, result XOR error, retryable_under_policy) + catálogo de erros §15.1 (16 códigos, categoria + classe de retry, `max_protocol_errors` explícito)
+  - [x] Ports §11.1/§26.1: `StateIdentityPort` e `CognitiveSession` (runtime-checkable); `DecisionContext.decision_session` opcional (aditivo, legacy válido)
+  - [x] Schemas JSON regenerados (`cb-tool-envelope`, `cb-decision-manifest`, `cb-config`)
+  - [x] Aceitação: validação de exemplos (fixtures × modelos × JSON Schema Draft 2020-12), rejection de campos desconhecidos, imports limpos, compatibilidade com descriptors antigos
+  - [x] Revisão (code-review skill, 2 eixos) aplicada — envelope reescrito para o §42.6 exato, transições estritas, classes de retry distintas; 276 offline
 
 ### Fase 3 — Percepção
 
@@ -105,5 +105,5 @@ flowchart TD
 |---|---|---|---|---|
 | 2026-09-06 | Fase 1 — baseline | ZGW-0087 | #25 | Code review 2 eixos aplicado; 261 offline; TEST-081 verde |
 | 2026-09-06 | Tracking | ZGW-0088 | este PR | Este checklist |
-| — | Fase 2 — contratos | ZGW-0089 | pending | |
-| — | Fase 3 — percepção | ZGW-0090 | pending | |
+| 2026-09-06 | Fase 2 — contratos | ZGW-0089 | [#27](https://github.com/maelrx/Zugzwang/pull/27) | Contratos de cognição fiéis ao §42.6/§12.2/§15; 34 testes de contrato; review aplicado |
+| — | Fase 3 — percepção | ZGW-0090 | pending | Depende do merge de ZGW-0089 (contracts) |

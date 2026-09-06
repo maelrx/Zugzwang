@@ -193,3 +193,129 @@ def test_snapshot_carries_no_secrets(tmp_path) -> None:
     flat = json.dumps(snapshot)
     assert "Bearer " not in flat
     assert snapshot["engine"] is None
+
+
+def test_exporter_snapshot_loads_real_bundle(tmp_path) -> None:
+    """ZGW-0101/TEST-061: build_cognitive_viewer over a scratch decision yields
+    a snapshot whose root focus, FENs, operations, budget and memories are
+    REAL journal rows — parsed by the same contract the TS loader enforces."""
+    import json
+    import subprocess
+    import sys
+
+    from sqlalchemy import text
+
+    from zugzwang_chess.cognition import ChessPerception
+    from zugzwang_chess.environment.standard import ChessGameState, StandardChessEnvironment
+    from zugzwang_runtime.artifacts.cas import ContentAddressedStore
+    from zugzwang_runtime.cognition.session import DecisionSession
+    from zugzwang_runtime.persistence.cognition import CognitionJournal
+    from zugzwang_runtime.persistence.database import Database
+    from zugzwang_runtime.persistence.repositories import SchemaManager
+
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    database = Database(workspace / "state.db", wal_policy="ephemeral")
+    engine = database.open()
+    SchemaManager(engine).upgrade()
+    with engine.connect() as conn:
+        for stmt in (
+            "INSERT INTO artifacts (artifact_id, algorithm, size_bytes, media_type, "
+            "relative_path, created_at) VALUES ('art:seed','sha256',1,"
+            "'application/json','cb/seed.json','2026-09-06T00:00:00Z')",
+            "INSERT INTO runs (run_id, condition_id, status, protocol_hash, "
+            "declared_assistance, projection_version, assistance_violated) "
+            "VALUES ('run-1','cond-1','RUNNING','proto','H0',0,0)",
+            "INSERT INTO episodes (episode_id, run_id, ordinal, task_type, seed, "
+            "status, assistance_violated) VALUES ('ep-1','run-1',0,"
+            "'chess.full_game',7,'RUNNING',0)",
+            "INSERT INTO steps (step_id, episode_id, ordinal, actor_id, status, "
+            "assistance_violated) VALUES ('st-1','ep-1',0,'model:main','RUNNING',0)",
+            "INSERT INTO search_sessions (search_session_id, run_id, algorithm, "
+            "algorithm_version, namespace, root_node_id, budgets_json, stats_json, "
+            "status, created_at) VALUES ('sess-1','run-1','alg','0.1','ns',"
+            "'node-root','{}','{}','RUNNING','2026-09-06T00:00:00Z')",
+            "INSERT INTO search_nodes (node_id, search_session_id, position_key, "
+            "trajectory_key, state_ref, depth, terminal, created_by, status) "
+            "VALUES ('node-root','sess-1','pos:root','traj:root','cas://root',"
+            "0,0,'perception','OPEN')",
+        ):
+            conn.execute(text(stmt))
+        conn.commit()
+    cas = ContentAddressedStore(workspace / "cas")
+    journal = CognitionJournal(database)
+    session = DecisionSession.open(
+        decision_id="dec-view-0001",
+        step_id="st-1",
+        decision_ordinal=0,
+        search_session_id="sess-1",
+        strategy_id="chess.cognitive_navigation",
+        strategy_version="0.2.0",
+        interaction_mode="native_tools",
+        policy_hash="b" * 64,
+        config={},
+        states={"node-root": ChessGameState()},
+        journal=journal,
+        perception=ChessPerception(
+            environment=StandardChessEnvironment(),
+            rules_version="standard/v1",
+            policy_hash="b" * 64,
+        ),
+        cas=cas,
+        engine=engine,
+    )
+    probe = session.execute(
+        "board_observe", {"node_id": "node-root"}, idempotency_key="v-obs"
+    )
+    assert probe.ok
+    action_id = probe.result["packet"]["legal_actions"]["items"][0]["action_id"]
+    expand = session.execute(
+        "board_expand",
+        {"node_id": "node-root", "action_ids": [action_id]},
+        idempotency_key="v-expand",
+    )
+    assert expand.ok
+
+    out = workspace / "cognitive.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_cognitive_viewer.py",
+            "--db",
+            str(workspace / "state.db"),
+            "--cas",
+            str(workspace / "cas"),
+            "--decision",
+            "dec-view-0001",
+            "--out",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    snapshot = json.loads(out.read_text(encoding="utf-8"))
+    assert snapshot["schema_version"] == "zgw.cognitive-snapshot/v1"
+    assert snapshot["mode"] == "post_hoc" and snapshot["engine"] is None
+    # Real root and focus: verifiable FENs, not empty placeholders.
+    assert snapshot["focus"]["node_id"] == "node-root"
+    assert len(snapshot["nodes"]) == 2
+    root_node = next(n for n in snapshot["nodes"] if n["node_id"] == "node-root")
+    assert root_node["fen"] == ChessGameState().fen
+    child_node = next(n for n in snapshot["nodes"] if n["node_id"] != "node-root")
+    assert child_node["depth_plies"] == 1 and child_node["fen"] != root_node["fen"]
+    # Real operations, results, budget: journal rows, not constants.
+    assert len(snapshot["audit"]["operations"]) == 2
+    assert snapshot["operations_settled"] == 2
+    assert snapshot["budget_balance"]["tool_operations"]["used"] == 2
+    assert snapshot["exposure_watermark"] == 2
+    # The source database survived read-only: journal mode and rows intact.
+    with engine.connect() as conn:
+        ops = conn.execute(
+            text(
+                "SELECT COUNT(*) FROM cb_tool_operations "
+                "WHERE decision_id = 'dec-view-0001' AND status = 'COMMITTED'"
+            )
+        ).scalar_one()
+    assert ops == 2

@@ -120,3 +120,36 @@ def test_comparative_budget_counts_formal_work() -> None:
     assert report["ops_deltas"] == [{"delta": 1.0, "sign": "+"}]
     assert report["cost_money"] == "unknown"
     assert report["cost_formal_ops"] == 1.0
+    assert report["total_off"] == 2.0
+    assert report["total_on"] == 3.0
+    assert report["delta"] == 1.0
+    assert report["pairs_unknown_metric"] == 0
+
+
+def test_missing_or_nonfinite_metrics_are_rejected_not_zeroed() -> None:
+    """ZGW-0101/TEST-066: absent/NaN/Inf metrics exclude the pair visibly."""
+    import math
+
+    from scripts.analyze_cb_ablation import analyze
+
+    base = {
+        "position": "p",
+        "split": "dev",
+        "versions": "v",
+        "route": "fake-direct",
+        "seed": "1",
+        "selection": "e2e4",
+    }
+    pairs = [
+        (dict(base, ops_charged=8), dict(base, ops_charged=9)),
+        (dict(base, ops_charged=None), dict(base, ops_charged=9)),
+        (dict(base, ops_charged=float("nan")), dict(base, ops_charged=9)),
+        (dict(base, ops_charged=float("inf")), dict(base, ops_charged=9)),
+    ]
+    report = analyze(pairs)
+    assert report["pairs_complete"] == 1
+    assert report["pairs_unknown_metric"] == 3
+    assert report["pairs_excluded"] == 3
+    assert report["total_off"] == 8.0
+    assert report["total_on"] == 9.0
+    assert math.isnan(report["delta"]) is False

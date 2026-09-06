@@ -103,7 +103,10 @@ flowchart TD
 
 ### Fase 6 — Ciência
 
-- [ ] **CB-WO-11** — primeira ablação preregistrada (§38.12) → pending (depende W8)
+- [x] **CB-WO-11** — primeira ablação preregistrada (§38.12) → **ZGW-0098** · PR [#36](https://github.com/maelrx/Zugzwang/pull/36) (empilhado no #35; review 2 eixos aplicado em 95262eb)
+  - [x] Prereg ABLATION_CB_01 (condições congeladas, plano pré-análise, route freeze, custo unknown)
+  - [x] `analyze_cb_ablation.py` (perspectiva, mate fora da média, sinal, pareamento com excluídos contados, custo formal)
+  - [x] TEST-071..074 (4 testes); 389 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
 - [ ] **CB-WO-12** — skills versionadas (§38.13) → pending (depende W9)
 - [ ] **CB-WO-13** — planos e premissas (§38.14) → pending (depende W9)
 - [ ] **CB-WO-14** — reancoragem (§38.15) → pending (depende W11; autorização por profiling)

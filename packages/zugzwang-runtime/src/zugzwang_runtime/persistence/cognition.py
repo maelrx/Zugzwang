@@ -56,6 +56,14 @@ class CognitionJournal:
     def _connect(self) -> Connection:
         return self._database.engine().connect()
 
+    def connect(self) -> Connection:
+        """Read connection for sibling readers (resume/audit) in this package.
+
+        Writes stay behind the writer methods; sibling read helpers (resume,
+        audit) share this read path instead of reaching into the private one.
+        """
+        return self._connect()
+
     # -- state snapshots ------------------------------------------------------
 
     def ensure_state_snapshot(

@@ -12,6 +12,7 @@ Revises: 0006
 
 from __future__ import annotations
 
+import sqlalchemy as sa
 from alembic import op
 
 revision = "0007"
@@ -34,6 +35,14 @@ _DDL = [
     )
     """,
     "CREATE INDEX cb_state_position_idx ON cb_state_snapshots(position_key)",
+    """
+    CREATE TRIGGER cb_state_snapshot_no_update BEFORE UPDATE ON cb_state_snapshots
+    BEGIN SELECT RAISE(ABORT, 'state snapshots are immutable'); END;
+    """,
+    """
+    CREATE TRIGGER cb_state_snapshot_no_delete BEFORE DELETE ON cb_state_snapshots
+    BEGIN SELECT RAISE(ABORT, 'state snapshots are immutable'); END;
+    """,
     # -- decisions (intermediate: no CB-M2/M3 snapshot columns) ---------------
     """
     CREATE TABLE cb_decisions (
@@ -82,6 +91,12 @@ _DDL = [
     """,
     "CREATE INDEX cb_node_state_idx ON cb_node_bindings(state_key)",
     """
+    CREATE TRIGGER cb_node_scope_guard BEFORE INSERT ON cb_node_bindings
+    WHEN (SELECT search_session_id FROM search_nodes WHERE node_id = NEW.node_id)
+     <> (SELECT search_session_id FROM cb_decisions WHERE decision_id = NEW.decision_id)
+    BEGIN SELECT RAISE(ABORT, 'node belongs to another search session'); END;
+    """,
+    """
     CREATE TRIGGER cb_node_binding_no_update BEFORE UPDATE ON cb_node_bindings
     BEGIN SELECT RAISE(ABORT, 'node binding is immutable'); END;
     """,
@@ -103,6 +118,12 @@ _DDL = [
         UNIQUE(round_id, decision_id)
     )
     """,
+    """
+    CREATE TRIGGER cb_round_identity_fixed BEFORE UPDATE ON cb_rounds
+    WHEN NEW.decision_id <> OLD.decision_id OR NEW.ordinal <> OLD.ordinal
+     OR NEW.context_artifact_id <> OLD.context_artifact_id
+    BEGIN SELECT RAISE(ABORT, 'round identity and submitted context are immutable'); END;
+    """,
     # -- provider links -------------------------------------------------------
     """
     CREATE TABLE cb_provider_links (
@@ -116,6 +137,16 @@ _DDL = [
         UNIQUE(round_id, transport_ordinal),
         FOREIGN KEY(round_id, decision_id) REFERENCES cb_rounds(round_id, decision_id)
     )
+    """,
+    """
+    CREATE TRIGGER cb_provider_step_guard BEFORE INSERT ON cb_provider_links
+    WHEN (SELECT step_id FROM attempts WHERE attempt_id = NEW.attempt_id)
+     <> (SELECT step_id FROM cb_decisions WHERE decision_id = NEW.decision_id)
+    BEGIN SELECT RAISE(ABORT, 'provider attempt belongs to another step'); END;
+    """,
+    """
+    CREATE TRIGGER cb_provider_link_no_update BEFORE UPDATE ON cb_provider_links
+    BEGIN SELECT RAISE(ABORT, 'provider links are immutable'); END;
     """,
     # -- idempotent tool operations ------------------------------------------
     """
@@ -147,6 +178,18 @@ _DDL = [
     )
     """,
     "CREATE INDEX cb_tool_decision_status_idx ON cb_tool_operations(decision_id, status)",
+    """
+    CREATE TRIGGER cb_operation_identity_fixed BEFORE UPDATE ON cb_tool_operations
+    WHEN NEW.decision_id <> OLD.decision_id OR NEW.round_id <> OLD.round_id
+     OR NEW.tool_name <> OLD.tool_name OR NEW.arguments_hash <> OLD.arguments_hash
+     OR NEW.idempotency_key <> OLD.idempotency_key
+    BEGIN SELECT RAISE(ABORT, 'tool operation identity is immutable'); END;
+    """,
+    """
+    CREATE TRIGGER cb_operation_committed_fixed BEFORE UPDATE ON cb_tool_operations
+    WHEN OLD.status IN ('COMMITTED','REJECTED')
+    BEGIN SELECT RAISE(ABORT, 'settled tool operations are immutable'); END;
+    """,
     # -- observations ---------------------------------------------------------
     """
     CREATE TABLE cb_observations (
@@ -169,6 +212,14 @@ _DDL = [
     )
     """,
     "CREATE INDEX cb_observation_timeline_idx ON cb_observations(decision_id, exposure_sequence)",
+    """
+    CREATE TRIGGER cb_observation_no_update BEFORE UPDATE ON cb_observations
+    BEGIN SELECT RAISE(ABORT, 'observations are immutable'); END;
+    """,
+    """
+    CREATE TRIGGER cb_observation_no_delete BEFORE DELETE ON cb_observations
+    BEGIN SELECT RAISE(ABORT, 'observations are immutable'); END;
+    """,
     # -- budget journal (append-only) -----------------------------------------
     """
     CREATE TABLE cb_budget_reservations (
@@ -238,5 +289,14 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Feature rollback. Refuses to drop when decision data exists (PRD §23.3:
+    no automatic DROP TABLE back to baseline while new runs are present)."""
+    bind = op.get_bind()
+    decision_rows = bind.execute(sa.text("SELECT COUNT(*) FROM cb_decisions")).scalar()
+    if decision_rows:
+        raise RuntimeError(
+            "refusing destructive rollback: cb_decisions holds "
+            f"{decision_rows} row(s); archive or clear decision data first"
+        )
     for table in _DROP_ORDER:
         op.execute(f"DROP TABLE IF EXISTS {table}")

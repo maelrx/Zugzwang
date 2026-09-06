@@ -9,6 +9,7 @@ append-only and reconcilable against the run's budget_ledger.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC
 from typing import Any
 
@@ -20,7 +21,7 @@ from .database import Database
 _DECISION_TRANSITIONS: dict[str, frozenset[str]] = {
     "PREPARING": frozenset({"READY"}),
     "READY": frozenset({"ACTIVE"}),
-    "ACTIVE": frozenset({"READY", "OUTCOME_UNKNOWN", "PAUSED", "SELECTED", "FAILED"}),
+    "ACTIVE": frozenset({"READY", "OUTCOME_UNKNOWN", "SELECTED", "FAILED"}),
     "OUTCOME_UNKNOWN": frozenset({"READY", "PAUSED"}),
     "PAUSED": frozenset(),
     "SELECTED": frozenset({"COMMITTED"}),
@@ -29,7 +30,10 @@ _DECISION_TRANSITIONS: dict[str, frozenset[str]] = {
     "CANCELLED": frozenset(),
 }
 
-_ROUND_TERMINAL = frozenset({"TOOLS_COMMITTED", "FAILED"})
+_ROUND_OPEN_STATUSES = frozenset({"REQUEST_PENDING", "RESPONSE_COMMITTED", "OUTCOME_UNKNOWN"})
+_ROUND_COMPLETION_TARGETS = frozenset(
+    {"RESPONSE_COMMITTED", "TOOLS_COMMITTED", "OUTCOME_UNKNOWN", "FAILED"}
+)
 
 
 def _now() -> str:
@@ -39,10 +43,15 @@ def _now() -> str:
 
 
 class CognitionJournal:
-    """Writer for the CB-M1 decision journal tables (single logical writer)."""
+    """Writer for the CB-M1 decision journal tables (single logical writer).
 
-    def __init__(self, database: Database) -> None:
+    ``clock`` is injectable for deterministic tests (CODING_STANDARDS:
+    injected clocks); production uses UTC wall time.
+    """
+
+    def __init__(self, database: Database, clock: Callable[[], str] | None = None) -> None:
         self._database = database
+        self._clock = clock or _now
 
     def _connect(self) -> Connection:
         return self._database.engine().connect()
@@ -77,7 +86,7 @@ class CognitionJournal:
                     "position_key": position_key,
                     "history_completeness": history_completeness,
                     "state_artifact_id": state_artifact_id,
-                    "created_at": _now(),
+                    "created_at": self._clock(),
                 },
             )
             conn.commit()
@@ -119,7 +128,7 @@ class CognitionJournal:
                     "interaction_mode": interaction_mode,
                     "policy_hash": policy_hash,
                     "config_artifact_id": config_artifact_id,
-                    "created_at": _now(),
+                    "created_at": self._clock(),
                 },
             )
             conn.commit()
@@ -173,7 +182,7 @@ class CognitionJournal:
                 "selection_source": selection_source,
             }
             if finished:
-                params["finished_at"] = _now()
+                params["finished_at"] = self._clock()
             conn.execute(
                 sa.text(
                     f"UPDATE cb_decisions SET status = :new_status{finished}{selection} "
@@ -245,19 +254,31 @@ class CognitionJournal:
                     "ordinal": ordinal,
                     "purpose": purpose,
                     "context_artifact_id": context_artifact_id,
-                    "created_at": _now(),
+                    "created_at": self._clock(),
                 },
             )
             conn.commit()
 
     def complete_round(self, round_id: str, decision_id: str, status: str) -> None:
-        """Close a round with a §12.2 round-boundary status."""
-        if status not in _ROUND_TERMINAL | {"RESPONSE_COMMITTED"}:
+        """Close a round from an open boundary status (§12.2 round statuses)."""
+        if status not in _ROUND_COMPLETION_TARGETS:
             raise DecisionJournalError(
                 "INVALID_ARGUMENTS", f"round cannot complete into {status!r}"
             )
         with self._connect() as conn:
-            result = conn.execute(
+            row = conn.execute(
+                sa.text(
+                    "SELECT status FROM cb_rounds "
+                    "WHERE round_id = :round_id AND decision_id = :decision_id"
+                ),
+                {"round_id": round_id, "decision_id": decision_id},
+            ).fetchone()
+            if row is None or row[0] not in _ROUND_OPEN_STATUSES:
+                raise DecisionJournalError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"round {round_id!r} not open for completion",
+                )
+            conn.execute(
                 sa.text(
                     "UPDATE cb_rounds SET status = :status, completed_at = :completed_at "
                     "WHERE round_id = :round_id AND decision_id = :decision_id "
@@ -265,16 +286,11 @@ class CognitionJournal:
                 ),
                 {
                     "status": status,
-                    "completed_at": _now(),
+                    "completed_at": self._clock(),
                     "round_id": round_id,
                     "decision_id": decision_id,
                 },
             )
-            if result.rowcount != 1:
-                raise DecisionJournalError(
-                    "STATE_REPLAY_MISMATCH",
-                    f"round {round_id!r} not open for completion",
-                )
             conn.commit()
 
     # -- tool operations (idempotent) -----------------------------------------
@@ -298,12 +314,19 @@ class CognitionJournal:
         with self._connect() as conn:
             existing = conn.execute(
                 sa.text(
-                    "SELECT operation_id FROM cb_tool_operations "
+                    "SELECT operation_id, tool_name, arguments_hash FROM cb_tool_operations "
                     "WHERE decision_id = :decision_id AND idempotency_key = :key"
                 ),
                 {"decision_id": decision_id, "key": idempotency_key},
             ).fetchone()
             if existing is not None:
+                # Replay must repeat the same semantic call; a divergent retry
+                # is a contract violation, not a new operation (PRD §15).
+                if existing[1] != tool_name or existing[2] != arguments_hash:
+                    raise DecisionJournalError(
+                        "STATE_REPLAY_MISMATCH",
+                        "idempotency key replayed with divergent tool or arguments",
+                    )
                 conn.commit()
                 return existing[0], False
             conn.execute(
@@ -325,7 +348,7 @@ class CognitionJournal:
                     "tool_name": tool_name,
                     "arguments_hash": arguments_hash,
                     "arguments_artifact_id": arguments_artifact_id,
-                    "created_at": _now(),
+                    "created_at": self._clock(),
                 },
             )
             conn.commit()
@@ -369,7 +392,7 @@ class CognitionJournal:
                     "policy_hash": policy_hash,
                     "exposure_sequence": exposure_sequence,
                     "available_before_selection": int(available_before_selection),
-                    "created_at": _now(),
+                    "created_at": self._clock(),
                 },
             )
             conn.commit()
@@ -402,7 +425,7 @@ class CognitionJournal:
                     "owner_id": owner_id,
                     "unit": unit,
                     "amount": amount,
-                    "created_at": _now(),
+                    "created_at": self._clock(),
                 },
             )
             self._append_entry(
@@ -453,7 +476,7 @@ class CognitionJournal:
                     "UPDATE cb_budget_reservations SET status = 'SETTLED', settled_at = :settled_at "
                     "WHERE reservation_id = :reservation_id AND status = 'RESERVED'"
                 ),
-                {"reservation_id": reservation_id, "settled_at": _now()},
+                {"reservation_id": reservation_id, "settled_at": self._clock()},
             )
             if result.rowcount != 1:
                 raise DecisionJournalError(
@@ -493,6 +516,40 @@ class CognitionJournal:
                 unit=unit,
                 delta_reserved=delta_reserved,
                 delta_used=delta_used,
+                evidence_artifact_id=evidence_artifact_id,
+            )
+            conn.commit()
+
+    def release_budget(
+        self,
+        *,
+        decision_id: str,
+        reservation_id: str,
+        unit: str,
+        evidence_artifact_id: str,
+    ) -> None:
+        """Release an unused reservation (RESERVED -> RELEASED, journal entry)."""
+        with self._connect() as conn:
+            self._reserved_amount(conn, decision_id, reservation_id, unit)
+            result = conn.execute(
+                sa.text(
+                    "UPDATE cb_budget_reservations SET status = 'RELEASED', settled_at = :settled_at "
+                    "WHERE reservation_id = :reservation_id AND status = 'RESERVED'"
+                ),
+                {"reservation_id": reservation_id, "settled_at": self._clock()},
+            )
+            if result.rowcount != 1:
+                raise DecisionJournalError(
+                    "SEMANTICS_MISMATCH", "reservation is not open for release"
+                )
+            self._append_entry(
+                conn,
+                decision_id=decision_id,
+                reservation_id=reservation_id,
+                event_kind="release",
+                unit=unit,
+                delta_reserved=0,
+                delta_used=0,
                 evidence_artifact_id=evidence_artifact_id,
             )
             conn.commit()
@@ -588,7 +645,7 @@ class CognitionJournal:
                 "delta_reserved": delta_reserved,
                 "delta_used": delta_used,
                 "evidence_artifact_id": evidence_artifact_id,
-                "created_at": _now(),
+                "created_at": self._clock(),
             },
         )
 

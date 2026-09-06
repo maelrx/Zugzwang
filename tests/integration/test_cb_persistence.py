@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 
+from zugzwang_core.domain.errors import PersistenceError
 from zugzwang_runtime.persistence.cognition import (
     CognitionJournal,
     DecisionJournalError,
@@ -151,6 +152,49 @@ def test_upgrade_chain_reaches_0007_with_cb_tables(tmp_path) -> None:
         "cb_budget_entries",
     }
     assert expected.issubset(tables)
+
+
+def test_rollback_refused_when_decision_data_exists(tmp_path) -> None:
+    """PRD §23.3: DROP automático não volta ao baseline com runs/decisões novos."""
+    database = Database(tmp_path / "state.db", wal_policy="ephemeral")
+    engine = database.open()
+    SchemaManager(engine).upgrade()
+    conn = engine.connect()
+    _seed_baseline(conn)
+    conn.commit()
+    conn.close()
+    journal = CognitionJournal(database)
+    journal.ensure_state_snapshot(
+        state_key="state_key:v2:" + "a" * 64,
+        state_schema_version="state/v2",
+        rules_version="standard/v1",
+        variant="standard",
+        position_key="position_key:v2:" + "a" * 64,
+        history_completeness="complete",
+        state_artifact_id=_ART,
+    )
+    journal.create_decision(
+        decision_id=DECISION_ID,
+        step_id=STEP_ID,
+        decision_ordinal=0,
+        search_session_id=SESSION_ID,
+        root_state_key="state_key:v2:" + "a" * 64,
+        strategy_id="chess.grounded",
+        strategy_version="0.1.0",
+        interaction_mode="native_tools",
+        policy_hash=POLICY_HASH,
+        config_artifact_id=_ART,
+    )
+    from alembic import command
+    from alembic.config import Config
+
+    from zugzwang_runtime import migration_dir
+
+    config = Config()
+    config.set_main_option("script_location", str(migration_dir))
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{engine.url.database}")
+    with pytest.raises((RuntimeError, PersistenceError)):
+        command.downgrade(config, "0006")
 
 
 def test_feature_rollback_drops_cb_m1_tables(tmp_path) -> None:
@@ -314,6 +358,39 @@ def _reserve(journal: CognitionJournal, reservation_id: str, amount: int) -> Non
         amount=amount,
         evidence_artifact_id=_ART,
     )
+
+
+def test_idempotency_replay_with_divergent_arguments_is_rejected(journal) -> None:
+    """Repetir a chave com tool/argumentos divergentes é violação, não nova operação."""
+    _round(journal)
+    kwargs = {
+        "operation_id": "operation_id:v2:" + "e" * 64,
+        "decision_id": DECISION_ID,
+        "round_id": f"{DECISION_ID}:round-0001",
+        "provider_tool_call_id": "call-1",
+        "command_ordinal": 0,
+        "idempotency_key": "op-key-0001",
+        "tool_name": "board_observe",
+        "arguments_hash": "d" * 64,
+        "arguments_artifact_id": _ART,
+    }
+    journal.record_tool_operation(**kwargs)
+    divergent = dict(kwargs, arguments_hash="9" * 64)
+    with pytest.raises(DecisionJournalError) as exc:
+        journal.record_tool_operation(**divergent)
+    assert exc.value.code == "STATE_REPLAY_MISMATCH"
+
+
+def test_release_returns_unused_reservation(journal) -> None:
+    _reserve(journal, "res-rel", 7)
+    journal.release_budget(
+        decision_id=DECISION_ID,
+        reservation_id="res-rel",
+        unit="tool_operations",
+        evidence_artifact_id=_ART,
+    )
+    report = journal.reconcile_budget(DECISION_ID)
+    assert report["tool_operations"]["remaining"] == 7
 
 
 def test_budget_journal_is_append_only(journal) -> None:

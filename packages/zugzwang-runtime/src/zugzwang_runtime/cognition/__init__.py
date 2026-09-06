@@ -12,6 +12,7 @@ from .broker import (
     ToolExecutionError,
     ToolOperationBudget,
 )
+from .loop import CognitiveLoop, LoopResult, LoopStep, count_protocol_errors, is_retryable
 from .session import (
     DecisionSession,
     cas_artifact_loader,
@@ -24,10 +25,15 @@ __all__ = [
     "ArtifactLoader",
     "ArtifactSink",
     "CognitionToolBroker",
+    "CognitiveLoop",
     "DecisionSession",
+    "LoopResult",
+    "LoopStep",
     "ToolExecutionError",
     "ToolOperationBudget",
     "cas_artifact_loader",
     "cas_artifact_sink",
+    "count_protocol_errors",
     "identity_keys",
+    "is_retryable",
 ]

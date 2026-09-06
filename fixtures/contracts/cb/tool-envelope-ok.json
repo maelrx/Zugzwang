@@ -1,0 +1,22 @@
+{
+  "request": {
+    "operation_id": "operation_id:v2:839986801861e464a8e292dea0c32d88",
+    "decision_id": "dec-cb0001-0000",
+    "round_no": 1,
+    "tool": "board_observe",
+    "arguments": {
+      "view": "basic",
+      "node_id": "node-cb0001-root"
+    }
+  },
+  "result": {
+    "operation_id": "operation_id:v2:839986801861e464a8e292dea0c32d88",
+    "ok": true,
+    "payload": {
+      "views": {
+        "basic": "1. e4 e5 2. Nf3 *"
+      }
+    },
+    "duration_ms": 3
+  }
+}

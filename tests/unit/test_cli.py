@@ -67,8 +67,9 @@ class TestCli:
     def test_schema_export(self, tmp_path) -> None:
         result = runner.invoke(app, ["schema", "--out", str(tmp_path), "--output", "json"])
         assert result.exit_code == 0
-        payload = json.loads(result.output)
-        assert len(payload["schemas"]) == 7
+        payload = json.loads(result.stdout)
+        # 7 kernel schemas + 4 CognitiveBoard contract schemas (ZGW-0089)
+        assert len(payload["schemas"]) == 11
 
     def test_init_and_doctor(self, tmp_path) -> None:
         init_result = runner.invoke(app, ["init", str(tmp_path / "ws"), "--output", "json"])

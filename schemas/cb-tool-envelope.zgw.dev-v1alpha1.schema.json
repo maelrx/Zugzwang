@@ -1,0 +1,194 @@
+{
+  "$defs": {
+    "RetryClass": {
+      "description": "Loop effect of an error (PRD §15.1 'Efeito no loop' + §15.2).",
+      "enum": [
+        "repair_allowed",
+        "no_execution_audited",
+        "withhold_fact",
+        "reject_may_end",
+        "request_correct_input",
+        "no_child",
+        "no_transition",
+        "reduce_or_finalize",
+        "compact_or_finalize",
+        "fail_closed",
+        "pause_or_explicit_retry",
+        "no_effect_acknowledged",
+        "no_partial_output"
+      ],
+      "title": "RetryClass",
+      "type": "string"
+    },
+    "ToolError": {
+      "additionalProperties": false,
+      "description": "One error result inside a tool envelope (PRD §15.1).",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/$defs/ToolErrorCategory"
+        },
+        "retry_class": {
+          "$ref": "#/$defs/RetryClass"
+        },
+        "details": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Details",
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "category",
+        "retry_class"
+      ],
+      "title": "ToolError",
+      "type": "object"
+    },
+    "ToolErrorCategory": {
+      "description": "Category of a tool error (PRD §15.1).",
+      "enum": [
+        "contract",
+        "safety",
+        "exposure",
+        "integrity",
+        "state",
+        "formal",
+        "budget",
+        "operational",
+        "provenance",
+        "compatibility",
+        "transport",
+        "infrastructure",
+        "implementation"
+      ],
+      "title": "ToolErrorCategory",
+      "type": "string"
+    },
+    "ToolRequest": {
+      "additionalProperties": false,
+      "description": "Normalized tool call issued by the model inside one round.",
+      "properties": {
+        "operation_id": {
+          "minLength": 8,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "decision_id": {
+          "minLength": 4,
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "round_no": {
+          "minimum": 0,
+          "title": "Round No",
+          "type": "integer"
+        },
+        "tool": {
+          "minLength": 1,
+          "title": "Tool",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation_id",
+        "decision_id",
+        "round_no",
+        "tool",
+        "arguments"
+      ],
+      "title": "ToolRequest",
+      "type": "object"
+    },
+    "ToolResult": {
+      "additionalProperties": false,
+      "description": "Normalized tool outcome: payload or catalogue error, never both.",
+      "properties": {
+        "operation_id": {
+          "minLength": 8,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "payload": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Payload"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        }
+      },
+      "required": [
+        "operation_id",
+        "ok"
+      ],
+      "title": "ToolResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request + result pair for one idempotent operation (PRD §42.6).",
+  "properties": {
+    "request": {
+      "$ref": "#/$defs/ToolRequest"
+    },
+    "result": {
+      "$ref": "#/$defs/ToolResult"
+    }
+  },
+  "required": [
+    "request",
+    "result"
+  ],
+  "title": "ToolEnvelope",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/cb-tool-envelope/v1alpha1"
+}

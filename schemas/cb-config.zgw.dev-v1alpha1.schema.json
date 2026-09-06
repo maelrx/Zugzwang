@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "description": "Bounded configuration; conservative defaults per PRD §48.3.\n\nFeature flags are all off by default (G-CB-08: reanchoring, parallelism\nand visual stay disabled until ratified and capability-tested).",
+  "properties": {
+    "contract_version": {
+      "const": 2,
+      "default": 2,
+      "title": "Contract Version",
+      "type": "integer"
+    },
+    "max_rounds": {
+      "default": 8,
+      "minimum": 1,
+      "title": "Max Rounds",
+      "type": "integer"
+    },
+    "max_protocol_errors": {
+      "default": 3,
+      "minimum": 1,
+      "title": "Max Protocol Errors",
+      "type": "integer"
+    },
+    "enable_reanchoring": {
+      "default": false,
+      "title": "Enable Reanchoring",
+      "type": "boolean"
+    },
+    "enable_parallelism": {
+      "default": false,
+      "title": "Enable Parallelism",
+      "type": "boolean"
+    },
+    "enable_visual": {
+      "default": false,
+      "title": "Enable Visual",
+      "type": "boolean"
+    },
+    "enable_skills": {
+      "default": false,
+      "title": "Enable Skills",
+      "type": "boolean"
+    }
+  },
+  "title": "CognitiveBoardConfig",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/cb-config/v1alpha1"
+}

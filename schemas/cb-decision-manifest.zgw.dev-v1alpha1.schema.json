@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "description": "Resolved per-decision manifest with canonical content hash (§38.3).\n\nThe hash is computed over the JSON contract representation of the fields\n(model_dump(mode=\"json\")), so it is a pure function of the contract —\nindependent of the Python container types used at the call site.",
+  "properties": {
+    "decision_id": {
+      "minLength": 4,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "contract_version": {
+      "const": 2,
+      "default": 2,
+      "title": "Contract Version",
+      "type": "integer"
+    },
+    "strategy_id": {
+      "minLength": 1,
+      "title": "Strategy Id",
+      "type": "string"
+    },
+    "strategy_version": {
+      "minLength": 1,
+      "title": "Strategy Version",
+      "type": "string"
+    },
+    "model_ref": {
+      "minLength": 1,
+      "title": "Model Ref",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "tool_registry": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Tool Registry",
+      "type": "array"
+    },
+    "max_rounds": {
+      "minimum": 1,
+      "title": "Max Rounds",
+      "type": "integer"
+    },
+    "max_protocol_errors": {
+      "default": 3,
+      "minimum": 1,
+      "title": "Max Protocol Errors",
+      "type": "integer"
+    },
+    "feature_flags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Feature Flags",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "strategy_id",
+    "strategy_version",
+    "model_ref",
+    "seed",
+    "max_rounds",
+    "content_sha256"
+  ],
+  "title": "DecisionManifest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/cb-decision-manifest/v1alpha1"
+}

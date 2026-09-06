@@ -19,17 +19,17 @@ Uma recomendação arquitetural é uma posição argumentada, não consentimento
 
 | Gate | Decisão | Bloqueio | Estado | Recomendação atual |
 |---|---|---|---|---|
-| [GATE-001](#gate-001) | Licença do kernel e substrato de regras | `M0 scaffold público` | **Pendente** | Apache-2.0 no kernel + substrato permissivo de regras atrás de port próprio |
-| [GATE-002](#gate-002) | Piso de Python e matriz de suporte | `Criação de pyproject e lockfile` | **Pendente** | Python >=3.13; CI em 3.13 e 3.14; desenvolvimento principal em 3.13 no primeiro ciclo |
-| [GATE-003](#gate-003) | Retenção padrão de prompts, responses e reasoning | `Defaults de artifact policy` | **Pendente** | Captura integral local privada; export público exige política explícita de derivação/redação |
-| [GATE-004](#gate-004) | Nome do CLI público | `Publicação do entry point` | **Pendente** | Comando canônico `zugzwang`; alias curto `zgw` quando não houver colisão |
+| [GATE-001](#gate-001) | Licença do kernel e substrato de regras | `M0 scaffold público` | **Aceito** | B: GPL-3.0 + python-chess (2026-08-16) |
+| [GATE-002](#gate-002) | Piso de Python e matriz de suporte | `Criação de pyproject e lockfile` | **Aceito** | Python >=3.13; CI 3.13/3.14 (2026-08-16) |
+| [GATE-003](#gate-003) | Retenção padrão de prompts, responses e reasoning | `Defaults de artifact policy` | **Aceito** | Captura integral local privada; export bloqueado (2026-08-16) |
+| [GATE-004](#gate-004) | Nome do CLI público | `Publicação do entry point` | **Aceito** | `zugzwang` canônico + alias `zgw` (2026-08-16) |
 | [GATE-005](#gate-005) | Redistribuição de outputs e artefatos de providers | `Export público de bundles reais` | **Pendente** | Registry de políticas por provider/modelo + confirmação explícita antes de export público |
-| [GATE-006](#gate-006) | Aquisição e distribuição do Stockfish | `UX do evaluator Stockfish` | **Pendente** | Binário fornecido pelo usuário no v0.1; downloader separado e juridicamente auditado depois |
+| [GATE-006](#gate-006) | Aquisição e distribuição do Stockfish | `UX do evaluator Stockfish` | **Aceito** | Binário do operador (SF 18 local, sem redistribuição) (2026-08-16) |
 | [GATE-007](#gate-007) | Estabilidade inicial da API de plugins | `Expectativa pública de compatibilidade` | **Pendente** | Experimental até 0.3; compatibility window de uma minor; contracts explicitamente versionados |
 | [GATE-008](#gate-008) | Escopo de variantes enxadrísticas no primeiro release | `Contrato do environment` | **Pendente** | Standard chess como happy path; variant_id no contrato; Chess960 apenas como capability futura |
 | [GATE-009](#gate-009) | Governança do registry de custos | `Claims econômicos` | **Pendente** | Snapshots manuais versionados por experimento; provider usage é fonte de verdade quando disponível |
 | [GATE-010](#gate-010) | Idioma canônico da documentação | `Política de contribuição internacional` | **Pendente** | README e contrato público em inglês; engenharia canônica inicialmente em PT-BR; tradução progressiva com source-of-truth explícito |
-| [GATE-011](#gate-011) | Matriz inaugural de modelos e orçamento científico | `Execução da primeira suite paga` | **Pendente** | 2 modelos frontier + 2 open-weight/local + fake; orçamento piloto explícito antes de escalar |
+| [GATE-011](#gate-011) | Matriz inaugural de modelos e orçamento científico | `Execução da primeira suite paga` | **Aceito** | muse-spark-1.3 (contributor/free) via opencode router, visão nativa; memória persistente default (2026-09-06) |
 | [GATE-012](#gate-012) | Topologia de publicação de packages | `Release PyPI` | **Pendente** | Monorepo multi-package interno; publicar inicialmente uma distribuição agregadora e somente separar quando houver consumidores reais |
 
 
@@ -56,11 +56,11 @@ Uma recomendação arquitetural é uma posição argumentada, não consentimento
 
 ```yaml
 id: GATE-001
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: 'B — GPL-3.0-or-later + python-chess'
+rationale: 'Menor caminho de engenharia com fidelidade funcional; o core não importa chess concreta.'
+approved_by: Mestre Mael
+selected_at: '2026-08-16'
+revisit_trigger: 'Antes de redistribuir o kernel ou embutir em produto proprietário.'
 ```
 
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
@@ -87,11 +87,11 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 
 ```yaml
 id: GATE-002
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: 'Python >=3.13; CI 3.13/3.14; dev 3.13; sem ilha Rust no v0.1'
+rationale: 'Piso moderno com asyncio nativo; uma única versão de desenvolvimento no primeiro ciclo.'
+approved_by: Mestre Mael
+selected_at: '2026-08-16'
+revisit_trigger: 'Ao considerar suporte a versões LTS antigas.'
 ```
 
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
@@ -119,11 +119,11 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 
 ```yaml
 id: GATE-003
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: 'Captura integral local privada; export público bloqueado (GATE-005)'
+rationale: 'Providers reais liberados para testes locais via adapter opencode; evidência completa fica no CAS/SQLite local.'
+approved_by: Mestre Mael
+selected_at: '2026-08-16'
+revisit_trigger: 'Antes de export público de bundles reais (GATE-005).'
 ```
 
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
@@ -150,11 +150,11 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 
 ```yaml
 id: GATE-004
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: '`zugzwang` canônico + alias `zgw`'
+rationale: 'Nome do projeto, sem colisão conhecida; alias curto para uso diário.'
+approved_by: Mestre Mael
+selected_at: '2026-08-16'
+revisit_trigger: 'Somente em colisão real de namespace no PyPI.'
 ```
 
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
@@ -212,11 +212,11 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 
 ```yaml
 id: GATE-006
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: 'Binário fornecido pelo operador; download oficial local (SF 18, sha256 f89b3b35...) para /home/mael/.local/bin/stockfish'
+rationale: 'Sem redistribuição: o binário não entra no repo nem em bundles.'
+approved_by: Mestre Mael
+selected_at: '2026-08-16'
+revisit_trigger: 'Antes de empacotar/redistribuir qualquer binário.'
 ```
 
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
@@ -347,10 +347,10 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 
 ## GATE-011: Matriz inaugural de modelos e orçamento científico
 
-**Bloqueia:** Execução da primeira suite paga  
-**ADR vinculada:** `none`  
+**Bloqueava:** Execução da primeira suite paga  
+**ADR vinculada:** `ADR-046` (emenda 2026-09-06)  
 **Recomendação de arquitetura:** 2 modelos frontier + 2 open-weight/local + fake; orçamento piloto explícito antes de escalar  
-**Enquanto pendente:** Executar somente fake e smoke tests locais.
+**Estado:** ACEITO em 2026-09-06 — matriz muse-spark-1.3 via opencode (free+Go), visão nativa; memória persistente como default experimental para full-game.
 
 | Opção | Escolha | Impacto direto e indireto |
 |---|---|---|
@@ -368,11 +368,11 @@ O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a tracea
 
 ```yaml
 id: GATE-011
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: 'opencode (plano free+Go, router local 127.0.0.1:8788, openai-responses): muse-spark-1.3-contributor com fallback muse-spark-1.3-free até esgotar a cota; visão nativa do próprio modelo — sem mimo-v2.5 nem deepseek-v4-flash; piloto ~210 calls n=10, full n>=24; memória persistente vira default experimental para full-game'
+rationale: 'Padrão único de acesso validado operacionalmente overnight; muse-spark-1.3 elimina o confundimento modelo×condição do RGB; resultados positivos validados (vitória 46.Rb8#, empate 224 plies) vêm de memória persistente.'
+approved_by: Mestre Mael
+selected_at: '2026-09-06'
+revisit_trigger: 'Esgotamento da cota free/Go, mudança de assinatura, ou escala de orçamento além da assinatura.'
 ```
 
 O agente responsável deve atualizar `DECISIONS.yaml`, a ADR vinculada, a traceability matrix e qualquer template de scaffold afetado. A ausência de resposta nunca autoriza a opção recomendada automaticamente.
@@ -451,11 +451,11 @@ matriz inaugural da suite 0.1 com orçamento piloto de ~210 calls?
 
 ```yaml
 id: GATE-011
-selected_option: null
-rationale: null
-approved_by: null
-selected_at: null
-revisit_trigger: null
+selected_option: 'opencode (plano free+Go, router local 127.0.0.1:8788, openai-responses): muse-spark-1.3-contributor com fallback muse-spark-1.3-free até esgotar a cota; visão nativa do próprio modelo — sem mimo-v2.5 nem deepseek-v4-flash; piloto ~210 calls n=10, full n>=24; memória persistente vira default experimental para full-game'
+rationale: 'Padrão único de acesso validado operacionalmente overnight; muse-spark-1.3 elimina o confundimento modelo×condição do RGB; resultados positivos validados (vitória 46.Rb8#, empate 224 plies) vêm de memória persistente.'
+approved_by: Mestre Mael
+selected_at: '2026-09-06'
+revisit_trigger: 'Esgotamento da cota free/Go, mudança de assinatura, ou escala de orçamento além da assinatura.'
 ```
 
 

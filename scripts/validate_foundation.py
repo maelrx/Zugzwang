@@ -170,12 +170,51 @@ def validate_adrs(r):
         r.ok(f"ADRs validated: {count}")
 
 
+def _tracked_skill_files(skill_root) -> tuple[list, list]:
+    """Return (tracked-and-present, tracked-but-absent) versioned SKILL.md files.
+
+    Absent tracked files happen under sparse checkout (REPOSITORY_STATUS:
+    versioned skills may be hidden locally while the host catalog is on disk).
+    """
+    import subprocess
+
+    try:
+        listing = subprocess.run(
+            ["git", "ls-files", "--", ".agents/skills"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.splitlines()
+    except Exception:
+        return [], []
+    tracked = sorted(
+        ROOT / rel
+        for rel in listing
+        if rel.startswith(".agents/skills/") and rel.endswith("SKILL.md")
+    )
+    present = [p for p in tracked if p.is_file()]
+    return present, [p for p in tracked if not p.is_file()]
+
+
 def validate_skills(r):
     skill_root = ROOT / ".agents/skills"
     if not skill_root.exists():
         r.ok("skills catalog supplied by host; no vendored skills to validate")
         return
-    dirs = list(skill_root.glob("*/SKILL.md"))
+    # ZGW-0086: only the versioned catalog is validated. Host-injected skills
+    # (symlinks or untracked copies; REPOSITORY_STATUS: never publish
+    # absolute-path symlinks) are host configuration, not repo sources.
+    dirs, hidden = _tracked_skill_files(skill_root)
+    if not dirs and hidden:
+        r.ok(
+            f"versioned skills hidden by sparse checkout ({len(hidden)} tracked); "
+            "host catalog not validated"
+        )
+        return
+    if not dirs:
+        # no git available: validate the real (non-symlink) catalog on disk
+        dirs = sorted(p for p in skill_root.glob("*/SKILL.md") if not p.is_symlink())
     names = set()
     for p in dirs:
         fm = parse_frontmatter(p.read_text(encoding="utf-8"))
@@ -241,6 +280,10 @@ def validate_no_control_chars(r):
             ".jpeg",
             ".webp",
         }:
+            continue
+        # ZGW-0086: runtime state (.zugzwang databases/WAL) is local evidence,
+        # not documentation; never scan its bytes here.
+        if ".zugzwang" in p.relative_to(ROOT).parts:
             continue
         data = p.read_bytes()
         for b in data:

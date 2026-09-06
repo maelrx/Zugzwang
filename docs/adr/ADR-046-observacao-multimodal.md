@@ -69,3 +69,20 @@ modelo; declaração explícita é auditável.
 
 Alta: ImagePart é aditivo ao union de parts; renderer é plugin interno; a
 declaração de capacidade é config, não contrato de wire.
+
+## Emenda 2026-09-06 — modelo de visão padrão (GATE-011 ratificado, ZGW-0086)
+
+Com a ratificação do GATE-011 pelo operador, o modelo de visão padrão da matriz
+paga passa a ser o próprio `muse-spark-1.3` (`muse-spark-1.3-contributor` no
+plano Go, com `muse-spark-1.3-free` como fallback até esgotar a cota), que
+possui visão nativa e é acessado via `provider.openai_compatible` no router
+opencode local (`127.0.0.1:8788`, perfil `openai-responses`) — o padrão de
+acesso validado operacionalmente nas baterias overnight (ZGW-0083/0084).
+
+- Substitui `mimo-v2.5` e `deepseek-v4-flash` na matriz inaugural; ambos deixam
+  de ser referenciados pela suite 0.1 (Emenda 002 da preregistration).
+- Nada desta ADR muda no contrato: `ImagePart` tipado, renderer Pillow
+  determinístico, CAS, `modality_authority` e bloqueio de fallback silencioso
+  imagem→texto permanecem exatamente como decididos.
+- Efeito científico positivo: texto e visão passam a usar o mesmo modelo,
+  eliminando o confundimento modelo×condição registrado na Emenda 001 da suite.

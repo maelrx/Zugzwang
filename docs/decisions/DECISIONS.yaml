@@ -133,16 +133,16 @@ gates:
   default_if_deferred: Política atual deste foundation pack.
 - id: GATE-011
   title: Matriz inaugural de modelos e orçamento científico
-  status: pending
+  status: accepted
   blocking: Execução completa da primeira suite paga (pilot livre via assinatura do operador)
   adr: ADR-046
   recommended: 'texto: opencode-go/deepseek-v4-flash; imagem: opencode-go/mimo-v2.5 (assinatura existente, custo marginal zero); piloto ~210 calls n=10; full batch n>=24 após análise'
   alternatives: 'qwen3-vl-30b via OpenRouter; adiar RGB'
-  selected_option: null
-  selected_at: null
-  rationale: null
-  approved_by: null
-  revisit_trigger: null
+  selected_option: 'opencode (plano free+Go, router local 127.0.0.1:8788, perfil openai-responses): muse-spark-1.3-contributor com fallback muse-spark-1.3-free até esgotar a cota free; visão nativa do próprio modelo — sem mimo-v2.5 nem deepseek-v4-flash; piloto ~210 calls n=10, full batch n>=24 após análise. Memória persistente vira default experimental para full-game.'
+  selected_at: '2026-09-06'
+  rationale: 'Diretiva direta do Mestre Mael (ZGW-0086): padrão único de acesso já validado operacionalmente nas baterias overnight (router opencode, openai-responses); muse-spark-1.3 possui visão nativa, o que elimina o confundimento modelo×condição do bloco RGB registrado na Emenda 001; os resultados positivos validados do projeto (vitória 46.Rb8# no H3, sobrevivência H2, empate em 224 plies na triple limpa) vêm de estratégias com memória persistente, que se tornam default experimental para partidas completas.'
+  approved_by: Mestre Mael
+  revisit_trigger: 'Esgotamento da cota free/Go, mudança de assinatura opencode, ou antes de escalar orçamento além da assinatura.'
   default_if_deferred: Executar somente fake e smoke tests locais.
 - id: GATE-012
   title: Topologia de publicação de packages

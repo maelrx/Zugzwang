@@ -71,3 +71,13 @@
 - Limitações 1–3 acima continuam válidas; a 4 (GATE-011) segue pendente.
 - Suite passa a referenciar corpus 1.1.0 em execuções futuras; manifestos já
   congelados não são reescritos (hash original preservado).
+
+## Amendment 002 — 2026-09-06 (ZGW-0086)
+
+- GATE-011 ratificado: matriz única `muse-spark-1.3-contributor`/`-free`
+  (visão nativa, router opencode). Manifests regenerados com corpus 1.1.0.
+- Default experimental para full-game: memória persistente
+  (`chess.single_agent_tree` com `memory_mode: persistent`), referência:
+  manifests `local-musespark-1.3-go-h2-*` e resultados ZGW-0083/0084.
+- Limitação 1 da Emenda 001 (confundimento RGB) está RESOLVIDA; limitações
+  2–4 permanecem.

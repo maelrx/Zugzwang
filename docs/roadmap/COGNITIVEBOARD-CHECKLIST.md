@@ -92,7 +92,10 @@ flowchart TD
   - [x] `audit_decision`: escolha/custos/exposição/limites hash-verificados; `redact`/`export_report` sem segredos; `validate_artifact_id`
   - [x] TEST-037/038/040/041/053/054/067/068 (fault) + TEST-057/058/059/080 e âncoras 055/056/079 (audit); 372 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
   - [x] Gate §38.9 levantado: baterias não-smoke liberadas (exactly-once remoto segue fora do escopo)
-- [ ] **CB-WO-10** — viewer mínimo causal (§38.11) → pending (depende W7)
+- [x] **CB-WO-10** — viewer mínimo causal (§38.11) → **ZGW-0097** · PR [#35](https://github.com/maelrx/Zugzwang/pull/35) (empilhado no #34; review 2 eixos aplicado em 2177c46)
+  - [x] `build_cognitive_viewer.py`: decisão → cognitive.json redatado via audit/resume (real_state vs focus, artifact hashes, memories key; sem bodies/engine/segredos)
+  - [x] `cognitive.ts` (tipos + loader bundle.json com guards) + `CognitiveTimeline.tsx` (timeline causal navegável por teclado)
+  - [x] TEST-060/061 + bundle import + redaction (4 testes); 385 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
 - [x] **CB-WO-09** — memória condicionada (§38.10) → **ZGW-0096** · PR [#34](https://github.com/maelrx/Zugzwang/pull/34) (empilhado no #33; review 2 eixos aplicado em 8ad4731)
   - [x] Migration 0008 CB-M2 (DDL §43.2): items/links/snapshots/members + 9 triggers; downgrade recusa com dados
   - [x] `ScopedMemoryStore`: origens contaminadas recusadas (write + restore), revisões append-only, recall com elegibilidade (fatos + seção avaliativa), test isolado, legacy sem inventar origem

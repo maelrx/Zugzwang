@@ -9,6 +9,7 @@ redacted before serialization.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,6 +35,26 @@ _SECRET_KEY_NAMES = {
     "authorization",
     "bearer",
 }
+
+#: Cap for projected ``value_json`` payloads (e.g. MultiPV ranked lines).
+#: The viewer is a static snapshot; large blobs stay in CAS/Parquet.
+_VALUE_JSON_MAX_CHARS = 4000
+_VALUE_JSON_MAX_ITEMS = 20
+
+
+def _truncate(value: Any, *, max_chars: int = _VALUE_JSON_MAX_CHARS) -> Any:
+    """Cap the serialized size of a redacted JSON value (reporter-only)."""
+    if isinstance(value, str) and len(value) > max_chars:
+        return value[:max_chars] + "…[truncated]"
+    if isinstance(value, list):
+        if len(value) > _VALUE_JSON_MAX_ITEMS:
+            return [_truncate(item) for item in value[:_VALUE_JSON_MAX_ITEMS]] + [
+                f"…[{len(value) - _VALUE_JSON_MAX_ITEMS} more truncated]"
+            ]
+        return [_truncate(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _truncate(item) for key, item in value.items()}
+    return value
 
 
 def _redact(value: Any) -> Any:
@@ -115,50 +136,13 @@ def _actor_kind(actor: str, policy: dict[str, Any] | None) -> str:
     return "Model"
 
 
-def _provider_stats(attempts: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Aggregate provider attempt stats for one step (calls, latency, tokens).
-
-    Attempts with kind != provider are ignored. usage_json/cost_json are
-    redacted dicts; latency_ms is integer milliseconds or None.
-    """
-    provider_attempts = [a for a in attempts if str(a.get("kind") or "") == "provider"]
-    if not provider_attempts:
-        return None
-    tokens_in = 0
-    tokens_out = 0
-    total_ms = 0
-    saw_usage = False
-    for attempt in provider_attempts:
-        total_ms += int(attempt.get("latency_ms") or 0)
-        usage = attempt.get("usage_json")
-        if isinstance(usage, dict):
-            saw_usage = True
-            tokens_in += int(usage.get("input_tokens") or usage.get("prompt_tokens") or 0)
-            tokens_out += int(usage.get("output_tokens") or usage.get("completion_tokens") or 0)
-    status = "ok"
-    if any(str(a.get("status") or "") == "timeout_unknown" for a in provider_attempts):
-        status = "timeout_unknown"
-    failed = [a for a in provider_attempts if str(a.get("status") or "") == "failed"]
-    if failed:
-        status = "repaired" if len(provider_attempts) > 1 else "failed"
-    return {
-        "attempts": len(provider_attempts),
-        "status": status,
-        "latencyMs": total_ms,
-        "tokensIn": tokens_in if saw_usage else None,
-        "tokensOut": tokens_out if saw_usage else None,
-    }
-
-
 def _episode_snapshot(
     services: DurableRunServices,
     episode: dict[str, Any],
     step_rows: list[dict[str, Any]],
-    attempts_by_step: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     initial = _artifact_json(services, episode.get("initial_state_artifact_id"))
     initial_fen = initial.get("fen") if isinstance(initial.get("fen"), str) else None
-    local_attempts_by_step: dict[str, list[dict[str, Any]]] = dict(attempts_by_step or {})
     positions: list[dict[str, Any]] = [
         {
             "ply": 0,
@@ -199,10 +183,6 @@ def _episode_snapshot(
                 "stepId": row.get("step_id"),
                 "fenAfter": fen_after,
                 "terminal": bool(after.get("terminal", False)),
-                "committedAt": row.get("committed_at"),
-                "provider": _provider_stats(
-                    local_attempts_by_step.get(str(row.get("step_id") or ""), [])
-                ),
             }
         )
         positions.append(
@@ -227,9 +207,6 @@ def _episode_snapshot(
             result = "stalemate"
         elif episode.get("status") == "FAILED":
             result = "failed"
-        elif episode.get("status") not in ("COMPLETED",):
-            # RUNNING (or any non-terminal state): game still going, not capped.
-            result = "in_progress"
         else:
             result = "capped"
     except (ValueError, chess.InvalidFenError):
@@ -317,6 +294,9 @@ def _build_run(services: DurableRunServices, run: dict[str, Any]) -> dict[str, A
             "version": row.get("metric_version"),
             "valueNum": row.get("value_num"),
             "valueText": row.get("value_text"),
+            "valueJson": _truncate(_redact(row.get("value_json")))
+            if row.get("value_json") is not None
+            else None,
             "unit": row.get("unit"),
             "dimensions": _redact(row.get("dimensions_json") or {}),
             "evaluator": row.get("evaluator_id"),
@@ -326,29 +306,19 @@ def _build_run(services: DurableRunServices, run: dict[str, Any]) -> dict[str, A
         for row in selected_metrics
     ]
 
+    attempt_repo = AttemptRepository(services.database_engine)
+    cost_entries: list[dict[str, Any]] = []
+    for step in all_steps:
+        for attempt in attempt_repo.for_step(str(step["step_id"])):
+            if attempt.get("cost_json"):
+                cost_entries.append(_redact(attempt["cost_json"]))
+
     task = condition.get("task") if isinstance(condition.get("task"), dict) else {}
     task_config = task.get("config") if isinstance(task.get("config"), dict) else {}
     model_players = [p for p in _players(condition) if p.get("model")]
     policy_players = [p for p in _players(condition) if p.get("policy")]
     source = _artifact_json(services, run.get("resolved_manifest_artifact_id"))
     source_meta = source.get("source", {}).get("metadata", {}) if isinstance(source, dict) else {}
-
-    attempt_repo = AttemptRepository(services.database_engine)
-    attempts_by_step: dict[str, list[dict[str, Any]]] = {}
-    cost_entries: list[dict[str, Any]] = []
-    for step in all_steps:
-        step_attempts = attempt_repo.for_step(str(step["step_id"]))
-        attempts_by_step[str(step["step_id"])] = list(step_attempts)
-        for attempt in step_attempts:
-            if attempt.get("cost_json"):
-                cost_entries.append(_redact(attempt["cost_json"]))
-    episodes = [
-        _episode_snapshot(services, episode, rows, attempts_by_step)
-        for episode, rows in (
-            (episode, services.steps.for_episode(str(episode["episode_id"])))
-            for episode in services.episodes.for_run(str(run["run_id"]))
-        )
-    ]
 
     return {
         "id": run.get("run_id"),
@@ -387,17 +357,28 @@ def _build_run(services: DurableRunServices, run: dict[str, Any]) -> dict[str, A
     }
 
 
-def build_snapshot(workspace_root: Path, *, completed_only: bool = False) -> dict[str, Any]:
+def build_snapshot(
+    workspace_root: Path, *, completed_only: bool = False, limit: int = 200
+) -> dict[str, Any]:
     services = DurableRunServices(Workspace.from_root(workspace_root), PluginRegistry())
-    run_rows = services.runs.list_runs(limit=200)
+    run_rows = services.runs.list_runs(limit=limit)
     if completed_only:
         run_rows = [run for run in run_rows if run.get("status") == "COMPLETED"]
     runs = [_build_run(services, run) for run in run_rows]
+    evaluated = sum(1 for run in runs if run.get("metrics"))
     return {
         "generatedAt": datetime.now(UTC).isoformat(),
         "workspace": str(workspace_root.resolve()),
         "readOnly": True,
+        "builder": "scripts/build_readonly_viewer.py",
+        "workOrder": "ZGW-0077",
         "runs": runs,
+        "summary": {
+            "runs": len(runs),
+            "evaluatedRuns": evaluated,
+            "completedOnly": completed_only,
+            "limit": limit,
+        },
     }
 
 
@@ -418,27 +399,46 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("viewer/data.js"))
     parser.add_argument("--pieces", type=Path, default=Path("viewer/pieces.js"))
     parser.add_argument(
+        "--meta",
+        type=Path,
+        default=Path("viewer/meta.json"),
+        help="write a tiny polling manifest (generatedAt, runs, sha256 of data.js)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=200,
+        help="max runs projected into the snapshot (default: 200)",
+    )
+    parser.add_argument(
         "--completed-only",
         action="store_true",
         help="include only completed runs in the browser snapshot",
     )
     args = parser.parse_args()
-    snapshot = build_snapshot(args.workspace.resolve(), completed_only=args.completed_only)
+    snapshot = build_snapshot(
+        args.workspace.resolve(), completed_only=args.completed_only, limit=args.limit
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
+    payload = (
         "window.ZUGZWANG_DATA = "
         + json.dumps(snapshot, ensure_ascii=False, separators=(",", ":"))
-        + ";\n",
-        encoding="utf-8",
+        + ";\n"
     )
-    json_output = args.output.with_name("data.json")
-    json_output.write_text(
-        json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8",
-    )
+    args.output.write_text(payload, encoding="utf-8")
     write_piece_asset(args.pieces)
+    meta = {
+        "generatedAt": snapshot["generatedAt"],
+        "runs": len(snapshot["runs"]),
+        "evaluatedRuns": snapshot["summary"]["evaluatedRuns"],
+        "sha256": hashlib.sha256(payload.encode("utf-8")).hexdigest(),
+        "readOnly": True,
+    }
+    args.meta.parent.mkdir(parents=True, exist_ok=True)
+    args.meta.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
-        f"viewer snapshot: {len(snapshot['runs'])} runs -> {args.output}, {json_output}; pieces -> {args.pieces}"
+        f"viewer snapshot: {len(snapshot['runs'])} runs -> {args.output}; "
+        f"pieces -> {args.pieces}; meta -> {args.meta}"
     )
 
 

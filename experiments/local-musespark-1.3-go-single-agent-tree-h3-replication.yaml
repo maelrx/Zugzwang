@@ -1,13 +1,12 @@
-# Real R7 probe: legal set + model branches + episode-scoped persistent memory.
+# Replicação H3 do jogo vencedor, MuseSpark Go em nova partida.
 api_version: zgw.dev/v1alpha1
 kind: Experiment
 metadata:
-  name: local-musespark-1-3-go-legal-tree-memory-persistent
-  tags: [local, opencode-go, r7, legal-action-set, model-search, memory-persistent]
+  name: local-musespark-1-3-go-single-agent-tree-h3-replication
+  tags: [local, opencode-go, r7, h3, replication, stockfish-1000]
 
 spec:
-  seed: 20260906
-
+  seed: 20260909
   task:
     plugin: chess.tasks
     version: "0.1"
@@ -15,22 +14,27 @@ spec:
       kind: full-game
       start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
       model_color: white
-      max_plies: 8
+      max_plies: 120
       search:
-        max_nodes: 24
-        max_depth_plies: 2
-        max_validation_queries: 64
-        max_transition_queries: 32
-        max_root_branches: 4
+        hypothesis_id: h3-persistent-forced-replies
         memory_mode: persistent
+        reply_scope: all
+        prompt_mode: forced_replies
+        max_root_branches: 4
+        max_affordance_roots: 256
+        max_variant_branches: 6
+        max_nodes: 256
+        max_depth_plies: 2
+        max_validation_queries: 512
+        max_transition_queries: 256
       backend_config:
         base_url: http://127.0.0.1:8788/v1
         provider_id: opencode-router
-        timeout_seconds: 120
+        timeout_seconds: 180
         profile: openai-responses
         allow_private_network: true
-        reasoning_effort: minimal
-        default_max_output_tokens: 2048
+        reasoning_effort: medium
+        default_max_output_tokens: 32768
 
   players:
     white:
@@ -38,7 +42,7 @@ spec:
         backend: provider.openai_compatible
         provider: opencode-router
         model: muse-spark-1.3-contributor
-        strategy: chess.legal_tree_memory
+        strategy: chess.single_agent_tree
     black:
       policy:
         plugin: chess.stockfish
@@ -58,15 +62,27 @@ spec:
       move_number: true
       history: {mode: full, plies: 0, notation: uci}
       legal_actions: {exposure: delayed, encoding: uci}
+    legality:
+      parse_feedback: true
+      validation: {enabled: true, feedback: enumerated}
+      enumerate: {enabled: false}
+      transition_sandbox: true
+      limits: {validations: 512, transitions: 256, depth_plies: 2, branch_states: 256}
+    retry_profile: enumerate_after_failure
     retries: {transport: 2, parse: 0, illegal: 3, feedback: enumerated}
 
   budget:
-    max_calls: 48
+    max_calls: 600
+    max_input_tokens: null
+    max_output_tokens: null
+    max_total_tokens: null
+    max_usd: null
+    max_wall_time_seconds: null
+    max_failed_calls: null
     max_concurrent_episodes: 1
     max_attempts: 1
 
   evaluation: []
-
   artifacts:
     raw_requests: true
     raw_responses: true

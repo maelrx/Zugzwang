@@ -54,7 +54,8 @@ class TestCli:
         payload = json.loads(result.output)
         assert payload["total_estimated_calls"] == 12
 
-    def test_run_fake(self, tmp_path) -> None:
+    def test_run_fake(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setenv("ZUGZWANG_WAL_POLICY", "ephemeral")
         result = runner.invoke(
             app,
             ["run", MANIFEST, "--workspace", str(tmp_path), "--output", "json"],
@@ -76,9 +77,18 @@ class TestCli:
         doctor_result = runner.invoke(
             app, ["doctor", "--directory", str(tmp_path / "ws"), "--output", "json"]
         )
-        assert doctor_result.exit_code == 0
+        # The sqlite check is honest about the locally linked SQLite (TEST-081):
+        # on machines without an approved corrected line the doctor reports
+        # status "error" and exits with a configuration error.
+        from zugzwang_runtime.persistence.sqlite_policy import admitted, effective_version
+
         payload = json.loads(doctor_result.output)
-        assert payload["status"] in {"ok", "warn"}
+        if admitted(effective_version()):
+            assert doctor_result.exit_code == 0
+            assert payload["status"] in {"ok", "warn"}
+        else:
+            assert doctor_result.exit_code != 0
+            assert payload["status"] == "error"
 
     def test_patch_flag(self) -> None:
         result = runner.invoke(

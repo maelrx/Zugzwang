@@ -64,7 +64,7 @@ spec:
 """,
         encoding="utf-8",
     )
-    workspace = Workspace.from_root(tmp_path / "workspace")
+    workspace = Workspace.from_root(tmp_path / "workspace", wal_policy="ephemeral")
     services = DurableRunServices(workspace, PluginRegistry())
 
     result = await services.start(StartRunCommand(manifest_path=manifest), asyncio.Event())

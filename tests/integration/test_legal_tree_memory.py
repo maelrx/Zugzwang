@@ -87,7 +87,7 @@ spec:
 async def test_r7_durable_trace_records_legal_tree_and_memory_mode(
     tmp_path: Path, mode: str, knowledge: str
 ) -> None:
-    workspace = Workspace.from_root(tmp_path / "workspace")
+    workspace = Workspace.from_root(tmp_path / "workspace", wal_policy="ephemeral")
     services = DurableRunServices(workspace, PluginRegistry())
 
     result = await services.start(

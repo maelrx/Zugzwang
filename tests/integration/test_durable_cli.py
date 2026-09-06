@@ -19,7 +19,8 @@ MANIFEST = "experiments/fake-smoke.yaml"
 
 @pytest.mark.integration
 class TestDurableCli:
-    def test_run_list_show_db_roundtrip(self, tmp_path) -> None:
+    def test_run_list_show_db_roundtrip(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setenv("ZUGZWANG_WAL_POLICY", "ephemeral")
         ws = str(tmp_path / "ws")
         assert runner.invoke(app, ["init", ws]).exit_code == 0
         run_result = runner.invoke(app, ["run", MANIFEST, "--workspace", ws, "--output", "json"])

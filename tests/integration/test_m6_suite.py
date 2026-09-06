@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.fixture
 def workspace(tmp_path) -> Workspace:
-    ws = Workspace.from_root(tmp_path / "ws")
+    ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
     ws.ensure_layout()
     return ws
 

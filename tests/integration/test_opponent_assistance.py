@@ -107,9 +107,9 @@ async def test_opponent_step_preserves_declared_assistance(
         rules=(FakeBackendRule(when={"call_index": 0}, output="e2e4"),)
     )
     manifest = _manifest(tmp_path)
-    workspace = Workspace.from_root(tmp_path / "workspace")
+    workspace = Workspace.from_root(tmp_path / "workspace", wal_policy="ephemeral")
     workspace.ensure_layout()
-    engine = Database(workspace.data_dir / "state.db").open()
+    engine = Database(workspace.data_dir / "state.db", wal_policy="ephemeral").open()
     SchemaManager(engine).upgrade()
     writer = PersistenceWriter(
         runs=RunRepository(engine),

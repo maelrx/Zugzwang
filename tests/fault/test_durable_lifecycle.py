@@ -22,7 +22,7 @@ MANIFEST = Path(__file__).resolve().parents[2] / "experiments" / "fake-smoke.yam
 
 @pytest.fixture
 def workspace(tmp_path) -> Workspace:
-    ws = Workspace.from_root(tmp_path / "ws")
+    ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
     ws.ensure_layout()
     return ws
 
@@ -157,7 +157,7 @@ class TestDurableLifecycle:
         )
         from zugzwang_runtime.persistence.writer import PersistenceWriter
 
-        db = Database(workspace.data_dir / "state.db")
+        db = Database(workspace.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
         writer = PersistenceWriter(
@@ -225,9 +225,9 @@ class TestArtifactCrashProtocol:
         )
         from zugzwang_runtime.persistence.writer import PersistenceWriter
 
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
-        db = Database(ws.data_dir / "state.db")
+        db = Database(ws.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
 

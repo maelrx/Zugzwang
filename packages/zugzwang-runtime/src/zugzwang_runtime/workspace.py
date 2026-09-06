@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from zugzwang_core.domain.errors import ConfigurationError
+from zugzwang_runtime.persistence.sqlite_policy import WalPolicy
 
 WORKSPACE_DIRNAME = ".zugzwang"
 DEFAULT_CONFIG_NAME = "config.toml"
@@ -42,12 +43,34 @@ allow_private_network = false
 """
 
 
+def resolve_wal_policy(override: WalPolicy | None = None) -> WalPolicy:
+    """Resolve the SQLite wal policy: explicit override > env > "enforce".
+
+    ``ZUGZWANG_WAL_POLICY=ephemeral`` is an explicit operator decision for
+    non-durable use (never a hidden default); anything else is an error.
+    """
+    if override is not None:
+        return override
+    value = os.environ.get("ZUGZWANG_WAL_POLICY", "enforce")
+    if value not in ("enforce", "ephemeral"):
+        raise ConfigurationError(
+            f"invalid ZUGZWANG_WAL_POLICY {value!r}; expected 'enforce' or 'ephemeral'",
+        )
+    return value  # type: ignore[no-any-return]
+
+
 @dataclass(frozen=True, slots=True)
 class Workspace:
-    """Resolved paths for a local workspace."""
+    """Resolved paths for one local workspace.
+
+    ``wal_policy`` selects the SQLite profile for this workspace: ``enforce``
+    (default, durable: WAL requires an approved corrected release line) or
+    ``ephemeral`` (explicit non-durable mode for throwaway fixtures/tests).
+    """
 
     root: Path
     data_dir: Path
+    wal_policy: WalPolicy = "enforce"
 
     @classmethod
     def discover(cls, start: Path | None = None) -> Workspace:
@@ -56,7 +79,7 @@ class Workspace:
         for candidate in (current, *current.parents):
             marker = candidate / WORKSPACE_DIRNAME
             if marker.is_dir():
-                return cls(root=candidate, data_dir=marker)
+                return cls(root=candidate, data_dir=marker, wal_policy=resolve_wal_policy())
         raise ConfigurationError(
             "no zugzwang workspace found; run 'zugzwang init' first",
             technical_context=f"searched up from {current}",
@@ -70,8 +93,12 @@ class Workspace:
             return None
 
     @classmethod
-    def from_root(cls, root: Path) -> Workspace:
-        return cls(root=root.resolve(), data_dir=(root / WORKSPACE_DIRNAME).resolve())
+    def from_root(cls, root: Path, wal_policy: WalPolicy | None = None) -> Workspace:
+        return cls(
+            root=root.resolve(),
+            data_dir=(root / WORKSPACE_DIRNAME).resolve(),
+            wal_policy=resolve_wal_policy(wal_policy),
+        )
 
     @property
     def config_path(self) -> Path:

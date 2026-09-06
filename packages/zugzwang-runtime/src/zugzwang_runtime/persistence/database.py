@@ -1,7 +1,10 @@
 """SQLite database bootstrap and connection management (design §11.3).
 
-WAL mode, foreign keys, busy timeout. SQLite's minimum safe version for WAL
-is enforced at open time (ADR-044).
+WAL mode, foreign keys, busy timeout. WAL is only enabled when the effectively
+linked SQLite version sits in an approved corrected release line (shared policy,
+ADR-044 as amended by ADR-CB-020 / TEST-081). The ``ephemeral`` policy profile
+is an explicit non-durable mode (journal DELETE) for throwaway fixtures and
+tests; it never backs a durable workspace (G-CB-04 pending).
 """
 
 from __future__ import annotations
@@ -15,19 +18,21 @@ from sqlalchemy.engine import Engine
 
 from zugzwang_core.domain.errors import PersistenceError
 
-MIN_SAFE_SQLITE = (3, 37, 0)
+from .sqlite_policy import WalPolicy, effective_version, wal_reason, wal_safe
 
 
 class Database:
     """Owns the engine lifecycle for one workspace database."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, wal_policy: WalPolicy = "enforce") -> None:
         self._path = path
+        self._wal_policy: WalPolicy = wal_policy
         self._engine: Engine | None = None
 
     def open(self) -> Engine:
         if self._engine is not None:
             return self._engine
+        self._assert_wal_policy()
         self._path.parent.mkdir(parents=True, exist_ok=True)
         engine = create_engine(
             f"sqlite:///{self._path}",
@@ -39,14 +44,17 @@ class Database:
             dbapi_connection: sqlite3.Connection, connection_record: Any
         ) -> None:
             cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
+            if self._wal_policy == "ephemeral":
+                cursor.execute("PRAGMA journal_mode=DELETE")
+                cursor.execute("PRAGMA synchronous=OFF")
+            else:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.execute("PRAGMA busy_timeout=5000")
             cursor.close()
 
         self._engine = engine
-        self._check_sqlite_version()
         return engine
 
     def engine(self) -> Engine:
@@ -59,16 +67,20 @@ class Database:
             self._engine.dispose()
             self._engine = None
 
-    def _check_sqlite_version(self) -> None:
-        connection = sqlite3.connect(self._path)
-        try:
-            version = connection.execute("SELECT sqlite_version()").fetchone()[0]
-        finally:
-            connection.close()
-        parts = tuple(int(p) for p in str(version).split("."))
-        if parts < MIN_SAFE_SQLITE:
+    def _assert_wal_policy(self) -> None:
+        """Fail closed before any connection when WAL is not admissible.
+
+        In-memory databases do not use a WAL file, so the WAL-reset bug does
+        not apply to them (PRD §25.1: schema validation is not operational
+        validation). File-backed workspaces under ``enforce`` require an
+        approved corrected release line.
+        """
+        if self._wal_policy != "enforce" or str(self._path) == ":memory:":
+            return
+        version = effective_version()
+        if not wal_safe(version):
             raise PersistenceError(
-                f"sqlite {version} is below the minimum safe version for WAL (3.37.0 required)",
+                wal_reason(version),
                 technical_context=str(self._path),
             )
 

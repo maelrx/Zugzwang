@@ -21,7 +21,7 @@ SUITE_DIR = REPO_ROOT / "experiments" / "research-suite-0.1"
 class TestReasonThenGround:
     @pytest.fixture
     def workspace(self, tmp_path) -> Workspace:
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
         return ws
 

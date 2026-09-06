@@ -85,7 +85,7 @@ spec:
 async def test_single_agent_tree_persists_one_call_and_all_root_affordances(
     tmp_path: Path,
 ) -> None:
-    workspace = Workspace.from_root(tmp_path / "workspace")
+    workspace = Workspace.from_root(tmp_path / "workspace", wal_policy="ephemeral")
     services = DurableRunServices(workspace, PluginRegistry())
 
     result = await services.start(
@@ -139,7 +139,7 @@ def _replace(tmp_path: Path, old: str, new: str) -> Path:
 
 
 async def _trace_for(tmp_path: Path, manifest: Path) -> tuple[Workspace, str, dict]:
-    workspace = Workspace.from_root(tmp_path / "workspace")
+    workspace = Workspace.from_root(tmp_path / "workspace", wal_policy="ephemeral")
     services = DurableRunServices(workspace, PluginRegistry())
     result = await services.start(StartRunCommand(manifest_path=manifest), asyncio.Event())
     assert result.status == "COMPLETED", result.status

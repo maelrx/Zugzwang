@@ -31,7 +31,7 @@ R6_MANIFEST = REPO_ROOT / "experiments" / "pure-search-v1.yaml"
 
 @pytest.fixture
 def workspace(tmp_path) -> Workspace:
-    ws = Workspace.from_root(tmp_path / "ws")
+    ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
     ws.ensure_layout()
     return ws
 
@@ -250,7 +250,7 @@ class TestBundleRoundtrip:
         assert (bundle_dir / "checksums.sha256").exists()
         assert (bundle_dir / "evaluation_runs.json").exists()
 
-        second_ws = Workspace.from_root(tmp_path / "ws2")
+        second_ws = Workspace.from_root(tmp_path / "ws2", wal_policy="ephemeral")
         second_ws.ensure_layout()
         second_services = DurableRunServices(second_ws, PluginRegistry())
         importer = ImportRunBundleService(
@@ -321,7 +321,7 @@ class TestBundleRoundtrip:
         )
         bundle_dir = exporter.export(run_id, tmp_path / "bundle-eval")
 
-        second_ws = Workspace.from_root(tmp_path / "ws-eval")
+        second_ws = Workspace.from_root(tmp_path / "ws-eval", wal_policy="ephemeral")
         second_ws.ensure_layout()
         second_services = DurableRunServices(second_ws, PluginRegistry())
         importer = ImportRunBundleService(
@@ -398,7 +398,7 @@ class TestBundleRoundtrip:
         bundle_dir = exporter.export(run_id, tmp_path / "bundle-trunc")
 
         def _rebuild(bd: Path, ws_root: str) -> list[dict]:
-            ws = Workspace.from_root(tmp_path / ws_root)
+            ws = Workspace.from_root(tmp_path / ws_root, wal_policy="ephemeral")
             ws.ensure_layout()
             ws_services = DurableRunServices(ws, PluginRegistry())
             imp = ImportRunBundleService(
@@ -465,7 +465,7 @@ class TestBundleRoundtrip:
         )
         bundle_dir = exporter.export(run_id, tmp_path / "tampered")
         (bundle_dir / "events.jsonl").write_text("tampered\n", encoding="utf-8")
-        second_ws = Workspace.from_root(tmp_path / "ws3")
+        second_ws = Workspace.from_root(tmp_path / "ws3", wal_policy="ephemeral")
         second_ws.ensure_layout()
         services2 = DurableRunServices(second_ws, PluginRegistry())
         importer = ImportRunBundleService(

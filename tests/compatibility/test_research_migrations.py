@@ -20,7 +20,7 @@ from zugzwang_runtime.persistence.repositories import (
 
 @pytest.mark.compatibility
 def test_research_migrations_upgrade_from_0002_and_fresh_db(tmp_path: Path) -> None:
-    database = Database(tmp_path / "state.db")
+    database = Database(tmp_path / "state.db", wal_policy="ephemeral")
     engine = database.open()
     schema = SchemaManager(engine)
     schema.upgrade()
@@ -66,7 +66,7 @@ def test_legacy_metrics_remain_visible_and_separate_after_0003_upgrade(
         RunRepository,
     )
 
-    database = Database(tmp_path / "state.db")
+    database = Database(tmp_path / "state.db", wal_policy="ephemeral")
     engine = database.open()
     schema = SchemaManager(engine)
     schema.upgrade()

@@ -87,6 +87,29 @@ _DDL = [
     """,
     "ALTER TABLE cb_decisions ADD COLUMN memory_snapshot_id TEXT REFERENCES cb_memory_snapshots(snapshot_id)",
     "ALTER TABLE cb_decisions ADD COLUMN skill_set_id TEXT REFERENCES cb_skill_sets(skill_set_id)",
+    """
+    CREATE TRIGGER cb_decision_snapshot_insert BEFORE INSERT ON cb_decisions
+    WHEN (NEW.memory_snapshot_id IS NOT NULL AND
+         (SELECT status FROM cb_memory_snapshots WHERE snapshot_id = NEW.memory_snapshot_id) <> 'SEALED')
+     OR (NEW.skill_set_id IS NOT NULL AND
+         (SELECT status FROM cb_skill_sets WHERE skill_set_id = NEW.skill_set_id) <> 'SEALED')
+    BEGIN SELECT RAISE(ABORT, 'decision requires sealed snapshots'); END;
+    """,
+    """
+    CREATE TRIGGER cb_decision_snapshot_fixed BEFORE UPDATE ON cb_decisions
+    WHEN (
+      (NEW.memory_snapshot_id <> OLD.memory_snapshot_id
+       OR ((NEW.memory_snapshot_id IS NULL) <> (OLD.memory_snapshot_id IS NULL)))
+      AND OLD.memory_snapshot_id IS NOT NULL
+     OR (NEW.skill_set_id <> OLD.skill_set_id
+       OR ((NEW.skill_set_id IS NULL) <> (OLD.skill_set_id IS NULL)))
+      AND OLD.skill_set_id IS NOT NULL
+     OR NEW.root_state_key <> OLD.root_state_key OR NEW.policy_hash <> OLD.policy_hash
+     OR NEW.search_session_id <> OLD.search_session_id OR NEW.step_id <> OLD.step_id
+     OR NEW.config_artifact_id <> OLD.config_artifact_id
+    )
+    BEGIN SELECT RAISE(ABORT, 'decision identity and policy are immutable'); END;
+    """,
 ]
 
 _DROP_ORDER = [

@@ -182,6 +182,7 @@ class SkillRegistry:
                 raise SkillError("SEMANTICS_MISMATCH", f"no candidate version {skill_version_id!r}")
             skill_id, version, content_hash, payload, provenance, origin = row
             tombstone_id = f"{skill_version_id}#rejected"
+            tombstone_version = f"{version}+rejected"
             try:
                 conn.execute(
                     sa.text(
@@ -194,7 +195,7 @@ class SkillRegistry:
                     {
                         "id": tombstone_id,
                         "skill_id": skill_id,
-                        "version": version,
+                        "version": tombstone_version,
                         "hash": content_hash,
                         "payload": payload,
                         "provenance": provenance,
@@ -214,14 +215,24 @@ class SkillRegistry:
 
     def open_set(self, *, skill_set_id: str, policy_hash: str) -> None:
         with self._connect() as conn:
-            conn.execute(
-                sa.text(
-                    "INSERT INTO cb_skill_sets (skill_set_id, policy_hash, status, "
-                    "created_at) VALUES (:id, :policy, 'DRAFT', :created_at)"
-                ),
-                {"id": skill_set_id, "policy": policy_hash, "created_at": self._clock()},
-            )
-            conn.commit()
+            try:
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_skill_sets (skill_set_id, policy_hash, status, "
+                        "created_at) VALUES (:id, :policy, 'DRAFT', :created_at)"
+                    ),
+                    {
+                        "id": skill_set_id,
+                        "policy": policy_hash,
+                        "created_at": self._clock(),
+                    },
+                )
+                conn.commit()
+            except IntegrityError as exc:
+                raise SkillError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"skill set {skill_set_id!r} already exists",
+                ) from exc
 
     def add_member(self, *, skill_set_id: str, skill_version_id: str, ordinal: int) -> None:
         """Only APPROVED versions join DRAFT sets (TEST-050, trigger-enforced)."""
@@ -290,7 +301,6 @@ class SkillRegistry:
                 ),
                 {"set_id": skill_set_id, "skill_id": skill_id},
             ).fetchone()
-            conn.commit()
         if row is None:
             raise SkillError(
                 "SEMANTICS_MISMATCH",
@@ -308,13 +318,33 @@ class SkillRegistry:
         )
 
     def bind_decision(self, *, decision_id: str, skill_set_id: str) -> None:
-        """Record the skill set on the decision for paired ablation context."""
+        """Record the skill set on the decision for paired ablation context.
+
+        Only SEALED sets bind (§43.2 decision guard); unknown sets and unknown
+        decisions fail closed instead of silently no-op'ing.
+        """
         with self._connect() as conn:
-            conn.execute(
-                sa.text(
-                    "UPDATE cb_decisions SET skill_set_id = :set_id "
-                    "WHERE decision_id = :decision_id"
-                ),
-                {"set_id": skill_set_id, "decision_id": decision_id},
-            )
-            conn.commit()
+            status = conn.execute(
+                sa.text("SELECT status FROM cb_skill_sets WHERE skill_set_id = :id"),
+                {"id": skill_set_id},
+            ).fetchone()
+            if status is None:
+                raise SkillError("SEMANTICS_MISMATCH", f"unknown set {skill_set_id!r}")
+            if status[0] != "SEALED":
+                raise SkillError("SEMANTICS_MISMATCH", f"set {skill_set_id!r} is not sealed")
+            try:
+                result = conn.execute(
+                    sa.text(
+                        "UPDATE cb_decisions SET skill_set_id = :set_id "
+                        "WHERE decision_id = :decision_id"
+                    ),
+                    {"set_id": skill_set_id, "decision_id": decision_id},
+                )
+                if result.rowcount != 1:
+                    raise SkillError("SEMANTICS_MISMATCH", f"unknown decision {decision_id!r}")
+                conn.commit()
+            except IntegrityError as exc:
+                raise SkillError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"cannot bind {skill_set_id!r} to {decision_id!r}",
+                ) from exc

@@ -4,22 +4,22 @@
 
 **Kernel de execução e atribuição de competência para experimentos verificáveis com LLMs.**
 
-[![Status: Fundação pronta](https://img.shields.io/badge/status-funda%C3%A7%C3%A3o%20pronta-5B4B8A.svg)](#estado-do-projeto)
+[![Status: Kernel experimental](https://img.shields.io/badge/status-kernel%20experimental-5B4B8A.svg)](#estado-do-projeto)
 [![Interface: CLI first](https://img.shields.io/badge/interface-CLI--first-2F6F9F.svg)](docs/architecture/SYSTEM_DESIGN.md)
 [![Arquitetura: Monólito modular](https://img.shields.io/badge/arquitetura-mon%C3%B3lito%20modular-4C956C.svg)](docs/architecture/MASTER_TECHNICAL_DESIGN.md)
-[![Python: 3.13 e 3.14 propostos](https://img.shields.io/badge/python-3.13%20%7C%203.14-3776AB.svg?logo=python&logoColor=white)](docs/decisions/HUMAN_DECISION_GATES.pt-BR.md)
+[![Python: 3.13 e 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-3776AB.svg?logo=python&logoColor=white)](docs/decisions/HUMAN_DECISION_GATES.pt-BR.md)
 [![Workspace: uv](https://img.shields.io/badge/workspace-uv-DE5FE9.svg)](docs/architecture/REPOSITORY_LAYOUT.md)
 [![Contratos: Pydantic strict](https://img.shields.io/badge/contratos-Pydantic%20strict-E92063.svg?logo=pydantic&logoColor=white)](docs/protocol/MANIFEST_SPEC.md)
 [![Banco: SQLite WAL](https://img.shields.io/badge/banco-SQLite%20WAL-003B57.svg?logo=sqlite&logoColor=white)](docs/architecture/DATA_ARCHITECTURE.md)
 [![Providers: agnóstico](https://img.shields.io/badge/providers-agn%C3%B3stico-555.svg)](docs/architecture/PROVIDER_ARCHITECTURE.md)
-[![Licença: decisão pendente](https://img.shields.io/badge/licen%C3%A7a-decis%C3%A3o%20pendente-B45309.svg)](LICENSE-DECISION.md)
+[![Licença: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-2F6F9F.svg)](LICENSE)
 
 [English](README.md) · [Comece aqui](START_HERE.md) · [Índice](docs/INDEX.md) · [Console do Mestre Mael](docs/decisions/HUMAN_DECISION_GATES.pt-BR.md) · [Roadmap](docs/roadmap/ROADMAP.md)
 
 </div>
 
 > [!IMPORTANT]
-> O runtime local já está implementado. O caminho de pesquisa continua privado por padrão: provider, reasoning telemetry e outputs de Stockfish ficam em CAS/SQLite local, e export público segue bloqueado pelo GATE-005.
+> O kernel experimental está implementado: uv workspace, CLI, SQLite/CAS, estratégias e testes offline. O [estado operacional](docs/engineering/REPOSITORY_STATUS.md) distingue a main das extensões em revisão. Reprodução independente e validação científica ainda têm pendências. O caminho de pesquisa continua privado por padrão: provider, reasoning telemetry e outputs de Stockfish ficam em CAS/SQLite local, e export público segue bloqueado pelo GATE-005.
 
 ## A tese
 
@@ -112,13 +112,15 @@ uv run zugzwang trace step STEP_ID --workspace PATH --output json
 
 Os testes reais usam o proxy local configurado pelo operador. Eles exigem autorização explícita do ambiente e não fazem fallback silencioso para fake.
 
+Para desenvolvimento, use `uv sync --all-packages --all-extras --locked` e `uv run pytest -m "not e2e"`. Novos trabalhos precisam de work order e base explícita; gates pendentes continuam sob autoridade de Mestre Mael.
+
 ## Estado do projeto
 
-O monorepo contém o runtime, os plugins, migrations, evaluator, bundles e a suite de testes. A matriz de modelo paga e a redistribuição pública continuam sujeitas aos gates humanos correspondentes.
+O monorepo contém o runtime, os plugins, migrations, evaluator, bundles e a suite de testes. M0-M6 têm entregas implementadas e testes; isso não declara todos os critérios de aceitação concluídos. GATE-001/002/003/004/006 foram aceitos; a matriz de modelo paga e a redistribuição pública continuam sujeitas aos gates humanos correspondentes. Consulte a [fila de integração](docs/engineering/REPOSITORY_STATUS.md).
 
 ## Licença
 
-Nenhuma licença foi silenciosamente escolhida. Até a aceitação da [ADR-004](docs/adr/ADR-004-licenca-e-biblioteca-de-regras.md) e a inclusão de um arquivo `LICENSE`, o repositório não deve ser anunciado juridicamente como open source.
+Mestre Mael ratificou GPL-3.0-or-later com python-chess em 2026-08-16. Veja [LICENSE](LICENSE), [ADR-004](docs/adr/ADR-004-licenca-e-biblioteca-de-regras.md) e [registro da decisão](LICENSE-DECISION.md). A redistribuição de outputs de providers continua pendente em GATE-005.
 
 ---
 

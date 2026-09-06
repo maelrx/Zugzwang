@@ -20,7 +20,9 @@ Este corpus contém:
 - skills reutilizáveis para agentes Codex;
 - material-fonte arquivado e manifesto de proveniência.
 
-Não contém um runtime funcional. Os diretórios `packages/` e `plugins/` representam fronteiras e instruções, não uma implementação disfarçada.
+O kernel Python está implementado em `packages/` e `plugins/`, com `uv.lock`, CLI, SQLite/CAS e testes offline. Este corpus também preserva propostas e documentos históricos; implementação não equivale a todos os exit gates concluídos.
+
+Antes de começar trabalho novo, consulte o [estado operacional e fila de PRs](docs/engineering/REPOSITORY_STATUS.md). As estratégias experimentais em branches não devem ser confundidas com a main.
 
 ## 2. Ordem de leitura humana
 
@@ -46,20 +48,22 @@ A leitura completa continua pelo [índice documental](docs/INDEX.md).
 8. Atualizar requisitos, ADRs e traceability quando o contrato mudar.
 9. Produzir um change report com evidência de testes e riscos residuais.
 
-## 4. Gates antes do scaffold
+## 4. Gates e execução
 
-Os gates bloqueantes para o scaffold M0 são:
+Os gates do scaffold M0 foram aceitos em 2026-08-16:
 
 - `GATE-001`: licença e rules substrate;
 - `GATE-002`: matriz Python;
 - `GATE-004`: nome do CLI.
 
-`GATE-003` bloqueia providers reais no M3, mas não o vertical slice fake-only de M0. Os demais possuem comportamento conservador documentado e precisam ser ratificados antes do milestone ou release que afetem.
+`GATE-003` e `GATE-006` também estão aceitos para captura privada e engine fornecido pelo operador. Gates 005 e 007-012 permanecem pendentes, com os defaults de DECISIONS.yaml. Esta organização não autoriza novos runs pagos, redistribuição de outputs ou publicação de packages.
 
 ## 5. Validação do pacote
 
 ```bash
-python scripts/validate_foundation.py
+uv sync --all-packages --all-extras --locked
+uv run python scripts/validate_foundation.py --strict
+uv run pytest -m "not e2e"
 ```
 
 O script confere:
@@ -76,3 +80,15 @@ O script confere:
 ## 6. Regra de ouro
 
 Nenhum agente pode “resolver” uma ambiguidade científica mudando silenciosamente o protocolo. Alterou representação, retries, tools, legal moves, knowledge packet, budget, engine ou seletor: alterou a condição experimental.
+
+## 7. O que cada nível de evidência prova (e o que não prova)
+
+Ao comunicar resultados, distinga sempre estes quatro níveis — nunca trate um pelo outro:
+
+1. **Implementação**: o código existe e os contratos estão tipados/testados. Não prova comportamento correto em execução.
+2. **Teste offline (fake)**: a suíte `pytest -m "not e2e"` cobre mecanismos com backend/engine fakes determinísticos. Prova os mecanismos do kernel; não prova nada sobre nenhum modelo real.
+3. **Evidência real local**: runs com provider/engine reais (suite 0.1, bateria overnight) gravados em bundle/CAS. Prova o que aconteceu naquele run específico; com `n=1` é exploração, não comparação.
+4. **Reprodução independente**: exportar um bundle, importá-lo em workspace sem acesso ao original, reconstruir as projeções do event stream e obter as mesmas jogadas e métricas equivalentes (prova offline: `tests/integration/test_m4_bundle.py`). É o piso para qualquer claim de reprodução; não substitui replicação estatística.
+
+Reprodução independente de máquina limpa e validação científica da suite completa continuam pendências explícitas do roadmap (issues #13/#14/#15, GATE-011 para execução paga).
+

@@ -88,7 +88,9 @@ def _collect_cases():
                 continue
             for path in root.rglob("*.py"):
                 for module in _imported_modules(path):
-                    if module in forbidden:
+                    # ZGW-0085/#15: submodule imports (sqlalchemy.orm) must be
+                    # caught by prefix matching, not exact equality.
+                    if any(module == name or module.startswith(name + ".") for name in forbidden):
                         cases.append((package_dir, path, module))
     return cases
 

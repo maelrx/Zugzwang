@@ -97,7 +97,7 @@ async def test_single_agent_sees_legal_tree_and_records_one_decision_call() -> N
             "search": {
                 "memory_mode": "episodic",
                 "reply_scope": "all",
-                "max_root_branches": 4,
+                "max_root_branches": 16,
                 "max_affordance_roots": 32,
             }
         },
@@ -132,7 +132,10 @@ async def test_single_agent_sees_legal_tree_and_records_one_decision_call() -> N
     rationale = trace.selection_rationale
     assert rationale is not None
     assert rationale["legal_action_set"]["count"] == 20
-    assert len(rationale["root_branches"]) == 20
+    # ZGW-0085/#14: max_root_branches caps the `all` scope (previously inert):
+    # twenty legal roots, configured width 16.
+    assert len(rationale["root_branches"]) == 16
+    assert rationale["root_affordance_timing"] == "pre_selection"
     assert rationale["root_branches"][0]["legal_reply_moves"]
     assert rationale["variant_branches"][0]["legal"]
     prompt = backend.requests[0][0].messages[0].parts[0].text

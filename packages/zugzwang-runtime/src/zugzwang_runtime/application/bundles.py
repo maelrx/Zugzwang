@@ -41,6 +41,7 @@ class BundleManifest(BaseModel):
     run_id: str
     created_at: str
     protocol_hash: str
+    condition_id: str | None = None
     completeness: dict[str, bool]
     redactions: dict[str, str | bool]
     reproducibility: dict[str, bool | list[str]]
@@ -189,6 +190,7 @@ class ExportRunBundleService:
             run_id=run_id,
             created_at=to_iso_z(utc_now()),
             protocol_hash=row["protocol_hash"],
+            condition_id=str(row["condition_id"]),
             completeness={
                 "source_manifest": False,
                 "resolved_manifest": bool(row.get("resolved_manifest_artifact_id")),
@@ -257,6 +259,180 @@ class ImportRunBundleService:
         self._cas = cas
         self._artifacts = artifacts
         self._evaluation_runs = evaluation_runs
+
+    def rebuild_projections(
+        self,
+        bundle_dir: Path,
+        *,
+        runs: RunRepository,
+        episodes: EpisodeRepository,
+        steps: StepRepository,
+        events: EventRepository,
+    ) -> dict[str, int]:
+        """Rebuild run/episode/step projections from the bundle event stream.
+
+        ZGW-0085/#15: importing bytes alone does not reproduce a run. The
+        event stream is the authoritative record; projections are derived,
+        exactly as they are during execution, so offline re-evaluation can
+        replay the same committed moves in a workspace that never touched the
+        original data.
+        """
+        bundle_path = bundle_dir / "bundle.json"
+        if not bundle_path.exists():
+            raise SecurityError(f"{bundle_dir} is not a valid bundle: bundle.json missing")
+        bundle = BundleManifest.model_validate(json.loads(bundle_path.read_text(encoding="utf-8")))
+        if bundle.condition_id is None:
+            raise SecurityError(
+                "bundle lacks condition_id; projection rebuild requires bundle schema with condition_id"
+            )
+
+        parsed_events: list[dict[str, Any]] = []
+        events_path = bundle_dir / "events.jsonl"
+        for line in events_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            parsed_events.append(cast(dict[str, Any], json.loads(line)))
+
+        run_status = "COMPLETED"
+        for event in parsed_events:
+            if event["event_type"] == "run.finalized":
+                run_status = str(event["payload"].get("status", run_status))
+        runs.insert_run(
+            {
+                "run_id": bundle.run_id,
+                "condition_id": bundle.condition_id,
+                "status": run_status,
+                "protocol_hash": bundle.protocol_hash,
+                "declared_assistance": bundle.declared_assistance,
+                "effective_assistance": bundle.effective_assistance,
+                "projection_version": 1,
+            }
+        )
+
+        episodes_seen: list[str] = []
+        episode_initial_ref: dict[str, str] = {}
+        episode_status: dict[str, str] = {}
+        episode_outcome: dict[str, str | None] = {}
+        steps_seen: list[str] = []
+        step_episode: dict[str, str] = {}
+        step_status: dict[str, str] = {}
+        step_action: dict[str, dict[str, Any]] = {}
+        step_transition: dict[str, str] = {}
+
+        for event in parsed_events:
+            event_type = str(event["event_type"])
+            context = cast(dict[str, Any], event.get("context") or {})
+            episode_id = cast("str | None", context.get("episode_id"))
+            step_id = cast("str | None", context.get("step_id"))
+            refs = [str(r) for r in cast(list[Any], event.get("artifact_refs") or [])]
+            payload = cast(dict[str, Any], event.get("payload") or {})
+            if (
+                event_type == "episode.started"
+                and episode_id
+                and str(episode_id) not in episodes_seen
+            ):
+                # The JSONL order is not guaranteed; registration is separate
+                # from the terminal status so completion arriving first cannot
+                # hide the episode.
+                episodes_seen.append(str(episode_id))
+                episode_status.setdefault(str(episode_id), "RUNNING")
+            elif (
+                event_type == "step.observation.created"
+                and episode_id
+                and str(episode_id) not in episode_initial_ref
+                and len(refs) >= 2
+            ):
+                episode_initial_ref[str(episode_id)] = refs[1]
+            elif event_type == "step.started" and step_id and str(step_id) not in steps_seen:
+                # Registration must not downgrade a terminal/committed status
+                # already parsed from an out-of-order event.
+                steps_seen.append(str(step_id))
+                step_episode[str(step_id)] = str(episode_id or "")
+                step_status.setdefault(str(step_id), "DECIDING")
+            elif event_type == "step.committed" and step_id:
+                step_status[str(step_id)] = "COMMITTED"
+                action_json: dict[str, Any] = {"action": str(payload.get("action", ""))}
+                if payload.get("policy"):
+                    action_json["policy"] = payload["policy"]
+                if payload.get("reconstruction_scores"):
+                    action_json["kind"] = "fen_prediction"
+                step_action[str(step_id)] = action_json
+                if refs:
+                    step_transition[str(step_id)] = refs[0]
+            elif event_type == "step.terminal_failure" and step_id:
+                step_status[str(step_id)] = "TERMINAL_FAILURE"
+            elif event_type == "episode.completed" and episode_id:
+                episode_status[str(episode_id)] = "COMPLETED"
+                episode_outcome[str(episode_id)] = str(payload.get("reason", "completed"))
+            elif event_type == "episode.failed" and episode_id:
+                episode_status[str(episode_id)] = "FAILED"
+                episode_outcome[str(episode_id)] = str(payload.get("reason", "failed"))
+
+        episode_ordinal = {episode_id: index + 1 for index, episode_id in enumerate(episodes_seen)}
+        for episode_id in episodes_seen:
+            episodes.insert_episode(
+                {
+                    "episode_id": episode_id,
+                    "run_id": bundle.run_id,
+                    "ordinal": episode_ordinal[episode_id],
+                    "task_type": "reconstructed",
+                    "seed": 0,
+                    "status": episode_status.get(episode_id, "RUNNING"),
+                    "outcome": episode_outcome.get(episode_id),
+                    "initial_state_artifact_id": episode_initial_ref.get(episode_id),
+                }
+            )
+        step_ordinal: dict[str, int] = {}
+        for step_id in steps_seen:
+            episode_id = step_episode[step_id]
+            step_ordinal[episode_id] = step_ordinal.get(episode_id, 0) + 1
+            steps.insert_step(
+                {
+                    "step_id": step_id,
+                    "episode_id": episode_id,
+                    "ordinal": step_ordinal[episode_id],
+                    "actor_id": "reconstructed",
+                    "status": step_status.get(step_id, "DECIDING"),
+                }
+            )
+        for step_id in steps_seen:
+            if step_status.get(step_id) not in {"COMMITTED", "TERMINAL_FAILURE"}:
+                continue
+            values: dict[str, Any] = {"status": step_status[step_id]}
+            if step_id in step_action:
+                values["action_json"] = step_action[step_id]
+            if step_id in step_transition:
+                values["transition_artifact_id"] = step_transition[step_id]
+            steps.update_step(step_id, values)
+
+        events_count = 0
+        for event in parsed_events:
+            stream = cast(dict[str, Any], event.get("stream") or {})
+            context = cast(dict[str, Any], event.get("context") or {})
+            events.append_event(
+                {
+                    "event_id": event["event_id"],
+                    "run_id": context.get("run_id") or bundle.run_id,
+                    "episode_id": context.get("episode_id"),
+                    "step_id": context.get("step_id"),
+                    "attempt_id": context.get("attempt_id"),
+                    "stream_type": stream.get("type", "run"),
+                    "stream_id": stream.get("id", bundle.run_id),
+                    "sequence_no": int(stream.get("sequence", 0)),
+                    "event_type": event["event_type"],
+                    "event_version": int(event.get("event_version", 1)),
+                    "occurred_at": event["occurred_at"],
+                    "payload_json": cast(dict[str, Any], event.get("payload") or {}),
+                    "artifact_refs_json": cast(list[Any], event.get("artifact_refs") or []),
+                    "trace_id": None,
+                }
+            )
+            events_count += 1
+        return {
+            "episodes": len(episodes_seen),
+            "steps": len(steps_seen),
+            "events": events_count,
+        }
 
     def import_bundle(self, bundle_dir: Path) -> dict[str, str]:
         bundle_path = bundle_dir / "bundle.json"

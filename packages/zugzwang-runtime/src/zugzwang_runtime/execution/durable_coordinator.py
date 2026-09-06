@@ -1036,6 +1036,62 @@ class DurableRunCoordinator:
 
                 legal_actions = environment.legal_actions(state)
                 if trace.final_action is None:
+                    provider_failure = decision_error is not None or any(
+                        verdict.kind in {"provider_error", "decision_error"}
+                        for verdict in trace.verdicts
+                    )
+                    if provider_failure:
+                        # ZGW-0085/#13: provider failures are fail-closed. A
+                        # timeout with unknown outcome may already have
+                        # consumed provider work, so it must never re-enter
+                        # the provider through the illegal-action retry
+                        # budget; transport-level retries stay inside the
+                        # recording backend under its own policy.
+                        stable_code = (
+                            str(getattr(decision_error, "stable_code", "decision_error"))
+                            if decision_error is not None
+                            else next(
+                                (
+                                    str(verdict.message) or "decision_error"
+                                    for verdict in trace.verdicts
+                                    if verdict.kind in {"provider_error", "decision_error"}
+                                ),
+                                "decision_error",
+                            )
+                        )[:128]
+                        self._emit_step_event(
+                            run_id,
+                            episode_id,
+                            step_id,
+                            "step.decision_failed",
+                            {"stable_code": stable_code},
+                        )
+                        self._persist_search_workspace(
+                            workspace=search_workspace,
+                            memory=search_memory,
+                            run_id=run_id,
+                            episode_id=episode_id,
+                            step_id=step_id,
+                            status="FAILED",
+                            algorithm=_search_algorithm(strategy),
+                        )
+                        await self._fail_step(run_id, episode_id, step_id, "decision_error")
+                        self._writer.enqueue(
+                            FinalizeEpisodeCommand(
+                                episode_id=episode_id,
+                                episode_values={
+                                    "status": EpisodeState.FAILED.value,
+                                    "outcome": "decision_error",
+                                },
+                                envelope=self._episode_envelope(
+                                    run_id,
+                                    episode_id,
+                                    "episode.failed",
+                                    {"reason": "decision_error", "stable_code": stable_code},
+                                ),
+                            )
+                        )
+                        return "failed"
                     illegal_retries += 1
                     reason = trace.termination_reason if trace.termination_reason else "no_action"
                     self._emit_step_event(
@@ -1589,8 +1645,15 @@ class DurableRunCoordinator:
                     "status": "COMMITTED",
                     "action_json": action_json,
                     "transition_artifact_id": snapshot_ref,
-                    "effective_assistance": "H2/K0",
-                    "assistance_violated": 0,
+                    "effective_assistance": _assistance_string(opponent_h, opponent_k),
+                    "assistance_violated": 1
+                    if _assistance_violation(
+                        condition.protocol.declared_assistance,
+                        condition.protocol.declared_knowledge,
+                        opponent_h,
+                        opponent_k,
+                    )
+                    else 0,
                     "committed_at": to_iso_z(utc_now()),
                 },
                 episode_id=episode_id,

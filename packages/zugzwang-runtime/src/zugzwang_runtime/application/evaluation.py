@@ -406,6 +406,7 @@ class ReportRunService:
             if selected_evaluation is not None
             else []
         )
+        legacy_metrics_rows = self._metrics.legacy_for_run(run_id)
         events_rows = self._events.for_run(run_id)
         provider_calls = sum(1 for e in events_rows if e["event_type"] == "provider.call.completed")
         provider_failures = sum(
@@ -438,6 +439,13 @@ class ReportRunService:
                 "cost_status": "unknown",  # GATE-009 pending: no USD claims
             },
             "metrics": [dict(m) for m in metrics_rows],
+            "legacy_metrics": {
+                "note": (
+                    "recorded before evaluation-run generations existed (pre-0003); "
+                    "evaluator generation/provenance is unknown"
+                ),
+                "observations": [dict(m) for m in legacy_metrics_rows],
+            },
             "evaluation": (
                 {
                     "evaluation_run_id": selected_evaluation["evaluation_run_id"],
@@ -491,6 +499,29 @@ class ReportRunService:
             lines.append("## Metrics")
             lines.append("")
             for metric in report["metrics"]:
+                value = (
+                    metric.get("value_num")
+                    if metric.get("value_num") is not None
+                    else metric.get("value_text")
+                )
+                lines.append(
+                    f"- {metric['metric_definition_id']}@{metric['metric_version']}: "
+                    f"{value} {metric['unit']}"
+                )
+        legacy_metrics = cast(
+            "dict[str, Any]",
+            report.get("legacy_metrics") or {},
+        )
+        legacy_observations = cast(
+            "list[dict[str, Any]]",
+            legacy_metrics.get("observations") or [],
+        )
+        if legacy_observations:
+            lines.append("")
+            lines.append("## Legacy metrics")
+            lines.append("")
+            lines.append(f"- {legacy_metrics.get('note', '')}")
+            for metric in legacy_observations:
                 value = (
                     metric.get("value_num")
                     if metric.get("value_num") is not None

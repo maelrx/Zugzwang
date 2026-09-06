@@ -69,7 +69,11 @@ flowchart TD
   - [x] Upgrade de cópia baseline (0001→0007) e rollback de feature ensaiados; rollback recusa DROP com dados (§23.3)
   - [x] Correção da nomenclatura de término: SEVENTYFIVE_MOVE + TERMINATION_MAPPING_VERSION v2 (FIFTY_MOVE preservado para claims; registros antigos não reescritos)
   - [x] Integridade referencial e idempotência testadas; 328 offline
-- [ ] **CB-WO-05** — facade e tools (§38.6) → pending (depende W3+W4; inclui codec textual da view básica e broker de exposição com TEST-007)
+- [x] **CB-WO-05** — facade e tools (§38.6) → **ZGW-0092** · PR [#30](https://github.com/maelrx/Zugzwang/pull/30) (empilhado no #29; review 2 eixos aplicado em f6f7d7f)
+  - [x] `CognitionToolBroker`: única porta às tools L0 (observe/inspect/expand/compare), preflight de catálogo/escopo/tamanho/budget, settle PREPARED→COMMITTED/REJECTED/FAILED com artifact CAS, observação, envelope §42.6
+  - [x] `DecisionSession.open` (§26.1): abertura §12.2 PREPARING→READY→ACTIVE, snapshots, bindings, primeiro round; sink/loader CAS-coerentes
+  - [x] Journal: `command_ordinal` e `exposure_sequence` como sequências duráveis (MAX+1); `bound_node_ids(decision_id)` explícito
+  - [x] TEST-019/020/021/031/032/033/034/035/036/077/078 (15 testes); 343 passed/1 skipped offline; ruff + pyright strict + foundation --strict verdes
 - [ ] **CB-WO-06** — providers round-trip (§38.7) → pending (depende W2)
 
 ### Fase 5 — Loop

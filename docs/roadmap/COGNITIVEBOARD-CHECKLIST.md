@@ -107,7 +107,10 @@ flowchart TD
   - [x] Prereg ABLATION_CB_01 (condições congeladas, plano pré-análise, route freeze, custo unknown)
   - [x] `analyze_cb_ablation.py` (perspectiva, mate fora da média, sinal, pareamento com excluídos contados, custo formal)
   - [x] TEST-071..074 (4 testes); 389 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
-- [ ] **CB-WO-12** — skills versionadas (§38.13) → pending (depende W9)
+- [x] **CB-WO-12** — skills versionadas (§38.13) → **ZGW-0099** · PR [#37](https://github.com/maelrx/Zugzwang/pull/37) (empilhado no #36; review 2 eixos aplicado em e32a1b5)
+  - [x] Migration 0009 CB-M3 (DDL §43.2 + triggers normativos de decisão NULL-aware documentados); downgrade recusa com dados
+  - [x] `SkillRegistry`: propose→approve (release versionado)/reject (tombstone); activate por allowlist (texto ignorado); bind exige SEALED
+  - [x] TEST-049/050/051 + contexto pareado (4 testes); 393 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
 - [ ] **CB-WO-13** — planos e premissas (§38.14) → pending (depende W9)
 - [ ] **CB-WO-14** — reancoragem (§38.15) → pending (depende W11; autorização por profiling)
 - [ ] **CB-WO-15** — paralelismo experimental (§38.15) → pending (depende W11; autorização por resultado)

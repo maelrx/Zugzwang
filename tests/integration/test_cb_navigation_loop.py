@@ -459,3 +459,24 @@ def test_system_prompt_names_real_root_node_id(harness) -> None:
     _run(loop)
     system_text = backend.seen_requests[0].messages[0].parts[0].text
     assert "'node-root'" in system_text, system_text[:400]
+
+
+def test_system_prompt_states_round_budget_and_declares_finalize(harness) -> None:
+    """Pilot regression: the prompt states the call budget (call i of N, last
+    call finalize-only) and board_finalize is a DECLARED native tool — the
+    real pilot explored past the finalize reserve because neither fact was
+    ever communicated (decision FAILED, BUDGET_INSUFFICIENT)."""
+    from zugzwang_runtime.cognition.loop import BOARD_TOOL_DEFINITIONS, FINALIZE_TOOL
+
+    session, _journal = _open(harness)
+    backend = FakeCognitiveBackend([propose_observe])
+    loop = _loop(session, backend, harness, max_rounds=2)
+    _run(loop)
+    system_text = backend.seen_requests[0].messages[0].parts[0].text
+    assert "model call 1 of at most 2" in system_text, system_text[:600]
+    assert "accepts only board_finalize" in system_text, system_text[:600]
+    tools = backend.seen_requests[0].tools
+    finalize = [t for t in tools if t.name == FINALIZE_TOOL]
+    assert len(finalize) == 1, [t.name for t in tools]
+    assert set(finalize[0].parameters["required"]) == {"node_id", "action_id"}
+    assert any(t.name == FINALIZE_TOOL for t in BOARD_TOOL_DEFINITIONS)

@@ -102,6 +102,21 @@ BOARD_TOOL_DEFINITIONS: tuple[ToolDefinition, ...] = (
             "required": ["node_id", "other_node_id"],
         },
     ),
+    ToolDefinition(
+        name=FINALIZE_TOOL,
+        description=(
+            "Commit the decision: validate the chosen action against the ROOT "
+            "node and end the decision. Call with the ROOT node id."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "node_id": {"type": "string"},
+                "action_id": {"type": "string"},
+            },
+            "required": ["node_id", "action_id"],
+        },
+    ),
 )
 
 
@@ -435,19 +450,34 @@ class CognitiveLoop:
         )
 
     def _system_prompt_for(self, ordinal: int) -> str:
-        base = self._system_prompt_override or self._default_system_prompt()
+        base = self._system_prompt_override or self._default_system_prompt(ordinal)
         if self._context_sections is None:
             return base
         extra = self._context_sections(ordinal)
         return f"{base}\n\n{extra}" if extra else base
 
-    def _default_system_prompt(self) -> str:
+    def _default_system_prompt(self, ordinal: int | None = None) -> str:
         # The root node id is the graph address every tool call must use for
         # the initial position: a real model cannot guess it (pilot: Kimi
         # addressed ROOT/root/0/1 and every observe was NODE_SCOPE_MISMATCH).
         # The id is decision-scoped and already journaled — exposing it is
-        # addressing, not hidden state.
+        # addressing, not hidden state. The round budget is likewise harness
+        # information the model needs to plan: without it the model explores
+        # until the finalize reserve refuses (pilot round 5) and the decision
+        # fails closed without ever hearing a limit existed.
         root = self._root_node_id or "the root node"
+        if ordinal is None:
+            budget_note = ""
+        else:
+            calls_total = self._max_rounds
+            calls_used = ordinal - 2
+            calls_left = max(0, self._max_rounds - calls_used)
+            budget_note = (
+                f" This is model call {calls_used + 1} of at most {calls_total}: "
+                f"{calls_left} call(s) remain including this one. "
+                "The final call accepts only board_finalize — exploration then "
+                "is refused, so finalize no later than the last call."
+            )
         if self._interaction_mode == "native_tools":
             return (
                 "You are navigating one decision's hypothetical search graph. "
@@ -456,6 +486,7 @@ class CognitiveLoop:
                 "Use the board tools to observe the root, expand legal actions "
                 f"(action ids come from observations), and when ready call "
                 f"{FINALIZE_TOOL} with the ROOT node and the chosen action_id."
+                f"{budget_note}"
             )
         return (
             "You are navigating one decision's hypothetical search graph. "
@@ -463,6 +494,7 @@ class CognitiveLoop:
             'Reply with ONE JSON command: {"command": <tool>, "arguments": {...}}. '
             f'To finish, use {{"command": "{FINALIZE_TOOL}", '
             '"arguments": {"node_id": <root>, "action_id": <id>}}}.'
+            f"{budget_note}"
         )
 
     # -- response parsing (native tools vs JSON commands, §12.1) ------------------

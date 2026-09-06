@@ -189,7 +189,55 @@ class OpenAiCompatibleBackend:
         for message in request.messages:
             role = self._role(message.role)
             text_parts = [p.text for p in message.parts if isinstance(p, TextPart)]
+            json_parts = [
+                json.dumps(p.data, ensure_ascii=False, sort_keys=True)
+                for p in message.parts
+                if isinstance(p, JsonDataPart)
+            ]
             image_parts = [p for p in message.parts if isinstance(p, ImagePart)]
+            call_parts = [p for p in message.parts if isinstance(p, ToolCallPart)]
+            result_parts = [p for p in message.parts if isinstance(p, ToolResultPart)]
+            if call_parts or result_parts:
+                if message.role is MessageRole.TOOL:
+                    if call_parts or text_parts or image_parts or json_parts:
+                        raise ProviderResponseError(
+                            "tool messages must use ToolResultPart in chat lowering",
+                            technical_context="TOOL messages carry tool results only",
+                        )
+                    for part in result_parts:
+                        messages.append(
+                            {
+                                "role": role,
+                                "tool_call_id": part.tool_call_id,
+                                "content": part.content,
+                            }
+                        )
+                    continue
+                if result_parts:
+                    raise ProviderResponseError(
+                        "tool results require the TOOL role in chat lowering",
+                        technical_context="ToolResultPart must ride a TOOL message",
+                    )
+                entry: dict[str, Any] = {
+                    "role": role,
+                    "content": "\n".join(text_parts) or None,
+                }
+                if call_parts:
+                    entry["tool_calls"] = [
+                        {
+                            "id": part.tool_call_id,
+                            "type": "function",
+                            "function": {
+                                "name": part.tool_name,
+                                "arguments": json.dumps(
+                                    part.arguments, ensure_ascii=False, sort_keys=True
+                                ),
+                            },
+                        }
+                        for part in call_parts
+                    ]
+                messages.append(entry)
+                continue
             if image_parts and not text_parts:
                 content: Any = [
                     {
@@ -204,8 +252,8 @@ class OpenAiCompatibleBackend:
                     for part in image_parts
                 ]
             else:
-                content = "\n".join(text_parts)
-            entry: dict[str, Any] = {"role": role, "content": content}
+                content = "\n".join(text_parts + json_parts)
+            entry = {"role": role, "content": content}
             messages.append(entry)
         payload: dict[str, Any] = {
             "model": request.model.model,

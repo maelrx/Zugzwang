@@ -302,7 +302,6 @@ class CognitionJournal:
         decision_id: str,
         round_id: str,
         provider_tool_call_id: str,
-        command_ordinal: int,
         idempotency_key: str,
         tool_name: str,
         arguments_hash: str,
@@ -319,6 +318,18 @@ class CognitionJournal:
                 ),
                 {"decision_id": decision_id, "key": idempotency_key},
             ).fetchone()
+            # The (round_id, command_ordinal) pair is a durable sequence: the next
+            # ordinal is the successor of the current maximum, so every broker
+            # sharing this round — including concurrent ones — allocates a fresh
+            # slot without colliding (PRD §42.6 ordering).
+            row = conn.execute(
+                sa.text(
+                    "SELECT COALESCE(MAX(command_ordinal), -1) FROM cb_tool_operations "
+                    "WHERE round_id = :round_id AND decision_id = :decision_id"
+                ),
+                {"round_id": round_id, "decision_id": decision_id},
+            ).fetchone()
+            next_ordinal = int(row[0]) + 1 if row is not None else 0
             if existing is not None:
                 # Replay must repeat the same semantic call; a divergent retry
                 # is a contract violation, not a new operation (PRD §15).
@@ -343,7 +354,7 @@ class CognitionJournal:
                     "decision_id": decision_id,
                     "round_id": round_id,
                     "provider_tool_call_id": provider_tool_call_id,
-                    "command_ordinal": command_ordinal,
+                    "command_ordinal": next_ordinal,
                     "idempotency_key": idempotency_key,
                     "tool_name": tool_name,
                     "arguments_hash": arguments_hash,
@@ -353,6 +364,24 @@ class CognitionJournal:
             )
             conn.commit()
             return operation_id, True
+
+    def next_exposure_sequence(self, decision_id: str) -> int:
+        """Successor of the current maximum exposure sequence (durable timeline).
+
+        Every broker sharing a decision allocates from this sequence, so
+        concurrent brokers never collide on UNIQUE(decision_id,
+        exposure_sequence) (PRD §42.6 ordering).
+        """
+        with self._connect() as conn:
+            row = conn.execute(
+                sa.text(
+                    "SELECT COALESCE(MAX(exposure_sequence), 0) FROM cb_observations "
+                    "WHERE decision_id = :decision_id"
+                ),
+                {"decision_id": decision_id},
+            ).fetchone()
+            conn.commit()
+        return int(row[0]) + 1 if row is not None else 1
 
     def record_observation(
         self,
@@ -396,6 +425,67 @@ class CognitionJournal:
                 },
             )
             conn.commit()
+
+    def settle_tool_operation(
+        self,
+        *,
+        operation_id: str,
+        decision_id: str,
+        status: str,
+        result_artifact_id: str | None,
+        error_code: str | None,
+        elapsed_us: int | None = None,
+    ) -> None:
+        """PREPARED -> COMMITTED/REJECTED/FAILED (result artifact mandatory for
+        COMMITTED/REJECTED, enforced by the DDL check)."""
+        if status not in {"COMMITTED", "REJECTED", "FAILED"}:
+            raise DecisionJournalError("INVALID_ARGUMENTS", f"cannot settle into {status!r}")
+        if status in {"COMMITTED", "REJECTED"} and result_artifact_id is None:
+            raise DecisionJournalError("INVALID_ARGUMENTS", f"{status} requires a result artifact")
+        with self._connect() as conn:
+            result = conn.execute(
+                sa.text(
+                    "UPDATE cb_tool_operations SET status = :status, result_artifact_id = "
+                    ":result_artifact_id, error_code = :error_code, elapsed_us = :elapsed_us, "
+                    "completed_at = :completed_at "
+                    "WHERE operation_id = :operation_id AND decision_id = :decision_id "
+                    "AND status = 'PREPARED'"
+                ),
+                {
+                    "status": status,
+                    "result_artifact_id": result_artifact_id,
+                    "error_code": error_code,
+                    "elapsed_us": elapsed_us,
+                    "completed_at": self._clock(),
+                    "operation_id": operation_id,
+                    "decision_id": decision_id,
+                },
+            )
+            if result.rowcount != 1:
+                raise DecisionJournalError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"operation {operation_id!r} is not open for settlement",
+                )
+            conn.commit()
+
+    def result_artifact_id(self, operation_id: str) -> str | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                sa.text(
+                    "SELECT result_artifact_id FROM cb_tool_operations "
+                    "WHERE operation_id = :operation_id"
+                ),
+                {"operation_id": operation_id},
+            ).fetchone()
+        return row[0] if row else None
+
+    def bound_node_ids(self, decision_id: str) -> list[str]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                sa.text("SELECT node_id FROM cb_node_bindings WHERE decision_id = :decision_id"),
+                {"decision_id": decision_id},
+            ).fetchall()
+        return [r[0] for r in rows]
 
     # -- budget journal (append-only, reconcilable) ---------------------------
 

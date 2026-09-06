@@ -64,7 +64,7 @@ class DurableRunServices:
         self._workspace = workspace
         self._registry = registry
         workspace.ensure_layout()
-        self._database = Database(workspace.data_dir / "state.db")
+        self._database = Database(workspace.data_dir / "state.db", wal_policy=workspace.wal_policy)
         engine = self._database.open()
         self._schema = SchemaManager(engine)
         self._schema.upgrade()

@@ -307,12 +307,14 @@ class DoctorService:
     def _sqlite_check() -> DoctorCheck:
         import sqlite3
 
-        version = sqlite3.sqlite_version_info
-        ok = version >= (3, 37)
+        from ..persistence.sqlite_policy import admitted, wal_reason
+
+        version_info = tuple(sqlite3.sqlite_version_info)
+        ok = admitted(version_info)
         return DoctorCheck(
             check="sqlite",
             status="ok" if ok else "error",
-            message=f"sqlite {sqlite3.sqlite_version} (>=3.37 for WAL)",
+            message=wal_reason(version_info),
         )
 
     @staticmethod
@@ -330,7 +332,7 @@ class DoctorService:
         from ..persistence.repositories import ArtifactRepository, SchemaManager
 
         checks: list[DoctorCheck] = []
-        db = Database(workspace.data_dir / "state.db")
+        db = Database(workspace.data_dir / "state.db", wal_policy=workspace.wal_policy)
         try:
             engine = db.open()
             schema = SchemaManager(engine)

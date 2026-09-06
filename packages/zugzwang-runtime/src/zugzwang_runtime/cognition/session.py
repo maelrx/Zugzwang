@@ -11,12 +11,17 @@ the journal tables directly.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.engine import Engine
 
-from zugzwang_chess.environment.standard import START_FEN
+from zugzwang_chess.environment.standard import (
+    START_FEN,
+    ChessGameState,
+    StandardChessRulesKernel,
+)
 from zugzwang_core.domain.artifacts import ArtifactPayload, ArtifactRef
 from zugzwang_core.domain.canonical import canonical_json_bytes
 from zugzwang_core.domain.cognition import ToolEnvelope, position_key_v2, state_key_v2
@@ -25,6 +30,7 @@ from zugzwang_core.domain.errors import ArtifactError
 from ..artifacts.cas import ContentAddressedStore
 from ..persistence.cognition import CognitionJournal
 from ..persistence.repositories import ArtifactRepository
+from ..search.workspace import SearchWorkspace
 from .broker import (
     ArtifactLoader,
     ArtifactSink,
@@ -34,9 +40,27 @@ from .broker import (
 
 if TYPE_CHECKING:
     from zugzwang_chess.cognition import ChessPerception
-    from zugzwang_chess.environment.standard import ChessGameState
 
 ROOT_ROUND_ID_SUFFIX = "round-0001"
+
+
+@dataclass(frozen=True, slots=True)
+class _SessionComponents:
+    """Decision-scoped components shared by every round's broker."""
+
+    journal: CognitionJournal
+    perception: Any
+    cas: ContentAddressedStore
+    engine: Engine
+    sink: ArtifactSink
+    loader: ArtifactLoader
+    rules_kernel: StandardChessRulesKernel
+    workspace: SearchWorkspace
+    policy_hash: str
+    max_batch: int
+    max_argument_bytes: int
+    search_session_id: str
+    clock: Callable[[], str]
 
 
 def _default_clock() -> str:
@@ -129,6 +153,8 @@ def _state_record(state: ChessGameState) -> dict[str, Any]:
 class DecisionSession:
     """One decision's authorized surface: journal + perception + broker (§26.1)."""
 
+    _factory: _SessionComponents | None = None
+
     def __init__(
         self,
         *,
@@ -149,6 +175,18 @@ class DecisionSession:
     @property
     def bound_node_ids(self) -> list[str]:
         return self._journal.bound_node_ids(self.decision_id)
+
+    @property
+    def journal(self) -> CognitionJournal:
+        return self._journal
+
+    @property
+    def workspace(self) -> SearchWorkspace | None:
+        return self._broker.workspace
+
+    @property
+    def root_node_id(self) -> str | None:
+        return self._broker.root_node_id
 
     @classmethod
     def open(
@@ -172,6 +210,8 @@ class DecisionSession:
         max_batch: int = 16,
         max_argument_bytes: int = 8192,
         remaining_tool_operations: int = 32,
+        max_depth_plies: int = 6,
+        max_nodes: int = 64,
     ) -> DecisionSession:
         """Open a decision: journal the opening, then expose the broker (§26.1)."""
         clock = clock or _default_clock
@@ -184,6 +224,34 @@ class DecisionSession:
         root_node_id = node_ids[0]
         node_keys = {node_id: identity_keys(state) for node_id, state in states.items()}
         root_state_key, root_position_key = node_keys[root_node_id]
+
+        rules_kernel = StandardChessRulesKernel()
+        workspace = SearchWorkspace(
+            kernel=rules_kernel,
+            root_state=states[root_node_id],
+            session_id=search_session_id,
+            max_depth_plies=max_depth_plies,
+            max_nodes=max_nodes,
+        )
+        # Every bound initial node must exist in the search-graph projection:
+        # cb_node_bindings references search_nodes with a session scope guard.
+        for node_id, state in states.items():
+            state_key, position_key = node_keys[node_id]
+            journal.ensure_search_node(
+                node_id=node_id,
+                search_session_id=search_session_id,
+                parent_id=None,
+                position_key=position_key,
+                trajectory_key=f"anchor:{state_key}",
+                state_ref=f"decision://{decision_id}/{node_id}",
+                action_from_parent=None,
+                root_action=None,
+                depth=_depth_plies(state),
+                side_to_move=state.side_to_move,
+                terminal=state.termination is not None,
+                created_by="root",
+                status="terminal" if state.termination is not None else "frontier",
+            )
 
         journal.ensure_state_snapshot(
             state_key=root_state_key,
@@ -257,8 +325,39 @@ class DecisionSession:
             artifact_loader=loader,
             max_batch=max_batch,
             max_argument_bytes=max_argument_bytes,
+            rules_kernel=rules_kernel,
+            search_workspace=workspace,
+            search_session_id=search_session_id,
         )
-        return cls(decision_id=decision_id, broker=broker, journal=journal)
+        session = cls(decision_id=decision_id, broker=broker, journal=journal)
+        session._factory = _SessionComponents(
+            journal=journal,
+            perception=perception,
+            cas=cas,
+            engine=engine,
+            sink=sink,
+            loader=loader,
+            rules_kernel=rules_kernel,
+            workspace=workspace,
+            policy_hash=policy_hash,
+            max_batch=max_batch,
+            max_argument_bytes=max_argument_bytes,
+            search_session_id=search_session_id,
+            clock=clock,
+        )
+        return session
+
+    def new_broker_for_round(self, round_id: str, ordinal: int) -> CognitionToolBroker:
+        """Broker for a later round sharing this decision's graph and budget.
+
+        Rounds are journal boundaries; the workspace, the kernel, the states
+        reached so far and the tool-operation pool are decision-scoped and
+        must never reset between rounds (§9.1, TEST-031).
+        """
+        factory = getattr(self, "_factory", None)
+        if factory is None:
+            raise ValueError("session was not opened through DecisionSession.open")
+        return self._broker.round_broker(round_id, ordinal)
 
 
 def _canonical(payload: dict[str, Any]) -> bytes:

@@ -17,11 +17,14 @@ authorized path (session.execute). Each test names the PRD TEST id it covers:
 - TEST-078 tool results respect the definition order of the batch.
 """
 
+import json as _json
+
 import pytest
 from sqlalchemy import text
 
 from zugzwang_chess.cognition import ChessPerception
 from zugzwang_chess.environment.standard import ChessGameState, StandardChessEnvironment
+from zugzwang_core.domain.cognition import action_id_v2
 from zugzwang_runtime.artifacts.cas import ContentAddressedStore
 from zugzwang_runtime.cognition.broker import CognitionToolBroker
 from zugzwang_runtime.cognition.session import (
@@ -419,3 +422,263 @@ def test_batch_definition_order_is_respected(harness) -> None:
     assert envelope.ok is True
     assert [row["action_id"] for row in envelope.result["results"]] == batch
     assert envelope.meta.logical_operations_charged == len(batch)
+
+
+# ---------------------------------------------------------------------------
+# ZGW-0101 regression — real expansion (PRD §9/§11.6; review round a2d0241).
+# These probes fail on the pre-fix broker, which returned ``expanded=True``
+# without transitioning, registering a child, or exposing an edge.
+# ---------------------------------------------------------------------------
+
+START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+FEN_AFTER_E4 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+FEN_AFTER_E4_C5 = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+FEN_AFTER_D4 = "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1"
+
+
+def _state_fen(harness, state_key):
+    """Recover a bound state's FEN from the durable snapshots (not memory)."""
+    database, _engine, cas = harness
+    journal = CognitionJournal(database)
+    with journal.connect() as conn:
+        row = conn.execute(
+            text("SELECT state_artifact_id FROM cb_state_snapshots WHERE state_key = :k"),
+            {"k": state_key},
+        ).fetchone()
+    assert row is not None, f"no durable snapshot for {state_key}"
+    data = cas_artifact_loader(cas)(row[0])
+    assert data is not None
+    return _json.loads(data.decode("utf-8"))["fen"]
+
+
+def _legal_action_id(session, uci):
+    """action_id of a legal UCI over the complete kernel set (any page)."""
+    state_key, _ = session._broker._perception.identity_keys(ChessGameState())
+    return action_id_v2(state_key, uci, "uci/v1", POLICY_HASH)
+
+
+def test_expand_transitions_and_child_is_observable_and_expandable(harness) -> None:
+    """FR-009/§11.6: e2e4 → c7c5 — distinct children, expected FENs, alternating
+    turns, growing depth, untouched root, and the returned child can be
+    observed AND expanded on the next call."""
+    session = _open_session(harness)
+    root_before = session.execute(
+        "board_observe", {"node_id": "node-root"}, idempotency_key="t-obs-root"
+    )
+    assert root_before.ok
+
+    e4 = session.execute(
+        "board_expand",
+        {"node_id": "node-root", "action_ids": [_legal_action_id(session, "e2e4")]},
+        idempotency_key="t-e4",
+    )
+    d4 = session.execute(
+        "board_expand",
+        {"node_id": "node-root", "action_ids": [_legal_action_id(session, "d2d4")]},
+        idempotency_key="t-d4",
+    )
+    assert e4.ok and d4.ok, (e4.error, d4.error)
+    e4_row, d4_row = e4.result["results"][0], d4.result["results"][0]
+    assert e4_row["expanded"] is True and d4_row["expanded"] is True
+    assert e4_row["child_node_id"] != d4_row["child_node_id"], "siblings are distinct nodes"
+    assert e4_row["state_key"] != d4_row["state_key"]
+    assert e4_row["depth"] == d4_row["depth"] == 1
+    assert _state_fen(harness, e4_row["state_key"]) == FEN_AFTER_E4
+    assert _state_fen(harness, d4_row["state_key"]) == FEN_AFTER_D4
+
+    # The child is a first-class node: observable…
+    child_obs = session.execute(
+        "board_observe", {"node_id": e4_row["child_node_id"]}, idempotency_key="t-obs-child"
+    )
+    assert child_obs.ok
+    packet = child_obs.result["packet"]
+    assert packet["state"]["side_to_move"] == "black", "turn alternates after e2e4"
+    # …and expandable (the review sequence e2e4 -> c7c5 runs on the child).
+    grandchild = session.execute(
+        "board_expand",
+        {
+            "node_id": e4_row["child_node_id"],
+            "action_ids": [action_id_v2(e4_row["state_key"], "c7c5", "uci/v1", POLICY_HASH)],
+        },
+        idempotency_key="t-c5",
+    )
+    assert grandchild.ok, grandchild.error
+    c5_row = grandchild.result["results"][0]
+    assert c5_row["depth"] == 2 and e4_row["depth"] == 1, "depth grows along the branch"
+    assert c5_row["root_action"] == "e2e4", "root_action is preserved down the branch"
+    assert _state_fen(harness, c5_row["state_key"]) == FEN_AFTER_E4_C5
+    grand_obs = session.execute(
+        "board_observe", {"node_id": c5_row["child_node_id"]}, idempotency_key="t-obs-gc"
+    )
+    assert grand_obs.ok
+    assert grand_obs.result["packet"]["state"]["side_to_move"] == "white"
+
+    # The real root never moved: same packet content as before any expansion.
+    root_after = session.execute(
+        "board_observe", {"node_id": "node-root"}, idempotency_key="t-obs-root-2"
+    )
+    assert root_after.result["content_hash"] == root_before.result["content_hash"]
+    assert _state_fen(harness, root_before.result["packet"]["state"]["state_key"]) == START_FEN
+
+    # Edges are durable: recoverable from SQLite after the fact.
+    database, _engine, _cas = harness
+    with CognitionJournal(database).connect() as conn:
+        edges = conn.execute(
+            text(
+                "SELECT parent_node_id, child_node_id, proposed_action FROM search_edges "
+                "WHERE search_session_id = 'sess-1' AND legal = 1"
+            )
+        ).fetchall()
+    actions = {row[2] for row in edges}
+    assert {"e2e4", "d2d4", "c7c5"} <= actions
+
+
+def test_expand_resolves_action_from_any_page(harness, tmp_path) -> None:
+    """TEST-005/FR-002: an action presented on a LATER packet page stays valid;
+    resolution runs over the complete legal set, not page 0."""
+    database, engine, cas = harness
+    journal = CognitionJournal(database)
+    paged_perception = ChessPerception(
+        environment=StandardChessEnvironment(),
+        rules_version="standard/v1",
+        policy_hash=POLICY_HASH,
+        page_size=5,
+    )
+    session = DecisionSession.open(
+        decision_id="dec-test-0002",
+        step_id="st-1",
+        decision_ordinal=0,
+        search_session_id="sess-1",
+        strategy_id="chess.grounded",
+        strategy_version="0.1.0",
+        interaction_mode="native_tools",
+        policy_hash=POLICY_HASH,
+        config=dict(CONFIG),
+        states={"node-root": ChessGameState()},
+        journal=journal,
+        perception=paged_perception,
+        cas=cas,
+        engine=engine,
+    )
+    page0 = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="p-obs")
+    legal = page0.result["packet"]["legal_actions"]
+    assert legal["total_count"] > 5 and legal["next_cursor"] is not None
+    page0_ids = {item["action_id"] for item in legal["items"]}
+    all_moves = StandardChessEnvironment().legal_actions(ChessGameState()).actions
+    late_move = all_moves[10].uci  # beyond page 0 by construction
+    late_id = action_id_v2(
+        page0.result["packet"]["state"]["state_key"], late_move, "uci/v1", POLICY_HASH
+    )
+    assert late_id not in page0_ids
+    envelope = session.execute(
+        "board_expand",
+        {"node_id": "node-root", "action_ids": [late_id]},
+        idempotency_key="p-late",
+    )
+    assert envelope.ok, envelope.error
+    assert envelope.result["results"][0]["uci"] == late_move
+
+
+def test_expand_batch_with_foreign_action_has_no_partial_effect(harness) -> None:
+    """§11.3: one invalid id fails the whole batch before ANY item transitions."""
+    session = _open_session(harness)
+    database, engine, _cas = harness
+    bound_before = CognitionJournal(database).bound_node_ids("dec-test-0001")
+    edges_before = _edge_count(engine)
+    foreign = "deadbeef" * 8
+    envelope = session.execute(
+        "board_expand",
+        {
+            "node_id": "node-root",
+            "action_ids": [_legal_action_id(session, "e2e4"), foreign],
+        },
+        idempotency_key="x-batch",
+    )
+    assert envelope.ok is False
+    assert envelope.error is not None
+    assert envelope.error.code == "ACTION_STATE_MISMATCH"
+    assert CognitionJournal(database).bound_node_ids("dec-test-0001") == bound_before
+    assert _edge_count(engine) == edges_before, "no edge may precede the refusal"
+
+
+def _edge_count(engine):
+    with engine.connect() as conn:
+        return conn.execute(
+            text("SELECT COUNT(*) FROM search_edges WHERE search_session_id = 'sess-1'")
+        ).scalar_one()
+
+
+def test_expand_reaches_transposition_without_losing_trajectory(harness) -> None:
+    """INV-03: Nf3 Nf6 Ng1 Ng8 returns to the root POSITION with a different
+    trajectory — a new node bound to the same state, root untouched."""
+    session = _open_session(harness)
+    node_id = "node-root"
+    depth_key = None
+    for i, uci in enumerate(["g1f3", "g8f6", "f3g1", "f6g8"]):
+        state_key, _ = session._broker._perception.identity_keys(session._broker._states[node_id])
+        envelope = session.execute(
+            "board_expand",
+            {
+                "node_id": node_id,
+                "action_ids": [action_id_v2(state_key, uci, "uci/v1", POLICY_HASH)],
+            },
+            idempotency_key=f"tr-{i}",
+        )
+        assert envelope.ok, envelope.error
+        row = envelope.result["results"][0]
+        node_id = row["child_node_id"]
+        depth_key = row["state_key"]
+    assert row["depth"] == 4 and row["terminal"] is False
+    assert node_id != "node-root", "transposition must not alias the root node"
+    assert _state_fen(harness, depth_key).split(" ")[:4] == START_FEN.split(" ")[:4], (
+        "transposition returns to the root position"
+    )
+    assert session.workspace is not None
+    assert session.workspace.stats["transpositions"] >= 1
+
+
+def test_expand_terminal_node_is_refused(harness) -> None:
+    """FR-010/TEST-014: after mate, the terminal node does not transition."""
+    session = _open_session(harness)
+    node_id = "node-root"
+    for i, uci in enumerate(["f2f3", "e7e5", "g2g4", "d8h4"]):
+        state_key, _ = session._broker._perception.identity_keys(session._broker._states[node_id])
+        envelope = session.execute(
+            "board_expand",
+            {
+                "node_id": node_id,
+                "action_ids": [action_id_v2(state_key, uci, "uci/v1", POLICY_HASH)],
+            },
+            idempotency_key=f"tm-{i}",
+        )
+        assert envelope.ok, (uci, envelope.error)
+        node_id = envelope.result["results"][0]["child_node_id"]
+    terminal_obs = session.execute("board_observe", {"node_id": node_id}, idempotency_key="tm-obs")
+    assert terminal_obs.result["packet"]["terminal"]["automatic"] is True
+    late = session.execute(
+        "board_expand",
+        {
+            "node_id": node_id,
+            "action_ids": [_legal_action_id(session, "e2e4")],
+        },
+        idempotency_key="tm-late",
+    )
+    assert late.ok is False
+    assert late.error is not None
+    assert late.error.code == "INVALID_ARGUMENTS"
+
+
+def test_expand_reports_real_physical_rules_queries(harness) -> None:
+    """§42.6 meta: physical_rules_queries reflects kernel work, not a fixed 0."""
+    session = _open_session(harness)
+    envelope = session.execute(
+        "board_expand",
+        {"node_id": "node-root", "action_ids": [_legal_action_id(session, "e2e4")]},
+        idempotency_key="q-e4",
+    )
+    assert envelope.ok
+    assert envelope.meta.physical_rules_queries >= 3, (
+        "expansion spends >= 1 legal-set query + 1 validation + 1 transition"
+    )
+    observe = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="q-obs")
+    assert observe.meta.physical_rules_queries >= 1

@@ -237,6 +237,176 @@ class CognitionJournal:
             )
             conn.commit()
 
+    def ensure_search_node(
+        self,
+        *,
+        node_id: str,
+        search_session_id: str,
+        parent_id: str | None,
+        position_key: str,
+        trajectory_key: str,
+        state_ref: str,
+        action_from_parent: str | None,
+        root_action: str | None,
+        depth: int,
+        side_to_move: str | None,
+        terminal: bool,
+        created_by: str,
+        status: str,
+    ) -> None:
+        """Insert the ``search_nodes`` projection of one node (idempotent).
+
+        ``cb_node_bindings`` references ``search_nodes`` and its scope guard
+        compares session ids, so the projection row must exist before the
+        binding is written.
+        """
+        with self._connect() as conn:
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_nodes (node_id, search_session_id, "
+                    "parent_id, position_key, trajectory_key, state_ref, "
+                    "action_from_parent, root_action, depth, side_to_move, terminal, "
+                    "created_by, analysis_ref, status) "
+                    "VALUES (:node_id, :search_session_id, :parent_id, :position_key, "
+                    ":trajectory_key, :state_ref, :action_from_parent, :root_action, "
+                    ":depth, :side_to_move, :terminal, :created_by, NULL, :status)"
+                ),
+                {
+                    "node_id": node_id,
+                    "search_session_id": search_session_id,
+                    "parent_id": parent_id,
+                    "position_key": position_key,
+                    "trajectory_key": trajectory_key,
+                    "state_ref": state_ref,
+                    "action_from_parent": action_from_parent,
+                    "root_action": root_action,
+                    "depth": depth,
+                    "side_to_move": side_to_move,
+                    "terminal": int(terminal),
+                    "created_by": created_by,
+                    "status": status,
+                },
+            )
+            conn.commit()
+
+    def register_child_node(
+        self,
+        *,
+        decision_id: str,
+        node_id: str,
+        state_key: str,
+        position_key: str,
+        state_record_artifact_id: str,
+        variant: str,
+        history_completeness: str,
+        depth_plies: int,
+        created_sequence: int,
+        search_session_id: str,
+        parent_node_id: str,
+        trajectory_key: str,
+        state_ref: str,
+        action_from_parent: str,
+        root_action: str | None,
+        side_to_move: str | None,
+        terminal: bool,
+        edge_id: str,
+    ) -> bool:
+        """Durably register one expansion child (§9.1; FR-015 idempotence).
+
+        One transaction writes, in order: the ``search_nodes`` projection
+        (scope-guard prerequisite), the child state snapshot, the decision
+        node binding and the committed search edge. A crash leaves at most
+        the CAS artifact orphaned — never a binding without a snapshot nor a
+        half-registered child. Re-registering an already-bound child
+        (duplicate trajectory) returns ``False`` without rewriting immutable
+        rows; the edge insert stays idempotent.
+        """
+        with self._connect() as conn:
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_nodes (node_id, search_session_id, "
+                    "parent_id, position_key, trajectory_key, state_ref, "
+                    "action_from_parent, root_action, depth, side_to_move, terminal, "
+                    "created_by, analysis_ref, status) "
+                    "VALUES (:node_id, :search_session_id, :parent_node_id, :position_key, "
+                    ":trajectory_key, :state_ref, :action_from_parent, :root_action, "
+                    ":depth_plies, :side_to_move, :terminal, 'decision-loop', NULL, "
+                    ":node_status)"
+                ),
+                {
+                    "node_id": node_id,
+                    "search_session_id": search_session_id,
+                    "parent_node_id": parent_node_id,
+                    "position_key": position_key,
+                    "trajectory_key": trajectory_key,
+                    "state_ref": state_ref,
+                    "action_from_parent": action_from_parent,
+                    "root_action": root_action,
+                    "depth_plies": depth_plies,
+                    "side_to_move": side_to_move,
+                    "terminal": int(terminal),
+                    "node_status": "terminal" if terminal else "frontier",
+                },
+            )
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO cb_state_snapshots "
+                    "(state_key, state_schema_version, rules_version, variant, position_key, "
+                    "history_completeness, state_artifact_id, created_at) "
+                    "VALUES (:state_key, 'state/v2', 'standard/v1', :variant, "
+                    ":position_key, :history_completeness, :state_artifact_id, :created_at)"
+                ),
+                {
+                    "state_key": state_key,
+                    "variant": variant,
+                    "position_key": position_key,
+                    "history_completeness": history_completeness,
+                    "state_artifact_id": state_record_artifact_id,
+                    "created_at": self._clock(),
+                },
+            )
+            bound = conn.execute(
+                sa.text(
+                    "SELECT 1 FROM cb_node_bindings "
+                    "WHERE decision_id = :decision_id AND node_id = :node_id"
+                ),
+                {"decision_id": decision_id, "node_id": node_id},
+            ).fetchone()
+            if bound is None:
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_node_bindings (decision_id, node_id, state_key, "
+                        "depth_plies, created_sequence) "
+                        "VALUES (:decision_id, :node_id, :state_key, :depth_plies, "
+                        ":created_sequence)"
+                    ),
+                    {
+                        "decision_id": decision_id,
+                        "node_id": node_id,
+                        "state_key": state_key,
+                        "depth_plies": depth_plies,
+                        "created_sequence": created_sequence,
+                    },
+                )
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_edges (edge_id, search_session_id, "
+                    "parent_node_id, child_node_id, proposed_action, legal, "
+                    "rejection_reason, created_by) "
+                    "VALUES (:edge_id, :search_session_id, :parent_node_id, :node_id, "
+                    ":action_from_parent, 1, NULL, 'decision-loop')"
+                ),
+                {
+                    "edge_id": edge_id,
+                    "search_session_id": search_session_id,
+                    "parent_node_id": parent_node_id,
+                    "node_id": node_id,
+                    "action_from_parent": action_from_parent,
+                },
+            )
+            conn.commit()
+        return bound is None
+
     # -- rounds ---------------------------------------------------------------
 
     def add_round(

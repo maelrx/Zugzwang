@@ -112,9 +112,7 @@ def test_sealed_snapshot_refuses_members_and_links(store) -> None:
     with engine.connect() as conn:
         conn.rollback()
     with pytest.raises(sqlalchemy.exc.IntegrityError), engine.connect() as conn2:
-        conn2.execute(
-            text("DELETE FROM cb_memory_snapshot_members WHERE snapshot_id = 'snap-1'")
-        )
+        conn2.execute(text("DELETE FROM cb_memory_snapshot_members WHERE snapshot_id = 'snap-1'"))
     with engine.connect() as conn:
         conn.rollback()
 
@@ -144,9 +142,7 @@ def test_revision_is_immutable(store) -> None:
     # The old revision row is immutable: a direct UPDATE aborts.
     with pytest.raises(sqlalchemy.exc.IntegrityError), engine.connect() as conn2:
         conn2.execute(
-            text(
-                "UPDATE cb_memory_items SET content_hash = 'f' * 64 WHERE memory_id = 'mem-1-r1'"
-            )
+            text("UPDATE cb_memory_items SET content_hash = 'f' * 64 WHERE memory_id = 'mem-1-r1'")
         )
     with engine.connect() as conn:
         conn.rollback()

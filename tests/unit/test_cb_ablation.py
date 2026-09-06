@@ -14,9 +14,10 @@ import pytest
 
 
 def _analysis():
-    spec = importlib.util.spec_from_file_location(
-        "analyze_cb_ablation", "scripts/analyze_cb_ablation.py"
-    )
+    from pathlib import Path as _Path
+
+    script = _Path(__file__).resolve().parents[2] / "scripts" / "analyze_cb_ablation.py"
+    spec = importlib.util.spec_from_file_location("analyze_cb_ablation", script)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -114,6 +115,7 @@ def test_comparative_budget_counts_formal_work() -> None:
     ]
     report = analyze(pairs)
     assert report["pairs_complete"] == 1
+    assert report["pairs_excluded"] == 1
     assert report["match_rate"] == 1.0
     assert report["ops_deltas"] == [{"delta": 1.0, "sign": "+"}]
     assert report["cost_money"] == "unknown"

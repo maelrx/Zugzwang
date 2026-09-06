@@ -67,12 +67,19 @@ def pair_key(entry: dict[str, Any]) -> tuple[str, str, str, str, str] | None:
 
 
 def analyze(pairs: list[tuple[dict[str, Any], dict[str, Any]]]) -> dict[str, Any]:
-    """Paired ON-vs-OFF analysis per the preregistered plan."""
+    """Paired ON-vs-OFF analysis per the preregistered plan.
+
+    Inputs must already be side-to-move perspective (TEST-071 documents,
+    not converts: no hidden inversion). Broken pairs are excluded AND
+    counted (TEST-073 dados completos).
+    """
     matches = 0
     ops_deltas: list[dict[str, Any]] = []
     complete = 0
+    excluded = 0
     for off, on in pairs:
         if pair_key(off) != pair_key(on) or pair_key(off) is None:
+            excluded += 1
             continue
         complete += 1
         matches += 1 if off.get("selection") == on.get("selection") else 0
@@ -82,6 +89,7 @@ def analyze(pairs: list[tuple[dict[str, Any], dict[str, Any]]]) -> dict[str, Any
         # Formal precomputed work enters the cost (TEST-074); money unknown.
     return {
         "pairs_complete": complete,
+        "pairs_excluded": excluded,
         "match_rate": (matches / complete) if complete else None,
         "ops_deltas": ops_deltas,
         "cost_money": "unknown",
@@ -94,8 +102,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pairs", type=Path, required=True, help="JSON list of [off, on]")
     parser.add_argument("--out", type=Path, required=True, help="report JSON output")
     args = parser.parse_args(argv)
-    raw = json.loads(args.pairs.read_text(encoding="utf-8"))
-    pairs = [(a, b) for a, b in raw]
+    raw: Any = json.loads(args.pairs.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        parser.error("--pairs must be a JSON list of [off, on] pairs")
+    entries: list[Any] = raw
+    if any(not isinstance(entry, list) or len(entry) != 2 for entry in entries):
+        parser.error("--pairs must be a JSON list of [off, on] pairs")
+    pairs: list[tuple[dict[str, Any], dict[str, Any]]] = [(dict(a), dict(b)) for a, b in entries]
     report = analyze(pairs)
     args.out.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps(report, indent=2, sort_keys=True))

@@ -29,7 +29,6 @@ from zugzwang_core.ports.model import (
     MessageRole,
     ModelRef,
     ModelRequest,
-    OnUnsupported,
     TextPart,
     ToolCallPart,
     ToolDefinition,
@@ -266,14 +265,61 @@ def test_unknown_remote_outcome_invents_nothing() -> None:
     assert result.response.content_parts == ()
 
 
+def _sample_key(ref: ModelRef, route: str) -> str:
+    """Sample identity includes the effective route (§15.4: route change
+    separates samples; run-global ledger wiring arrives with CB-WO-07)."""
+    return f"{ref.backend}/{ref.provider}/{ref.model}@{route}"
+
+
 def test_route_change_separates_samples() -> None:
-    """TEST-064: same logical model via a different route is a different sample key."""
+    """TEST-064: the same logical model via different routes drives different
+    wire requests, and the sample key separates them.
 
-    def sample_key(ref: ModelRef, route: str) -> str:
-        return f"{ref.backend}/{ref.provider}/{ref.model}@{route}"
+    Full run-comparative invalidation (fail or split by effective route)
+    belongs to the loop/run layer (CB-WO-07); this WO proves the adapter
+    exposes the effective route per call so the layer above can separate.
+    """
+    from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend
 
+    wires: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        wires.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "id": "cmpl-route",
+                "model": "m",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            },
+        )
+
+    async def _run(route: str) -> dict:
+        backend = OpenAiCompatibleBackend(
+            base_url="http://mock.local/v1",
+            transport=_mock_transport(handler),
+            profile=route,
+        )
+        request = ModelRequest(
+            model=ModelRef(backend="provider.openai_compatible", provider="mock", model="m"),
+            messages=(Message(role=MessageRole.USER, parts=(TextPart(text="hi"),)),),
+        )
+        result = await backend.infer(request, CallContext(run_id="run_test"))
+        await backend.close()
+        return result.wire_request
+
+    wire_chat = asyncio.run(_run("openai-chat-completions"))
+    wire_responses = asyncio.run(_run("openai-responses"))
+    assert wire_chat != wire_responses
     ref = ModelRef(backend="provider.openai_compatible", provider="mock", model="m")
-    assert sample_key(ref, "route-a") != sample_key(ref, "route-b")
+    assert _sample_key(ref, "openai-chat-completions") != _sample_key(ref, "openai-responses")
 
 
 def test_image_without_support_refused_before_wire() -> None:
@@ -282,21 +328,19 @@ def test_image_without_support_refused_before_wire() -> None:
 
     from zugzwang_core.domain.errors import CapabilityMissingError
 
-    async def _run() -> str:
+    posted: list[httpx.Request] = []
+
+    def guard(request: httpx.Request) -> httpx.Response:
+        posted.append(request)
+        return httpx.Response(200, json={})
+
+    async def _run() -> None:
         backend = OpenAiCompatibleBackend(
             base_url="http://mock.local/v1",
-            transport=_mock_transport(lambda _: httpx.Response(200, json={})),
+            transport=_mock_transport(guard),
             image_input=False,
         )
         model = ModelRef(backend="provider.openai_compatible", provider="mock", model="m")
-        report = await backend.inspect_capabilities(
-            model,
-            required=frozenset({Capability.MULTIMODAL_IMAGE}),
-            on_unsupported=OnUnsupported.FAIL,
-        )
-        outcome = "refused" if report.missing_required else "allowed"
-        # The RecordingBackend enforcement path raises before any wire call —
-        # mirror it here: no image request may reach infer() unrefused.
         image = ImagePart(
             mime="image/png",
             width=8,
@@ -309,22 +353,15 @@ def test_image_without_support_refused_before_wire() -> None:
             messages=(Message(role=MessageRole.USER, parts=(image,)),),
             required_capabilities=frozenset({Capability.MULTIMODAL_IMAGE}),
         )
-        check = await backend.inspect_capabilities(model, required=request.required_capabilities)
-        await backend.close()
-        if check.missing_required:
-            raise CapabilityMissingError(
-                "backend lacks required capabilities: "
-                + ", ".join(sorted(str(c) for c in check.missing_required))
-            )
-        return outcome
+        try:
+            await backend.infer(request, CallContext(run_id="run_test"))
+        finally:
+            await backend.close()
 
-    try:
+    with pytest.raises(CapabilityMissingError):
         asyncio.run(_run())
-    except CapabilityMissingError:
-        refused = True
-    else:
-        refused = False
-    assert refused
+    # Refused inside the adapter before any wire call — zero requests posted.
+    assert posted == []
     # And the lowering path never silently drops the image: with support on,
     # the image reaches the wire.
     seen: dict = {}

@@ -14,6 +14,7 @@ import httpx
 
 from zugzwang_core.domain.clocks import utc_now
 from zugzwang_core.domain.errors import (
+    CapabilityMissingError,
     ProviderConnectionError,
     ProviderResponseError,
     ProviderServerError,
@@ -111,6 +112,32 @@ class OpenAiCompatibleBackend:
             ),
         )
 
+    def _require_supported_parts(self, request: ModelRequest) -> None:
+        """Refuse image parts before any wire call when image input is off.
+
+        TEST-065: no silent image-to-text fallback — the refusal happens in
+        the adapter itself, before persistence or transport, mirroring the
+        RecordingBackend required-capabilities enforcement.
+        """
+        needs_image = any(
+            isinstance(part, ImagePart) for message in request.messages for part in message.parts
+        )
+        if needs_image and Capability.MULTIMODAL_IMAGE not in self.descriptor.default_capabilities:
+            raise CapabilityMissingError(
+                f"backend {self.backend_id} lacks required capabilities: multimodal_image"
+            )
+        if request.required_capabilities:
+            missing = [
+                str(capability)
+                for capability in request.required_capabilities
+                if capability not in self.descriptor.default_capabilities
+            ]
+            if missing:
+                raise CapabilityMissingError(
+                    f"backend {self.backend_id} lacks required capabilities: "
+                    + ", ".join(sorted(missing))
+                )
+
     async def inspect_capabilities(
         self,
         model: ModelRef,
@@ -129,6 +156,7 @@ class OpenAiCompatibleBackend:
 
     async def infer(self, request: ModelRequest, context: CallContext) -> ProviderResult:
         started = utc_now()
+        self._require_supported_parts(request)
         is_responses = self._profile == _RESPONSES_PROFILE
         payload = (
             self._lower_responses_request(request) if is_responses else self._lower_request(request)
@@ -220,7 +248,10 @@ class OpenAiCompatibleBackend:
                     )
                 entry: dict[str, Any] = {
                     "role": role,
-                    "content": "\n".join(text_parts) or None,
+                    # JSON command envelopes ride the text channel; images never
+                    # mix with tool calls (image shapes are refused in
+                    # _require_supported_parts when unsupported).
+                    "content": "\n".join(text_parts + json_parts) or None,
                 }
                 if call_parts:
                     entry["tool_calls"] = [

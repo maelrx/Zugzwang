@@ -93,7 +93,10 @@ flowchart TD
   - [x] TEST-037/038/040/041/053/054/067/068 (fault) + TEST-057/058/059/080 e âncoras 055/056/079 (audit); 372 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
   - [x] Gate §38.9 levantado: baterias não-smoke liberadas (exactly-once remoto segue fora do escopo)
 - [ ] **CB-WO-10** — viewer mínimo causal (§38.11) → pending (depende W7)
-- [ ] **CB-WO-09** — memória condicionada (§38.10) → pending (depende W8; retrieval elegível = ADR-CB-013)
+- [x] **CB-WO-09** — memória condicionada (§38.10) → **ZGW-0096** · PR [#34](https://github.com/maelrx/Zugzwang/pull/34) (empilhado no #33; review 2 eixos aplicado em 8ad4731)
+  - [x] Migration 0008 CB-M2 (DDL §43.2): items/links/snapshots/members + 9 triggers; downgrade recusa com dados
+  - [x] `ScopedMemoryStore`: origens contaminadas recusadas (write + restore), revisões append-only, recall com elegibilidade (fatos + seção avaliativa), test isolado, legacy sem inventar origem
+  - [x] TEST-042..048 + TEST-052 + legacy (9 testes); 381 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
 
 ### Fase 6 — Ciência
 

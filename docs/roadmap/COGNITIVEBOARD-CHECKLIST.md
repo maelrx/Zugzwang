@@ -115,8 +115,8 @@ flowchart TD
   - [x] Migration 0010 CB-M4 (DDL §43.2 + cb_plan_premises): investigations, plans, episode guard; downgrade recusa com dados
   - [x] `PlanStore`: investigações ancoradas, planos por episódio/perspectiva, revise com premissas persistidas e escalação needs_review, DSL true/false/unknown
   - [x] TEST-048/075 + fixtures false/unknown + recusa cross-episode (4 testes); 397 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
-- [ ] **CB-WO-14** — reancoragem (§38.15) → pending (depende W11; autorização por profiling)
-- [ ] **CB-WO-15** — paralelismo experimental (§38.15) → pending (depende W11; autorização por resultado)
+- [ ] **CB-WO-14** — reancoragem (§38.15) → AGUARDANDO AUTORIZAÇÃO (depende W11 + profiling ou resultado científico, não apenas disponibilidade de coding; sem TEST-076測定 sem medição de economia vs complexidade não inicia)
+- [ ] **CB-WO-15** — paralelismo experimental (§38.15) → AGUARDANDO AUTORIZAÇÃO (depende W11 + comparação com sequencial; snapshots read-only, merge pelo owner e budgets globais exigem desenho prévio)
 
 ## Gates de milestone (PRD §36.1)
 

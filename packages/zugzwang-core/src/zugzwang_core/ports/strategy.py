@@ -55,6 +55,10 @@ class DecisionContext(BaseModel):
     legality_gateway: Any = None
     search_workspace: Any = None
     search_memory: Any = None
+    # CognitiveBoard §26.1: optional decision-scoped session port. Absent by
+    # default so legacy strategies remain valid; the runtime factory binds the
+    # concrete session (core never imports it).
+    decision_session: Any = None
 
 
 class Candidate(BaseModel):

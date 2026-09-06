@@ -1,0 +1,23 @@
+{
+  "schema_version": "zgw.cognitive-tool-result/v1",
+  "ok": true,
+  "meta": {
+    "decision_id": "dec-cb0001-0000",
+    "round_id": "dec-cb0001-0000:round-0001",
+    "operation_id": "operation_id:v2:839986801861e464a8e292dea0c32d880aeec1287ad8b4943d0754d271eced9a",
+    "tool_call_id": "call-1",
+    "exposure_sequence": 1,
+    "policy_hash": "025b023a54b114812c7f26fb2bc221392d4ea965d0942ab1a081843e555c0013",
+    "semantic_hash": null,
+    "logical_operations_charged": 1,
+    "physical_rules_queries": 0,
+    "remaining_model_calls": 2,
+    "remaining_tool_operations": 5
+  },
+  "result": {
+    "views": {
+      "basic": "1. e4 e5 2. Nf3 *"
+    }
+  },
+  "error": null
+}

@@ -19,7 +19,7 @@ FIXTURE = REPO_ROOT / "fixtures" / "compatibility" / "fake-bundle-v1"
 @pytest.mark.compatibility
 class TestBundleFixtureImport:
     def test_v1_fixture_imports(self, tmp_path) -> None:
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
         services = DurableRunServices(ws, PluginRegistry())
         importer = ImportRunBundleService(
@@ -39,7 +39,7 @@ class TestBundleFixtureImport:
         bundle = json.loads((copy / "bundle.json").read_text(encoding="utf-8"))
         bundle["schema_version"] = "zgw.bundle/v999"
         (copy / "bundle.json").write_text(json.dumps(bundle), encoding="utf-8")
-        ws = Workspace.from_root(tmp_path / "ws2")
+        ws = Workspace.from_root(tmp_path / "ws2", wal_policy="ephemeral")
         ws.ensure_layout()
         services = DurableRunServices(ws, PluginRegistry())
         importer = ImportRunBundleService(

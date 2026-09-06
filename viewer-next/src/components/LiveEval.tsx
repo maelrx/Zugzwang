@@ -152,19 +152,19 @@ export function LiveEval({
   const set = <K extends keyof EngineOptions>(k: K, v: EngineOptions[K]) =>
     setOpts((o) => ({ ...o, [k]: v }));
 
-  const num = "w-full rounded border border-line bg-panel2 px-1.5 py-1 font-mono text-[11px]";
+  const num = "w-full rounded border border-line bg-panel2 px-1.5 py-1 font-mono text-[length:calc(11px*var(--fs-scale))]";
 
   return (
     <div className="flex gap-2">
       <div className="flex w-9 shrink-0 flex-col items-stretch gap-1">
         <div
-          className="relative flex-1 overflow-hidden rounded border border-line bg-[#20242c]"
+          className="relative flex-1 overflow-hidden rounded border border-line bg-eval-track"
           role="img"
           aria-label={`avaliação local: ${label} para as brancas`}
           title={enabled ? `local engine · ${depthNote} · ${label}` : "engine local desligado"}
         >
           <div
-            className="absolute inset-x-0 bottom-0 bg-[#e8e4da] transition-[height] duration-300"
+            className="absolute inset-x-0 bottom-0 bg-eval-fill transition-[height] duration-300"
             style={{ height: `${enabled ? pct : 50}%` }}
           />
           <div className="absolute inset-x-0 top-1/2 h-px bg-faint/60" />
@@ -174,14 +174,14 @@ export function LiveEval({
             </div>
           )}
         </div>
-        <div className="text-center font-mono text-[10px] text-muted" title={depthNote}>
+        <div className="text-center font-mono text-[length:calc(10px*var(--fs-scale))] text-muted" title={depthNote}>
           {enabled ? (busy && !score ? depthNote : label) : "off"}
         </div>
         <button
           onClick={() => setEnabled((v) => !v)}
           aria-pressed={enabled}
           title={enabled ? "desligar engine local" : "ligar engine local"}
-          className={`rounded border px-1 py-0.5 font-mono text-[10px] ${enabled ? "border-ok/50 text-ok" : "border-line text-faint"}`}
+          className={`rounded border px-1 py-0.5 font-mono text-[length:calc(10px*var(--fs-scale))] ${enabled ? "border-ok/50 text-ok" : "border-line text-faint"}`}
         >
           SF
         </button>
@@ -189,15 +189,15 @@ export function LiveEval({
           onClick={() => setShowConfig((v) => !v)}
           aria-pressed={showConfig}
           title="configurar engine local"
-          className="rounded border border-line px-1 py-0.5 font-mono text-[10px] text-muted hover:text-paper"
+          className="rounded border border-line px-1 py-0.5 font-mono text-[length:calc(10px*var(--fs-scale))] text-muted hover:text-paper"
         >
           ⚙
         </button>
       </div>
 
       {showConfig && (
-        <div className="mb-2 w-44 shrink-0 space-y-2 rounded-md border border-line bg-panel2 p-2.5 text-[11.5px]">
-          <p className="font-mono text-[9.5px] uppercase tracking-widest text-faint">engine local · só visual</p>
+        <div className="mb-2 w-44 shrink-0 space-y-2 rounded-md border border-line bg-panel2 p-2.5 text-[length:calc(11.5px*var(--fs-scale))]">
+          <p className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-widest text-faint">engine local · só visual</p>
           <label className="block">
             <span className="text-muted">profundidade ({opts.depth})</span>
             <input type="range" min={6} max={24} value={opts.depth} onChange={(e) => set("depth", +e.target.value)} className="w-full accent-accent" />
@@ -240,11 +240,11 @@ export function LiveEval({
           <button
             onClick={() => restartWorker(false)}
             title="reiniciar o worker (se travar)"
-            className="w-full rounded border border-line px-1.5 py-1 font-mono text-[10px] text-muted hover:text-paper"
+            className="w-full rounded border border-line px-1.5 py-1 font-mono text-[length:calc(10px*var(--fs-scale))] text-muted hover:text-paper"
           >
             ↻ reiniciar engine
           </button>
-          <div className="rounded bg-ink p-1.5 font-mono text-[9.5px] leading-4 text-faint">
+          <div className="rounded bg-ink p-1.5 font-mono text-[length:calc(9.5px*var(--fs-scale))] leading-4 text-faint">
             {(() => {
               void diagTick;
               const st = engine.current?.stats();
@@ -264,7 +264,7 @@ export function LiveEval({
               );
             })()}
           </div>
-          <p className="font-mono text-[9.5px] leading-4 text-faint">não entra na análise oficial do banco</p>
+          <p className="font-mono text-[length:calc(9.5px*var(--fs-scale))] leading-4 text-faint">não entra na análise oficial do banco</p>
         </div>
       )}
     </div>

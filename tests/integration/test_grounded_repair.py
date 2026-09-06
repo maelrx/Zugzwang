@@ -73,7 +73,7 @@ spec:
 class TestGroundedAndRepair:
     @pytest.fixture
     def workspace(self, tmp_path) -> Workspace:
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
         return ws
 
@@ -102,9 +102,9 @@ class TestGroundedAndRepair:
         from zugzwang_runtime.persistence.writer import PersistenceWriter
 
         manifest = _grounded_manifest(tmp_path, "chess.grounded", "opaque_index")
-        ws = Workspace.from_root(tmp_path / "opaque-ws")
+        ws = Workspace.from_root(tmp_path / "opaque-ws", wal_policy="ephemeral")
         ws.ensure_layout()
-        db = Database(ws.data_dir / "state.db")
+        db = Database(ws.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
         writer = PersistenceWriter(
@@ -177,9 +177,9 @@ class TestGroundedAndRepair:
         from zugzwang_runtime.persistence.writer import PersistenceWriter
 
         manifest = _grounded_manifest(tmp_path, "chess.repair", "uci", parse_retries=1)
-        ws = Workspace.from_root(tmp_path / "repair-ws")
+        ws = Workspace.from_root(tmp_path / "repair-ws", wal_policy="ephemeral")
         ws.ensure_layout()
-        db = Database(ws.data_dir / "state.db")
+        db = Database(ws.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
         writer = PersistenceWriter(
@@ -257,9 +257,9 @@ class TestStructuredR3:
         from zugzwang_runtime.persistence.writer import PersistenceWriter
 
         manifest = _grounded_manifest(tmp_path, "chess.structured", "uci")
-        ws = Workspace.from_root(tmp_path / "r3-ws")
+        ws = Workspace.from_root(tmp_path / "r3-ws", wal_policy="ephemeral")
         ws.ensure_layout()
-        db = Database(ws.data_dir / "state.db")
+        db = Database(ws.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
         writer = PersistenceWriter(

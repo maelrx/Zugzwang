@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "EnvelopeMeta": {
+      "additionalProperties": false,
+      "description": "Provenance and budget meta of one tool result (PRD §42.6).",
+      "properties": {
+        "decision_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9:_-]{0,127}$",
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "round_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9:_-]{0,127}$",
+          "title": "Round Id",
+          "type": "string"
+        },
+        "operation_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9:_-]{0,127}$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "tool_call_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9:_-]{0,127}$",
+          "title": "Tool Call Id",
+          "type": "string"
+        },
+        "exposure_sequence": {
+          "minimum": 0,
+          "title": "Exposure Sequence",
+          "type": "integer"
+        },
+        "policy_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Hash",
+          "type": "string"
+        },
+        "semantic_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Hash"
+        },
+        "logical_operations_charged": {
+          "minimum": 0,
+          "title": "Logical Operations Charged",
+          "type": "integer"
+        },
+        "physical_rules_queries": {
+          "minimum": 0,
+          "title": "Physical Rules Queries",
+          "type": "integer"
+        },
+        "remaining_model_calls": {
+          "minimum": 0,
+          "title": "Remaining Model Calls",
+          "type": "integer"
+        },
+        "remaining_tool_operations": {
+          "minimum": 0,
+          "title": "Remaining Tool Operations",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "decision_id",
+        "round_id",
+        "operation_id",
+        "tool_call_id",
+        "exposure_sequence",
+        "policy_hash",
+        "logical_operations_charged",
+        "physical_rules_queries",
+        "remaining_model_calls",
+        "remaining_tool_operations"
+      ],
+      "title": "EnvelopeMeta",
+      "type": "object"
+    },
+    "ToolError": {
+      "additionalProperties": false,
+      "description": "Envelope error (PRD §42.6): code from the §15.1 catalogue only.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable_under_policy": {
+          "title": "Retryable Under Policy",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable_under_policy"
+      ],
+      "title": "ToolError",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Normalized tool-result envelope (PRD §42.6).\n\n``ok=True`` requires ``result`` and forbids ``error``; ``ok=False``\nrequires a catalogue ``error`` and forbids ``result``.",
+  "properties": {
+    "schema_version": {
+      "const": "zgw.cognitive-tool-result/v1",
+      "default": "zgw.cognitive-tool-result/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    },
+    "meta": {
+      "$ref": "#/$defs/EnvelopeMeta"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ToolError"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "meta"
+  ],
+  "title": "ToolEnvelope",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zugzwang.dev/schemas/cb-tool-envelope/v1alpha1"
+}

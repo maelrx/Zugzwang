@@ -22,28 +22,32 @@
       }
 
       :root {
-        --ink: #0d1118;
-        --ink-2: #131a23;
-        --panel: rgba(22, 29, 39, 0.86);
-        --panel-2: rgba(28, 37, 49, 0.72);
-        --line: rgba(226, 235, 230, 0.12);
+        --ink: #0c1017;
+        --ink-2: #121822;
+        --panel: rgba(20, 27, 38, 0.88);
+        --panel-2: rgba(26, 34, 46, 0.6);
+        --line: rgba(226, 235, 230, 0.11);
         --line-bright: rgba(226, 235, 230, 0.22);
         --paper: #f2eee4;
-        --muted: #97a5ae;
+        --muted: #93a1ab;
+        --faint: #67727b;
         --orange: #f5a65b;
         --orange-soft: rgba(245, 166, 91, 0.13);
         --mint: #7de2c5;
         --mint-soft: rgba(125, 226, 197, 0.12);
         --red: #ee8278;
+        --red-soft: rgba(238, 130, 120, 0.1);
         --blue: #8eaae9;
-        --analysis-blue-soft: rgba(142, 170, 233, 0.1);
-        --board-light: #f0d9b5;
-        --board-dark: #b58863;
+        --blue-soft: rgba(142, 170, 233, 0.1);
+        --violet: #c4a8ee;
+        --board-light: #eedab9;
+        --board-dark: #a87f57;
         --board-highlight: #cdd26a;
-        --shadow: 0 28px 80px rgba(0, 0, 0, 0.3);
+        --shadow: 0 28px 80px rgba(0, 0, 0, 0.32);
         --sans: "Geist Sans", "Noto Sans", "Segoe UI", sans-serif;
         --mono: "Geist Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
         --display: "Geist Sans", "Noto Sans", "Segoe UI", sans-serif;
+        --radius: 6px;
       }
 
       * { box-sizing: border-box; }
@@ -55,8 +59,8 @@
         margin: 0;
         color: var(--paper);
         background:
-          radial-gradient(circle at 77% 7%, rgba(66, 113, 101, 0.17), transparent 28rem),
-          radial-gradient(circle at 13% 93%, rgba(245, 166, 91, 0.08), transparent 24rem),
+          radial-gradient(circle at 78% 4%, rgba(66, 113, 101, 0.18), transparent 28rem),
+          radial-gradient(circle at 10% 96%, rgba(245, 166, 91, 0.07), transparent 24rem),
           var(--ink);
         font-family: var(--sans);
         font-size: 15px;
@@ -70,7 +74,7 @@
         z-index: -1;
         pointer-events: none;
         content: "";
-        opacity: 0.22;
+        opacity: 0.2;
         background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
         background-size: 44px 44px;
@@ -78,10 +82,9 @@
       }
 
       button, input, select { font: inherit; touch-action: manipulation; }
-
       button { color: inherit; }
 
-      button:focus-visible, input:focus-visible, select:focus-visible {
+      button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
         outline: 2px solid var(--orange);
         outline-offset: 3px;
       }
@@ -90,14 +93,14 @@
         position: fixed;
         top: 10px;
         left: 10px;
-        z-index: 20;
+        z-index: 40;
         padding: 9px 12px;
         border: 1px solid var(--orange);
         color: var(--ink);
         background: var(--orange);
         font-family: var(--mono);
         font-size: 11px;
-        transform: translateY(-160%);
+        transform: translateY(-180%);
         transition: transform 160ms ease-out;
       }
 
@@ -105,9 +108,11 @@
 
       .app-shell {
         display: grid;
-        grid-template-columns: 300px minmax(0, 1fr);
+        grid-template-columns: 308px minmax(0, 1fr);
         min-height: 100vh;
       }
+
+      /* ---------- rail ---------- */
 
       .rail {
         position: sticky;
@@ -115,9 +120,9 @@
         display: flex;
         flex-direction: column;
         height: 100vh;
-        padding: 29px 20px 20px;
+        padding: 26px 18px 16px;
         border-right: 1px solid var(--line);
-        background: rgba(11, 15, 22, 0.76);
+        background: rgba(10, 14, 21, 0.78);
         backdrop-filter: blur(18px);
       }
 
@@ -125,7 +130,7 @@
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        margin-bottom: 28px;
+        margin-bottom: 20px;
       }
 
       .brand-mark {
@@ -157,7 +162,7 @@
         margin-bottom: 0;
         color: var(--paper);
         font-family: var(--display);
-        font-size: clamp(30px, 3vw, 42px);
+        font-size: clamp(30px, 3vw, 40px);
         font-weight: 650;
         letter-spacing: -0.055em;
         line-height: 0.92;
@@ -174,36 +179,57 @@
         text-transform: uppercase;
       }
 
-      .readonly-stamp {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 9px;
-        border: 1px solid rgba(125, 226, 197, 0.24);
-        color: var(--mint);
+      .snapshot-card {
+        margin-bottom: 14px;
+        padding: 10px 11px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.025);
         font-family: var(--mono);
         font-size: 10px;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
+        line-height: 1.7;
       }
 
-      .readonly-stamp::before {
-        width: 6px;
-        height: 6px;
+      .snapshot-card .live-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 7px;
         border-radius: 50%;
         background: var(--mint);
         box-shadow: 0 0 0 4px var(--mint-soft);
-        content: "";
+        vertical-align: 1px;
       }
 
-      .search-box {
-        position: relative;
-        margin-bottom: 13px;
+      .snapshot-card .live-dot.stale { background: var(--orange); box-shadow: 0 0 0 4px var(--orange-soft); }
+      .snapshot-card .live-dot.off { background: var(--faint); box-shadow: none; }
+
+      .snapshot-card strong { color: var(--paper); font-weight: 600; }
+      .snapshot-card .dim { color: var(--faint); }
+
+      .update-pill {
+        display: none;
+        width: 100%;
+        margin-top: 8px;
+        padding: 8px 10px;
+        border: 1px solid rgba(125, 226, 197, 0.5);
+        cursor: pointer;
+        color: var(--mint);
+        background: var(--mint-soft);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: background 150ms ease;
       }
+
+      .update-pill.show { display: block; }
+      .update-pill:hover { background: rgba(125, 226, 197, 0.2); }
+
+      .search-box { position: relative; margin-bottom: 10px; }
 
       .search-box::before {
         position: absolute;
-        top: 10px;
+        top: 9px;
         left: 11px;
         color: var(--muted);
         content: "⌕";
@@ -212,7 +238,7 @@
 
       .search-box input {
         width: 100%;
-        padding: 11px 11px 11px 32px;
+        padding: 10px 10px 10px 32px;
         border: 1px solid var(--line);
         outline: none;
         color: var(--paper);
@@ -227,12 +253,11 @@
         background: rgba(255, 255, 255, 0.06);
       }
 
-      .search-box input:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
-
       .filter-bar {
         display: flex;
+        flex-wrap: wrap;
         gap: 6px;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
       }
 
       .filter-btn {
@@ -276,8 +301,9 @@
       .run-card {
         position: relative;
         width: 100%;
-        padding: 12px 12px 11px;
+        padding: 11px 12px 10px;
         border: 1px solid transparent;
+        border-radius: var(--radius);
         cursor: pointer;
         text-align: left;
         background: transparent;
@@ -285,6 +311,7 @@
       }
 
       .run-card:hover { background: rgba(255, 255, 255, 0.045); }
+
       .run-card.active {
         border-color: rgba(245, 166, 91, 0.38);
         background: linear-gradient(105deg, rgba(245, 166, 91, 0.14), rgba(245, 166, 91, 0.02));
@@ -299,6 +326,8 @@
         background: var(--orange);
         content: "";
       }
+
+      .run-card.pinned { border-color: rgba(142, 170, 233, 0.5); background: var(--blue-soft); }
 
       .run-card-top, .run-card-bottom {
         display: flex;
@@ -317,7 +346,7 @@
       }
 
       .run-card-id {
-        margin-top: 4px;
+        margin-top: 3px;
         overflow: hidden;
         color: var(--muted);
         font-family: var(--mono);
@@ -326,12 +355,28 @@
         white-space: nowrap;
       }
 
-      .run-card-bottom { margin-top: 9px; }
-
+      .run-card-bottom { margin-top: 8px; }
       .run-card-meta { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+      .run-card-meta.good { color: var(--mint); }
+      .run-card-meta.bad { color: var(--red); }
+
+      .pin-btn {
+        flex: 0 0 auto;
+        padding: 2px 7px;
+        border: 1px solid var(--line);
+        cursor: pointer;
+        color: var(--faint);
+        background: transparent;
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .pin-btn:hover { border-color: var(--blue); color: var(--blue); }
+      .pin-btn.on { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
 
       .status-dot {
         display: inline-flex;
+        flex: 0 0 auto;
         align-items: center;
         gap: 6px;
         font-family: var(--mono);
@@ -352,9 +397,11 @@
       .status-dot.completed::before { background: var(--mint); }
       .status-dot.failed { color: var(--red); }
       .status-dot.failed::before { background: var(--red); }
+      .status-dot.canceled { color: var(--orange); }
+      .status-dot.canceled::before { background: var(--orange); }
 
       .rail-footer {
-        padding-top: 15px;
+        padding-top: 12px;
         border-top: 1px solid var(--line);
         color: var(--muted);
         font-family: var(--mono);
@@ -363,9 +410,11 @@
 
       .rail-footer strong { color: var(--paper); font-weight: 500; }
 
+      /* ---------- content ---------- */
+
       .content {
         min-width: 0;
-        padding: 30px clamp(18px, 4vw, 58px) 60px;
+        padding: 28px clamp(18px, 4vw, 56px) 60px;
       }
 
       .topbar {
@@ -373,7 +422,7 @@
         align-items: flex-end;
         justify-content: space-between;
         gap: 25px;
-        margin-bottom: 27px;
+        margin-bottom: 24px;
       }
 
       .topbar h2 {
@@ -381,7 +430,7 @@
         margin-bottom: 0;
         color: var(--paper);
         font-family: var(--display);
-        font-size: clamp(27px, 4.5vw, 58px);
+        font-size: clamp(26px, 4.2vw, 54px);
         font-weight: 520;
         letter-spacing: -0.055em;
         line-height: 0.97;
@@ -399,6 +448,39 @@
 
       .topbar-meta strong { color: var(--paper); font-weight: 500; }
 
+      .topbar-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+      }
+
+      .view-btn {
+        min-height: 34px;
+        padding: 8px 11px;
+        border: 1px solid rgba(142, 170, 233, 0.42);
+        border-radius: var(--radius);
+        cursor: pointer;
+        color: var(--blue);
+        background: var(--blue-soft);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+      }
+
+      .view-btn:hover {
+        border-color: var(--blue);
+        color: var(--paper);
+        background: rgba(142, 170, 233, 0.18);
+      }
+
+      .view-btn[aria-pressed="true"] {
+        border-color: rgba(125, 226, 197, 0.45);
+        color: var(--mint);
+        background: var(--mint-soft);
+      }
+
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -407,16 +489,11 @@
       }
 
       .stat {
-        position: relative;
         min-height: 92px;
         padding: 13px 16px 12px 0;
-        overflow: hidden;
         border-top: 1px solid var(--line-bright);
         border-bottom: 1px solid var(--line);
-        background: transparent;
       }
-
-      .stat::after { display: none; }
 
       .stat-label {
         color: var(--muted);
@@ -427,11 +504,8 @@
       }
 
       .stat-value {
-        position: relative;
-        z-index: 1;
         margin-top: 9px;
         color: var(--paper);
-        font-family: var(--sans);
         font-size: 24px;
         font-weight: 600;
         line-height: 1;
@@ -439,16 +513,18 @@
 
       .stat-value.accent { color: var(--orange); }
       .stat-value.mint { color: var(--mint); }
+      .stat-value small { font-size: 12px; font-weight: 400; color: var(--muted); }
 
       .stage-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.78fr);
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
         gap: 18px;
         align-items: start;
       }
 
       .panel {
         border: 1px solid var(--line);
+        border-radius: var(--radius);
         background: var(--panel);
         box-shadow: var(--shadow);
       }
@@ -474,9 +550,10 @@
       .panel-head small { color: var(--muted); font-family: var(--mono); font-size: 10px; }
 
       .episode-select {
-        max-width: 190px;
+        max-width: 200px;
         padding: 7px 9px;
         border: 1px solid var(--line-bright);
+        border-radius: 4px;
         outline: none;
         cursor: pointer;
         color: var(--paper);
@@ -485,22 +562,54 @@
         font-size: 10px;
       }
 
-      .episode-select:focus { border-color: rgba(245,166,91,0.6); }
-      .episode-select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+      /* ---------- board ---------- */
 
-      .board-panel { overflow: hidden; }
-
-      .board-stage {
-        display: grid;
-        place-items: center;
-        padding: clamp(16px, 4vw, 34px);
+      .board-zone {
+        display: flex;
+        gap: 14px;
+        align-items: stretch;
+        padding: clamp(16px, 3.5vw, 30px);
         background:
-          linear-gradient(130deg, rgba(125, 226, 197, 0.035), transparent 48%),
+          linear-gradient(130deg, rgba(125, 226, 197, 0.04), transparent 48%),
           rgba(7, 10, 15, 0.26);
       }
 
+      .eval-gauge {
+        position: relative;
+        flex: 0 0 22px;
+        overflow: hidden;
+        border: 1px solid var(--line-bright);
+        border-radius: 3px;
+        background: #20242b;
+      }
+
+      .eval-gauge .white-fill {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, #f2eee4, #cfc8b4);
+        transition: height 250ms ease;
+      }
+
+      .eval-gauge .gauge-label {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 4px;
+        z-index: 1;
+        color: #0d1118;
+        font-family: var(--mono);
+        font-size: 8px;
+        text-align: center;
+        mix-blend-mode: plus-lighter;
+      }
+
+      .board-col { flex: 1; min-width: 0; }
+
       .board-wrap {
         width: min(100%, 600px);
+        margin: 0 auto;
         padding: 10px;
         border: 1px solid rgba(242, 238, 228, 0.17);
         border-radius: 4px;
@@ -533,31 +642,24 @@
       .square.light { background: var(--board-light); }
       .square.dark { background: var(--board-dark); }
 
-      .square::after {
+      .square .coord-rank {
         position: absolute;
-        left: 5px;
-        bottom: 3px;
-        color: rgba(13, 17, 24, 0.46);
-        font-family: var(--sans);
+        left: 4px;
+        top: 3px;
         font-size: clamp(7px, 1.1vw, 10px);
         font-weight: 700;
-        content: attr(data-label);
       }
 
-      .square.dark::after { color: rgba(242,238,228,0.38); }
-
-      .square::before {
+      .square .coord-file {
         position: absolute;
         right: 5px;
         bottom: 3px;
-        color: rgba(13, 17, 24, 0.46);
-        font-family: var(--sans);
         font-size: clamp(7px, 1.1vw, 10px);
         font-weight: 700;
-        content: attr(data-file);
       }
 
-      .square.dark::before { color: rgba(242,238,228,0.38); }
+      .square.light .coord-rank, .square.light .coord-file { color: rgba(120, 84, 50, 0.85); }
+      .square.dark .coord-rank, .square.dark .coord-file { color: rgba(242, 238, 228, 0.65); }
 
       .square .piece {
         position: relative;
@@ -568,17 +670,42 @@
         place-items: center;
       }
 
-      .piece-svg { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; overflow: visible; }
+      .piece-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
       .piece-svg.white { color: #f8f1df; filter: drop-shadow(0 2px 1px rgba(38, 29, 23, 0.68)); }
       .piece-svg.black { color: #252a2e; filter: drop-shadow(0 1px 1px rgba(255, 248, 228, 0.24)); }
 
       .square.from, .square.to { background: var(--board-highlight); }
       .square.to { box-shadow: inset 0 0 0 4px rgba(72, 87, 47, 0.34); }
 
-      .replay-bar {
-        padding: 15px 18px 18px;
-        border-top: 1px solid var(--line);
+      .board-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: min(100%, 600px);
+        margin: 10px auto 0;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
       }
+
+      .board-status strong { color: var(--paper); }
+
+      .turn-dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        margin-right: 6px;
+        border: 1px solid var(--line-bright);
+        border-radius: 2px;
+        vertical-align: baseline;
+      }
+
+      .turn-dot.w { background: #f2eee4; }
+      .turn-dot.b { background: #20242b; }
+
+      .replay-bar { padding: 15px 18px 18px; border-top: 1px solid var(--line); }
 
       .replay-current {
         display: flex;
@@ -597,33 +724,20 @@
         letter-spacing: -0.035em;
       }
 
-      .replay-current p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+      .replay-current p { margin: 3px 0 0; color: var(--muted); font-size: 10px; font-family: var(--mono); }
 
-      .ply-counter {
-        color: var(--orange);
-        font-size: 11px;
-        white-space: nowrap;
-      }
+      .ply-counter { color: var(--orange); font-size: 11px; font-family: var(--mono); white-space: nowrap; }
 
-      .range {
-        width: 100%;
-        height: 4px;
-        margin: 0 0 13px;
-        accent-color: var(--orange);
-        cursor: pointer;
-      }
+      .range { width: 100%; height: 4px; margin: 0 0 13px; accent-color: var(--orange); cursor: pointer; }
 
-      .transport {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
+      .transport { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
       .transport button {
         min-width: 34px;
         height: 31px;
         padding: 0 10px;
         border: 1px solid var(--line-bright);
+        border-radius: 4px;
         cursor: pointer;
         color: var(--paper);
         background: rgba(255,255,255,0.035);
@@ -637,7 +751,20 @@
       }
 
       .transport button:disabled { cursor: default; opacity: 0.32; }
-      .transport .play-btn { min-width: 84px; color: var(--orange); }
+      .transport .play-btn { min-width: 88px; color: var(--orange); }
+
+      .speed-select {
+        height: 31px;
+        padding: 0 8px;
+        border: 1px solid var(--line-bright);
+        border-radius: 4px;
+        color: var(--muted);
+        background: var(--ink-2);
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .kbd-hint { margin-left: auto; color: var(--faint); font-family: var(--mono); font-size: 10px; }
 
       .side-stack { display: grid; gap: 18px; }
 
@@ -645,7 +772,7 @@
 
       .metric-hero {
         display: grid;
-        grid-template-columns: 1.1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 7px;
         margin-bottom: 14px;
       }
@@ -654,6 +781,7 @@
         min-height: 80px;
         padding: 12px 11px;
         border: 1px solid var(--line);
+        border-radius: 4px;
         background: rgba(255,255,255,0.025);
       }
 
@@ -670,14 +798,14 @@
         display: block;
         margin-top: 8px;
         color: var(--paper);
-        font-family: var(--sans);
-        font-size: 23px;
+        font-size: 21px;
         font-weight: 600;
       }
 
       .metric-box strong.good { color: var(--mint); }
       .metric-box strong.warn { color: var(--orange); }
       .metric-box strong.bad { color: var(--red); }
+      .metric-box small { color: var(--faint); font-size: 10px; font-weight: 400; }
 
       .metric-list { display: grid; gap: 1px; }
 
@@ -693,7 +821,6 @@
       .metric-row:last-child, .fact-row:last-child { border-bottom: 0; }
       .metric-row span, .fact-row span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
       .metric-row strong, .fact-row strong { color: var(--paper); font-size: 12px; font-weight: 600; text-align: right; }
-
       .fact-row strong { max-width: 67%; overflow-wrap: anywhere; }
 
       .player-card {
@@ -704,6 +831,7 @@
         margin-bottom: 11px;
         padding: 10px;
         border: 1px solid var(--line);
+        border-radius: 4px;
         background: rgba(255,255,255,0.025);
       }
 
@@ -718,7 +846,6 @@
         font-size: 18px;
       }
 
-      .player-card:last-child { margin-bottom: 14px; }
       .player-name { color: var(--paper); font-size: 13px; font-weight: 700; }
       .player-detail { margin-top: 3px; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
 
@@ -728,15 +855,18 @@
         min-height: 20px;
         padding: 2px 6px;
         border: 1px solid var(--line-bright);
+        border-radius: 3px;
         color: var(--muted);
         font-family: var(--mono);
         font-size: 9px;
         line-height: 1.3;
+        white-space: nowrap;
       }
 
       .tag.orange { border-color: rgba(245,166,91,0.38); color: var(--orange); background: var(--orange-soft); }
       .tag.mint { border-color: rgba(125,226,197,0.34); color: var(--mint); background: var(--mint-soft); }
       .tag.red { border-color: rgba(238,130,120,0.34); color: var(--red); background: rgba(238,130,120,0.09); }
+      .tag.blue { border-color: rgba(142,170,233,0.4); color: var(--blue); background: var(--blue-soft); }
 
       .lower-grid {
         display: grid;
@@ -745,23 +875,35 @@
         margin-top: 18px;
       }
 
+      .move-list-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 18px 0;
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
       .move-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 5px;
-        max-height: 380px;
+        max-height: 420px;
         overflow: auto;
-        padding: 15px 18px 18px;
+        padding: 12px 18px 18px;
       }
 
       .move-item {
         display: grid;
-        grid-template-columns: 34px 48px minmax(0, 1fr) auto auto;
+        grid-template-columns: 30px minmax(0, 1fr) auto;
         gap: 8px;
         align-items: center;
         min-width: 0;
-        padding: 9px 10px;
+        padding: 8px 10px;
         border: 1px solid transparent;
+        border-radius: 4px;
         cursor: pointer;
         text-align: left;
         background: rgba(255,255,255,0.025);
@@ -770,22 +912,42 @@
 
       .move-item:hover { border-color: var(--line-bright); }
       .move-item.active { border-color: rgba(245,166,91,0.48); background: var(--orange-soft); }
-      .move-number { color: var(--muted); font-size: 10px; }
-      .move-number, .move-side, .move-eval { font-family: var(--mono); }
-      .move-side { color: var(--orange); font-size: 10px; }
-      .move-san { overflow: hidden; color: var(--paper); font-family: var(--sans); font-size: 17px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-      .move-uci { color: var(--muted); font-size: 9px; }
-      .move-eval { color: var(--muted); font-size: 9px; white-space: nowrap; }
+
+      .move-number { color: var(--muted); font-size: 10px; font-family: var(--mono); }
+      .move-san { overflow: hidden; color: var(--paper); font-size: 16px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+      .move-sub { color: var(--muted); font-family: var(--mono); font-size: 9px; margin-top: 1px; }
+      .move-badges { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+
+      .class-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+      .class-dot.best_or_good, .class-dot.good { background: var(--mint); }
+      .class-dot.inaccuracy { background: var(--blue); }
+      .class-dot.mistake { background: var(--orange); }
+      .class-dot.blunder { background: var(--red); }
+      .class-dot.none { background: var(--faint); }
+
+      .move-eval { font-family: var(--mono); font-size: 9px; white-space: nowrap; color: var(--muted); }
       .move-eval.good { color: var(--mint); }
       .move-eval.warn { color: var(--orange); }
       .move-eval.bad { color: var(--red); }
 
-      .events-list {
-        display: grid;
-        gap: 1px;
-        max-height: 380px;
-        overflow: auto;
+      .events-tools {
+        display: flex;
+        gap: 8px;
+        padding: 12px 18px 0;
       }
+
+      .events-tools input {
+        width: 100%;
+        padding: 7px 9px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        color: var(--paper);
+        background: rgba(255,255,255,0.03);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .events-list { display: grid; gap: 1px; max-height: 420px; overflow: auto; }
 
       .event-item {
         display: grid;
@@ -804,19 +966,14 @@
         content: "";
       }
 
-      .event-name { color: var(--paper); font-size: 12px; }
-      .event-meta { margin-top: 2px; color: var(--muted); font-size: 10px; }
-      .event-meta, .event-payload { font-family: var(--mono); }
-      .event-payload { margin: 8px 0 0; max-height: 180px; overflow: auto; color: #b9c4ca; font-size: 10px; white-space: pre-wrap; }
+      .event-name { color: var(--paper); font-size: 12px; font-family: var(--mono); }
+      .event-meta { margin-top: 2px; color: var(--muted); font-size: 10px; font-family: var(--mono); }
+      .event-payload { margin: 8px 0 0; max-height: 180px; overflow: auto; color: #b9c4ca; font-family: var(--mono); font-size: 10px; white-space: pre-wrap; }
 
-      .event-details summary {
-        cursor: pointer;
-        list-style: none;
-      }
-
+      .event-details summary { cursor: pointer; list-style: none; }
       .event-details summary::-webkit-details-marker { display: none; }
       .event-details summary::after { float: right; color: var(--muted); content: "+"; }
-      .event-details[open] summary::after { content: "-"; }
+      .event-details[open] summary::after { content: "–"; }
 
       .empty-state {
         display: grid;
@@ -827,7 +984,7 @@
         text-align: center;
       }
 
-      .empty-state strong { display: block; margin-bottom: 6px; color: var(--paper); font-family: var(--sans); font-size: 22px; font-weight: 600; }
+      .empty-state strong { display: block; margin-bottom: 6px; color: var(--paper); font-size: 22px; font-weight: 600; }
 
       .footnote {
         margin-top: 22px;
@@ -839,62 +996,31 @@
 
       .footnote code { color: var(--orange); }
 
-      .topbar-actions {
-        display: flex;
-        align-items: flex-end;
-        gap: 14px;
-      }
-
-      .view-btn {
-        min-height: 34px;
-        padding: 8px 11px;
-        border: 1px solid rgba(142, 170, 233, 0.42);
-        cursor: pointer;
-        color: var(--blue);
-        background: var(--analysis-blue-soft, rgba(142, 170, 233, 0.1));
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
-      }
-
-      .view-btn:hover {
-        border-color: var(--blue);
-        color: var(--paper);
-        background: rgba(142, 170, 233, 0.18);
-      }
-
-      .view-btn[aria-pressed="true"] {
-        border-color: rgba(125, 226, 197, 0.45);
-        color: var(--mint);
-        background: var(--mint-soft);
-      }
+      /* ---------- analysis view ---------- */
 
       .analysis-toolbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 18px;
-        margin-bottom: 19px;
+        margin-bottom: 18px;
       }
 
       .analysis-toolbar p { margin: 0; color: var(--muted); font-size: 13px; }
+      .analysis-toolbar .formula { margin-top: 4px; color: var(--faint); font-family: var(--mono); font-size: 10px; }
 
       .analysis-kpis {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1px;
         margin-bottom: 18px;
         border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
         background: var(--line);
       }
 
-      .analysis-kpi {
-        min-height: 92px;
-        padding: 14px 15px;
-        background: var(--panel);
-      }
+      .analysis-kpi { min-height: 96px; padding: 14px 15px; background: var(--panel); }
 
       .analysis-kpi-label {
         color: var(--muted);
@@ -904,19 +1030,13 @@
         text-transform: uppercase;
       }
 
-      .analysis-kpi-value {
-        display: block;
-        margin-top: 10px;
-        color: var(--paper);
-        font-size: 25px;
-        font-weight: 650;
-        line-height: 1;
-      }
-
+      .analysis-kpi-value { display: block; margin-top: 10px; color: var(--paper); font-size: 25px; font-weight: 650; line-height: 1; }
       .analysis-kpi-value.blue { color: var(--blue); }
       .analysis-kpi-value.orange { color: var(--orange); }
       .analysis-kpi-value.red { color: var(--red); }
       .analysis-kpi-value.mint { color: var(--mint); }
+      .analysis-kpi-value.violet { color: var(--violet); }
+      .analysis-kpi-sub { display: block; margin-top: 6px; color: var(--faint); font-family: var(--mono); font-size: 10px; }
 
       .analysis-grid {
         display: grid;
@@ -928,6 +1048,7 @@
       .analysis-panel {
         min-width: 0;
         border: 1px solid var(--line);
+        border-radius: var(--radius);
         background: var(--panel);
         box-shadow: var(--shadow);
       }
@@ -941,30 +1062,25 @@
         border-bottom: 1px solid var(--line);
       }
 
-      .analysis-panel-head h3 {
-        margin: 0;
-        color: var(--paper);
-        font-size: 19px;
-        font-weight: 620;
-        letter-spacing: -0.025em;
-      }
-
+      .analysis-panel-head h3 { margin: 0; color: var(--paper); font-size: 19px; font-weight: 620; letter-spacing: -0.025em; }
       .analysis-panel-head small { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-
       .analysis-panel-body { padding: 17px 18px; }
 
-      .chart-wrap { min-height: 310px; padding: 6px 0 0; }
+      .chart-wrap { min-height: 240px; padding: 6px 0 0; }
+      .chart-wrap + .chart-wrap { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+      .chart-title { margin: 0 0 8px; color: var(--paper); font-size: 13px; font-weight: 650; }
+      .chart-title small { color: var(--faint); font-family: var(--mono); font-size: 10px; font-weight: 400; }
 
-      .cpl-chart {
-        display: block;
-        width: 100%;
-        height: auto;
-        overflow: visible;
-      }
-
-      .cpl-chart .grid-line { stroke: rgba(226, 235, 230, 0.1); stroke-width: 1; }
-      .cpl-chart .axis-label { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .cpl-chart .bar { shape-rendering: crispEdges; }
+      .eval-chart, .cpl-chart { display: block; width: 100%; height: auto; overflow: visible; }
+      .eval-chart .grid-line, .cpl-chart .grid-line { stroke: rgba(226, 235, 230, 0.1); stroke-width: 1; }
+      .eval-chart .axis-label, .cpl-chart .axis-label { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+      .eval-chart .eval-area { fill: rgba(142, 170, 233, 0.16); }
+      .eval-chart .eval-line { fill: none; stroke: var(--blue); stroke-width: 2; }
+      .eval-chart .eval-dot { fill: var(--blue); cursor: pointer; }
+      .eval-chart .eval-dot.blunder { fill: var(--red); }
+      .eval-chart .eval-dot.mistake { fill: var(--orange); }
+      .eval-chart .zero-line { stroke: rgba(226, 235, 230, 0.3); stroke-width: 1; stroke-dasharray: 4 4; }
+      .cpl-chart .bar { shape-rendering: crispEdges; cursor: pointer; }
       .cpl-chart .bar.good { fill: rgba(125, 226, 197, 0.74); }
       .cpl-chart .bar.inaccuracy { fill: rgba(142, 170, 233, 0.82); }
       .cpl-chart .bar.mistake { fill: rgba(245, 166, 91, 0.88); }
@@ -982,10 +1098,9 @@
         font-size: 10px;
       }
 
-      .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; }
-
-      .legend-item { display: inline-flex; align-items: center; gap: 5px; }
-      .legend-swatch { width: 8px; height: 8px; }
+      .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+      .legend-item { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+      .legend-swatch { width: 8px; height: 8px; border-radius: 2px; }
       .legend-swatch.good { background: var(--mint); }
       .legend-swatch.inaccuracy { background: var(--blue); }
       .legend-swatch.mistake { background: var(--orange); }
@@ -1003,6 +1118,7 @@
         width: 100%;
         padding: 10px;
         border: 1px solid var(--line);
+        border-radius: 4px;
         cursor: pointer;
         text-align: left;
         background: rgba(255, 255, 255, 0.025);
@@ -1021,6 +1137,7 @@
         place-items: center;
         color: var(--red);
         background: rgba(238, 130, 120, 0.1);
+        border-radius: 3px;
         font-family: var(--mono);
         font-size: 10px;
       }
@@ -1028,7 +1145,8 @@
       .incident-main { min-width: 0; }
       .incident-move { overflow: hidden; color: var(--paper); font-size: 15px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
       .incident-meta { margin-top: 2px; color: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .incident-cpl { color: var(--red); font-family: var(--mono); font-size: 12px; font-weight: 650; white-space: nowrap; }
+      .incident-cpl { color: var(--red); font-family: var(--mono); font-size: 12px; font-weight: 650; white-space: nowrap; text-align: right; }
+      .incident-cpl small { display: block; color: var(--faint); font-size: 9px; font-weight: 400; }
 
       .analysis-summary { display: grid; gap: 1px; }
 
@@ -1037,7 +1155,7 @@
         align-items: baseline;
         justify-content: space-between;
         gap: 12px;
-        padding: 9px 0;
+        padding: 8px 0;
         border-bottom: 1px solid rgba(226, 235, 230, 0.08);
       }
 
@@ -1047,28 +1165,26 @@
       .analysis-summary-row strong.red { color: var(--red); }
       .analysis-summary-row strong.orange { color: var(--orange); }
       .analysis-summary-row strong.mint { color: var(--mint); }
+      .analysis-summary-row strong.blue { color: var(--blue); }
 
       .engine-proof {
         display: grid;
         gap: 9px;
         padding: 13px;
         border: 1px solid rgba(142, 170, 233, 0.22);
+        border-radius: 4px;
         background: rgba(142, 170, 233, 0.06);
       }
 
       .engine-proof-title { color: var(--blue); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
       .engine-proof-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
-      .engine-proof-row span { color: var(--muted); }
-      .engine-proof-row strong { color: var(--paper); font-weight: 600; text-align: right; }
-      .engine-proof-note { margin: 1px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+      .engine-proof-row span { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+      .engine-proof-row strong { color: var(--paper); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+      .engine-proof-note { margin: 1px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
       .analysis-table-wrap { overflow-x: auto; }
 
-      .analysis-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
+      .analysis-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 
       .analysis-table th {
         padding: 9px 10px;
@@ -1084,7 +1200,7 @@
       }
 
       .analysis-table td {
-        padding: 10px;
+        padding: 9px 10px;
         border-bottom: 1px solid rgba(226, 235, 230, 0.08);
         color: var(--paper);
         white-space: nowrap;
@@ -1094,72 +1210,61 @@
       .analysis-table tr[data-analysis-ply] { cursor: pointer; transition: background 150ms ease; }
       .analysis-table tr[data-analysis-ply]:hover { background: rgba(255, 255, 255, 0.045); }
       .analysis-table .muted { color: var(--muted); font-family: var(--mono); font-size: 10px; }
-      .analysis-table .move-link { color: var(--paper); font-weight: 620; }
-      .analysis-table .cpl { color: var(--muted); font-family: var(--mono); }
+      .analysis-table .move-link { font-weight: 620; }
+      .analysis-table .cpl { font-family: var(--mono); }
       .analysis-table .cpl.warn { color: var(--orange); }
       .analysis-table .cpl.bad { color: var(--red); }
       .analysis-table .cpl.good { color: var(--mint); }
+      .analysis-table .pv { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 
-      .analysis-empty {
-        display: grid;
-        min-height: 230px;
-        place-items: center;
-        padding: 30px;
-        text-align: center;
-      }
-
+      .analysis-empty { display: grid; min-height: 230px; place-items: center; padding: 30px; text-align: center; }
       .analysis-empty.compact { min-height: 125px; }
-
       .analysis-empty strong { display: block; margin-bottom: 7px; color: var(--paper); font-size: 18px; font-weight: 620; }
       .analysis-empty p { max-width: 48ch; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 
-      .analysis-note {
-        margin: 14px 0 0;
-        color: var(--muted);
-        font-family: var(--mono);
-        font-size: 10px;
-        line-height: 1.55;
-      }
+      .analysis-note { margin: 14px 0 0; color: var(--muted); font-family: var(--mono); font-size: 10px; line-height: 1.55; }
 
-      @media (max-width: 1150px) {
-        .analysis-grid { grid-template-columns: 1fr; }
-        .analysis-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-      }
+      /* ---------- compare view ---------- */
 
-      @media (max-width: 760px) {
-        .topbar-actions { align-items: flex-start; flex-direction: column-reverse; gap: 10px; }
-        .topbar-actions, .topbar-meta { width: 100%; }
-        .analysis-toolbar { align-items: flex-start; flex-direction: column; }
-        .analysis-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .analysis-kpi:last-child { grid-column: span 2; }
-        .analysis-side { grid-template-columns: 1fr; }
-        .chart-wrap { min-height: 250px; }
-        .chart-caption { align-items: flex-start; flex-direction: column; }
-      }
+      .compare-table-wrap { overflow-x: auto; }
+      .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      .compare-table th, .compare-table td { padding: 9px 12px; border-bottom: 1px solid rgba(226,235,230,0.08); text-align: right; white-space: nowrap; }
+      .compare-table th:first-child, .compare-table td:first-child { text-align: left; color: var(--muted); font-family: var(--mono); font-size: 10px; }
+      .compare-table thead th { color: var(--paper); font-size: 12px; border-bottom: 1px solid var(--line-bright); }
+      .compare-table thead th small { display: block; color: var(--faint); font-family: var(--mono); font-size: 9px; font-weight: 400; }
+      .compare-table td.best { color: var(--mint); font-weight: 700; }
+      .compare-table td.worst { color: var(--red); }
+
+      .compare-hint { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+      .compare-hint code { color: var(--blue); font-family: var(--mono); }
 
       .fade-in { animation: rise 420ms ease both; }
       @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
       @media (max-width: 1150px) {
-        .app-shell { grid-template-columns: 255px minmax(0, 1fr); }
-        .stage-grid, .lower-grid { grid-template-columns: 1fr; }
-        .side-stack { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+        .app-shell { grid-template-columns: 260px minmax(0, 1fr); }
+        .stage-grid, .lower-grid, .analysis-grid { grid-template-columns: 1fr; }
+        .side-stack, .analysis-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+        .analysis-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
 
       @media (max-width: 760px) {
         .app-shell { display: block; }
         .rail { position: relative; height: auto; min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
         .run-list { max-height: 260px; }
-        .content { padding: 25px 14px 42px; }
+        .content { padding: 22px 14px 42px; }
         .topbar { align-items: flex-start; flex-direction: column; gap: 12px; }
-        .topbar h2 { max-width: 100%; font-size: 37px; white-space: normal; }
+        .topbar h2 { max-width: 100%; font-size: 36px; white-space: normal; }
         .topbar-meta { text-align: left; }
+        .topbar-actions { width: 100%; flex-wrap: wrap; }
         .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .stats-grid .stat:last-child { grid-column: span 2; }
-        .side-stack { grid-template-columns: 1fr; }
+        .side-stack, .analysis-side { grid-template-columns: 1fr; }
         .move-list { grid-template-columns: 1fr; }
-        .board-stage { padding: 16px 10px; }
+        .board-zone { padding: 14px 10px; }
         .replay-current { align-items: flex-start; flex-direction: column; gap: 5px; }
+        .analysis-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .kbd-hint { display: none; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -1180,22 +1285,28 @@
           <div class="brand-mark" aria-hidden="true"><span>♞</span></div>
         </div>
 
-        <div class="readonly-stamp">snapshot somente leitura</div>
+        <div class="snapshot-card" id="snapshot-card" aria-live="polite">
+          <span id="snapshot-dot" class="live-dot off"></span><strong id="snapshot-title">snapshot</strong><br />
+          <span id="snapshot-detail" class="dim">carregando…</span>
+          <button id="update-pill" class="update-pill" type="button">↓ nova snapshot — atualizar sem perder o replay</button>
+        </div>
 
-        <div class="search-box" style="margin-top: 21px">
+        <div class="search-box">
           <input id="search" name="run-search" type="search" aria-label="Buscar partida ou modelo" placeholder="buscar partida ou modelo…" autocomplete="off" />
         </div>
         <div class="filter-bar" aria-label="Filtrar runs">
           <button class="filter-btn active" data-filter="all">todos</button>
           <button class="filter-btn" data-filter="COMPLETED">verdes</button>
           <button class="filter-btn" data-filter="FAILED">falhas</button>
+          <button class="filter-btn" data-filter="eval">com CPL</button>
         </div>
         <div class="run-count"><span>partidas no recorte</span><span id="run-count">0</span></div>
         <div id="run-list" class="run-list"></div>
 
         <div class="rail-footer">
           <strong>sem escrita</strong><br />
-          gerado de SQLite + CAS · sem requests brutos
+          gerado de SQLite + CAS · sem requests brutos<br />
+          <span id="poll-state">auto-refresh: verificando…</span>
         </div>
       </aside>
 
@@ -1206,6 +1317,7 @@
             <h2 id="run-title">Carregando recorte…</h2>
           </div>
           <div class="topbar-actions">
+            <button id="compare-btn" class="view-btn" type="button" aria-pressed="false">comparar</button>
             <button id="analysis-btn" class="view-btn" type="button" aria-pressed="false">análise da partida</button>
             <div id="snapshot-meta" class="topbar-meta"></div>
           </div>
@@ -1216,18 +1328,40 @@
     </div>
 
     <script src="pieces.js"></script>
-    <script src="data.js?source=real-validation-20260904-v10"></script>
+    <script id="zgw-data" src="data.js"></script>
     <script>
       (() => {
-        const DATA = window.ZUGZWANG_DATA || { runs: [], readOnly: true };
-        const state = { query: "", filter: "all", runId: null, episodeIndex: 0, ply: 0, view: "replay", playing: false, timer: null };
+        "use strict";
+        let DATA = window.ZUGZWANG_DATA || { runs: [], readOnly: true };
+        const state = {
+          query: "", filter: "all", runId: null, episodeIndex: 0, ply: 0,
+          view: "replay", compare: [], playing: false, timer: null, speed: 900,
+          snapshotSha: null, eventQuery: "",
+        };
         const PIECES = window.ZUGZWANG_PIECES || {};
         const PIECE_NAMES = { K: "rei branco", Q: "dama branca", R: "torre branca", B: "bispo branco", N: "cavalo branco", P: "peão branco", k: "rei preto", q: "dama preta", r: "torre preta", b: "bispo preto", n: "cavalo preto", p: "peão preto" };
+        const PIECE_VALUES = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 0, p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+
+        /* Thresholds: evaluator.stockfish move_class v1.0.0 (plugins/evaluator-stockfish).
+           Shown verbatim wherever classification appears; reporter never re-thresholds. */
+        const CLASS_LIMITS = { blunder: 300, mistake: 100, inaccuracy: 50 };
+        const FORMULA_ACPL = "ACPL = mean(chess.cpl) sobre lances do modelo com CPL publicado";
+        const FORMULA_CLASS = "classe v1.0.0: blunder ≥300cp · erro ≥100cp · imprecisão ≥50cp · senão bom/melhor";
+        const FORMULA_WDL = "WDL médio = mean(chess.wdl_loss) em probabilidade [0,1]";
+        const FORMULA_TOPK = "top-1 = acordo com bestmove · top-3 = chess.chosen_rank ≤ 3";
+
         const $ = (selector) => document.querySelector(selector);
         const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
         const formatNumber = (value) => new Intl.NumberFormat("pt-BR").format(Number(value || 0));
         const formatDate = (value) => value ? new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "n/a";
         const shortId = (value) => String(value || "").replace(/^run_/, "").slice(0, 15);
+        const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value));
+        const mean = (values) => values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        const medianOf = (values) => {
+          if (!values.length) return null;
+          const sorted = [...values].sort((a, b) => a - b);
+          return sorted[Math.floor(sorted.length / 2)];
+        };
 
         function prettyExperiment(value) {
           const name = String(value || "run");
@@ -1271,22 +1405,28 @@
           return actor;
         }
 
-        function currentRun() {
-          return DATA.runs.find((run) => run.id === state.runId) || DATA.runs[0] || null;
-        }
+        /* ---------- snapshot state ---------- */
+
+        function runById(id) { return DATA.runs.find((run) => run.id === id) || null; }
+        function currentRun() { return runById(state.runId) || DATA.runs[0] || null; }
 
         function currentEpisode(run) {
           return run?.episodes?.[state.episodeIndex] || run?.episodes?.[0] || { positions: [{ ply: 0, fen: null }], moves: [] };
         }
 
+        function runHasEval(run) {
+          return (run.metrics || []).some((m) => m.metric === "chess.cpl" && m.valueNum !== null && m.valueNum !== undefined);
+        }
+
         function syncUrl() {
           const params = new URLSearchParams();
           if (state.runId) params.set("run", state.runId);
-          if (state.view === "analysis") params.set("view", "analysis");
+          if (state.view !== "replay") params.set("view", state.view);
           if (state.episodeIndex) params.set("episode", String(state.episodeIndex));
           if (state.ply) params.set("ply", String(state.ply));
           if (state.query) params.set("q", state.query);
           if (state.filter !== "all") params.set("status", state.filter);
+          if (state.compare.length) params.set("cmp", state.compare.join(","));
           const query = params.toString();
           history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
         }
@@ -1297,13 +1437,96 @@
           state.runId = DATA.runs.some((run) => run.id === requestedRun) ? requestedRun : defaultRunId;
           state.query = params.get("q") || "";
           const requestedFilter = params.get("status");
-          state.filter = ["all", "COMPLETED", "FAILED"].includes(requestedFilter) ? requestedFilter : "all";
-          state.view = params.get("view") === "analysis" ? "analysis" : "replay";
+          state.filter = ["all", "COMPLETED", "FAILED", "CANCELED", "eval"].includes(requestedFilter) ? requestedFilter : "all";
+          state.view = params.get("view") === "analysis" || params.get("view") === "compare" ? params.get("view") : "replay";
+          state.compare = String(params.get("cmp") || "").split(",").map((s) => s.trim()).filter((id) => DATA.runs.some((run) => run.id === id)).slice(0, 4);
           state.episodeIndex = Math.max(0, Number(params.get("episode") || 0));
           state.ply = Math.max(0, Number(params.get("ply") || 0));
           $("#search").value = state.query;
           document.querySelectorAll("[data-filter]").forEach((button) => button.classList.toggle("active", button.dataset.filter === state.filter));
         }
+
+        function snapshotAge() {
+          if (!DATA.generatedAt) return "idade desconhecida";
+          const minutes = Math.max(0, Math.round((Date.now() - new Date(DATA.generatedAt).getTime()) / 60000));
+          if (minutes < 1) return "gerado agora mesmo";
+          if (minutes < 60) return `gerado há ${minutes} min`;
+          const hours = Math.floor(minutes / 60);
+          if (hours < 48) return `gerado há ${hours} h`;
+          return `gerado há ${Math.floor(hours / 24)} d`;
+        }
+
+        function renderSnapshotCard() {
+          const evaluated = DATA.runs.filter(runHasEval).length;
+          $("#snapshot-detail").innerHTML =
+            `${DATA.runs.length} runs · ${evaluated} com CPL<br />${escapeHtml(snapshotAge())} · poll a cada 15 s`;
+        }
+
+        /* ---------- auto-refresh (poll meta.json, never force-reload) ---------- */
+
+        async function pollSnapshot() {
+          let meta = null;
+          try {
+            const response = await fetch("meta.json", { cache: "no-store" });
+            if (!response.ok) throw new Error(`http ${response.status}`);
+            meta = await response.json();
+          } catch {
+            $("#poll-state").textContent = "auto-refresh: meta.json ausente (rebuild gera o arquivo)";
+            $("#snapshot-dot").className = "live-dot off";
+            renderSnapshotCard();
+            return;
+          }
+          $("#poll-state").textContent = `auto-refresh: ativo · ${meta.runs ?? "?"} runs na origem`;
+          if (!state.snapshotSha) {
+            state.snapshotSha = meta.sha256 || null;
+            $("#snapshot-dot").className = "live-dot";
+            renderSnapshotCard();
+            return;
+          }
+          if (meta.sha256 && meta.sha256 !== state.snapshotSha) {
+            $("#update-pill").classList.add("show");
+            $("#snapshot-dot").className = "live-dot stale";
+            $("#snapshot-detail").innerHTML =
+              `nova snapshot na origem (${escapeHtml(String(meta.runs ?? "?"))} runs)<br />seu replay está preservado — atualize quando quiser`;
+          }
+        }
+
+        function reloadSnapshot() {
+          const pill = $("#update-pill");
+          pill.textContent = "carregando nova snapshot…";
+          pill.disabled = true;
+          const script = document.createElement("script");
+          const bust = Date.now().toString(36);
+          script.src = `data.js?sha=${bust}`;
+          script.onload = () => {
+            DATA = window.ZUGZWANG_DATA || DATA;
+            if (!runById(state.runId)) {
+              state.runId = DATA.runs[0]?.id || null;
+              state.episodeIndex = 0;
+              state.ply = 0;
+            }
+            state.compare = state.compare.filter((id) => runById(id));
+            state.snapshotSha = null;
+            pill.classList.remove("show");
+            pill.disabled = false;
+            pill.textContent = "↓ nova snapshot — atualizar sem perder o replay";
+            $("#snapshot-dot").className = "live-dot";
+            stopPlayback();
+            renderAll();
+            syncUrl();
+            pollSnapshot();
+          };
+          script.onerror = () => {
+            pill.textContent = "falha ao carregar — tentar de novo";
+            pill.disabled = false;
+          };
+          document.head.appendChild(script);
+          const old = $("#zgw-data");
+          if (old) old.remove();
+          script.id = "zgw-data";
+        }
+
+        /* ---------- run list ---------- */
 
         function statusHtml(status) {
           const normalized = String(status || "desconhecido").toLowerCase();
@@ -1313,7 +1536,8 @@
         function filteredRuns() {
           const query = state.query.trim().toLowerCase();
           return DATA.runs.filter((run) => {
-            const matchesFilter = state.filter === "all" || run.status === state.filter;
+            const matchesFilter = state.filter === "all"
+              || (state.filter === "eval" ? runHasEval(run) : run.status === state.filter);
             const haystack = [run.id, run.experiment, run.conditionId, run.model?.model, run.model?.provider, ...(run.tags || [])].join(" ").toLowerCase();
             return matchesFilter && (!query || haystack.includes(query));
           });
@@ -1322,21 +1546,53 @@
         function renderRunList() {
           const runs = filteredRuns();
           $("#run-count").textContent = `${runs.length}/${DATA.runs.length}`;
-          $("#run-list").innerHTML = runs.length ? runs.map((run, index) => `
-            <button class="run-card ${run.id === state.runId ? "active" : ""}" data-run-id="${escapeHtml(run.id)}" style="animation-delay:${Math.min(index * 24, 300)}ms">
+          $("#run-list").innerHTML = runs.length ? runs.map((run, index) => {
+            const plies = run.episodes?.reduce((sum, episode) => sum + (episode.stepsCommitted || 0), 0) || 0;
+            const evalBadge = runHasEval(run) ? `<span class="run-card-meta good">CPL ✓</span>` : `<span class="run-card-meta">sem CPL</span>`;
+            const pinned = state.compare.includes(run.id);
+            return `
+            <div class="run-card ${run.id === state.runId && state.view !== "compare" ? "active" : ""} ${pinned ? "pinned" : ""}" data-run-id="${escapeHtml(run.id)}" role="button" tabindex="0" aria-label="${escapeHtml(prettyExperiment(run.experiment))}" style="animation-delay:${Math.min(index * 24, 300)}ms">
               <div class="run-card-top"><span class="run-card-title">${escapeHtml(prettyExperiment(run.experiment))}</span>${statusHtml(run.status)}</div>
               <div class="run-card-id">${escapeHtml(shortId(run.id))}</div>
-              <div class="run-card-bottom"><span class="run-card-meta">${formatNumber(run.episodes?.reduce((sum, episode) => sum + (episode.stepsCommitted || 0), 0))} plies</span><span class="run-card-meta">${formatDate(run.startedAt)}</span></div>
-            </button>`).join("") : `<div class="empty-state"><div><strong>nenhum run</strong>ajuste a busca ou filtro.</div></div>`;
-          document.querySelectorAll("[data-run-id]").forEach((button) => button.addEventListener("click", () => {
-            state.runId = button.dataset.runId;
-            state.episodeIndex = 0;
-            state.ply = 0;
-            stopPlayback();
+              <div class="run-card-bottom"><span class="run-card-meta">${formatNumber(plies)} plies · ${formatDate(run.startedAt)}</span>${evalBadge}</div>
+              <div class="run-card-bottom"><button class="pin-btn ${pinned ? "on" : ""}" data-pin-id="${escapeHtml(run.id)}" title="Fixar para comparar (máx. 4)">📌 ${pinned ? "fixo" : "comparar"}</button></div>
+            </div>`;
+          }).join("") : `<div class="empty-state"><div><strong>nenhum run</strong>ajuste a busca ou filtro.</div></div>`;
+          document.querySelectorAll("[data-run-id]").forEach((card) => {
+            const open = () => {
+              state.runId = card.dataset.runId;
+              state.episodeIndex = 0;
+              state.ply = 0;
+              if (state.view === "compare" && !state.compare.includes(state.runId)) state.view = "replay";
+              stopPlayback();
+              renderAll();
+              syncUrl();
+            };
+            card.addEventListener("click", (event) => {
+              if (event.target.closest("[data-pin-id]")) return;
+              open();
+            });
+            card.addEventListener("keydown", (event) => {
+              if (event.target.closest("[data-pin-id]")) return;
+              if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); }
+            });
+          });
+          document.querySelectorAll("[data-pin-id]").forEach((button) => button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const id = button.dataset.pinId;
+            if (state.compare.includes(id)) {
+              state.compare = state.compare.filter((other) => other !== id);
+            } else if (state.compare.length < 4) {
+              state.compare = [...state.compare, id];
+            }
+            if (state.compare.length) state.view = "compare";
+            else if (state.view === "compare") state.view = "replay";
             renderAll();
             syncUrl();
           }));
         }
+
+        /* ---------- board ---------- */
 
         function parseFen(fen) {
           if (!fen) return Array.from({ length: 8 }, () => Array(8).fill(null));
@@ -1351,13 +1607,37 @@
           });
         }
 
+        function sideToMove(fen) {
+          const fields = String(fen || "").split(" ");
+          return fields[1] === "b" ? "Black" : "White";
+        }
+
+        function materialBalance(fen) {
+          const matrix = parseFen(fen);
+          let white = 0, black = 0;
+          for (const row of matrix) for (const piece of row) {
+            if (!piece) continue;
+            if (piece === piece.toUpperCase()) white += PIECE_VALUES[piece] || 0;
+            else black += PIECE_VALUES[piece] || 0;
+          }
+          return white - black;
+        }
+
         function pieceSvg(piece) {
           const color = piece === piece.toUpperCase() ? "white" : "black";
           return `<svg class="piece-svg ${color}" role="img" aria-label="${PIECE_NAMES[piece] || "peça"}" viewBox="0 0 45 45" preserveAspectRatio="xMidYMid meet">${PIECES[piece] || ""}</svg>`;
         }
 
+        /* Engine score → white-perspective win estimate for the gauge (display only). */
+        function winEstimate(cp) {
+          if (cp === null || cp === undefined) return 50;
+          const clamped = clamp(Number(cp), -1500, 1500);
+          return 50 * (1 + (2 / (1 + Math.exp(-0.004 * clamped)) - 1));
+        }
+
         function renderBoard(episode) {
-          const position = episode.positions?.[Math.min(state.ply, (episode.positions || []).length - 1)] || episode.positions?.[0] || {};
+          const positions = episode.positions || [];
+          const position = positions[Math.min(state.ply, positions.length - 1)] || positions[0] || {};
           const matrix = parseFen(position.fen);
           const selectedMove = episode.moves?.[state.ply - 1];
           const from = selectedMove?.uci?.slice(0, 2);
@@ -1370,13 +1650,26 @@
               const classes = [((row + file) % 2 === 0 ? "light" : "dark")];
               if (square === from) classes.push("from");
               if (square === to) classes.push("to");
-              if (piece && piece === piece.toUpperCase()) classes.push("white-piece");
-              if (piece && piece === piece.toLowerCase()) classes.push("black-piece");
-              squares.push(`<div class="square ${classes.join(" ")}" data-label="${file === 0 ? 8 - row : ""}" data-file="${row === 7 ? String.fromCharCode(97 + file) : ""}" aria-label="${square}${piece ? `, ${PIECE_NAMES[piece] || "peça"}` : ", vazio"}"><span class="piece">${piece ? pieceSvg(piece) : ""}</span></div>`);
+              const rankLabel = file === 0 ? `<span class="coord-rank">${8 - row}</span>` : "";
+              const fileLabel = row === 7 ? `<span class="coord-file">${String.fromCharCode(97 + file)}</span>` : "";
+              squares.push(`<div class="square ${classes.join(" ")}" aria-label="${square}${piece ? `, ${PIECE_NAMES[piece] || "peça"}` : ", vazio"}">${rankLabel}${fileLabel}<span class="piece">${piece ? pieceSvg(piece) : ""}</span></div>`);
             }
           }
           $("#board").innerHTML = squares.join("");
+          const turn = sideToMove(position.fen);
+          const balance = materialBalance(position.fen);
+          const balanceText = balance === 0 ? "material igual" : `${balance > 0 ? "+" : ""}${balance} p/ ${balance > 0 ? "brancas" : "pretas"}`;
+          const evalCp = currentEvalCp(episode);
+          $("#board-status").innerHTML =
+            `<span><span class="turn-dot ${turn === "White" ? "w" : "b"}"></span>vez das <strong>${turn === "White" ? "brancas" : "pretas"}</strong></span>` +
+            `<span>${escapeHtml(balanceText)}</span>` +
+            `<span>${evalCp === null ? "sem eval" : `<strong>${evalCp > 0 ? "+" : ""}${formatNumber(Math.round(evalCp))} cp</strong> brancas`}</span>`;
+          const pct = evalCp === null ? 50 : winEstimate(evalCp);
+          $("#gauge-fill").style.height = `${pct.toFixed(1)}%`;
+          $("#gauge-label").textContent = evalCp === null ? "–" : `${Math.round(winEstimate(evalCp))}%`;
         }
+
+        /* ---------- metrics access ---------- */
 
         function metricsForStep(run, stepId) {
           return (run.metrics || []).filter((metric) => metric.stepId === stepId);
@@ -1384,6 +1677,12 @@
 
         function firstMetric(metrics, name) {
           return metrics.find((metric) => metric.metric === name);
+        }
+
+        function numOf(metric) {
+          if (!metric || metric.valueNum === null || metric.valueNum === undefined) return null;
+          const value = Number(metric.valueNum);
+          return Number.isFinite(value) ? value : null;
         }
 
         function metricValue(metric, fallback = "n/a") {
@@ -1399,6 +1698,275 @@
           return "";
         }
 
+        function classLabel(moveClass) {
+          return ({ blunder: "blunder", mistake: "erro", inaccuracy: "imprecisão", best_or_good: "bom / melhor" })[moveClass] || "sem classe";
+        }
+
+        function cplLabel(value) {
+          return value === null || value === undefined ? "n/a" : `${formatNumber(Math.round(value))} cp`;
+        }
+
+        function cpLabel(value) {
+          if (value === null || value === undefined) return "n/a";
+          const abs = Math.abs(Number(value));
+          if (abs >= 9000) {
+            const distance = Math.max(0, Math.round((10000 - abs) / 100));
+            return `${Number(value) > 0 ? "+" : "−"}M${distance}`;
+          }
+          return `${Number(value) > 0 ? "+" : ""}${formatNumber(Math.round(Number(value)))}`;
+        }
+
+        /* Eval at current ply, white perspective (display only; rich metrics duplicate engine_score). */
+        function currentEvalCp(episode) {
+          const run = currentRun();
+          const move = episode.moves?.[state.ply - 1] || episode.moves?.[state.ply];
+          if (!run || !move) return null;
+          const metrics = metricsForStep(run, move.stepId);
+          const before = numOf(firstMetric(metrics, "chess.engine_score_before") || firstMetric(metrics, "chess.cp_before"));
+          if (before !== null) return before;
+          return null;
+        }
+
+        /* ---------- rich analysis rows (reporter-only derivation) ---------- */
+
+        function isModelMove(move) {
+          return ["Model", "Model opponent"].includes(move.actorKind);
+        }
+
+        function analysisRows(run, episode) {
+          return (episode?.moves || []).filter(isModelMove).map((move) => {
+            const metrics = metricsForStep(run, move.stepId);
+            const cplValue = numOf(firstMetric(metrics, "chess.cpl"));
+            const classValue = firstMetric(metrics, "chess.move_class")?.valueText || null;
+            const agreementMetric = firstMetric(metrics, "chess.best_move_agreement");
+            const agreement = agreementMetric && agreementMetric.valueNum !== null && agreementMetric.valueNum !== undefined
+              ? Number(agreementMetric.valueNum) === 1 : null;
+            const phase = firstMetric(metrics, "chess.cpl")?.dimensions?.phase
+              || move.phase || (move.moveNumber <= 10 ? "opening" : move.moveNumber <= 30 ? "middlegame" : "endgame");
+            const mateBefore = numOf(firstMetric(metrics, "chess.mate_before"));
+            const mateAfter = numOf(firstMetric(metrics, "chess.mate_after"));
+            return {
+              ...move,
+              cpl: cplValue,
+              moveClass: classValue,
+              agreement,
+              phase,
+              engineBestMove: firstMetric(metrics, "chess.engine_best_move")?.valueText || null,
+              engineScoreBefore: numOf(firstMetric(metrics, "chess.engine_score_before")),
+              engineScoreAfter: numOf(firstMetric(metrics, "chess.engine_score_after")),
+              cpBefore: numOf(firstMetric(metrics, "chess.cp_before")),
+              cpAfter: numOf(firstMetric(metrics, "chess.cp_after_chosen")),
+              wdl: numOf(firstMetric(metrics, "chess.wdl_loss")),
+              rank: numOf(firstMetric(metrics, "chess.chosen_rank")),
+              pv: firstMetric(metrics, "chess.principal_variation")?.valueText || null,
+              mateTransition: firstMetric(metrics, "chess.mate_transition")?.valueText || null,
+              mateBefore,
+              mateAfter,
+              evaluator: metrics[0]?.evaluator || null,
+              metricVersion: metrics[0]?.version || null,
+            };
+          });
+        }
+
+        function summarize(rows) {
+          const withCpl = rows.filter((row) => row.cpl !== null);
+          const cpls = withCpl.map((row) => row.cpl);
+          const wdls = rows.map((row) => row.wdl).filter((value) => value !== null);
+          const ranks = rows.map((row) => row.rank).filter((value) => value !== null);
+          const agreements = rows.map((row) => row.agreement).filter((value) => value !== null);
+          const classes = rows.reduce((counts, row) => {
+            if (row.moveClass) counts[row.moveClass] = (counts[row.moveClass] || 0) + 1;
+            return counts;
+          }, {});
+          const phases = {};
+          for (const row of withCpl) {
+            const bucket = phases[row.phase] || (phases[row.phase] = []);
+            bucket.push(row.cpl);
+          }
+          const phaseStats = Object.fromEntries(Object.entries(phases).map(([phase, values]) => [
+            phase, { n: values.length, acpl: mean(values), median: medianOf(values), worst: Math.max(...values) },
+          ]));
+          const rankDist = ranks.reduce((counts, rank) => {
+            const bucket = rank <= 1 ? "1" : rank <= 2 ? "2" : rank <= 3 ? "3" : "4+";
+            counts[bucket] = (counts[bucket] || 0) + 1;
+            return counts;
+          }, {});
+          const mateCounts = rows.reduce((counts, row) => {
+            if (row.mateTransition && row.mateTransition !== "none") {
+              counts[row.mateTransition] = (counts[row.mateTransition] || 0) + 1;
+            }
+            return counts;
+          }, {});
+          return {
+            n: rows.length,
+            nCpl: cpls.length,
+            acpl: mean(cpls),
+            median: medianOf(cpls),
+            worst: cpls.length ? Math.max(...cpls) : null,
+            wdlMean: mean(wdls),
+            wdlN: wdls.length,
+            classes,
+            top1: agreements.length ? agreements.filter(Boolean).length / agreements.length : null,
+            top1N: agreements.length,
+            top3: ranks.length ? ranks.filter((rank) => rank <= 3).length / ranks.length : null,
+            top3N: ranks.length,
+            phaseStats,
+            rankDist,
+            mateCounts,
+          };
+        }
+
+        function stockfishProof(run, episode) {
+          const stockfishMove = episode?.moves?.find((move) => move.actorKind === "Stockfish" && move.policy);
+          const opponent = (run.opponents || []).find((player) => player.policy?.plugin === "chess.stockfish");
+          const config = opponent?.policy?.config || {};
+          const policy = stockfishMove?.policy || {};
+          const options = policy.options || {};
+          const limit = policy.limit || {};
+          const binary = policy.binary_sha256 || policy.binary || "n/a";
+          const evaluators = [...new Set((run.metrics || []).map((metric) => `${metric.evaluator}@${metric.version || "?"}`).filter(Boolean))];
+          return {
+            name: policy.engine_name || "Stockfish",
+            target: policy.requested_elo ?? config.elo ?? "n/a",
+            effective: policy.effective_uci_elo ?? "n/a",
+            mode: policy.strength_mode || (policy.approximate ? "aproximado" : "não informado"),
+            nodes: limit.nodes ?? config.nodes ?? "n/a",
+            threads: options.Threads ?? config.Threads ?? "n/a",
+            hash: options.Hash ?? config.Hash ?? "n/a",
+            binary: String(binary),
+            evaluators: evaluators.join(", ") || "não executado",
+          };
+        }
+
+        /* ---------- charts ---------- */
+
+        function evalCurveChart(rows) {
+          const points = rows.filter((row) => row.cpBefore !== null && row.cpBefore !== undefined);
+          if (!points.length) {
+            return `<div class="analysis-empty compact"><div><strong>Sem curva de avaliação</strong><p>Este recorte não tem <code>chess.cp_before</code> por lance. A curva aparece quando o evaluator pós-hoc publica scores do engine.</p></div></div>`;
+          }
+          const width = 960, height = 250, left = 52, right = 14, top = 16, bottom = 32;
+          const plotWidth = width - left - right, plotHeight = height - top - bottom;
+          const limit = 1200;
+          const yFor = (value) => top + plotHeight / 2 - (clamp(Number(value), -limit, limit) / limit) * (plotHeight / 2 - 6);
+          const xFor = (index) => left + (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+          const grid = [-limit, -limit / 2, 0, limit / 2, limit].map((value) =>
+            `<line class="grid-line" x1="${left}" x2="${width - right}" y1="${yFor(value)}" y2="${yFor(value)}"></line>` +
+            `<text class="axis-label" x="${left - 7}" y="${yFor(value) + 4}" text-anchor="end">${value === 0 ? "0" : (value > 0 ? "+" : "") + value}</text>`
+          ).join("");
+          const path = points.map((row, index) => `${index === 0 ? "M" : "L"}${xFor(index).toFixed(1)},${yFor(row.cpBefore).toFixed(1)}`).join(" ");
+          const area = `${path} L${xFor(points.length - 1).toFixed(1)},${yFor(0).toFixed(1)} L${xFor(0).toFixed(1)},${yFor(0).toFixed(1)} Z`;
+          const dots = points.map((row, index) => {
+            const tone = row.moveClass === "blunder" ? "blunder" : row.moveClass === "mistake" ? "mistake" : "";
+            return `<circle class="eval-dot ${tone}" data-analysis-ply="${row.ply}" cx="${xFor(index).toFixed(1)}" cy="${yFor(row.cpBefore).toFixed(1)}" r="4.5"><title>ply ${row.ply} · ${escapeHtml(row.san || row.display)} · ${escapeHtml(cpLabel(row.cpBefore))} cp · ${escapeHtml(classLabel(row.moveClass))}</title></circle>`;
+          }).join("");
+          return `<div class="chart-wrap"><p class="chart-title">Avaliação do engine ao longo da partida <small>chess.cp_before · perspectiva das brancas · clamp ±${limit}</small></p>` +
+            `<svg class="eval-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Curva de avaliação do engine"><title>Eval por lance do modelo</title>${grid}<line class="zero-line" x1="${left}" x2="${width - right}" y1="${yFor(0)}" y2="${yFor(0)}"></line><path class="eval-area" d="${area}"></path><path class="eval-line" d="${path}"></path>${dots}</svg>` +
+            `<div class="chart-caption"><span>clique num ponto para abrir o replay naquele ply</span><span>${points.length}/${rows.length} lances com score</span></div></div>`;
+        }
+
+        function cplChart(rows) {
+          const points = rows.filter((row) => row.cpl !== null);
+          if (!points.length) {
+            return `<div class="analysis-empty compact"><div><strong>Sem avaliação Stockfish</strong><p>Este recorte tem a partida registrada, mas ainda não tem observações CPL por lance. O gráfico aparece quando um evaluator pós-hoc for anexado ao run.</p></div></div>`;
+          }
+          const width = 960, height = 250, left = 52, right = 14, top = 16, bottom = 32;
+          const plotWidth = width - left - right, plotHeight = height - top - bottom;
+          const maxCpl = Math.max(300, Math.ceil(Math.max(...points.map((point) => point.cpl)) / 100) * 100);
+          const slot = plotWidth / Math.max(rows.length, 1);
+          const barWidth = Math.max(4, Math.min(20, slot * 0.64));
+          const yFor = (value) => top + plotHeight - (value / maxCpl) * plotHeight;
+          const grid = [0, maxCpl / 2, maxCpl].map((value) =>
+            `<line class="grid-line" x1="${left}" x2="${width - right}" y1="${yFor(value)}" y2="${yFor(value)}"></line>` +
+            `<text class="axis-label" x="${left - 7}" y="${yFor(value) + 4}" text-anchor="end">${Math.round(value)}</text>`
+          ).join("");
+          const bars = rows.map((row, index) => {
+            if (row.cpl === null) return "";
+            const x = left + index * slot + (slot - barWidth) / 2;
+            const y = yFor(row.cpl);
+            const barHeight = Math.max(2, top + plotHeight - y);
+            const tone = row.moveClass === "blunder" ? "blunder" : row.moveClass === "mistake" ? "mistake" : row.moveClass === "inaccuracy" ? "inaccuracy" : "good";
+            return `<rect class="bar ${tone}" data-analysis-ply="${row.ply}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1"><title>ply ${row.ply} · ${escapeHtml(row.san || row.display)} · ${escapeHtml(cplLabel(row.cpl))} · ${escapeHtml(classLabel(row.moveClass))}</title></rect>`;
+          }).join("");
+          const labels = rows.map((row, index) => {
+            const shouldShow = rows.length <= 18 || index === 0 || index === rows.length - 1 || index % Math.ceil(rows.length / 9) === 0;
+            if (!shouldShow) return "";
+            const x = left + index * slot + slot / 2;
+            return `<text class="axis-label" x="${x.toFixed(2)}" y="${height - 8}" text-anchor="middle">${row.ply}</text>`;
+          }).join("");
+          return `<div class="chart-wrap"><p class="chart-title">Perda em centipawns por lance <small>CPL · cor = classe v1.0.0 (≥300/≥100/≥50)</small></p>` +
+            `<svg class="cpl-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfico de perda em centipawns por lance do modelo"><title>CPL por lance do modelo</title>${grid}<line class="baseline" x1="${left}" x2="${width - right}" y1="${top + plotHeight}" y2="${top + plotHeight}"></line>${bars}${labels}</svg>` +
+            `<div class="chart-caption"><span>ply do modelo · perda em centipawns</span><span>${points.length}/${rows.length} lances com CPL</span></div>` +
+            `<div class="chart-legend"><span class="legend-item"><i class="legend-swatch good"></i>bom</span><span class="legend-item"><i class="legend-swatch inaccuracy"></i>imprecisão ≥50</span><span class="legend-item"><i class="legend-swatch mistake"></i>erro ≥100</span><span class="legend-item"><i class="legend-swatch blunder"></i>blunder ≥300</span></div></div>`;
+        }
+
+        function incidentList(rows) {
+          const incidents = rows
+            .filter((row) => row.cpl !== null && ["blunder", "mistake", "inaccuracy"].includes(row.moveClass))
+            .sort((a, b) => b.cpl - a.cpl).slice(0, 8);
+          if (!incidents.length) {
+            return `<div class="analysis-empty compact"><div><strong>Nenhum erro classificado</strong><p>Blunders, erros e imprecisões aparecem aqui quando o evaluator publica CPL + classe.</p></div></div>`;
+          }
+          return `<div class="incident-list">${incidents.map((row) => `
+            <button class="incident-item" type="button" data-analysis-ply="${row.ply}">
+              <span class="incident-ply">${row.ply}</span>
+              <span class="incident-main"><span class="incident-move">${escapeHtml(row.san || row.display)}</span>
+              <span class="incident-meta" style="display:block">${escapeHtml(classLabel(row.moveClass))} · ${row.side === "White" ? "brancas" : "pretas"}${row.engineBestMove ? ` · melhor ${escapeHtml(row.engineBestMove)}` : ""}${row.wdl !== null ? ` · ΔWDL ${row.wdl.toFixed(3)}` : ""}</span></span>
+              <span class="incident-cpl">${escapeHtml(cplLabel(row.cpl))}<small>${row.rank !== null ? `rank ${row.rank}` : "sem rank"}</small></span>
+            </button>`).join("")}</div>`;
+        }
+
+        function phaseTable(summary) {
+          const order = ["opening", "middlegame", "endgame"];
+          const names = { opening: "abertura ≤10", middlegame: "meio-jogo 11–30", endgame: "final 31+" };
+          const entries = order.filter((phase) => summary.phaseStats[phase]);
+          if (!entries.length) {
+            return `<div class="analysis-empty compact"><div><strong>Sem slices por fase</strong><p>O CPL deste run não carrega <code>dimensions.phase</code>.</p></div></div>`;
+          }
+          return `<div class="analysis-summary">${entries.map((phase) => {
+            const stats = summary.phaseStats[phase];
+            return `<div class="analysis-summary-row"><span>${names[phase]} · ${stats.n} lances</span><strong>ACPL ${escapeHtml(cplLabel(stats.acpl))} · mediana ${escapeHtml(cplLabel(stats.median))}</strong></div>`;
+          }).join("")}</div><p class="analysis-note">Fase = dimensions.phase do chess.cpl (opening ≤10, middlegame 11–30, endgame 31+).</p>`;
+        }
+
+        function rankAndMate(summary) {
+          const dist = summary.rankDist;
+          const total = Object.values(dist).reduce((a, b) => a + b, 0);
+          const rankLine = total
+            ? ["1", "2", "3", "4+"].map((bucket) => `${bucket}º: ${dist[bucket] || 0}`).join(" · ")
+            : "sem chess.chosen_rank neste recorte";
+          const mateEntries = Object.entries(summary.mateCounts);
+          const mateLine = mateEntries.length
+            ? mateEntries.map(([kind, count]) => `${kind}: ${count}`).join(" · ")
+            : "nenhuma transição de mate registrada";
+          return `<div class="analysis-summary">
+            <div class="analysis-summary-row"><span>distribuição de rank</span><strong>${escapeHtml(rankLine)}</strong></div>
+            <div class="analysis-summary-row"><span>top-3 (rank ≤ 3)</span><strong class="blue">${summary.top3 === null ? "n/a" : `${Math.round(summary.top3 * 100)}% · ${summary.top3N} lances`}</strong></div>
+            <div class="analysis-summary-row"><span>transições de mate</span><strong>${escapeHtml(mateLine)}</strong></div>
+          </div><p class="analysis-note">${escapeHtml(FORMULA_TOPK)}. Rank e PV vêm do MultiPV do evaluator pós-hoc; linhas ranqueadas completas ficam no Parquet/CAS.</p>`;
+        }
+
+        function analysisTable(rows) {
+          if (!rows.length) {
+            return `<div class="analysis-empty compact"><div><strong>Sem lances do modelo</strong><p>Este episódio não tem lance do modelo comparável ao Stockfish.</p></div></div>`;
+          }
+          return `<div class="analysis-table-wrap"><table class="analysis-table"><thead><tr><th scope="col">ply</th><th scope="col">lance</th><th scope="col">CPL</th><th scope="col">classe</th><th scope="col">ΔWDL</th><th scope="col">rank</th><th scope="col">melhor lance</th><th scope="col">SF antes → depois</th><th scope="col">PV</th></tr></thead><tbody>${rows.map((row) => {
+            const pvShort = row.pv ? row.pv.split(" ").slice(0, 5).join(" ") : "n/a";
+            const mateFlag = row.mateTransition && row.mateTransition !== "none" ? ` · ${escapeHtml(row.mateTransition)}` : "";
+            return `<tr data-analysis-ply="${row.ply}"><td class="muted">${row.ply}</td>` +
+              `<td class="move-link">${escapeHtml(row.san || row.display)}</td>` +
+              `<td class="cpl ${metricClass(row.moveClass)}">${escapeHtml(cplLabel(row.cpl))}</td>` +
+              `<td><span class="tag ${row.moveClass === "blunder" ? "red" : row.moveClass === "mistake" || row.moveClass === "inaccuracy" ? "orange" : row.moveClass === "best_or_good" ? "mint" : ""}">${escapeHtml(classLabel(row.moveClass))}</span></td>` +
+              `<td class="muted">${row.wdl === null ? "n/a" : row.wdl.toFixed(3)}</td>` +
+              `<td class="muted">${row.rank === null ? "n/a" : `nº ${row.rank}`}</td>` +
+              `<td class="muted">${row.engineBestMove ? `${escapeHtml(row.engineBestMove)} · ` : ""}${row.agreement === null ? "n/a" : row.agreement ? "acordo" : "alternativa"}</td>` +
+              `<td class="muted">${escapeHtml(cpLabel(row.cpBefore))} → ${escapeHtml(cpLabel(row.cpAfter))}${mateFlag}</td>` +
+              `<td class="muted pv" title="${escapeHtml(row.pv || "")}">${escapeHtml(pvShort)}</td></tr>`;
+          }).join("")}</tbody></table></div>`;
+        }
+
+        /* ---------- replay view ---------- */
+
         function renderReplay(run, episode) {
           const maxPly = episode.moves?.length || 0;
           state.ply = Math.min(Math.max(Number(state.ply), 0), maxPly);
@@ -1407,6 +1975,8 @@
           const cpl = firstMetric(metrics, "chess.cpl");
           const moveClass = firstMetric(metrics, "chess.move_class");
           const agreement = firstMetric(metrics, "chess.best_move_agreement");
+          const wdl = firstMetric(metrics, "chess.wdl_loss");
+          const rank = firstMetric(metrics, "chess.chosen_rank");
           $("#board").innerHTML = "";
           renderBoard(episode);
           $("#ply-range").max = String(maxPly);
@@ -1414,11 +1984,17 @@
           $("#ply-counter").textContent = `${String(state.ply).padStart(2, "0")} / ${String(maxPly).padStart(2, "0")}`;
           $("#move-title").textContent = move ? `${move.side} · ${move.san || move.display}` : "Posição inicial";
           $("#move-subtitle").textContent = move ? `${move.actorKind} · ${shortActor(move.actor)}` : `${episode.id || "episódio"} · estado inicial`;
+          const cplNum = numOf(cpl);
           $("#metric-cpl").textContent = metricValue(cpl);
-          $("#metric-cpl").className = `metric-value ${cpl && Number(cpl.valueNum) > 100 ? "warn" : "good"}`;
+          $("#metric-cpl").className = `metric-value ${cplNum !== null && cplNum > 100 ? "warn" : cplNum !== null ? "good" : ""}`;
           $("#metric-class").textContent = metricValue(moveClass);
           $("#metric-class").className = `metric-value ${metricClass(moveClass?.valueText)}`;
-          $("#metric-agreement").textContent = agreement ? (Number(agreement.valueNum) === 1 ? "sim" : "não") : "n/a";
+          const agreementText = agreement ? (Number(agreement.valueNum) === 1 ? "sim" : "não") : "n/a";
+          const extra = [
+            wdl && wdl.valueNum !== null ? `ΔWDL ${Number(wdl.valueNum).toFixed(3)}` : null,
+            rank && rank.valueNum !== null ? `rank ${Number(rank.valueNum)}` : null,
+          ].filter(Boolean).join(" · ");
+          $("#metric-agreement").innerHTML = `${escapeHtml(agreementText)}${extra ? `<br /><small>${escapeHtml(extra)}</small>` : ""}`;
           $("#metric-agreement").className = `metric-value ${agreement && Number(agreement.valueNum) === 1 ? "good" : agreement ? "warn" : ""}`;
           $("#btn-first").disabled = state.ply === 0;
           $("#btn-prev").disabled = state.ply === 0;
@@ -1431,190 +2007,28 @@
         function runAggregate(run) {
           const episodes = run.episodes || [];
           const moves = episodes.flatMap((episode) => episode.moves || []);
-          const modelMoves = moves.filter((move) => move.actorKind === "Model");
+          const modelMoves = moves.filter(isModelMove);
           const engineMoves = moves.filter((move) => move.actorKind === "Stockfish");
           const cpls = (run.metrics || []).filter((metric) => metric.metric === "chess.cpl" && metric.valueNum !== null).map((metric) => Number(metric.valueNum));
           const classes = (run.metrics || []).filter((metric) => metric.metric === "chess.move_class").reduce((acc, metric) => { acc[metric.valueText] = (acc[metric.valueText] || 0) + 1; return acc; }, {});
           const agreements = (run.metrics || []).filter((metric) => metric.metric === "chess.best_move_agreement" && metric.valueNum !== null);
-          return { episodes, moves, modelMoves, engineMoves, cpls, classes, agreements };
-        }
-
-        function analysisRows(run, episode) {
-          return (episode?.moves || []).filter((move) => ["Model", "Model opponent"].includes(move.actorKind)).map((move) => {
-            const metrics = metricsForStep(run, move.stepId);
-            const cplMetric = firstMetric(metrics, "chess.cpl");
-            const classMetric = firstMetric(metrics, "chess.move_class");
-            const agreementMetric = firstMetric(metrics, "chess.best_move_agreement");
-            const cplValue = cplMetric && cplMetric.valueNum !== null && cplMetric.valueNum !== undefined ? Number(cplMetric.valueNum) : null;
-            const classValue = classMetric?.valueText || null;
-            return {
-              ...move,
-              cpl: Number.isFinite(cplValue) ? cplValue : null,
-              moveClass: classValue,
-              agreement: agreementMetric && agreementMetric.valueNum !== null ? Number(agreementMetric.valueNum) === 1 : null,
-              engineBestMove: firstMetric(metrics, "chess.engine_best_move")?.valueText || null,
-              engineScoreBefore: firstMetric(metrics, "chess.engine_score_before")?.valueNum ?? null,
-              engineScoreAfter: firstMetric(metrics, "chess.engine_score_after")?.valueNum ?? null,
-            };
-          });
-        }
-
-        function classTone(moveClass) {
-          return ({ blunder: "bad", mistake: "warn", inaccuracy: "warn", best_or_good: "good" })[moveClass] || "";
-        }
-
-        function classLabel(moveClass) {
-          return ({ blunder: "blunder", mistake: "erro", inaccuracy: "imprecisão", best_or_good: "bom / melhor" })[moveClass] || "sem classe";
-        }
-
-        function cplLabel(value) {
-          return value === null || value === undefined ? "n/a" : `${formatNumber(Math.round(value))} cp`;
-        }
-
-        function analysisSummary(rows) {
-          const cpls = rows.map((row) => row.cpl).filter((value) => value !== null);
-          const sorted = [...cpls].sort((a, b) => a - b);
-          const classes = rows.reduce((counts, row) => {
-            if (row.moveClass) counts[row.moveClass] = (counts[row.moveClass] || 0) + 1;
-            return counts;
-          }, {});
-          const agreements = rows.map((row) => row.agreement).filter((value) => value !== null);
-          return {
-            cpls,
-            classes,
-            average: cpls.length ? cpls.reduce((sum, value) => sum + value, 0) / cpls.length : null,
-            median: sorted.length ? sorted[Math.floor(sorted.length / 2)] : null,
-            worst: cpls.length ? Math.max(...cpls) : null,
-            agreements,
-            agreementRate: agreements.length ? agreements.filter(Boolean).length / agreements.length : null,
-          };
-        }
-
-        function stockfishProof(run, episode) {
-          const stockfishMove = episode?.moves?.find((move) => move.actorKind === "Stockfish" && move.policy);
-          const opponent = (run.opponents || []).find((player) => player.policy?.plugin === "chess.stockfish");
-          const config = opponent?.policy?.config || {};
-          const policy = stockfishMove?.policy || {};
-          const options = policy.options || {};
-          const limit = policy.limit || {};
-          const binary = policy.binary_sha256 || policy.binary || "n/a";
-          return {
-            name: policy.engine_name || "Stockfish",
-            target: policy.requested_elo ?? config.elo ?? "n/a",
-            effective: policy.effective_uci_elo ?? "n/a",
-            mode: policy.strength_mode || (policy.approximate ? "aproximado" : "não informado"),
-            nodes: limit.nodes ?? config.nodes ?? "n/a",
-            threads: options.Threads ?? config.Threads ?? "n/a",
-            hash: options.Hash ?? config.Hash ?? "n/a",
-            binary: String(binary),
-            evaluator: [...new Set((run.metrics || []).map((metric) => metric.evaluator).filter(Boolean))].join(", ") || "não executado",
-          };
-        }
-
-        function cplChart(rows) {
-          const points = rows.filter((row) => row.cpl !== null);
-          if (!points.length) {
-            return `<div class="analysis-empty"><div><strong>Sem avaliação Stockfish</strong><p>Este recorte tem a partida registrada, mas ainda não tem observações CPL por lance. O gráfico aparece quando um evaluator.stockfish real for anexado ao run.</p></div></div>`;
-          }
-          const width = 960;
-          const height = 290;
-          const left = 48;
-          const right = 12;
-          const top = 20;
-          const bottom = 35;
-          const plotWidth = width - left - right;
-          const plotHeight = height - top - bottom;
-          const maxCpl = Math.max(300, Math.ceil(Math.max(...points.map((point) => point.cpl)) / 100) * 100);
-          const slot = plotWidth / Math.max(rows.length, 1);
-          const barWidth = Math.max(4, Math.min(20, slot * 0.64));
-          const yFor = (value) => top + plotHeight - (value / maxCpl) * plotHeight;
-          const grid = [0, maxCpl / 2, maxCpl].map((value) => `<line class="grid-line" x1="${left}" x2="${width - right}" y1="${yFor(value)}" y2="${yFor(value)}"></line><text class="axis-label" x="${left - 8}" y="${yFor(value) + 4}" text-anchor="end">${Math.round(value)}</text>`).join("");
-          const bars = rows.map((row, index) => {
-            if (row.cpl === null) return "";
-            const x = left + index * slot + (slot - barWidth) / 2;
-            const y = yFor(row.cpl);
-            const barHeight = Math.max(2, top + plotHeight - y);
-            const tone = row.moveClass === "blunder" ? "blunder" : row.moveClass === "mistake" ? "mistake" : row.moveClass === "inaccuracy" ? "inaccuracy" : "good";
-            return `<rect class="bar ${tone}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1"><title>ply ${row.ply}, ${escapeHtml(row.san || row.display)}, ${cplLabel(row.cpl)}, ${escapeHtml(classLabel(row.moveClass))}</title></rect>`;
-          }).join("");
-          const labels = rows.map((row, index) => {
-            const shouldShow = rows.length <= 18 || index === 0 || index === rows.length - 1 || index % Math.ceil(rows.length / 9) === 0;
-            if (!shouldShow) return "";
-            const x = left + index * slot + slot / 2;
-            return `<text class="axis-label" x="${x.toFixed(2)}" y="${height - 10}" text-anchor="middle">${row.ply}</text>`;
-          }).join("");
-          return `<div class="chart-wrap"><svg class="cpl-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfico de perda em centipawns por lance do modelo"><title>CPL por lance do modelo</title>${grid}<line class="baseline" x1="${left}" x2="${width - right}" y1="${top + plotHeight}" y2="${top + plotHeight}"></line>${bars}${labels}</svg><div class="chart-caption"><span>ply do modelo · perda em centipawns</span><span>${points.length}/${rows.length} lances com CPL</span></div></div>`;
-        }
-
-        function incidentList(rows) {
-          const incidents = rows.filter((row) => row.cpl !== null && ["blunder", "mistake", "inaccuracy"].includes(row.moveClass)).sort((a, b) => b.cpl - a.cpl).slice(0, 8);
-          if (!incidents.length) {
-            return `<div class="analysis-empty compact"><div><strong>Nenhum erro classificado</strong><p>As classificações de blunder, erro e imprecisão aparecem aqui quando o evaluator publica CPL.</p></div></div>`;
-          }
-          return `<div class="incident-list">${incidents.map((row) => `<button class="incident-item" type="button" data-analysis-ply="${row.ply}"><span class="incident-ply">${row.ply}</span><span class="incident-main"><span class="incident-move">${escapeHtml(row.san || row.display)}</span><span class="incident-meta">${escapeHtml(classLabel(row.moveClass))} · ${row.side === "White" ? "brancas" : "pretas"}${row.engineBestMove ? ` · melhor ${escapeHtml(row.engineBestMove)}` : ""}</span></span><span class="incident-cpl">${escapeHtml(cplLabel(row.cpl))}</span></button>`).join("")}</div>`;
-        }
-
-        function analysisTable(rows) {
-          if (!rows.length) {
-            return `<div class="analysis-empty compact"><div><strong>Sem lances do modelo</strong><p>Este episódio não tem um lance do modelo que possa ser comparado ao Stockfish.</p></div></div>`;
-          }
-          const signedCp = (value) => value === null || value === undefined ? "n/a" : `${Number(value) > 0 ? "+" : ""}${formatNumber(Math.round(Number(value)))} cp`;
-          return `<div class="analysis-table-wrap"><table class="analysis-table"><thead><tr><th scope="col">ply</th><th scope="col">lance</th><th scope="col">CPL</th><th scope="col">classe</th><th scope="col">melhor lance</th><th scope="col">SF antes → depois</th></tr></thead><tbody>${rows.map((row) => `<tr data-analysis-ply="${row.ply}"><td class="muted">${row.ply}</td><td class="move-link">${escapeHtml(row.san || row.display)}</td><td class="cpl ${classTone(row.moveClass)}">${escapeHtml(cplLabel(row.cpl))}</td><td><span class="tag ${row.moveClass === "blunder" ? "red" : row.moveClass === "mistake" || row.moveClass === "inaccuracy" ? "orange" : row.moveClass === "best_or_good" ? "mint" : ""}">${escapeHtml(classLabel(row.moveClass))}</span></td><td class="muted">${row.engineBestMove ? `${escapeHtml(row.engineBestMove)} · ` : ""}${row.agreement === null ? "n/a" : row.agreement ? "acordo" : "alternativa"}</td><td class="muted">${escapeHtml(signedCp(row.engineScoreBefore))} → ${escapeHtml(signedCp(row.engineScoreAfter))}</td></tr>`).join("")}</tbody></table></div>`;
-        }
-
-        function renderAnalysis(run) {
-          const episode = currentEpisode(run);
-          const rows = analysisRows(run, episode);
-          const summary = analysisSummary(rows);
-          const proof = stockfishProof(run, episode);
-          const modelMoves = rows.length;
-          const analyzedMoves = summary.cpls.length;
-          const classTotal = Object.values(summary.classes).reduce((sum, value) => sum + value, 0);
-          const engineResult = episode.result === "checkmate" ? `mate · ${episode.winner || "lado não identificado"}` : episode.result || "em andamento";
-          const medianLabel = summary.median === null ? "n/a" : cplLabel(summary.median);
-          const agreementLabel = summary.agreementRate === null ? "n/a" : `${Math.round(summary.agreementRate * 100)}%`;
-          $("#app").innerHTML = `
-            <section class="analysis-toolbar fade-in"><div><p>Uma leitura por lance da atuação do modelo contra o engine.</p></div><button id="analysis-back" class="view-btn" type="button">voltar ao replay</button></section>
-            <section class="analysis-kpis fade-in">
-              <div class="analysis-kpi"><span class="analysis-kpi-label">CPL médio</span><strong class="analysis-kpi-value blue">${escapeHtml(cplLabel(summary.average))}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">pior lance</span><strong class="analysis-kpi-value red">${escapeHtml(cplLabel(summary.worst))}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">blunders</span><strong class="analysis-kpi-value red">${formatNumber(summary.classes.blunder || 0)}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">melhor lance</span><strong class="analysis-kpi-value mint">${escapeHtml(agreementLabel)}</strong></div>
-              <div class="analysis-kpi"><span class="analysis-kpi-label">resultado</span><strong class="analysis-kpi-value orange">${escapeHtml(engineResult)}</strong></div>
-            </section>
-            <section class="analysis-grid">
-              <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">perda por decisão</p><h3>CPL ao longo da partida</h3></div><small>${escapeHtml(episode.id || "episódio")}</small></div><div class="analysis-panel-body">${cplChart(rows)}<div class="chart-legend"><span class="legend-item"><i class="legend-swatch good"></i>bom</span><span class="legend-item"><i class="legend-swatch inaccuracy"></i>imprecisão</span><span class="legend-item"><i class="legend-swatch mistake"></i>erro</span><span class="legend-item"><i class="legend-swatch blunder"></i>blunder</span></div></div></article>
-              <div class="analysis-side">
-                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">pontos críticos</p><h3>Piores lances</h3></div><small>top 8</small></div><div class="analysis-panel-body">${incidentList(rows)}</div></article>
-                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">cobertura</p><h3>Resumo do diagnóstico</h3></div><small>${escapeHtml(run.status || "n/a")}</small></div><div class="analysis-panel-body"><div class="analysis-summary"><div class="analysis-summary-row"><span>lances do modelo</span><strong>${formatNumber(modelMoves)}</strong></div><div class="analysis-summary-row"><span>lances com CPL</span><strong>${formatNumber(analyzedMoves)} / ${formatNumber(modelMoves)}</strong></div><div class="analysis-summary-row"><span>mediana CPL</span><strong>${escapeHtml(medianLabel)}</strong></div><div class="analysis-summary-row"><span>bom / melhor</span><strong class="mint">${formatNumber(summary.classes.best_or_good || 0)}</strong></div><div class="analysis-summary-row"><span>imprecisões</span><strong>${formatNumber(summary.classes.inaccuracy || 0)}</strong></div><div class="analysis-summary-row"><span>erros</span><strong class="orange">${formatNumber(summary.classes.mistake || 0)}</strong></div><div class="analysis-summary-row"><span>lances classificados</span><strong>${formatNumber(classTotal)}</strong></div></div></div></article>
-              </div>
-            </section>
-            <article class="analysis-panel fade-in" style="margin-top:18px"><div class="analysis-panel-head"><div><p class="eyebrow">proveniência</p><h3>Configuração do Stockfish</h3></div><small>evaluator real</small></div><div class="analysis-panel-body"><div class="engine-proof"><div class="engine-proof-title">parâmetros registrados no run</div><div class="analysis-summary"><div class="engine-proof-row"><span>engine</span><strong>${escapeHtml(proof.name)}</strong></div><div class="engine-proof-row"><span>força solicitada / efetiva</span><strong>${escapeHtml(proof.target)} / ${escapeHtml(proof.effective)}</strong></div><div class="engine-proof-row"><span>limite</span><strong>${escapeHtml(proof.nodes)} nodes · ${escapeHtml(proof.threads)} threads · ${escapeHtml(proof.hash)} MB</strong></div><div class="engine-proof-row"><span>modo</span><strong>${escapeHtml(proof.mode)}</strong></div><div class="engine-proof-row"><span>evaluator</span><strong>${escapeHtml(proof.evaluator)}</strong></div><div class="engine-proof-row"><span>binário</span><strong>${escapeHtml(proof.binary.slice(0, 24))}</strong></div></div><p class="engine-proof-note">CPL mede a perda em centipawns atribuída ao lance do modelo. "n/a" significa que o evaluator não publicou observação para aquele registro.</p></div></div></article>
-            <article class="analysis-panel fade-in" style="margin-top:18px"><div class="analysis-panel-head"><div><p class="eyebrow">auditoria lance a lance</p><h3>Decisões do modelo</h3></div><small>${formatNumber(rows.length)} registros</small></div>${analysisTable(rows)}</article>
-            <p class="analysis-note">Clique em um ponto crítico ou em uma linha para voltar ao replay exatamente naquele ply. A tela é somente leitura e não recalcula o engine no navegador.</p>`;
-          $("#analysis-back")?.addEventListener("click", () => { state.view = "replay"; stopPlayback(); renderAll(); syncUrl(); window.scrollTo({ top: 0, behavior: "smooth" }); });
-          document.querySelectorAll("[data-analysis-ply]").forEach((element) => element.addEventListener("click", () => {
-            state.ply = Number(element.dataset.analysisPly);
-            state.view = "replay";
-            stopPlayback();
-            renderAll();
-            syncUrl();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }));
+          const wdls = (run.metrics || []).filter((metric) => metric.metric === "chess.wdl_loss" && metric.valueNum !== null).map((metric) => Number(metric.valueNum));
+          return { episodes, moves, modelMoves, engineMoves, cpls, classes, agreements, wdls };
         }
 
         function renderStats(run) {
           const aggregate = runAggregate(run);
           const totalPlies = aggregate.moves.length;
-          const cplAvg = aggregate.cpls.length ? (aggregate.cpls.reduce((a, b) => a + b, 0) / aggregate.cpls.length).toFixed(1) : "n/a";
+          const cplAvg = aggregate.cpls.length ? mean(aggregate.cpls).toFixed(1) : "n/a";
+          const wdlAvg = aggregate.wdls.length ? mean(aggregate.wdls).toFixed(3) : "n/a";
           const agreement = aggregate.agreements.length ? `${Math.round(100 * aggregate.agreements.reduce((a, m) => a + Number(m.valueNum), 0) / aggregate.agreements.length)}%` : "n/a";
           const status = run.status === "COMPLETED" ? "COMPLETED" : run.status || "n/a";
           $("#stats").innerHTML = `
             <div class="stat"><div class="stat-label">status</div><div class="stat-value ${run.status === "COMPLETED" ? "mint" : "accent"}">${escapeHtml(status)}</div></div>
-            <div class="stat"><div class="stat-label">plies / episódios</div><div class="stat-value">${formatNumber(totalPlies)} <small style="font: 12px var(--sans); color:var(--muted)">/ ${aggregate.episodes.length}</small></div></div>
+            <div class="stat"><div class="stat-label">plies / episódios</div><div class="stat-value">${formatNumber(totalPlies)} <small>/ ${aggregate.episodes.length}</small></div></div>
             <div class="stat"><div class="stat-label">chamadas ao provider</div><div class="stat-value accent">${formatNumber(run.provider?.calls || 0)}</div></div>
-            <div class="stat"><div class="stat-label">tokens de entrada / saída</div><div class="stat-value">${formatNumber(run.provider?.tokens?.input || 0)} <small style="font: 12px var(--sans); color:var(--muted)">/ ${formatNumber(run.provider?.tokens?.output || 0)}</small></div></div>
-            <div class="stat"><div class="stat-label">CPL médio / acordo SF</div><div class="stat-value">${cplAvg} <small style="font: 12px var(--sans); color:var(--muted)">/ ${agreement}</small></div></div>`;
+            <div class="stat"><div class="stat-label">tokens entrada / saída</div><div class="stat-value">${formatNumber(run.provider?.tokens?.input || 0)} <small>/ ${formatNumber(run.provider?.tokens?.output || 0)}</small></div></div>
+            <div class="stat"><div class="stat-label">ACPL / acordo SF / ΔWDL</div><div class="stat-value">${cplAvg} <small>/ ${agreement} / ${wdlAvg}</small></div></div>`;
         }
 
         function renderFacts(run) {
@@ -1645,27 +2059,238 @@
             const stepMetrics = metricsForStep(run, move.stepId);
             const cpl = firstMetric(stepMetrics, "chess.cpl");
             const moveClass = firstMetric(stepMetrics, "chess.move_class");
-            const cplText = cpl ? `${Number(cpl.valueNum).toFixed(0)} cp` : "n/a";
+            const rank = firstMetric(stepMetrics, "chess.chosen_rank");
+            const cplText = cpl && cpl.valueNum !== null ? `${Number(cpl.valueNum).toFixed(0)} cp` : "n/a";
             const cplClass = moveClass ? metricClass(moveClass.valueText) : "";
+            const rankText = rank && rank.valueNum !== null ? ` · nº${Number(rank.valueNum)}` : "";
             return `
             <button class="move-item ${index + 1 === state.ply ? "active" : ""}" data-ply="${index + 1}">
-              <span class="move-number">${String(move.moveNumber || Math.floor(index / 2) + 1).padStart(2, "0")}</span>
-              <span class="move-side">${move.side === "White" ? "W" : "B"}</span>
-              <span class="move-san">${escapeHtml(move.san || move.display)}</span>
-              <span class="move-eval ${cplClass}">${escapeHtml(cplText)}</span>
-              <span class="tag ${move.actorKind === "Stockfish" ? "orange" : move.actorKind === "Model" ? "mint" : ""}">${escapeHtml(move.actorKind)}</span>
+              <span class="move-number">${String(move.moveNumber || Math.floor(index / 2) + 1).padStart(2, "0")}${move.side === "White" ? "." : "…"}</span>
+              <span><span class="move-san"><span class="class-dot ${moveClass?.valueText || "none"}" title="${escapeHtml(classLabel(moveClass?.valueText))}"></span> ${escapeHtml(move.san || move.display)}</span>
+              <span class="move-sub" style="display:block">${escapeHtml(move.uci || move.actorKind)} · ${escapeHtml(move.actorKind)}</span></span>
+              <span class="move-badges"><span class="move-eval ${cplClass}">${escapeHtml(cplText)}${escapeHtml(rankText)}</span></span>
             </button>`;
           }).join("") : `<div class="empty-state" style="grid-column:1/-1"><div><strong>sem lances</strong>este episódio não tem lances confirmados.</div></div>`;
           document.querySelectorAll("[data-ply]").forEach((button) => button.addEventListener("click", () => { state.ply = Number(button.dataset.ply); updatePly(); }));
         }
 
         function renderEvents(run) {
-          const events = (run.events || []).slice().reverse().slice(0, 24);
+          const query = state.eventQuery.trim().toLowerCase();
+          const all = (run.events || []).slice().reverse();
+          const events = (query ? all.filter((event) => `${event.type} ${JSON.stringify(event.payload || {})}`.toLowerCase().includes(query)) : all).slice(0, 40);
+          $("#events-meta").textContent = `${events.length}/${all.length} eventos`;
           $("#events").innerHTML = events.length ? events.map((event) => {
             const payload = event.payload || {};
-            const payloadHtml = Object.keys(payload).length ? `<details class="event-details"><summary><span class="event-name">${escapeHtml(event.type)}</span><span class="event-meta">${escapeHtml(formatDate(event.at))} · ${event.artifactCount || 0} artefatos</span></summary><pre class="event-payload">${escapeHtml(JSON.stringify(payload, null, 2))}</pre></details>` : `<div class="event-details"><div class="event-name">${escapeHtml(event.type)}</div><div class="event-meta">${escapeHtml(formatDate(event.at))} · ${event.artifactCount || 0} artefatos</div></div>`;
-            return `<div class="event-item"><div>${payloadHtml}</div></div>`;
-          }).join("") : `<div class="empty-state"><div><strong>sem eventos</strong>não há eventos neste recorte.</div></div>`;
+            const payloadHtml = Object.keys(payload).length ? `<details class="event-details"><summary><span class="event-name">${escapeHtml(event.type)}</span><span class="event-meta" style="display:block">${escapeHtml(formatDate(event.at))} · ${event.artifactCount || 0} artefatos</span></summary><pre class="event-payload">${escapeHtml(JSON.stringify(payload, null, 2))}</pre></details>` : `<div class="event-details"><div class="event-name">${escapeHtml(event.type)}</div><div class="event-meta">${escapeHtml(formatDate(event.at))} · ${event.artifactCount || 0} artefatos</div></div>`;
+            return `<div class="event-item"><div></div><div>${payloadHtml}</div></div>`;
+          }).join("") : `<div class="empty-state"><div><strong>sem eventos</strong>ajuste o filtro de eventos.</div></div>`;
+        }
+
+        /* ---------- analysis view ---------- */
+
+        function renderAnalysis(run) {
+          const episode = currentEpisode(run);
+          const rows = analysisRows(run, episode);
+          const summary = summarize(rows);
+          const proof = stockfishProof(run, episode);
+          const engineResult = episode.result === "checkmate" ? `mate · ${episode.winner || "lado?"}` : episode.result || "em andamento";
+          const agreementLabel = summary.top1 === null ? "n/a" : `${Math.round(summary.top1 * 100)}%`;
+          const wdlLabel = summary.wdlMean === null ? "n/a" : summary.wdlMean.toFixed(3);
+          $("#app").innerHTML = `
+            <section class="analysis-toolbar fade-in"><div><p>Uma leitura por lance da atuação do modelo contra o engine — derivada só do que o evaluator pós-hoc já publicou.</p><p class="formula">${escapeHtml(FORMULA_ACPL)} · ${escapeHtml(FORMULA_CLASS)}</p></div></section>
+            <section class="analysis-kpis fade-in">
+              <div class="analysis-kpi"><span class="analysis-kpi-label">ACPL</span><strong class="analysis-kpi-value blue">${escapeHtml(cplLabel(summary.acpl))}</strong><span class="analysis-kpi-sub">mediana ${escapeHtml(cplLabel(summary.median))} · ${summary.nCpl}/${summary.n} lances</span></div>
+              <div class="analysis-kpi"><span class="analysis-kpi-label">pior lance</span><strong class="analysis-kpi-value red">${escapeHtml(cplLabel(summary.worst))}</strong><span class="analysis-kpi-sub">máximo CPL do modelo</span></div>
+              <div class="analysis-kpi"><span class="analysis-kpi-label">ΔWDL médio</span><strong class="analysis-kpi-value violet">${escapeHtml(wdlLabel)}</strong><span class="analysis-kpi-sub">${escapeHtml(FORMULA_WDL)} · ${summary.wdlN} lances</span></div>
+              <div class="analysis-kpi"><span class="analysis-kpi-label">top-1 / top-3</span><strong class="analysis-kpi-value mint">${escapeHtml(agreementLabel)}${summary.top3 !== null ? ` <small style="font-size:14px">/ ${Math.round(summary.top3 * 100)}%</small>` : ""}</strong><span class="analysis-kpi-sub">${summary.top1N} c/ bestmove · ${summary.top3N} c/ rank</span></div>
+              <div class="analysis-kpi"><span class="analysis-kpi-label">blunders</span><strong class="analysis-kpi-value red">${formatNumber(summary.classes.blunder || 0)}</strong><span class="analysis-kpi-sub">erros ${formatNumber(summary.classes.mistake || 0)} · imprec. ${formatNumber(summary.classes.inaccuracy || 0)}</span></div>
+              ${summary.nCpl ? `<div class="analysis-kpi"><span class="analysis-kpi-label">bom / melhor</span><strong class="analysis-kpi-value mint">${formatNumber(summary.classes.best_or_good || 0)}</strong><span class="analysis-kpi-sub">de ${formatNumber(summary.n)} lances do modelo</span></div>
+              <div class="analysis-kpi"><span class="analysis-kpi-label">resultado</span><strong class="analysis-kpi-value orange">${escapeHtml(engineResult)}</strong><span class="analysis-kpi-sub">${escapeHtml(episode.id || "episódio")}</span></div>
+              <div class="analysis-kpi"><span class="analysis-kpi-label">transições mate</span><strong class="analysis-kpi-value orange">${formatNumber(Object.values(summary.mateCounts).reduce((a, b) => a + b, 0))}</strong><span class="analysis-kpi-sub">${escapeHtml(Object.entries(summary.mateCounts).map(([k, v]) => `${k}:${v}`).join(" · ") || "nenhuma")}</span></div>` : ""}
+            </section>
+            <section class="analysis-grid">
+              <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">posição e perda</p><h3>Eval + CPL ao longo da partida</h3></div><small>${escapeHtml(episode.id || "episódio")}</small></div><div class="analysis-panel-body">${evalCurveChart(rows)}${cplChart(rows)}</div></article>
+              <div class="analysis-side">
+                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">pontos críticos</p><h3>Piores lances</h3></div><small>top 8</small></div><div class="analysis-panel-body">${incidentList(rows)}</div></article>
+                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">cobertura</p><h3>Resumo do diagnóstico</h3></div><small>${escapeHtml(run.status || "n/a")}</small></div><div class="analysis-panel-body"><div class="analysis-summary"><div class="analysis-summary-row"><span>lances do modelo</span><strong>${formatNumber(summary.n)}</strong></div><div class="analysis-summary-row"><span>lances com CPL</span><strong>${formatNumber(summary.nCpl)} / ${formatNumber(summary.n)}</strong></div><div class="analysis-summary-row"><span>ACPL / mediana</span><strong>${escapeHtml(cplLabel(summary.acpl))} / ${escapeHtml(cplLabel(summary.median))}</strong></div><div class="analysis-summary-row"><span>bom / melhor</span><strong class="mint">${formatNumber(summary.classes.best_or_good || 0)}</strong></div><div class="analysis-summary-row"><span>imprecisões</span><strong>${formatNumber(summary.classes.inaccuracy || 0)}</strong></div><div class="analysis-summary-row"><span>erros</span><strong class="orange">${formatNumber(summary.classes.mistake || 0)}</strong></div><div class="analysis-summary-row"><span>blunders</span><strong class="red">${formatNumber(summary.classes.blunder || 0)}</strong></div><div class="analysis-summary-row"><span>lances sem classe</span><strong>${formatNumber(summary.classes.none || 0)}</strong></div></div></div></article>
+                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">fases</p><h3>CPL por fase</h3></div><small>dimensions.phase</small></div><div class="analysis-panel-body">${phaseTable(summary)}</div></article>
+                <article class="analysis-panel fade-in"><div class="analysis-panel-head"><div><p class="eyebrow">profundidade</p><h3>Rank + mate</h3></div><small>multipv</small></div><div class="analysis-panel-body">${rankAndMate(summary)}</div></article>
+              </div>
+            </section>
+            <article class="analysis-panel fade-in" style="margin-top:18px"><div class="analysis-panel-head"><div><p class="eyebrow">proveniência</p><h3>Configuração do Stockfish</h3></div><small>evaluator real</small></div><div class="analysis-panel-body"><div class="engine-proof"><div class="engine-proof-title">parâmetros registrados no run</div><div class="analysis-summary"><div class="engine-proof-row"><span>engine</span><strong>${escapeHtml(proof.name)}</strong></div><div class="engine-proof-row"><span>força solicitada / efetiva</span><strong>${escapeHtml(proof.target)} / ${escapeHtml(proof.effective)}</strong></div><div class="engine-proof-row"><span>limite</span><strong>${escapeHtml(proof.nodes)} nodes · ${escapeHtml(proof.threads)} threads · ${escapeHtml(proof.hash)} MB</strong></div><div class="engine-proof-row"><span>modo</span><strong>${escapeHtml(proof.mode)}</strong></div><div class="engine-proof-row"><span>evaluators</span><strong>${escapeHtml(proof.evaluators)}</strong></div><div class="engine-proof-row"><span>binário sha256</span><strong>${escapeHtml(proof.binary.slice(0, 24))}…</strong></div></div><p class="engine-proof-note">CPL mede a perda em centipawns atribuída ao lance do modelo. "n/a" significa que o evaluator não publicou observação para aquele registro. Nada aqui recalcula o engine: é só leitura do snapshot.</p></div></div></article>
+            <article class="analysis-panel fade-in" style="margin-top:18px"><div class="analysis-panel-head"><div><p class="eyebrow">auditoria lance a lance</p><h3>Decisões do modelo</h3></div><small>${formatNumber(rows.length)} registros</small></div><div class="analysis-panel-body">${analysisTable(rows)}</div></article>
+            <p class="analysis-note">Clique num ponto crítico, barra, ponto da curva ou linha para voltar ao replay exatamente naquele ply. A tela é somente leitura e não recalcula o engine no navegador.</p>`;
+          bindAnalysisNav();
+        }
+
+        function bindAnalysisNav() {
+          document.querySelectorAll("[data-analysis-ply]").forEach((element) => element.addEventListener("click", () => {
+            state.ply = Number(element.dataset.analysisPly);
+            state.view = "replay";
+            stopPlayback();
+            renderAll();
+            syncUrl();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }));
+        }
+
+        /* ---------- compare view ---------- */
+
+        function compareMetrics(run) {
+          const rows = (run.episodes || []).flatMap((episode) => analysisRows(run, episode));
+          const summary = summarize(rows);
+          const aggregate = runAggregate(run);
+          return { rows, summary, aggregate };
+        }
+
+        function renderCompare() {
+          const runs = state.compare.map(runById).filter(Boolean);
+          if (!runs.length) {
+            $("#app").innerHTML = `<div class="panel empty-state fade-in"><div><strong>Nada fixado para comparar</strong><p>Fixe até 4 runs com o botão 📌 na lista ao lado. O comparativo usa só métricas pós-hoc já publicadas — ACPL, ΔWDL, top-1/top-3, classes.</p></div></div>`;
+            return;
+          }
+          const computed = runs.map((run) => ({ run, ...compareMetrics(run) }));
+          const cell = (value, cls = "") => `<td class="${cls}">${value}</td>`;
+          const numCells = (get, { lower = true, format = (v) => v } = {}) => {
+            const values = computed.map(({ summary }) => get(summary));
+            const finite = values.filter((v) => v !== null && v !== undefined);
+            const best = finite.length ? (lower ? Math.min(...finite) : Math.max(...finite)) : null;
+            return computed.map(({ summary }) => {
+              const value = get(summary);
+              const text = value === null || value === undefined ? "n/a" : format(value);
+              const cls = value !== null && best !== null && value === best && finite.length > 1 ? "best" : "";
+              return cell(escapeHtml(text), cls);
+            }).join("");
+          };
+          $("#app").innerHTML = `
+            <p class="compare-hint fade-in">Comparativo reporter-only: cada coluna é um run, cada célula deriva de métricas pós-hoc já publicadas. <code>ACPL = mean(chess.cpl)</code> · classes v1.0.0 (≥300/≥100/≥50) · sem claims de Elo a partir de run único.</p>
+            <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">lado a lado</p><h3>${runs.length} runs fixados</h3></div><small>clique no título p/ abrir o run</small></div>
+            <div class="compare-table-wrap"><table class="compare-table"><thead><tr><th scope="col">métrica</th>${computed.map(({ run }) => `<th scope="col"><a href="#" data-open-run="${escapeHtml(run.id)}" style="color:inherit">${escapeHtml(prettyExperiment(run.experiment))}</a><small>${escapeHtml(shortId(run.id))} · ${escapeHtml(run.status || "")}</small></th>`).join("")}</tr></thead><tbody>
+              <tr><td>resultado</td>${computed.map(({ run }) => { const ep = run.episodes?.[0]; return cell(escapeHtml(ep?.result ? `${ep.result}${ep.winner ? ` · ${ep.winner}` : ""}` : "n/a")); }).join("")}</tr>
+              <tr><td>lances do modelo (c/ CPL)</td>${computed.map(({ summary }) => cell(`${formatNumber(summary.n)} (${formatNumber(summary.nCpl)})`)).join("")}</tr>
+              <tr><td>ACPL</td>${numCells((s) => s.acpl, { format: (v) => cplLabel(v) })}</tr>
+              <tr><td>mediana CPL</td>${numCells((s) => s.median, { format: (v) => cplLabel(v) })}</tr>
+              <tr><td>pior CPL</td>${numCells((s) => s.worst, { format: (v) => cplLabel(v) })}</tr>
+              <tr><td>ΔWDL médio</td>${numCells((s) => s.wdlMean, { format: (v) => v.toFixed(3) })}</tr>
+              <tr><td>top-1</td>${numCells((s) => s.top1, { lower: false, format: (v) => `${Math.round(v * 100)}%` })}</tr>
+              <tr><td>top-3</td>${numCells((s) => s.top3, { lower: false, format: (v) => `${Math.round(v * 100)}%` })}</tr>
+              <tr><td>blunders</td>${numCells((s) => s.classes.blunder || 0)}</tr>
+              <tr><td>erros</td>${numCells((s) => s.classes.mistake || 0)}</tr>
+              <tr><td>imprecisões</td>${numCells((s) => s.classes.inaccuracy || 0)}</tr>
+              <tr><td>bom / melhor</td>${numCells((s) => s.classes.best_or_good || 0, { lower: false })}</tr>
+              <tr><td>plies totais</td>${computed.map(({ aggregate }) => cell(formatNumber(aggregate.moves.length))).join("")}</tr>
+              <tr><td>provider calls</td>${computed.map(({ run }) => cell(formatNumber(run.provider?.calls || 0))).join("")}</tr>
+              <tr><td>tokens in/out</td>${computed.map(({ run }) => cell(`${formatNumber(run.provider?.tokens?.input || 0)} / ${formatNumber(run.provider?.tokens?.output || 0)}`)).join("")}</tr>
+            </tbody></table></div></article>
+            <p class="analysis-note">Verde = melhor da coluna (menor ACPL/CPL/WDL/erros; maior top-1/top-3/bons). Comparar runs não estabelece claim de sistema: condições, budgets e assistance podem diferir — confira proveniência em cada run.</p>`;
+          document.querySelectorAll("[data-open-run]").forEach((link) => link.addEventListener("click", (event) => {
+            event.preventDefault();
+            state.runId = link.dataset.openRun;
+            state.episodeIndex = 0;
+            state.ply = 0;
+            state.view = "replay";
+            renderAll();
+            syncUrl();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }));
+        }
+
+        /* ---------- main render ---------- */
+
+        function renderMain(run) {
+          if (!run) {
+            $("#run-title").textContent = "Nenhum run disponível";
+            $("#view-kicker").textContent = "snapshot local";
+            $("#snapshot-meta").innerHTML = `<strong>snapshot vazio</strong>`;
+            $("#app").innerHTML = `<div class="panel empty-state"><div><strong>Sem dados de partida</strong>gere o recorte com <code>uv run python scripts/build_readonly_viewer.py</code>.</div></div>`;
+            return;
+          }
+          const episode = currentEpisode(run);
+          $("#view-kicker").textContent = state.view === "analysis" ? "análise da partida" : state.view === "compare" ? "comparativo" : "replay local";
+          $("#run-title").textContent = state.view === "compare" ? `${state.compare.length} runs em comparação` : prettyExperiment(run.experiment || run.id);
+          $("#snapshot-meta").innerHTML = `<strong>${escapeHtml(shortId(run.id))}</strong><br />${escapeHtml(formatDate(run.startedAt))} → ${escapeHtml(formatDate(run.finishedAt))}<br /><span class="tag mint">somente leitura</span>`;
+          $("#analysis-btn").textContent = state.view === "analysis" ? "voltar ao replay" : "análise da partida";
+          $("#analysis-btn").setAttribute("aria-pressed", state.view === "analysis" ? "true" : "false");
+          $("#compare-btn").setAttribute("aria-pressed", state.view === "compare" ? "true" : "false");
+          if (state.view === "analysis") {
+            renderAnalysis(run);
+            return;
+          }
+          if (state.view === "compare") {
+            renderCompare();
+            return;
+          }
+          $("#app").innerHTML = `
+            <section id="stats" class="stats-grid fade-in"></section>
+            <section class="stage-grid">
+              <article class="panel fade-in">
+                <div class="panel-head"><div><p class="eyebrow">posição</p><h3>Tabuleiro</h3></div><select id="episode-select" class="episode-select" aria-label="Selecionar episódio">${(run.episodes || []).map((item, index) => `<option value="${index}" ${index === state.episodeIndex ? "selected" : ""}>episódio ${index + 1} · ${escapeHtml(item.result || item.status || "n/a")}</option>`).join("")}</select></div>
+                <div class="board-zone"><div class="eval-gauge" title="Estimativa de vitória das brancas a partir do score do engine (só exibição)"><div id="gauge-fill" class="white-fill" style="height:50%"></div><div id="gauge-label" class="gauge-label">–</div></div><div class="board-col"><div class="board-wrap"><div id="board" class="board" aria-label="Tabuleiro de xadrez"></div></div><div id="board-status" class="board-status"></div></div></div>
+                <div class="replay-bar">
+                  <div class="replay-current"><div><h4 id="move-title" aria-live="polite">Posição inicial</h4><p id="move-subtitle" aria-live="polite">estado inicial</p></div><div id="ply-counter" class="ply-counter" aria-live="polite">00 / 00</div></div>
+                  <input id="ply-range" class="range" type="range" min="0" max="0" value="0" aria-label="Selecionar ply" />
+                  <div class="transport"><button id="btn-first" aria-label="Ir para o primeiro lance" title="Primeiro ply">|◀</button><button id="btn-prev" aria-label="Voltar um lance" title="Ply anterior">◀</button><button id="play-btn" class="play-btn" aria-label="Reproduzir ou pausar a partida">reproduzir</button><button id="btn-next" aria-label="Avançar um lance" title="Próximo ply">▶</button><button id="btn-last" aria-label="Ir para o último lance" title="Último ply">▶|</button><select id="speed-select" class="speed-select" aria-label="Velocidade de reprodução"><option value="1400">0.5×</option><option value="900" selected>1×</option><option value="450">2×</option><option value="220">4×</option></select><span class="kbd-hint">← → navegam · espaço reproduz · Home/End</span></div>
+                </div>
+              </article>
+              <div class="side-stack">
+                <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">avaliação do engine</p><h3>Avaliação</h3></div><small id="step-eval-detail">n/a</small></div><div class="metric-body"><div class="metric-hero"><div class="metric-box"><label>CPL</label><strong id="metric-cpl" class="metric-value">n/a</strong></div><div class="metric-box"><label>classe</label><strong id="metric-class" class="metric-value">n/a</strong></div><div class="metric-box"><label>acordo SF</label><strong id="metric-agreement" class="metric-value">n/a</strong></div></div><div class="metric-list"><div class="metric-row"><span>observações nesta partida</span><strong>${formatNumber(run.metrics?.length || 0)}</strong></div><div class="metric-row"><span>avaliadores</span><strong>${escapeHtml([...new Set((run.metrics || []).map((metric) => metric.evaluator).filter(Boolean))].join(", ") || "n/a")}</strong></div><div class="metric-row"><span>resultado do episódio</span><strong>${escapeHtml(episode.result || "n/a")}${episode.winner ? ` · ${escapeHtml(episode.winner)}` : ""}</strong></div></div></div></article>
+                <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">jogadores e origem</p><h3>Quem jogou</h3></div><small>${escapeHtml(run.status || "n/a")}</small></div><div id="facts" class="facts-body"></div></article>
+              </div>
+            </section>
+            <section class="lower-grid">
+              <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">lances confirmados</p><h3>Lances</h3></div><small>${escapeHtml(episode.id || "episódio")}</small></div><div class="move-list-head"><span>ponto = classe do lance · CPL + rank</span><span>${(episode.moves || []).length} plies</span></div><div id="move-list" class="move-list"></div></article>
+              <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">linha de eventos</p><h3>Eventos</h3></div><small id="events-meta">últimos 40 eventos</small></div><div class="events-tools"><input id="event-search" type="search" placeholder="filtrar eventos…" aria-label="Filtrar eventos" value="${escapeHtml(state.eventQuery)}" /></div><div class="events-body"><div id="events" class="events-list"></div></div></article>
+            </section>
+            <p class="footnote">Recorte gerado em <code>${escapeHtml(DATA.generatedAt || "n/a")}</code> · atualizar: <code>uv run python scripts/build_readonly_viewer.py</code> · auto-refresh via <code>meta.json</code></p>`;
+          renderStats(run);
+          renderFacts(run);
+          renderMoveList(run, episode);
+          renderEvents(run);
+          renderReplay(run, episode);
+          bindTransport(episode);
+          $("#event-search")?.addEventListener("input", (event) => { state.eventQuery = event.target.value; renderEvents(run); });
+        }
+
+        function bindTransport(episode) {
+          $("#episode-select")?.addEventListener("change", (event) => {
+            state.episodeIndex = Number(event.target.value);
+            state.ply = 0;
+            const scrollTop = window.scrollY;
+            renderMain(currentRun());
+            window.scrollTo(0, scrollTop);
+            syncUrl();
+          });
+          $("#speed-select")?.addEventListener("change", (event) => {
+            state.speed = Number(event.target.value);
+            if (state.playing) startPlayback();
+          });
+          $("#speed-select").value = String(state.speed);
+          $("#ply-range").addEventListener("input", (event) => { state.ply = Number(event.target.value); updatePly(); });
+          $("#btn-first").addEventListener("click", () => { state.ply = 0; updatePly(); });
+          $("#btn-prev").addEventListener("click", () => { state.ply = Math.max(0, state.ply - 1); updatePly(); });
+          $("#btn-next").addEventListener("click", () => { state.ply = Math.min(episode.moves.length, state.ply + 1); updatePly(); });
+          $("#btn-last").addEventListener("click", () => { state.ply = episode.moves.length; updatePly(); });
+          $("#play-btn").addEventListener("click", () => state.playing ? stopPlayback() : startPlayback());
+        }
+
+        function startPlayback() {
+          const episode = currentEpisode(currentRun());
+          if (!episode.moves?.length) return;
+          stopPlayback();
+          state.playing = true;
+          state.timer = setInterval(() => {
+            if (state.ply >= episode.moves.length) { stopPlayback(); return; }
+            state.ply += 1;
+            updatePly();
+          }, state.speed);
+          updatePly();
+        }
+
+        function stopPlayback() {
+          state.playing = false;
+          if (state.timer) clearInterval(state.timer);
+          state.timer = null;
+          if ($("#play-btn")) $("#play-btn").textContent = "reproduzir";
         }
 
         function updateMoveSelection() {
@@ -1681,91 +2306,8 @@
           syncUrl();
         }
 
-        function renderMain(run) {
-          if (!run) {
-            $("#run-title").textContent = "Nenhum run disponível";
-            $("#view-kicker").textContent = "snapshot local";
-            $("#snapshot-meta").innerHTML = `<strong>snapshot vazio</strong>`;
-            $("#app").innerHTML = `<div class="panel empty-state"><div><strong>Sem dados de partida</strong>gere o recorte com <code>uv run python scripts/build_readonly_viewer.py</code>.</div></div>`;
-            return;
-          }
-          const episode = currentEpisode(run);
-          $("#view-kicker").textContent = state.view === "analysis" ? "análise da partida" : "replay local";
-          $("#run-title").textContent = prettyExperiment(run.experiment || run.id);
-          $("#snapshot-meta").innerHTML = `<strong>${escapeHtml(shortId(run.id))}</strong><br />${escapeHtml(formatDate(run.startedAt))} → ${escapeHtml(formatDate(run.finishedAt))}<br /><span class="tag mint">somente leitura</span>`;
-          $("#analysis-btn").textContent = state.view === "analysis" ? "voltar ao replay" : "análise da partida";
-          $("#analysis-btn").setAttribute("aria-pressed", state.view === "analysis" ? "true" : "false");
-          if (state.view === "analysis") {
-            renderAnalysis(run);
-            return;
-          }
-          $("#app").innerHTML = `
-            <section id="stats" class="stats-grid fade-in"></section>
-            <section class="stage-grid">
-              <article class="panel board-panel fade-in">
-                <div class="panel-head"><div><p class="eyebrow">posição</p><h3>Tabuleiro</h3></div><select id="episode-select" class="episode-select" aria-label="Selecionar episódio">${(run.episodes || []).map((item, index) => `<option value="${index}" ${index === state.episodeIndex ? "selected" : ""}>episódio ${index + 1} · ${escapeHtml(item.result || item.status || "n/a")}</option>`).join("")}</select></div>
-                <div class="board-stage"><div class="board-wrap"><div id="board" class="board" aria-label="Tabuleiro de xadrez"></div></div></div>
-                <div class="replay-bar">
-                  <div class="replay-current"><div><h4 id="move-title" aria-live="polite">Posição inicial</h4><p id="move-subtitle" aria-live="polite">estado inicial</p></div><div id="ply-counter" class="ply-counter" aria-live="polite">00 / 00</div></div>
-                  <input id="ply-range" class="range" type="range" min="0" max="0" value="0" aria-label="Selecionar ply" />
-                  <div class="transport"><button id="btn-first" aria-label="Ir para o primeiro lance" title="Primeiro ply">|◀</button><button id="btn-prev" aria-label="Voltar um lance" title="Ply anterior">◀</button><button id="play-btn" class="play-btn" aria-label="Reproduzir ou pausar a partida">reproduzir</button><button id="btn-next" aria-label="Avançar um lance" title="Próximo ply">▶</button><button id="btn-last" aria-label="Ir para o último lance" title="Último ply">▶|</button></div>
-                </div>
-              </article>
-              <div class="side-stack">
-                <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">avaliação do engine</p><h3>Avaliação</h3></div><small id="step-eval-detail">n/a</small></div><div class="metric-body"><div class="metric-hero"><div class="metric-box"><label>CPL</label><strong id="metric-cpl" class="metric-value">n/a</strong></div><div class="metric-box"><label>classe</label><strong id="metric-class" class="metric-value">n/a</strong></div><div class="metric-box"><label>acordo SF</label><strong id="metric-agreement" class="metric-value">n/a</strong></div></div><div class="metric-list"><div class="metric-row"><span>observações nesta partida</span><strong>${formatNumber(run.metrics?.length || 0)}</strong></div><div class="metric-row"><span>avaliadores</span><strong>${escapeHtml([...new Set((run.metrics || []).map((metric) => metric.evaluator).filter(Boolean))].join(", ") || "n/a")}</strong></div><div class="metric-row"><span>resultado do episódio</span><strong>${escapeHtml(episode.result || "n/a")}${episode.winner ? ` · ${escapeHtml(episode.winner)}` : ""}</strong></div></div></div></article>
-                <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">jogadores e origem</p><h3>Quem jogou</h3></div><small>${escapeHtml(run.status || "n/a")}</small></div><div id="facts" class="facts-body"></div></article>
-              </div>
-            </section>
-            <section class="lower-grid">
-              <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">lances confirmados</p><h3>Lances</h3></div><small>${escapeHtml(episode.id || "episódio")}</small></div><div id="move-list" class="move-list"></div></article>
-              <article class="panel fade-in"><div class="panel-head"><div><p class="eyebrow">linha de eventos</p><h3>Eventos</h3></div><small>últimos 24 eventos</small></div><div class="events-body"><div id="events" class="events-list"></div></div></article>
-            </section>
-            <p class="footnote">Recorte gerado em <code>${escapeHtml(DATA.generatedAt || "n/a")}</code> · atualizar: <code>uv run python scripts/build_readonly_viewer.py --completed-only</code></p>`;
-          renderStats(run);
-          renderFacts(run);
-          renderMoveList(run, episode);
-          renderEvents(run);
-          renderReplay(run, episode);
-          bindTransport(episode);
-        }
-
-        function bindTransport(episode) {
-          $("#episode-select")?.addEventListener("change", (event) => {
-            state.episodeIndex = Number(event.target.value);
-            state.ply = 0;
-            const scrollTop = window.scrollY;
-            renderMain(currentRun());
-            window.scrollTo(0, scrollTop);
-            syncUrl();
-          });
-          $("#ply-range").addEventListener("input", (event) => { state.ply = Number(event.target.value); updatePly(); });
-          $("#btn-first").addEventListener("click", () => { state.ply = 0; updatePly(); });
-          $("#btn-prev").addEventListener("click", () => { state.ply = Math.max(0, state.ply - 1); updatePly(); });
-          $("#btn-next").addEventListener("click", () => { state.ply = Math.min(episode.moves.length, state.ply + 1); updatePly(); });
-          $("#btn-last").addEventListener("click", () => { state.ply = episode.moves.length; updatePly(); });
-          $("#play-btn").addEventListener("click", () => state.playing ? stopPlayback() : startPlayback());
-        }
-
-        function startPlayback() {
-          const episode = currentEpisode(currentRun());
-          if (!episode.moves?.length) return;
-          state.playing = true;
-          state.timer = setInterval(() => {
-            if (state.ply >= episode.moves.length) { stopPlayback(); return; }
-            state.ply += 1;
-            updatePly();
-          }, 900);
-          updatePly();
-        }
-
-        function stopPlayback() {
-          state.playing = false;
-          if (state.timer) clearInterval(state.timer);
-          state.timer = null;
-          if ($("#play-btn")) $("#play-btn").textContent = "reproduzir";
-        }
-
         function renderAll() {
+          renderSnapshotCard();
           renderRunList();
           renderMain(currentRun());
         }
@@ -1784,16 +2326,35 @@
           syncUrl();
           window.scrollTo({ top: 0, behavior: "smooth" });
         });
+        $("#compare-btn").addEventListener("click", () => {
+          if (state.view === "compare") {
+            state.view = "replay";
+          } else {
+            state.view = "compare";
+            if (!state.compare.length && state.runId) state.compare = [state.runId];
+          }
+          stopPlayback();
+          renderAll();
+          syncUrl();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+        $("#update-pill").addEventListener("click", reloadSnapshot);
         document.addEventListener("keydown", (event) => {
-          if (event.target.matches("input")) return;
+          if (event.target.matches("input, select, textarea")) return;
+          if (state.view !== "replay") return;
           if (event.key === "ArrowLeft") { state.ply = Math.max(0, state.ply - 1); updatePly(); }
           if (event.key === "ArrowRight") { const episode = currentEpisode(currentRun()); state.ply = Math.min(episode.moves.length, state.ply + 1); updatePly(); }
           if (event.key === " ") { event.preventDefault(); state.playing ? stopPlayback() : startPlayback(); }
+          if (event.key === "Home") { event.preventDefault(); state.ply = 0; updatePly(); }
+          if (event.key === "End") { event.preventDefault(); state.ply = currentEpisode(currentRun()).moves.length; updatePly(); }
         });
 
         const defaultRunId = DATA.runs.find((run) => run.status === "COMPLETED" && !String(run.experiment || "").startsWith("fake-"))?.id || DATA.runs.find((run) => run.status === "COMPLETED")?.id || DATA.runs[0]?.id || null;
         restoreUrlState(defaultRunId);
         renderAll();
+        pollSnapshot();
+        setInterval(pollSnapshot, 15000);
+        setInterval(renderSnapshotCard, 30000);
       })();
     </script>
   </body>

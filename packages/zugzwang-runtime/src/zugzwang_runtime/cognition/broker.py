@@ -118,6 +118,8 @@ class CognitionToolBroker:
         self._artifact_loader = artifact_loader
         self._max_batch = max_batch
         self._max_argument_bytes = max_argument_bytes
+        bound = self._journal.bound_node_ids(decision_id)
+        self._root_node_id = bound[0] if bound else None
         self._exposure_sequence = self._journal.next_exposure_sequence(decision_id)
         self._call_count = 0
 
@@ -321,6 +323,11 @@ class CognitionToolBroker:
                 f"cost of {cost} exceeds the {self._budget.remaining} remaining tool operations",
             )
         return None
+
+    @property
+    def root_node_id(self) -> str | None:
+        """First bound node of the decision (the loop's finalization focus)."""
+        return self._root_node_id
 
     def _check_scope(self, node_id: str) -> ToolError | None:
         if node_id not in self._journal.bound_node_ids(self.decision_id):

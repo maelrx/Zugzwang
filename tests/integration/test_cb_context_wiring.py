@@ -306,7 +306,6 @@ def test_plan_revised_from_real_round_results(harness) -> None:
     session.plan_store = store
 
     async def mate_branch():
-        mate = "f2f3"
         # Route through the productive session so the round feedback sees a
         # real terminal expansion: f3 e5 g4 Qh4# needs the full line.
         from zugzwang_core.ports.model import ModelRef
@@ -363,7 +362,6 @@ def test_plan_revised_from_real_round_results(harness) -> None:
             return session.root_node_id or "node-root"
 
         def aid_of(messages, uci):
-            import json as _json
 
             expansions = [p for p in _parts(messages) if p[0] == "board_expand"]
             if expansions:

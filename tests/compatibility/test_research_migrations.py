@@ -298,14 +298,12 @@ def test_migration_0009_freezes_bindings_and_round_trips(tmp_path: Path) -> None
             )
         )
         conn.commit()
-    with pytest.raises(Exception, match="freeze|sealed|immutable"):
-        with engine.begin() as conn:
-            conn.execute(
-                sa.text(
-                    "UPDATE cb_decisions SET memory_snapshot_id = 'snap-9' "
-                    "WHERE decision_id = 'dec-9b'"
-                )
+    with pytest.raises(Exception, match=r"freeze|forbidden"), engine.begin() as conn:
+        conn.execute(
+            sa.text(
+                "UPDATE cb_decisions SET memory_snapshot_id = 'snap-9' WHERE decision_id = 'dec-9b'"
             )
+        )
 
     # Round-trip: downgrade (with data present) is refused BEFORE any DDL…
     config = Config()
@@ -313,7 +311,7 @@ def test_migration_0009_freezes_bindings_and_round_trips(tmp_path: Path) -> None
 
     config.set_main_option("script_location", str(migration_dir))
     config.set_main_option("sqlalchemy.url", f"sqlite:///{database.path}")
-    with pytest.raises(RuntimeError, match="bound decision"):
+    with pytest.raises(RuntimeError, match=r"bound decision"):
         command.downgrade(config, "0008")
     # 0009's own downgrade refused BEFORE dropping anything: the skill tables
     # survive and the binding row is intact.

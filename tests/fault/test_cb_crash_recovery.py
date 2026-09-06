@@ -22,6 +22,7 @@ import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sqlalchemy import text

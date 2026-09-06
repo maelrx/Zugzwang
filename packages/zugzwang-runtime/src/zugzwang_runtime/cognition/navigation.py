@@ -188,9 +188,7 @@ class CognitiveNavigationStrategy:
                 if not isinstance(result, dict):
                     continue
                 raw_rows: Any = cast("dict[str, Any]", result).get("results") or []
-                items: "list[Any]" = (
-                    cast("list[Any]", raw_rows) if isinstance(raw_rows, list) else []
-                )
+                items: list[Any] = cast("list[Any]", raw_rows) if isinstance(raw_rows, list) else []
                 for item in list(items):
                     row_data: Any = dict(cast(Any, item)) if isinstance(item, dict) else {}
                     terminal: Any = row_data.get("terminal")

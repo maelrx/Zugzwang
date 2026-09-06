@@ -620,8 +620,8 @@ class CognitionToolBroker:
                 "edge_id",
             }
             for item in cast("list[Any]", results):
-                row = cast("dict[str, Any]", item) if isinstance(item, dict) else None
-                if row is None or not required.issubset(row):
+                row = cast("dict[str, Any]", item) if isinstance(item, dict) else {}
+                if not required.issubset(row):
                     raise ToolExecutionError(
                         "OUTPUT_CONTRACT_VIOLATION",
                         "expand result row lacks the child reference fields",

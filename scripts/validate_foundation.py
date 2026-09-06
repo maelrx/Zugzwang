@@ -87,21 +87,15 @@ def _iter_files(root, pattern):
         yield p
 
 
-def _parse_json_or_jsonc(text, name):
-    # ZGW-0085/#15: tsconfig*.json files are JSONC (comments allowed) and are
-    # editor/tool configuration, not foundation data; parse them tolerantly
-    # without weakening validation of versioned foundation sources.
-    if name.startswith("tsconfig"):
-        text = re.sub(r"//[^\n]*", "", text)
-        text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
-    return json.loads(text)
-
-
 def validate_json(r):
     count = 0
     for p in _iter_files(ROOT, "*.json"):
+        # ZGW-0085/#15: tsconfig*.json are JSONC toolchain configuration (not
+        # foundation data); out of scope. node_modules is already excluded.
+        if p.name.startswith("tsconfig"):
+            continue
         try:
-            _parse_json_or_jsonc(p.read_text(encoding="utf-8"), p.name)
+            json.loads(p.read_text(encoding="utf-8"))
             count += 1
         except Exception as e:
             r.error(f"invalid JSON {p.relative_to(ROOT)}: {e}")

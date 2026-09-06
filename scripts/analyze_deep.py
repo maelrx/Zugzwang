@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import hashlib
 import json
 import sys
@@ -40,7 +41,7 @@ def already_evaluated(services: object, run_id: str, depth: int) -> bool:
 
     from zugzwang_runtime.persistence.repositories import EvaluationRunRepository
 
-    engine: Any = getattr(services, "database_engine")
+    engine: Any = services.database_engine
     repo = EvaluationRunRepository(engine)
     rows: Any = repo.for_run(run_id)
     for row in rows:
@@ -75,6 +76,7 @@ async def analyze_one(
 ) -> dict[str, object]:
     from zgw_eval_stockfish.evaluator import StockfishEvaluator
     from zgw_eval_stockfish.uci import UciEngineClient
+
     from zugzwang_runtime.application.evaluation import EvaluateRunService
     from zugzwang_runtime.persistence.repositories import MetricObservationRepository
 
@@ -102,10 +104,8 @@ async def analyze_one(
         cas=services.cas,  # type: ignore[attr-defined]
     )
     summary = await service.evaluate(run_id, evaluator, evaluator_id=EVALUATOR_ID)
-    try:
+    with contextlib.suppress(Exception):
         await engine.quit()
-    except Exception:
-        pass
     return summary.model_dump() if hasattr(summary, "model_dump") else dict(summary)
 
 
@@ -167,7 +167,7 @@ def main() -> int:
             )
             obs = summary.get("observations", summary.get("total_observations", "?"))
             print(f"done {run_id}: observations={obs}")
-        except Exception as exc:  # noqa: BLE001 — report and continue with next run
+        except Exception as exc:
             failed += 1
             print(f"FAILED {run_id}: {exc}", file=sys.stderr)
     return 1 if failed else 0

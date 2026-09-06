@@ -1,0 +1,207 @@
+{
+  "description": "50 perguntas naturais em pt-BR sobre o PRD CognitiveBoard com ground truth manual (subseção que responde). Herdado do benchmark de retrieval executado em 2026-09-06 (retrieval-bench-recovered; metodologia e resultados no README do tool).",
+  "source_document": "Zugzwang_PRD_CognitiveBoard_v0.1.md",
+  "ground_truth_granularity": "level-2 heading (a subseção; qualquer parte dela conta como acerto)",
+  "questions": [
+    {
+      "q": "Como o documento classifica afirmações entre BASELINE, PROPOSTA e HIPÓTESE?",
+      "gt_heading": "1.2. Classificação das afirmações"
+    },
+    {
+      "q": "Quem é o responsável pela decisão de produto e qual é o baseline do documento?",
+      "gt_heading": "1.1. Identidade"
+    },
+    {
+      "q": "Quais são as decisões executivas propostas para o primeiro corte?",
+      "gt_heading": "1.4. Decisões executivas propostas"
+    },
+    {
+      "q": "Qual é a missão do projeto Zugzwang?",
+      "gt_heading": "2.2. Missão"
+    },
+    {
+      "q": "Qual o job-to-be-done do curador de skills?",
+      "gt_heading": "2.4. Usuários e jobs-to-be-done"
+    },
+    {
+      "q": "O que o primeiro ciclo NÃO implementa?",
+      "gt_heading": "2.6. Não objetivos do primeiro ciclo"
+    },
+    {
+      "q": "Qual migration introduziu auditoria de assistência?",
+      "gt_heading": "3.4. Estado persistido atual"
+    },
+    {
+      "q": "O pacote chess pode importar o runtime?",
+      "gt_heading": "3.5. Achados que alteram o desenho"
+    },
+    {
+      "q": "O que é o invariante INV-04?",
+      "gt_heading": "4.2. Invariantes absolutos"
+    },
+    {
+      "q": "Quais são as hipóteses centrais HY-01 a HY-06?",
+      "gt_heading": "5.1. Hipóteses centrais"
+    },
+    {
+      "q": "Quais componentes são propostos e em qual pacote cada um fica?",
+      "gt_heading": "6.2. Componentes e responsabilidades"
+    },
+    {
+      "q": "A fachada CognitiveBoard pode virar um segundo coordinator?",
+      "gt_heading": "6.5. A facade não deve virar um segundo coordinator"
+    },
+    {
+      "q": "O que é state_key_v2 e position_key_v2?",
+      "gt_heading": "7.2. Chaves com semânticas distintas"
+    },
+    {
+      "q": "Como funciona a canonicalização do estado?",
+      "gt_heading": "7.4. Canonicalização"
+    },
+    {
+      "q": "O que são as camadas L0-S, L0-L, L0-R e L0-D?",
+      "gt_heading": "8.1. Camadas de informação"
+    },
+    {
+      "q": "Quais os campos do PositionPacket?",
+      "gt_heading": "8.2. `PositionPacket` proposto"
+    },
+    {
+      "q": "Como funciona a cravada absoluta (absolute_pin)?",
+      "gt_heading": "8.4. Semântica das relações"
+    },
+    {
+      "q": "O que é o PositionDelta e o que ele promete reconstruir?",
+      "gt_heading": "8.6. `PositionDelta`"
+    },
+    {
+      "q": "Como a fronteira é calculada a partir de ações não expandidas?",
+      "gt_heading": "9.2. Fronteira calculada"
+    },
+    {
+      "q": "Quais tools o CognitiveBoard expõe ao modelo?",
+      "gt_heading": "11.1. Superfície inicial"
+    },
+    {
+      "q": "O que faz a tool board_expand?",
+      "gt_heading": "11.6. `board_expand`"
+    },
+    {
+      "q": "Como funciona a compactação de contexto?",
+      "gt_heading": "12.5. Compactação de contexto"
+    },
+    {
+      "q": "Como funciona o ledger multidimensional de orçamento?",
+      "gt_heading": "13.1. Ledger multidimensional"
+    },
+    {
+      "q": "Quais são os critérios de parada da investigação?",
+      "gt_heading": "13.5. Critérios de parada"
+    },
+    {
+      "q": "Quais os presets iniciais de orçamento?",
+      "gt_heading": "13.6. Presets iniciais, todos metas de configuração"
+    },
+    {
+      "q": "Como funciona o protocolo CAS + SQLite?",
+      "gt_heading": "14.2. Protocolo CAS + SQLite"
+    },
+    {
+      "q": "Qual a política de repetição (retry) de erros?",
+      "gt_heading": "15.2. Política de repetição de erros"
+    },
+    {
+      "q": "Qual o contrato do MemoryItem?",
+      "gt_heading": "16.2. Contrato de `MemoryItem`"
+    },
+    {
+      "q": "Quando considerar BM25, embeddings e banco vetorial?",
+      "gt_heading": "17.6. Quando considerar BM25, embeddings e banco vetorial"
+    },
+    {
+      "q": "Quais métricas de retrieval o documento define?",
+      "gt_heading": "17.7. Métricas de retrieval"
+    },
+    {
+      "q": "Como funciona o firewall semântico e de acesso?",
+      "gt_heading": "19.2. Firewall semântico e de acesso"
+    },
+    {
+      "q": "Qual a configuração operacional recomendada do SQLite?",
+      "gt_heading": "25.1. Configuração operacional"
+    },
+    {
+      "q": "Quando migrar para PostgreSQL?",
+      "gt_heading": "25.3. Quando migrar para PostgreSQL"
+    },
+    {
+      "q": "O que é o DecisionContext?",
+      "gt_heading": "26.1. `DecisionContext`"
+    },
+    {
+      "q": "Como fazer backup consistente?",
+      "gt_heading": "24.3. Backup consistente"
+    },
+    {
+      "q": "Qual a política de retenção de raw wire?",
+      "gt_heading": "24.2. Retenção de raw wire"
+    },
+    {
+      "q": "Quais os preflight obrigatórios?",
+      "gt_heading": "27.4. Preflight obrigatório"
+    },
+    {
+      "q": "Quais são os principais ativos protegidos e ameaças?",
+      "gt_heading": "30.2. Principais ameaças"
+    },
+    {
+      "q": "Quais eventos de observabilidade são propostos?",
+      "gt_heading": "31.1. Eventos propostos"
+    },
+    {
+      "q": "Quais as metas iniciais de microbenchmark?",
+      "gt_heading": "32.2. Metas iniciais de microbenchmark"
+    },
+    {
+      "q": "Quais são as dimensões de custo do modelo?",
+      "gt_heading": "33.1. Dimensões de custo"
+    },
+    {
+      "q": "Como funciona a ablação em estágios?",
+      "gt_heading": "34.3. Ablação em estágios"
+    },
+    {
+      "q": "Quais as metas de cobertura de testes?",
+      "gt_heading": "35.2. Metas de cobertura"
+    },
+    {
+      "q": "O que é a work order CB-WO-09?",
+      "gt_heading": "38.10. CB-WO-09: memória condicionada"
+    },
+    {
+      "q": "O que decide a ADR-CB-013?",
+      "gt_heading": "ADR-CB-013. Retrieval elegível antes de ranking"
+    },
+    {
+      "q": "Qual ADR trata da idempotência local forte?",
+      "gt_heading": "ADR-CB-010. Idempotência local forte, sem prometer exactly-once externo"
+    },
+    {
+      "q": "O que é o schema do comando canônico?",
+      "gt_heading": "42.4. Schema do comando canônico"
+    },
+    {
+      "q": "Como funciona o envelope de resultados e erros?",
+      "gt_heading": "42.6. Envelope dos resultados e erros"
+    },
+    {
+      "q": "O que acontece se falhar depois do commit e antes da entrega do tool result?",
+      "gt_heading": "44.3. Falha depois do commit e antes da entrega do tool result"
+    },
+    {
+      "q": "Onde está o glossário operacional?",
+      "gt_heading": "48.4. Glossário operacional"
+    }
+  ]
+}

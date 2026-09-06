@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 from zugzwang_core.domain.assistance import HClass, KClass
-from zugzwang_core.domain.errors import CapabilityMissingError, PluginError
+from zugzwang_core.domain.errors import CapabilityMissingError, PersistenceError, PluginError
 from zugzwang_core.domain.manifests import (
     ResolvedCondition,
     ResolvedManifest,
@@ -307,10 +307,10 @@ class DoctorService:
     def _sqlite_check() -> DoctorCheck:
         import sqlite3
 
-        from ..persistence.sqlite_policy import admitted, wal_reason
+        from ..persistence.sqlite_policy import wal_reason, wal_safe
 
         version_info = tuple(sqlite3.sqlite_version_info)
-        ok = admitted(version_info)
+        ok = wal_safe(version_info)
         return DoctorCheck(
             check="sqlite",
             status="ok" if ok else "error",
@@ -378,6 +378,11 @@ class DoctorService:
                         else "no orphaned CAS objects"
                     ),
                 )
+            )
+        except PersistenceError as exc:
+            # Fail-closed policy rejection is a hard condition, not a skip.
+            checks.append(
+                DoctorCheck(check="db", status="error", message=f"storage unavailable: {exc}")
             )
         except Exception as exc:
             checks.append(

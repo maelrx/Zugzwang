@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import sys
 from pathlib import Path
 from typing import Any, cast
 
@@ -64,6 +65,12 @@ class DurableRunServices:
         self._workspace = workspace
         self._registry = registry
         workspace.ensure_layout()
+        if workspace.wal_policy == "ephemeral":
+            print(
+                "aviso: workspace NAO-DURAVEL (wal_policy=ephemeral) — "
+                "continuidade apos crash/falta de energia nao garantida",
+                file=sys.stderr,
+            )
         self._database = Database(workspace.data_dir / "state.db", wal_policy=workspace.wal_policy)
         engine = self._database.open()
         self._schema = SchemaManager(engine)

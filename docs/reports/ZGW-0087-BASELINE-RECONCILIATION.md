@@ -66,12 +66,17 @@ Nova `persistence/sqlite_policy.py` (policy **v2**), única fonte de decisão, u
   valida mecânica de persistência/lifecycle, não segurança de WAL (§25.1).
 - **Perfil durable** (`synchronous=FULL`/fsync ensaiado): **não implementado** —
   ratificação é G-CB-04 (§48.3). Nenhum gate é ratificado nesta ordem.
-- Doctor reporta a decisão com a política na mensagem; acordo doctor/bootstrap
-  testado (`tests/unit/test_sqlite_policy.py`, 22 testes).
+- Doctor reporta a decisão com a política na mensagem; a rejeição de política no
+  storage check do doctor é **error** (não warn) — fail-closed visível; a fila durable
+  divulga em stderr quando roda com `ephemeral` (nunca silencioso).
+- Acordo doctor/bootstrap testado por versão simulada (monkeypatch do SQLite ligado),
+  determinístico em qualquer máquina (TEST_STRATEGY §4); suíte em
+  `tests/integration/test_sqlite_policy.py` (marker `integration`, I/O de arquivo).
 
 Ambiente desta máquina: o venv (CPython 3.14.7 via uv) linka SQLite **3.53.1** —
-admitida; o SQLite do sistema (3.45.1) seria rejeitado para WAL, ilustrando por que a
-política inspeciona a versão efetivamente ligada ao Python e não a do sistema.
+admitida (mainline pós-fix); o SQLite do sistema (3.45.1) seria rejeitado para WAL,
+ilustrando por que a política inspeciona a versão efetivamente ligada ao Python e não
+a do sistema.
 
 ## 5. Diagnóstico: nomenclatura de término (D2)
 
@@ -110,7 +115,7 @@ estados preservados).
 
 ## 8. Teste de não alteração das strategies
 
-Suíte offline completa verde após o delta (nenhuma strategy tocada): **264 passed,
+Suíte offline completa verde após o delta (nenhuma strategy tocada): **261 passed,
 1 skipped, 6 deselected** (`uv run pytest -m "not e2e"`), incluindo os testes das
 strategies R5/R7, bateria single-agent H1–H5 e os 22 testes novos da política.
 `ruff check .`, `ruff format --check .`, `pyright` e `validate_foundation.py --strict`

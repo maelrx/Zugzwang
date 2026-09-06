@@ -25,26 +25,26 @@ class TestDurableCli:
         assert runner.invoke(app, ["init", ws]).exit_code == 0
         run_result = runner.invoke(app, ["run", MANIFEST, "--workspace", ws, "--output", "json"])
         assert run_result.exit_code == 0, run_result.output
-        payload = json.loads(run_result.output)
+        payload = json.loads(run_result.stdout)
         assert payload["status"] == "COMPLETED"
         run_id = payload["run_id"]
 
         list_result = runner.invoke(app, ["runs", "list", "--workspace", ws, "--output", "json"])
         assert list_result.exit_code == 0
-        runs = json.loads(list_result.output)
+        runs = json.loads(list_result.stdout)
         assert any(r["run_id"] == run_id for r in runs)
 
         show_result = runner.invoke(
             app, ["runs", "show", run_id, "--workspace", ws, "--output", "json"]
         )
         assert show_result.exit_code == 0
-        summary = json.loads(show_result.output)
+        summary = json.loads(show_result.stdout)
         assert summary["status"] == "COMPLETED"
         assert summary["steps_committed"] == 6
 
         db_result = runner.invoke(app, ["db", "status", "--workspace", ws, "--output", "json"])
         assert db_result.exit_code == 0
-        status = json.loads(db_result.output)
+        status = json.loads(db_result.stdout)
         assert status["tables_exist"] is True
 
     def test_run_requires_workspace(self, tmp_path) -> None:

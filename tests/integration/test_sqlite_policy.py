@@ -2,8 +2,10 @@
 
 Doctor and bootstrap must reject vulnerable versions and accept only the
 approved corrected release lines for the WAL-reset bug (ADR-CB-020, RISK-13):
-fix 3.51.3, backports 3.44.6 and 3.50.7. Corrected, vulnerable-intermediate
-and not-yet-approved future versions are all exercised here.
+mainline fix 3.51.3 (and later 3.x), backports 3.44.6 and 3.50.7. Corrected,
+vulnerable-intermediate and not-yet-approved future versions are all exercised
+here through a monkeypatched linked version, so the suite is deterministic on
+any machine (TEST_STRATEGY §4).
 """
 
 import sqlite3
@@ -16,14 +18,16 @@ from zugzwang_runtime.application.services import DoctorCheck, DoctorService
 from zugzwang_runtime.persistence.database import Database
 from zugzwang_runtime.persistence.sqlite_policy import (
     CORRECTED_LINES,
+    MAINLINE_FIX,
+    NEXT_MAJOR,
     POLICY_VERSION,
-    admitted,
     effective_version,
-    parse_version,
     wal_reason,
+    wal_safe,
 )
+from zugzwang_runtime.workspace import Workspace
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize(
@@ -32,6 +36,7 @@ pytestmark = pytest.mark.unit
         # corrected lines (admitted)
         ((3, 51, 3), True),
         ((3, 51, 9), True),
+        ((3, 53, 1), True),
         ((3, 50, 7), True),
         ((3, 50, 11), True),
         ((3, 44, 6), True),
@@ -41,34 +46,27 @@ pytestmark = pytest.mark.unit
         ((3, 45, 1), False),
         ((3, 50, 4), False),
         ((3, 51, 2), False),
-        # mainline releases at or above the fix carry it (admitted)
-        ((3, 52, 0), True),
-        ((3, 53, 1), True),
-        # future major (not yet approved; requires policy update)
+        # unproven future major (rejected until policy update with evidence)
         ((4, 0, 0), False),
         ((5, 99, 0), False),
     ],
 )
 def test_admission_by_corrected_lines(version: tuple[int, ...], expected: bool) -> None:
-    assert admitted(version) is expected
+    assert wal_safe(version) is expected
 
 
 def test_policy_is_versioned_and_lines_sorted() -> None:
-    assert POLICY_VERSION >= 1
+    assert POLICY_VERSION >= 2
     assert tuple(sorted(CORRECTED_LINES)) == CORRECTED_LINES
+    assert MAINLINE_FIX < NEXT_MAJOR
 
 
-def test_parse_version_accepts_dotted_and_rejects_garbage() -> None:
-    assert parse_version("3.45.1") == (3, 45, 1)
-    with pytest.raises(ValueError):
-        parse_version("three")
-
-
-def test_wal_reason_names_policy_and_lines() -> None:
+def test_wal_reason_names_policy_lines_and_remediation() -> None:
     reason = wal_reason((3, 45, 1))
     assert "3.45.1" in reason
     assert "3.51.3" in reason and "3.44.6" in reason and "3.50.7" in reason
     assert f"policy v{POLICY_VERSION}" in reason
+    assert "ZUGZWANG_WAL_POLICY" in reason and "no external work accepted" in reason
     assert "approved corrected line" in wal_reason((3, 51, 3))
 
 
@@ -79,17 +77,21 @@ def test_doctor_and_bootstrap_share_the_same_decision(
     """TEST-081 agreement: doctor check and Database gate use one policy."""
     monkeypatch.setattr(sqlite3, "sqlite_version_info", version)
     assert effective_version() == version
-    expected_admitted = admitted(effective_version())
-    assert expected_admitted == admitted(version)
+    expected = wal_safe(version)
 
     database = Database(tmp_path / "state.db")
-    if expected_admitted:
+    if expected:
         database.open().dispose()
         database.close()
     else:
         with pytest.raises(PersistenceError) as exc:
             database.open()
         assert "3.51.3" in str(exc.value)
+
+    check = DoctorService._sqlite_check()
+    assert isinstance(check, DoctorCheck)
+    assert (check.status == "ok") is expected
+    assert ("NOT in an approved" in check.message) is (not expected)
 
 
 def test_ephemeral_profile_opens_on_vulnerable_sqlite(
@@ -107,22 +109,14 @@ def test_ephemeral_profile_opens_on_vulnerable_sqlite(
     database.close()
 
 
-def test_enforce_on_this_machine_matches_real_policy(tmp_path: Path) -> None:
-    """The real linked SQLite decides: admitted opens WAL, otherwise fail-closed."""
-    database = Database(tmp_path / "state.db")
-    if admitted(effective_version()):
-        engine = database.open()
-        with engine.connect() as connection:
-            journal = connection.exec_driver_sql("PRAGMA journal_mode").scalar()
-        assert journal == "wal"
-        database.close()
-    else:
-        with pytest.raises(PersistenceError):
-            database.open()
-
-
-def test_doctor_check_reports_honest_status() -> None:
-    check = DoctorService._sqlite_check()
-    assert isinstance(check, DoctorCheck)
-    assert check.status == ("ok" if admitted(effective_version()) else "error")
-    assert "3.51.3" in check.message or "approved corrected line" in check.message
+def test_storage_check_reports_error_on_policy_rejection(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A fail-closed policy rejection is an error check, not a warn downgrade."""
+    monkeypatch.setattr(sqlite3, "sqlite_version_info", (3, 45, 1))
+    workspace = Workspace.from_root(tmp_path, wal_policy="enforce")
+    checks = DoctorService._storage_checks(workspace)
+    db_checks = [c for c in checks if c.check == "db"]
+    assert db_checks, "storage check must always report"
+    assert db_checks[0].status == "error"
+    assert "NOT in an approved" in db_checks[0].message

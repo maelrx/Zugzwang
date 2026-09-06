@@ -18,7 +18,7 @@ from sqlalchemy.engine import Engine
 
 from zugzwang_core.domain.errors import PersistenceError
 
-from .sqlite_policy import WalPolicy, admitted, effective_version, wal_reason
+from .sqlite_policy import WalPolicy, effective_version, wal_reason, wal_safe
 
 
 class Database:
@@ -78,7 +78,7 @@ class Database:
         if self._wal_policy != "enforce" or str(self._path) == ":memory:":
             return
         version = effective_version()
-        if not admitted(version):
+        if not wal_safe(version):
             raise PersistenceError(
                 wal_reason(version),
                 technical_context=str(self._path),

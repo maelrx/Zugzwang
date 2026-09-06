@@ -15,7 +15,7 @@ stays unknown instead of an invented zero.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from zugzwang_core.ports.strategy import (
     CallRecord,
@@ -76,6 +76,10 @@ class CognitiveNavigationStrategy:
         if context.backend is None:
             raise ValueError("chess.cognitive_navigation requires DecisionContext.backend")
         journal = session.journal
+        raw_config: Any = context.config.get("cognitive") or {}
+        config = cast("dict[str, Any]", raw_config) if isinstance(raw_config, dict) else {}
+        section_builder = self._section_builder(session, config)
+        feedback = self._round_feedback(session, config)
         loop = CognitiveLoop(
             decision_id=session.decision_id,
             journal=journal,
@@ -87,9 +91,119 @@ class CognitiveNavigationStrategy:
             interaction_mode=session.interaction_mode,
             shared_budget=session.budget,
             model_reservation_id=session.model_reservation_id,
+            context_sections=section_builder,
+            round_feedback=feedback,
         )
         result = await loop.run()
         return self._trace_from(result, context)
+
+    # -- context wiring (§16/§18/§10: what the model actually receives) ---------
+
+    def _decision_bindings(self, session: Any) -> dict[str, Any]:
+        from sqlalchemy import text as _sql_text
+
+        with session.journal.connect() as conn:
+            row = conn.execute(
+                _sql_text(
+                    "SELECT memory_snapshot_id, skill_set_id FROM cb_decisions "
+                    "WHERE decision_id = :id"
+                ),
+                {"id": session.decision_id},
+            ).fetchone()
+        return {
+            "memory_snapshot_id": row[0] if row else None,
+            "skill_set_id": row[1] if row else None,
+        }
+
+    def _section_builder(self, session: Any, config: dict[str, Any]):
+        """Build the memory/skills context section from the REAL stores.
+
+        Returns None when neither store is bound — memory OFF is observably
+        absent from the request, never an empty placeholder (§16; HY-04).
+        """
+        memory_store = getattr(session, "memory_store", None)
+        skill_registry = getattr(session, "skill_registry", None)
+        bindings = self._decision_bindings(session)
+        snapshot_id = bindings.get("memory_snapshot_id")
+        skill_set_id = bindings.get("skill_set_id")
+        skill_id = config.get("skill_id")
+
+        def build(ordinal: int) -> str:
+            sections: list[str] = []
+            if memory_store is not None and snapshot_id:
+                recalled = memory_store.recall(
+                    snapshot_id=str(snapshot_id),
+                    scope_kind="episode",
+                    scope_owner_id="",
+                    perspective="neutral",
+                )
+                lines = [
+                    f"- {item.kind}/{item.epistemic_status}: {item.logical_memory_id} "
+                    f"r{item.revision} [{item.eligibility_reason}]"
+                    for item in recalled.items
+                ]
+                if lines:
+                    sections.append(
+                        "ELIGIBLE MEMORY (snapshot "
+                        f"{snapshot_id}, frozen for this decision):\n" + "\n".join(lines)
+                    )
+            if skill_registry is not None and skill_set_id and skill_id:
+                activation = skill_registry.activate(
+                    skill_set_id=str(skill_set_id),
+                    skill_id=str(skill_id),
+                    requested=tuple(config.get("skill_capabilities", ())),
+                )
+                sections.append(
+                    f"ACTIVE SKILL {activation.skill_id} v{activation.version} "
+                    f"(set {skill_set_id}, frozen): "
+                    f"capabilities={list(activation.capabilities)}"
+                )
+            return "\n\n".join(sections)
+
+        if (memory_store is None or not snapshot_id) and not (
+            skill_registry is not None and skill_set_id and skill_id
+        ):
+            return None
+        return build
+
+    def _round_feedback(self, session: Any, config: dict[str, Any]):
+        """Revise the episode's plan from the REAL tool results of a round.
+
+        The watched premise is the CB default: when a committed expansion
+        reaches a terminal child, the premise ``position_terminal`` flips to
+        true. A changed premise escalates the plan to needs_review via the
+        plan store's own delta logic — never a silent continuation (§10.3).
+        """
+        plan_store = getattr(session, "plan_store", None)
+        plan_id = config.get("plan_id")
+        if plan_store is None or not plan_id:
+            return None
+
+        def feedback(ordinal: int, executed: list[dict[str, Any]]) -> None:
+            view = plan_store.view_plan(str(plan_id))
+            premises = dict(view.premises)
+            changed = False
+            for entry in executed:
+                result: Any = entry.get("result")
+                if not isinstance(result, dict):
+                    continue
+                raw_rows: Any = cast("dict[str, Any]", result).get("results") or []
+                items: "list[Any]" = (
+                    cast("list[Any]", raw_rows) if isinstance(raw_rows, list) else []
+                )
+                for item in list(items):
+                    row_data: Any = dict(cast(Any, item)) if isinstance(item, dict) else {}
+                    terminal: Any = row_data.get("terminal")
+                    if terminal is True:
+                        if premises.get("position_terminal") != "true":
+                            premises["position_terminal"] = "true"
+                            changed = True
+            if changed:
+                plan_store.revise_plan(
+                    plan_id=str(plan_id), status="needs_review", premises=premises
+                )
+
+        return feedback
 
     def _trace_from(self, result: LoopResult, context: DecisionContext) -> DecisionTrace:
         verdicts = [
@@ -124,9 +238,12 @@ class CognitiveNavigationStrategy:
         )
 
     def _call_records(self, records: list[ModelCallRecord]) -> list[CallRecord]:
+        from zugzwang_core.domain.money import TokenUsage
+
         out: list[CallRecord] = []
         for call in records:
-            usage = call.usage
+            # Unavailable usage stays UNKNOWN, never zero-invented (§22.2).
+            usage = call.usage if call.usage is not None else TokenUsage()
             out.append(
                 CallRecord(
                     attempt_id=call.attempt_id,

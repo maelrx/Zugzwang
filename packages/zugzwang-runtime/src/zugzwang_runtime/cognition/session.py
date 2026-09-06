@@ -159,6 +159,9 @@ class DecisionSession:
     _factory: SessionComponents | None = None
     _interaction_mode: str = "native_tools"
     _model_reservation_id: str | None = None
+    memory_store: Any | None = None
+    skill_registry: Any | None = None
+    plan_store: Any | None = None
 
     def __init__(
         self,

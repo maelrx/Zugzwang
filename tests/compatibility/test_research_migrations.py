@@ -319,9 +319,12 @@ def test_migration_0009_freezes_bindings_and_round_trips(tmp_path: Path) -> None
     # survive and the binding row is intact.
     assert schema.current_revision() == "0009"
     with engine.connect() as conn:
-        assert conn.execute(
-            sa.text("SELECT memory_snapshot_id FROM cb_decisions WHERE decision_id = 'dec-9'")
-        ).fetchone()[0] == "snap-9"
+        assert (
+            conn.execute(
+                sa.text("SELECT memory_snapshot_id FROM cb_decisions WHERE decision_id = 'dec-9'")
+            ).fetchone()[0]
+            == "snap-9"
+        )
         tables = set(inspect(engine).get_table_names())
         assert "cb_skill_versions" in tables
 
@@ -331,9 +334,7 @@ def test_migration_0009_freezes_bindings_and_round_trips(tmp_path: Path) -> None
     SchemaManager(clean_engine).upgrade()
     clean_config = Config()
     clean_config.set_main_option("script_location", str(migration_dir))
-    clean_config.set_main_option(
-        "sqlalchemy.url", f"sqlite:///{clean.path}"
-    )
+    clean_config.set_main_option("sqlalchemy.url", f"sqlite:///{clean.path}")
     command.downgrade(clean_config, "0002")
     SchemaManager(clean_engine).upgrade()
     assert SchemaManager(clean_engine).current_revision() == "0010"

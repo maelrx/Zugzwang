@@ -11,6 +11,8 @@ Revises: 0008
 
 from __future__ import annotations
 
+from typing import Any
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -141,8 +143,8 @@ _DROP_ORDER = [
 ]
 
 
-def _columns_exist(bind, table: str, column: str) -> bool:
-    rows = bind.execute(
+def _columns_exist(bind: Any, table: str, column: str) -> bool:
+    rows: Any = bind.execute(
         sa.text("SELECT 1 FROM pragma_table_info(:table) WHERE name = :column"),
         {"table": table, "column": column},
     ).fetchall()

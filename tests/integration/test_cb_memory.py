@@ -340,8 +340,9 @@ def test_eligibility_matrix_no_early_return_for_test_partition(store) -> None:
     and partition isolation is symmetric (test snapshot admits only test)."""
     memory, _ = store
 
-    def seed(memory_id: str, *, validity: str, epistemic: str, perspective: str,
-             partition: str) -> None:
+    def seed(
+        memory_id: str, *, validity: str, epistemic: str, perspective: str, partition: str
+    ) -> None:
         memory.write_note(
             memory_id=f"{memory_id}-r1",
             logical_memory_id=memory_id,
@@ -360,19 +361,49 @@ def test_eligibility_matrix_no_early_return_for_test_partition(store) -> None:
         )
 
     # Items inside a TEST snapshot.
-    seed("mem-t-ok", validity="active", epistemic="formal_fact",
-         perspective="neutral", partition="test")
-    seed("mem-t-quar", validity="quarantined", epistemic="formal_fact",
-         perspective="neutral", partition="test")
-    seed("mem-t-contra", validity="contradicted", epistemic="formal_fact",
-         perspective="neutral", partition="test")
-    seed("mem-t-assess", validity="active", epistemic="model_assessment",
-         perspective="neutral", partition="test")
-    seed("mem-t-white", validity="active", epistemic="formal_fact",
-         perspective="white", partition="test")
+    seed(
+        "mem-t-ok",
+        validity="active",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-quar",
+        validity="quarantined",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-contra",
+        validity="contradicted",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-assess",
+        validity="active",
+        epistemic="model_assessment",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-white",
+        validity="active",
+        epistemic="formal_fact",
+        perspective="white",
+        partition="test",
+    )
     # A development note that must never surface inside the test snapshot.
-    seed("mem-dev-ok", validity="active", epistemic="formal_fact",
-         perspective="neutral", partition="development")
+    seed(
+        "mem-dev-ok",
+        validity="active",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="development",
+    )
 
     memory.open_snapshot(
         snapshot_id="snap-t-matrix",
@@ -382,12 +413,9 @@ def test_eligibility_matrix_no_early_return_for_test_partition(store) -> None:
         policy_hash="p" * 64,
     )
     for ordinal, mid in enumerate(
-        ("mem-t-ok", "mem-t-quar", "mem-t-contra", "mem-t-assess",
-         "mem-t-white", "mem-dev-ok")
+        ("mem-t-ok", "mem-t-quar", "mem-t-contra", "mem-t-assess", "mem-t-white", "mem-dev-ok")
     ):
-        memory.add_member(
-            snapshot_id="snap-t-matrix", memory_id=f"{mid}-r1", ordinal=ordinal
-        )
+        memory.add_member(snapshot_id="snap-t-matrix", memory_id=f"{mid}-r1", ordinal=ordinal)
 
     result = memory.recall(
         snapshot_id="snap-t-matrix",
@@ -402,9 +430,9 @@ def test_eligibility_matrix_no_early_return_for_test_partition(store) -> None:
     assert "mem-dev-ok" not in surfaced, "dev note never surfaces in a test snapshot"
     # Assessments remain EVALUATIONS even in the test partition (INV-07).
     assert "mem-t-assess" not in surfaced
-    assert any(
-        item.logical_memory_id == "mem-t-assess" for item in result.evaluative
-    ), "test-partition assessment lands in the evaluative section"
+    assert any(item.logical_memory_id == "mem-t-assess" for item in result.evaluative), (
+        "test-partition assessment lands in the evaluative section"
+    )
     # Perspective gate on a positioned query inside test.
     white = memory.recall(
         snapshot_id="snap-t-matrix",
@@ -458,9 +486,7 @@ def test_restore_preserves_quarantine_and_refuses_unknown_origin(store) -> None:
         policy_hash="p" * 64,
     )
     memory.add_member(snapshot_id="snap-q", memory_id="mem-q-r1", ordinal=0)
-    result = memory.recall(
-        snapshot_id="snap-q", scope_kind="episode", scope_owner_id="ep-1"
-    )
+    result = memory.recall(snapshot_id="snap-q", scope_kind="episode", scope_owner_id="ep-1")
     assert all(item.logical_memory_id != "mem-q" for item in result.items), (
         "restoration must not reactivate a quarantined note"
     )

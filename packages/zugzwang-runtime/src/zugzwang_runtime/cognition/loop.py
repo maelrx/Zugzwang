@@ -177,6 +177,8 @@ class CognitiveLoop:
         call_context: CallContext | None = None,
         system_prompt: str | None = None,
         model_reservation_id: str | None = None,
+        context_sections: Callable[[int], str] | None = None,
+        round_feedback: Callable[[int, list[dict[str, Any]]], None] | None = None,
     ) -> None:
         if max_rounds < 1:
             raise ValueError("max_rounds must be >= 1")
@@ -199,6 +201,8 @@ class CognitiveLoop:
         self._shared_budget = shared_budget
         self._call_context = call_context
         self._model_reservation_id = model_reservation_id
+        self._context_sections = context_sections
+        self._round_feedback = round_feedback
 
     # -- productive entry point -------------------------------------------------
 
@@ -316,6 +320,11 @@ class CognitiveLoop:
                 self._journal.complete_round(round_id, self.decision_id, "FAILED")
                 return self._fail_closed(result, round_id, protocol_errors, trace)
             self._journal.complete_round(round_id, self.decision_id, "TOOLS_COMMITTED")
+            if self._round_feedback is not None:
+                executed = [
+                    entry for entry in result.transcript if entry.get("round_ordinal") == ordinal
+                ]
+                self._round_feedback(ordinal, executed)
 
         # Round budget exhausted without finalization: fail closed, never fall
         # back to a silent legal move (TEST-030).
@@ -367,7 +376,7 @@ class CognitiveLoop:
         messages: list[Message] = [
             Message(
                 role=MessageRole.SYSTEM,
-                parts=(TextPart(text=self._default_system_prompt()),),
+                parts=(TextPart(text=self._system_prompt_for(ordinal)),),
             )
         ]
         for entry in transcript:
@@ -418,6 +427,13 @@ class CognitiveLoop:
                 "interaction_mode": self._interaction_mode,
             },
         )
+
+    def _system_prompt_for(self, ordinal: int) -> str:
+        base = self._default_system_prompt()
+        if self._context_sections is None:
+            return base
+        extra = self._context_sections(ordinal)
+        return f"{base}\n\n{extra}" if extra else base
 
     def _default_system_prompt(self) -> str:
         if self._interaction_mode == "native_tools":

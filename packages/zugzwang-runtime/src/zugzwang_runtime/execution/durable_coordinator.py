@@ -267,6 +267,7 @@ class DurableRunCoordinator:
         steps: StepRepository,
         checkpoints: CheckpointRepository,
         rate_limiter: RateLimiter,
+        cognitive_session_factory: Any | None = None,
     ) -> None:
         self._registry = registry
         self._backend = backend
@@ -278,6 +279,7 @@ class DurableRunCoordinator:
         self._steps = steps
         self._checkpoints = checkpoints
         self._rate_limiter = rate_limiter
+        self._cognitive_session_factory = cognitive_session_factory
         self._run_assistance: dict[str, tuple[HClass, KClass]] = {}
         self._run_assistance_violated: dict[str, bool] = {}
 
@@ -827,13 +829,13 @@ class DurableRunCoordinator:
                     max_transition_queries=int(search_config.get("max_transition_queries", 64)),
                     session_id=str(new_id("ses")),
                 )
-                initial_items = (
+                initial_items: tuple[Any, ...] = (
                     persistent_memory_items
                     if strategy.descriptor.declared_regime == "R7"
                     and _search_memory_mode(condition) == "persistent"
                     else ()
                 )
-                search_memory = SearchMemoryFabric(
+                search_memory: Any = SearchMemoryFabric(
                     search_workspace,
                     initial_items=initial_items,
                 )
@@ -887,6 +889,16 @@ class DurableRunCoordinator:
             illegal_retries = 0
             decision_attempt_index = 0
             max_strategy_calls = max(1, strategy.descriptor.max_model_calls)
+            decision_session: Any = None
+            if getattr(strategy, "requires_decision_session", False):
+                decision_session = self._open_cognitive_session(
+                    run_id=run_id,
+                    episode_id=episode_id,
+                    step_id=step_id,
+                    decision_ordinal=ordinal,
+                    state=state,
+                    strategy=strategy,
+                )
             while True:
                 decision_context = DecisionContext(
                     run_id=run_id,
@@ -904,6 +916,7 @@ class DurableRunCoordinator:
                     legality_gateway=bound_gateway,
                     search_workspace=search_workspace,
                     search_memory=search_memory,
+                    decision_session=decision_session,
                 )
                 async with ledger_lock:
                     try:
@@ -1933,6 +1946,36 @@ class DurableRunCoordinator:
             return StandardChessEnvironment()
         raise ValueError(f"no environment for task {condition.task.plugin!r}")
 
+    def _open_cognitive_session(
+        self,
+        *,
+        run_id: str,
+        episode_id: str,
+        step_id: str,
+        decision_ordinal: int,
+        state: Any,
+        strategy: DecisionStrategy,
+    ) -> Any:
+        """Open one CognitiveBoard decision session for a step (§26.1).
+
+        The composition root injects the factory; the coordinator itself
+        stays free of SQL/CAS wiring. Without a factory, a cognitive strategy
+        cannot run — an explicit error instead of a silent degraded path.
+        """
+        if self._cognitive_session_factory is None:
+            raise ValueError(
+                f"strategy {getattr(strategy, 'strategy_id', '?')!r} requires a "
+                "cognitive session factory (DurableRunServices provides one)"
+            )
+        return self._cognitive_session_factory(
+            run_id=run_id,
+            episode_id=episode_id,
+            step_id=step_id,
+            decision_ordinal=decision_ordinal,
+            state=state,
+            strategy=strategy,
+        )
+
     def _strategy_for(self, condition: ResolvedCondition) -> DecisionStrategy:
         for player in condition.players.values():
             if player.model is not None:
@@ -1971,6 +2014,10 @@ class DurableRunCoordinator:
                         initial_candidates=int(config.get("initial_candidates", 4)),
                         judges=int(config.get("judges", 3)),
                     )
+                if player.model.strategy == "chess.cognitive_navigation":
+                    from ..cognition.navigation import CognitiveNavigationStrategy
+
+                    return CognitiveNavigationStrategy()
                 if player.model.strategy == "chess.multi_agent_review":
                     from zugzwang_chess.strategies.multi_agent_review import (
                         MultiAgentReviewStrategy,

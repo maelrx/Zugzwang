@@ -10,6 +10,7 @@ the journal tables directly.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -154,6 +155,7 @@ class DecisionSession:
     """One decision's authorized surface: journal + perception + broker (§26.1)."""
 
     _factory: _SessionComponents | None = None
+    _interaction_mode: str = "native_tools"
 
     def __init__(
         self,
@@ -187,6 +189,23 @@ class DecisionSession:
     @property
     def root_node_id(self) -> str | None:
         return self._broker.root_node_id
+
+    @property
+    def interaction_mode(self) -> str:
+        """native_tools or json_commands, frozen at decision open (§12.1)."""
+        return self._interaction_mode
+
+    def round_context_artifact_id(self, ordinal: int, request: Any) -> str:
+        """CAS-artifact the EXACT model request of one round (§22.1/FR-020).
+
+        The round's context row points at the canonical request bytes, so the
+        timeline shows what the model actually received — not a summary.
+        """
+        factory = self._factory
+        if factory is None:
+            raise ValueError("session was not opened through DecisionSession.open")
+        payload = canonical_json_bytes({"request": json.loads(request.model_dump_json())})
+        return factory.sink(payload, "application/vnd.zugzwang.model-request+json")
 
     @classmethod
     def open(
@@ -299,13 +318,16 @@ class DecisionSession:
                 created_sequence=sequence,
             )
 
-        round_id = f"{decision_id}:{ROOT_ROUND_ID_SUFFIX}"
+        # Round 0001 is the decision OPENING record (§12.2: journaled before
+        # any tool call). The loop creates every subsequent round with the
+        # EXACT ModelRequest as its context (FR-020/§22.1; cb_rounds context
+        # is immutable by trigger, so it must be submitted at creation).
         round_context_artifact_id = sink(
-            _canonical({"root_state_key": root_state_key, "purpose": "explore"}),
+            _canonical({"root_state_key": root_state_key, "purpose": "open"}),
             "application/json",
         )
         journal.add_round(
-            round_id=round_id,
+            round_id=f"{decision_id}:{ROOT_ROUND_ID_SUFFIX}",
             decision_id=decision_id,
             ordinal=1,
             purpose="explore",
@@ -314,7 +336,7 @@ class DecisionSession:
 
         broker = CognitionToolBroker(
             decision_id=decision_id,
-            round_id=round_id,
+            round_id=f"{decision_id}:{ROOT_ROUND_ID_SUFFIX}",
             round_ordinal=1,
             journal=journal,
             perception=perception,
@@ -330,6 +352,7 @@ class DecisionSession:
             search_session_id=search_session_id,
         )
         session = cls(decision_id=decision_id, broker=broker, journal=journal)
+        session._interaction_mode = interaction_mode
         session._factory = _SessionComponents(
             journal=journal,
             perception=perception,

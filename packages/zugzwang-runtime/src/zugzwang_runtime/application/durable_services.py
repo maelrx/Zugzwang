@@ -115,6 +115,70 @@ class DurableRunServices:
     def workspace(self) -> Workspace:
         return self._workspace
 
+    def _cognitive_session_factory(self):
+        """Factory opening one CognitiveBoard decision session per step (§26.1).
+
+        Keeps the coordinator free of SQL/CAS wiring while the productive
+        cognitive path runs through the same durable workspace: the journal,
+        the CAS and the perception share this run's storage (ZGW-0101).
+        """
+        from zugzwang_chess.cognition import ChessPerception
+        from zugzwang_chess.environment.standard import StandardChessEnvironment
+        from zugzwang_core.domain.canonical import hash_canonical
+
+        from ..cognition.session import DecisionSession
+        from ..persistence.cognition import CognitionJournal
+
+        def factory(
+            *,
+            run_id: str,
+            episode_id: str,
+            step_id: str,
+            decision_ordinal: int,
+            state: Any,
+            strategy: Any,
+        ):
+            decision_id = f"dec-{step_id}-{decision_ordinal}"[:128]
+            search_session_id = f"ses_{decision_id}"[:32]
+            root_node_id = f"node_{decision_id}"[:128]
+            journal = CognitionJournal(self._database)
+            policy_hash = hash_canonical(
+                {
+                    "rules": "standard/v1",
+                    "perception": "chess-perception/v0.1",
+                    "strategy": strategy.strategy_id,
+                }
+            )
+            journal.ensure_search_session(
+                search_session_id=search_session_id,
+                run_id=run_id,
+                episode_id=episode_id,
+                step_id=step_id,
+                root_node_id=root_node_id,
+            )
+            return DecisionSession.open(
+                decision_id=decision_id,
+                step_id=step_id,
+                decision_ordinal=decision_ordinal,
+                search_session_id=search_session_id,
+                strategy_id=strategy.strategy_id,
+                strategy_version=strategy.strategy_version,
+                interaction_mode="native_tools",
+                policy_hash=policy_hash,
+                config={},
+                states={root_node_id: state},
+                journal=journal,
+                perception=ChessPerception(
+                    environment=StandardChessEnvironment(),
+                    rules_version="standard/v1",
+                    policy_hash=policy_hash,
+                ),
+                cas=self._cas,
+                engine=self._database.engine(),
+            )
+
+        return factory
+
     def _build_writer(self) -> PersistenceWriter:
         from ..persistence.repositories import (
             ArtifactRepository,
@@ -158,6 +222,7 @@ class DurableRunServices:
             steps=self._steps,
             checkpoints=self._checkpoints,
             rate_limiter=rate_limiter,
+            cognitive_session_factory=self._cognitive_session_factory(),
         )
 
         if command.condition_index is not None:
@@ -221,6 +286,7 @@ class DurableRunServices:
             steps=self._steps,
             checkpoints=self._checkpoints,
             rate_limiter=RateLimiter(),
+            cognitive_session_factory=self._cognitive_session_factory(),
         )
         await coordinator.resume(run_id, resolved, stop_event)
         await writer.flush()

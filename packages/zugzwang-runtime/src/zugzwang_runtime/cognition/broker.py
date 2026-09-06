@@ -132,6 +132,7 @@ class CognitionToolBroker:
         # onto anchors of the same graph (§9.1: one graph per decision).
         self._node_map: dict[str, str] = {}
         self._packet_query_count = 0
+        self._active_provider_tool_call_id: str | None = None
         bound = self._journal.bound_node_ids(decision_id)
         self._bound_sequence = len(bound)
         self._root_node_id = bound[0] if bound else None
@@ -233,10 +234,23 @@ class CognitionToolBroker:
     # -- public ---------------------------------------------------------------
 
     def execute(
-        self, tool: str, arguments: dict[str, Any], *, idempotency_key: str
+        self,
+        tool: str,
+        arguments: dict[str, Any],
+        *,
+        idempotency_key: str,
+        provider_tool_call_id: str | None = None,
     ) -> ToolEnvelope:
-        """Run one tool through the full authorized path (§11.1, §38.6)."""
+        """Run one tool through the full authorized path (§11.1, §38.6).
+
+        ``provider_tool_call_id`` is the id the MODEL actually issued (native
+        tool call) or the loop's mapped id (JSON command mode). It is stored
+        verbatim as the operation's provider link and echoed in the envelope
+        meta — the original ids are never replaced by synthetic counters
+        (TEST-026; §22.1 "o que o modelo viu antes de selecionar").
+        """
         self._call_count += 1
+        self._active_provider_tool_call_id = provider_tool_call_id
         operation_id = operation_id_v2(self.decision_id, self._round_ordinal, idempotency_key)
 
         if tool not in TOOL_CATALOG:
@@ -275,7 +289,8 @@ class CognitionToolBroker:
                 operation_id=operation_id,
                 decision_id=self.decision_id,
                 round_id=self._round_id,
-                provider_tool_call_id=f"{idempotency_key}:{self._call_count}",
+                provider_tool_call_id=self._active_provider_tool_call_id
+                or f"{idempotency_key}:{self._call_count}",
                 idempotency_key=idempotency_key,
                 tool_name=tool,
                 arguments_hash=hashlib.sha256(raw).hexdigest(),
@@ -462,6 +477,26 @@ class CognitionToolBroker:
     def root_node_id(self) -> str | None:
         """First bound node of the decision (the loop's finalization focus)."""
         return self._root_node_id
+
+    @property
+    def budget(self) -> ToolOperationBudget:
+        """The decision-scoped tool-operation pool."""
+        return self._budget
+
+    def resolve_action(self, node_id: str, action_ref: str) -> str | None:
+        """Resolve an action reference (action_id or UCI) at one node.
+
+        Resolution runs over the COMPLETE kernel legal set (never just the
+        exposed page). Returns the canonical UCI, or None when the reference
+        does not belong to the node's state (TEST-006 direction, FR-003).
+        """
+        state = self._states.get(node_id)
+        if state is None or not action_ref:
+            return None
+        if action_ref in {move.uci for move in self._kernel.legal_actions(state).actions}:
+            return action_ref
+        index = self._full_legal_index(state)
+        return index.get(action_ref)
 
     def _check_scope(self, node_id: str) -> ToolError | None:
         if node_id not in self._journal.bound_node_ids(self.decision_id):
@@ -796,7 +831,8 @@ class CognitionToolBroker:
             decision_id=self.decision_id,
             round_id=self._round_id,
             operation_id=operation_id,
-            tool_call_id=f"{self.decision_id}:{self._call_count}",
+            tool_call_id=self._active_provider_tool_call_id
+            or f"{self.decision_id}:{self._call_count}",
             exposure_sequence=self._exposure_sequence,
             policy_hash=self._policy_hash,
             semantic_hash=semantic_hash,

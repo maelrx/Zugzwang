@@ -237,6 +237,41 @@ class CognitionJournal:
             )
             conn.commit()
 
+    def ensure_search_session(
+        self,
+        *,
+        search_session_id: str,
+        run_id: str,
+        episode_id: str | None,
+        step_id: str | None,
+        root_node_id: str,
+    ) -> None:
+        """Idempotently register the decision's search-graph session row.
+
+        ``cb_decisions.search_session_id`` references ``search_sessions``, so
+        the row must exist before the decision opens (§23.2 referential path).
+        """
+        with self._connect() as conn:
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_sessions (search_session_id, run_id, "
+                    "episode_id, step_id, algorithm, algorithm_version, namespace, "
+                    "root_node_id, budgets_json, stats_json, status, created_at) "
+                    "VALUES (:search_session_id, :run_id, :episode_id, :step_id, "
+                    "'cognitive-navigation', '0.2.0', 'search://', :root_node_id, "
+                    "'{}', '{}', 'RUNNING', :created_at)"
+                ),
+                {
+                    "search_session_id": search_session_id,
+                    "run_id": run_id,
+                    "episode_id": episode_id,
+                    "step_id": step_id,
+                    "root_node_id": root_node_id,
+                    "created_at": self._clock(),
+                },
+            )
+            conn.commit()
+
     def ensure_search_node(
         self,
         *,
@@ -436,6 +471,15 @@ class CognitionJournal:
                 },
             )
             conn.commit()
+
+    def round_exists(self, round_id: str) -> bool:
+        """Whether a round row already exists (loop reuses session round 1)."""
+        with self._connect() as conn:
+            row = conn.execute(
+                sa.text("SELECT 1 FROM cb_rounds WHERE round_id = :round_id"),
+                {"round_id": round_id},
+            ).fetchone()
+        return row is not None
 
     def open_round(self, round_id: str, decision_id: str, status: str) -> None:
         """Move a round from PREPARED to an open boundary status (§12.2).

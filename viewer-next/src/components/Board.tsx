@@ -11,10 +11,11 @@ interface Props {
   lastUci: string | null;
   /** interactive mode: legal-ish move dests shown */
   viewOnly?: boolean;
+  orientation?: "white" | "black";
 }
 
 /** Chessground replay board driven by FEN snapshots (no game logic state). */
-export function Board({ fen, lastUci, viewOnly = true }: Props) {
+export function Board({ fen, lastUci, viewOnly = true, orientation = "white" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const api = useRef<Api | null>(null);
 
@@ -22,7 +23,7 @@ export function Board({ fen, lastUci, viewOnly = true }: Props) {
     if (!ref.current) return;
     api.current = Chessground(ref.current, {
       viewOnly: true,
-      animation: { enabled: true, duration: 220 },
+      animation: { enabled: !window.matchMedia("(prefers-reduced-motion: reduce)").matches, duration: 180 },
       drawable: { enabled: false, visible: false },
       coordinates: true,
     });
@@ -44,6 +45,7 @@ export function Board({ fen, lastUci, viewOnly = true }: Props) {
     // increment — removed rather than fixed).
     api.current.set({
       fen: board,
+      orientation,
       turnColor: turn as Color,
       lastMove: last,
       highlight: { lastMove: true, check: false },
@@ -51,7 +53,7 @@ export function Board({ fen, lastUci, viewOnly = true }: Props) {
       movable: { free: false, color: undefined, showDests: false, dests: undefined },
       selectable: { enabled: !viewOnly },
     });
-  }, [fen, lastUci, viewOnly]);
+  }, [fen, lastUci, viewOnly, orientation]);
 
   return <div ref={ref} className="aspect-square w-full overflow-hidden rounded-md" role="img" aria-label="Tabuleiro de xadrez" />;
 }

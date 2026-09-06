@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { runState, resultLabel, modelLabel, runTitle, comparable, parseRoute, routeFor } from '../src/lib/presentation.ts';
+const run = (patch = {}) => ({ id:'run_fixture', experiment:'Zugzwang run', status:'COMPLETED', episodes:[], players:[], task:{}, ...patch });
+test('completed process with failed episode is review, not success', () => assert.equal(runState(run({episodes:[{status:'FAILED'}]})).label,'Revisar status'));
+test('cap does not become a draw', () => assert.equal(resultLabel({result:'capped'}),'Limite de lances · sem resultado'));
+test('completion is not a chess victory', () => { assert.equal(runState(run()).tone,'muted'); assert.equal(resultLabel({result:'completed'}),'Sem desfecho informado'); });
+test('both cancellation spellings are understood', () => { for(const status of ['CANCELED','CANCELLED']) assert.equal(runState(run({status})).label,'Cancelada'); });
+test('unknown model is explicit; observed actor may identify it', () => { assert.equal(modelLabel(run()),'Modelo não informado'); assert.equal(modelLabel(run({episodes:[{moves:[{actorKind:'Model',actor:'provider/router/muse-spark'}]}]})),'muse-spark'); });
+test('missing experiment names remain distinguishable', () => assert.notEqual(runTitle(run({id:'run_first'})),runTitle(run({id:'run_second'}))));
+test('route round trip preserves run, tab, episode and position', () => assert.deepEqual(parseRoute(routeFor('run_a+/b','analysis',2,47)),{runId:'run_a+/b',view:'analysis',episode:2,ply:47}));
+test('invalid route fields fall back safely', () => assert.deepEqual(parseRoute('#run=r&view=unknown&episode=-1&ply=NaN'),{runId:'r',view:'game',episode:0,ply:0}));
+test('unknown protocols never imply comparability', () => { assert.equal(comparable([run(),run()]),false); assert.equal(comparable([run({protocolHash:'x'}),run({protocolHash:'y'})]),false); assert.equal(comparable([run({protocolHash:'x'}),run({protocolHash:'x'})]),true); });

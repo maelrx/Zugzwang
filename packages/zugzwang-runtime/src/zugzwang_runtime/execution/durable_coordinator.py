@@ -1971,13 +1971,25 @@ class DurableRunCoordinator:
                         initial_candidates=int(config.get("initial_candidates", 4)),
                         judges=int(config.get("judges", 3)),
                     )
-                if player.model.strategy in {"chess.multi_agent_review", "chess.legal_tree_memory"}:
-                    # ZGW-0085/#13: these strategies are introduced by a later
-                    # work order (ZGW-0080/0081); this build must stay
-                    # self-contained and fail closed instead of importing
-                    # modules that do not exist here.
-                    raise ValueError(
-                        f"strategy {player.model.strategy!r} is not registered in this build"
+                if player.model.strategy == "chess.multi_agent_review":
+                    from zugzwang_chess.strategies.multi_agent_review import (
+                        MultiAgentReviewStrategy,
+                    )
+
+                    return MultiAgentReviewStrategy()
+                if player.model.strategy == "chess.legal_tree_memory":
+                    from zugzwang_chess.strategies.legal_tree_memory import (
+                        LegalTreeMemoryStrategy,
+                    )
+
+                    search_config = condition.task.config.get("search")
+                    config = (
+                        cast(dict[str, Any], search_config)
+                        if isinstance(search_config, dict)
+                        else {}
+                    )
+                    return LegalTreeMemoryStrategy(
+                        memory_mode=str(config.get("memory_mode", "episodic")),
                     )
                 if player.model.strategy == "chess.structured":
                     from zugzwang_chess.strategies.structured import StructuredStrategy

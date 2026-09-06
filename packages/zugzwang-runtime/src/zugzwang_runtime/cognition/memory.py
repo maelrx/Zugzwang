@@ -40,6 +40,7 @@ _ORIGIN = frozenset(
 _SCOPE = frozenset({"decision", "episode", "run", "corpus", "campaign"})
 _PARTITION = frozenset({"train", "validation", "test", "development", "unspecified"})
 _CONTAMINATED_ORIGINS = frozenset({"evaluation"})
+_CONTENT_HASH_RE = __import__("re").compile(r"^[0-9a-f]{64}$")
 _EVALUATIVE_EPISTEMICS = frozenset({"model_assessment"})
 
 
@@ -134,6 +135,11 @@ class ScopedMemoryStore:
             raise MemoryError(
                 "SOURCE_NOT_ALLOWED",
                 f"origin {origin_class!r} is not admissible as memory",
+            )
+        if not _CONTENT_HASH_RE.fullmatch(content_hash):
+            raise MemoryError(
+                "INVALID_ARGUMENTS",
+                "content_hash must be a 64-hex sha256; a zero/placeholder hash is refused",
             )
         if epistemic_status not in _EPISTEMIC or origin_class not in _ORIGIN:
             raise MemoryError("INVALID_ARGUMENTS", "unknown epistemic status or origin")
@@ -494,6 +500,7 @@ class ScopedMemoryStore:
                 scope_kind=scope_kind,
                 scope_owner_id=scope_owner_id,
                 perspective=perspective,
+                item_perspective=str(item_perspective),
                 kinds=kinds,
             )
             if reason is None:
@@ -542,64 +549,116 @@ class ScopedMemoryStore:
         scope_kind: str,
         scope_owner_id: str,
         perspective: str,
+        item_perspective: str,
         kinds: frozenset[str] | None,
     ) -> str | None:
-        # Scope gate first: a note outside the querying scope never surfaces,
-        # however similar (TEST-044). Episode scope additionally admits notes
-        # from the same run's committed steps (TEST-046 — owner match).
+        # Gate ORDER (ZGW-0101): scope → validity → kind → perspective →
+        # partition → epistemic. NO branch returns early: a test-partition
+        # note passes the SAME validity/kind/epistemic gates as any other
+        # (TEST-047 is isolation, not exemption).
+        # 1. Scope gate: a note outside the querying scope never surfaces,
+        # however similar (TEST-044).
         if item_scope != scope_kind or owner != scope_owner_id:
             return None
-        # Test partition is isolated from train/selection (TEST-047): test
-        # notes recall only inside a test-scoped query, never elsewhere.
-        if partition == "test":
-            if snapshot_partition != "test":
-                return None
-            return "eligible-test-scope-only"
-        # Quarantined/contradicted notes are ineligible until reviewed.
+        # 2. Quarantined/contradicted notes are ineligible until reviewed —
+        # including inside a test snapshot (a quarantine is not washed by
+        # partition context).
         if validity in {"quarantined", "contradicted"}:
             return None
+        # 3. Kind filter applies everywhere.
         if kinds is not None and kind not in kinds:
             return None
+        # 4. Perspective gate: a neutral query admits every perspective; a
+        # positioned query admits only matching or neutral notes.
+        if perspective != "neutral" and item_perspective not in {perspective, "neutral"}:
+            return None
+        # 5. Partition isolation is symmetric (TEST-047): test notes recall
+        # only inside test snapshots, and non-test notes never surface inside
+        # a test snapshot.
+        partition_isolated = partition == "test" or snapshot_partition == "test"
+        if partition_isolated and partition != snapshot_partition:
+            return None
+        # 6. Epistemic separation BEFORE the partition reason: assessments
+        # stay evaluations in every partition (INV-07).
         if epistemic in _EVALUATIVE_EPISTEMICS:
             return "eligible-evaluative-separate-section"
+        if partition_isolated:
+            return "eligible-test-scope-only"
         return "eligible-scope-partition-validity"
 
     # -- restore ------------------------------------------------------------------
 
-    def restore_notes(self, records: list[dict[str, Any]]) -> int:
-        """Seed/import path: every record passes the same origin gate as writes.
+    _RESTORE_REQUIRED_FIELDS = (
+        "memory_id",
+        "logical_memory_id",
+        "origin_class",
+        "content_hash",
+        "payload_artifact_id",
+        "source_manifest_artifact_id",
+    )
 
-        TEST-045 'também na restauração': a contaminated engine/eval source is
-        refused here exactly as in write_note — restoration never launders
-        provenance. Returns the count restored.
+    def restore_notes(self, records: list[dict[str, Any]]) -> int:
+        """Seed/import path: every record passes the same gates as writes.
+
+        ZGW-0101: metadata is never invented. A record missing required
+        provenance (origin, content hash, artifact refs) is REJECTED with an
+        explicit reason — never defaulted to endogenous/neutral/hash-zero —
+        and an unknown origin is refused, not silently accepted. The recorded
+        validity travels with the note (a quarantined note restores
+        quarantined), so restoration cannot reactivate reviewed-out items
+        (TEST-045 'também na restauração').
         """
         restored = 0
         for record in records:
-            origin = record.get("origin_class", "endogenous")
+            # Provenance gate FIRST: a contaminated or unknown origin is the
+            # headline rejection, before any shape complaint.
+            origin = str(record.get("origin_class", ""))
             if origin in _CONTAMINATED_ORIGINS:
                 raise MemoryError(
                     "SOURCE_NOT_ALLOWED",
                     f"origin {origin!r} is not admissible as memory",
                 )
+            if not origin:
+                raise MemoryError(
+                    "INVALID_ARGUMENTS",
+                    f"restore record {record.get('memory_id', '?')!r} is missing "
+                    "'origin_class'; unknown provenance is rejected, not invented",
+                )
+            if origin not in _ORIGIN:
+                raise MemoryError(
+                    "SOURCE_NOT_ALLOWED",
+                    f"restore record {record.get('memory_id', '?')!r} carries unknown "
+                    f"origin {origin!r}; quarantine or reject it explicitly",
+                )
+            for field_name in self._RESTORE_REQUIRED_FIELDS:
+                value = record.get(field_name)
+                if value is None or (isinstance(value, str) and not value):
+                    raise MemoryError(
+                        "INVALID_ARGUMENTS",
+                        f"restore record {record.get('memory_id', '?')!r} is missing "
+                        f"{field_name!r}; unknown provenance is rejected, not invented",
+                    )
+            origin = str(record["origin_class"])
             raw_revision: Any = record.get("revision", 1)
             raw_sequence: Any = record.get("created_sequence", 0)
             self.write_note(
                 memory_id=str(record["memory_id"]),
                 logical_memory_id=str(record["logical_memory_id"]),
                 revision=int(raw_revision),
-                kind=str(record.get("kind", "note")),
-                epistemic_status=str(record.get("epistemic_status", "model_hypothesis")),
-                origin_class=str(origin),
-                scope_kind=str(record.get("scope_kind", "episode")),
-                scope_owner_id=str(record.get("scope_owner_id", "")),
-                partition_name=str(record.get("partition_name", "unspecified")),
-                perspective=str(record.get("perspective", "neutral")),
+                kind=str(record["kind"]),
+                epistemic_status=str(record["epistemic_status"]),
+                origin_class=origin,
+                scope_kind=str(record["scope_kind"]),
+                scope_owner_id=str(record["scope_owner_id"]),
+                partition_name=str(record["partition_name"]),
+                perspective=str(record["perspective"]),
                 payload_artifact_id=str(record["payload_artifact_id"]),
-                content_hash=str(record.get("content_hash", "0" * 64)),
+                content_hash=str(record["content_hash"]),
                 source_manifest_artifact_id=str(record["source_manifest_artifact_id"]),
                 source_run_id=_optional_str(record.get("source_run_id")),
                 source_episode_id=_optional_str(record.get("source_episode_id")),
                 created_sequence=int(raw_sequence),
+                validity_status=str(record.get("validity_status", "active")),
             )
             restored += 1
         return restored

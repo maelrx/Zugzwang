@@ -15,6 +15,7 @@ from .broker import (
 )
 from .loop import CognitiveLoop, LoopResult, LoopStep, count_protocol_errors, is_retryable
 from .memory import MemoryError, RecalledItem, RecallResult, ScopedMemoryStore
+from .plans import PlanError, PlanStore, PlanView, evaluate_premise
 from .resume import ResumePlan, open_operations, resume_decision
 from .session import (
     DecisionSession,
@@ -36,6 +37,9 @@ __all__ = [
     "LoopResult",
     "LoopStep",
     "MemoryError",
+    "PlanError",
+    "PlanStore",
+    "PlanView",
     "RecallResult",
     "RecalledItem",
     "ResumePlan",
@@ -48,6 +52,7 @@ __all__ = [
     "cas_artifact_loader",
     "cas_artifact_sink",
     "count_protocol_errors",
+    "evaluate_premise",
     "export_report",
     "identity_keys",
     "is_retryable",

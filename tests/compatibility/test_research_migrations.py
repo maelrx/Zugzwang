@@ -24,7 +24,7 @@ def test_research_migrations_upgrade_from_0002_and_fresh_db(tmp_path: Path) -> N
     engine = database.open()
     schema = SchemaManager(engine)
     schema.upgrade()
-    assert schema.current_revision() == "0009"
+    assert schema.current_revision() == "0010"
 
     inspector = inspect(engine)
     assert {"evaluation_runs", "search_sessions", "search_nodes", "search_edges"}.issubset(
@@ -43,7 +43,7 @@ def test_research_migrations_upgrade_from_0002_and_fresh_db(tmp_path: Path) -> N
     assert schema.current_revision() == "0002"
 
     schema.upgrade()
-    assert schema.current_revision() == "0009"
+    assert schema.current_revision() == "0010"
     inspector = inspect(engine)
     assert "reasoning_telemetry_artifact_id" in {
         column["name"] for column in inspector.get_columns("attempts")
@@ -110,7 +110,7 @@ def test_legacy_metrics_remain_visible_and_separate_after_0003_upgrade(
         )
 
     schema.upgrade()
-    assert schema.current_revision() == "0009"
+    assert schema.current_revision() == "0010"
 
     # A newer generation with full provenance must not be mixed with the
     # legacy record.

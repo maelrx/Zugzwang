@@ -96,6 +96,19 @@ class ChessReconstructStrategyDefinition:
         )
 
 
+class ChessR6BatchedTreeStrategyDefinition:
+    @property
+    def descriptor(self) -> PluginDescriptor:
+        return PluginDescriptor(
+            plugin_id="chess.r6_batched_tree",
+            plugin_version="0.1.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R6", "model_only_search", "uci"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+
 class ChessPolicyDefinition:
     @property
     def descriptor(self) -> PluginDescriptor:
@@ -131,3 +144,4 @@ CHESS_REASON_THEN_GROUND_STRATEGY_ENTRY = ChessReasonThenGroundStrategyDefinitio
 CHESS_REPAIR_STRATEGY_ENTRY = ChessRepairStrategyDefinition()
 CHESS_STRUCTURED_STRATEGY_ENTRY = ChessStructuredStrategyDefinition()
 CHESS_RECONSTRUCT_STRATEGY_ENTRY = ChessReconstructStrategyDefinition()
+CHESS_R6_BATCHED_TREE_STRATEGY_ENTRY = ChessR6BatchedTreeStrategyDefinition()

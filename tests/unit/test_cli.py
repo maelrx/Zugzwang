@@ -38,7 +38,7 @@ class TestCli:
     def test_plugins_list_json(self) -> None:
         result = runner.invoke(app, ["plugins", "list", "--output", "json"])
         assert result.exit_code == 0
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         plugin_ids = {p["plugin_id"] for p in payload["plugins"]}
         assert "fake.backend" in plugin_ids
         assert "provider.openai_compatible" in plugin_ids
@@ -51,16 +51,17 @@ class TestCli:
     def test_plan(self) -> None:
         result = runner.invoke(app, ["experiment", "plan", MANIFEST, "--output", "json"])
         assert result.exit_code == 0
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         assert payload["total_estimated_calls"] == 12
 
-    def test_run_fake(self, tmp_path) -> None:
+    def test_run_fake(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setenv("ZUGZWANG_WAL_POLICY", "ephemeral")
         result = runner.invoke(
             app,
             ["run", MANIFEST, "--workspace", str(tmp_path), "--output", "json"],
         )
         assert result.exit_code == 0
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         assert payload["status"] == "COMPLETED"
         assert payload["output_dir"]
 
@@ -71,15 +72,24 @@ class TestCli:
         # 7 kernel schemas + 3 CognitiveBoard contract schemas (ZGW-0089)
         assert len(payload["schemas"]) == 10
 
-    def test_init_and_doctor(self, tmp_path) -> None:
+    def test_init_and_doctor(self, tmp_path, monkeypatch) -> None:
         init_result = runner.invoke(app, ["init", str(tmp_path / "ws"), "--output", "json"])
         assert init_result.exit_code == 0
+        # Deterministic wiring check (TEST-081): with a linked sqlite rejected by
+        # the policy, the doctor reports status "error" and exits with a
+        # configuration error instead of crashing.
+        import sqlite3 as _sqlite3
+
+        monkeypatch.setattr(_sqlite3, "sqlite_version_info", (3, 45, 1))
         doctor_result = runner.invoke(
             app, ["doctor", "--directory", str(tmp_path / "ws"), "--output", "json"]
         )
-        assert doctor_result.exit_code == 0
-        payload = json.loads(doctor_result.output)
-        assert payload["status"] in {"ok", "warn"}
+        payload = json.loads(doctor_result.stdout)
+        assert doctor_result.exit_code != 0
+        assert payload["status"] == "error"
+        assert any(
+            check["check"] == "sqlite" and check["status"] == "error" for check in payload["checks"]
+        )
 
     def test_patch_flag(self) -> None:
         result = runner.invoke(
@@ -95,7 +105,7 @@ class TestCli:
             ],
         )
         assert result.exit_code == 0
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         assert payload["conditions"][0]["budget_ceiling"]["max_calls"] == 3
 
     def test_deterministic_plan(self) -> None:

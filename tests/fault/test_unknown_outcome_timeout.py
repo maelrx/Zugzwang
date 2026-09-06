@@ -90,9 +90,9 @@ spec:
 async def _run(
     tmp_path: Path, backend: DeterministicModelBackend, manifest: Path
 ) -> tuple[Workspace, str]:
-    workspace = Workspace.from_root(tmp_path / "workspace")
+    workspace = Workspace.from_root(tmp_path / "workspace", wal_policy="ephemeral")
     workspace.ensure_layout()
-    engine = Database(workspace.data_dir / "state.db").open()
+    engine = Database(workspace.data_dir / "state.db", wal_policy="ephemeral").open()
     SchemaManager(engine).upgrade()
     writer = PersistenceWriter(
         runs=RunRepository(engine),

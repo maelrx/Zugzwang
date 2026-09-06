@@ -187,9 +187,9 @@ class TestWriterBackpressure:
         from zugzwang_runtime.persistence.writer import PersistenceWriter
         from zugzwang_runtime.workspace import Workspace
 
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
-        db = Database(ws.data_dir / "state.db")
+        db = Database(ws.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
         writer = PersistenceWriter(

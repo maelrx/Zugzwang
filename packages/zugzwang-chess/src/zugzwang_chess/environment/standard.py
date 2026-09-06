@@ -39,9 +39,17 @@ class TerminationKind(StrEnum):
     CHECKMATE = "checkmate"
     STALEMATE = "stalemate"
     INSUFFICIENT_MATERIAL = "insufficient_material"
-    FIFTY_MOVE = "fifty_move"
+    FIFTY_MOVE = "fifty_move"  # claimable draw; never automatic (PRD §8.7)
+    SEVENTYFIVE_MOVE = "seventyfive_move"  # automatic draw (PRD §3.5[^R03])
     FIVEFOLD_REPETITION = "fivefold_repetition"
     MAX_PLIES = "max_plies"
+
+
+# Version of the outcome-kind mapping (PRD §3.5[^R03]: "expor a versão do
+# mapeamento"). v2 renames the 75-move automatic draw from the historical
+# FIFTY_MOVE category to SEVENTYFIVE_MOVE; records written before v2 keep
+# their original kind and are never rewritten.
+TERMINATION_MAPPING_VERSION = "v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +143,9 @@ def termination_for(board: Board, reason: str = "") -> Termination | None:
             kind=TerminationKind.FIVEFOLD_REPETITION.value, result="draw", reason=reason
         )
     if board.is_seventyfive_moves():
-        return Termination(kind=TerminationKind.FIFTY_MOVE.value, result="draw", reason=reason)
+        return Termination(
+            kind=TerminationKind.SEVENTYFIVE_MOVE.value, result="draw", reason=reason
+        )
     return None
 
 

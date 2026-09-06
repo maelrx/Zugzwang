@@ -20,11 +20,11 @@ from zugzwang_runtime.persistence.repositories import (
 
 @pytest.mark.compatibility
 def test_research_migrations_upgrade_from_0002_and_fresh_db(tmp_path: Path) -> None:
-    database = Database(tmp_path / "state.db")
+    database = Database(tmp_path / "state.db", wal_policy="ephemeral")
     engine = database.open()
     schema = SchemaManager(engine)
     schema.upgrade()
-    assert schema.current_revision() == "0006"
+    assert schema.current_revision() == "0007"
 
     inspector = inspect(engine)
     assert {"evaluation_runs", "search_sessions", "search_nodes", "search_edges"}.issubset(
@@ -43,7 +43,7 @@ def test_research_migrations_upgrade_from_0002_and_fresh_db(tmp_path: Path) -> N
     assert schema.current_revision() == "0002"
 
     schema.upgrade()
-    assert schema.current_revision() == "0006"
+    assert schema.current_revision() == "0007"
     inspector = inspect(engine)
     assert "reasoning_telemetry_artifact_id" in {
         column["name"] for column in inspector.get_columns("attempts")
@@ -66,7 +66,7 @@ def test_legacy_metrics_remain_visible_and_separate_after_0003_upgrade(
         RunRepository,
     )
 
-    database = Database(tmp_path / "state.db")
+    database = Database(tmp_path / "state.db", wal_policy="ephemeral")
     engine = database.open()
     schema = SchemaManager(engine)
     schema.upgrade()
@@ -110,7 +110,7 @@ def test_legacy_metrics_remain_visible_and_separate_after_0003_upgrade(
         )
 
     schema.upgrade()
-    assert schema.current_revision() == "0006"
+    assert schema.current_revision() == "0007"
 
     # A newer generation with full provenance must not be mixed with the
     # legacy record.

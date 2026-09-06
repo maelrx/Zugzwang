@@ -21,7 +21,7 @@ WHITE_SCRIPT = ("g1f3", "g2g3", "f1g2", "e2e4", "e1g1", "d2d4")
 class TestChessRuns:
     @pytest.fixture
     def workspace(self, tmp_path) -> Workspace:
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
         return ws
 
@@ -91,9 +91,9 @@ class TestChessRuns:
         )
         from zugzwang_runtime.persistence.writer import PersistenceWriter
 
-        ws = Workspace.from_root(tmp_path / "ws")
+        ws = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
         ws.ensure_layout()
-        db = Database(ws.data_dir / "state.db")
+        db = Database(ws.data_dir / "state.db", wal_policy="ephemeral")
         engine = db.open()
         SchemaManager(engine).upgrade()
         writer = PersistenceWriter(

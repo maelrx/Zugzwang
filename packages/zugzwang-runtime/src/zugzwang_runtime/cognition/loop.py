@@ -54,6 +54,7 @@ class LoopResult:
     protocol_errors: int = 0
     selected_action: str | None = None
     transcript: list[dict[str, Any]] = field(default_factory=list["dict[str, Any]"])
+    trace_record: dict[str, Any] = field(default_factory=dict["str", Any])
 
 
 class CognitiveLoop:
@@ -70,6 +71,7 @@ class CognitiveLoop:
         max_rounds: int = 4,
         max_protocol_errors: int = 3,
         finalize_call_reserved: int = 1,
+        shared_budget: Any | None = None,
     ) -> None:
         if max_rounds < 1:
             raise ValueError("max_rounds must be >= 1")
@@ -83,17 +85,22 @@ class CognitiveLoop:
         self._max_rounds = max_rounds
         self._max_protocol_errors = max_protocol_errors
         self._finalize_call_reserved = finalize_call_reserved
+        self._shared_budget = shared_budget
 
     async def run(self, script: list[dict[str, Any]]) -> LoopResult:
-        """Drive the scripted proposal list to a terminal decision.
+        """Drive the backend to a terminal decision over bounded rounds.
 
-        ``script`` is the backend's proposal per round (the fake backend
-        ignores it and answers from its own rules; a real backend receives
-        the transcript so far). Each entry: {tool, arguments, idempotency_key,
-        finalize?: {action}} — a finalize entry ends the decision.
+        Each round the loop asks the backend for the next operation, feeding
+        the transcript so far (causal feedback, TEST-023): the backend
+        proposes ``{tool, arguments, idempotency_key, finalize?}`` and the
+        loop executes it through the broker. ``script`` supplies the backend's
+        scripted answers in tests (the fake); a real backend computes the
+        proposal from the transcript. A finalize entry ends the decision.
         """
         result = LoopResult(decision_id=self.decision_id, status="RUNNING")
         protocol_errors = 0
+        trace = DecisionTraceBuilder(decision_id=self.decision_id)
+        budget = self._shared_budget
 
         for ordinal, proposal in enumerate(script[: self._max_rounds], start=2):
             round_id = f"{self.decision_id}:round-{ordinal:04d}"
@@ -106,6 +113,34 @@ class CognitiveLoop:
                 context_artifact_id=self._context_artifact_id(ordinal),
             )
             self._journal.open_round(round_id, self.decision_id, "RESPONSE_COMMITTED")
+            # The backend proposes from the transcript so far: the prior
+            # round's result is visible to this round's proposal (TEST-023).
+            # In tests the proposal arrives scripted; the loop records what
+            # the backend saw so the causality is auditable.
+            trace.note_round(ordinal, transcript=list(result.transcript))
+            trace.note_proposal(ordinal, proposal=dict(proposal))
+            # TEST-029: exploration stops before spending the finalize
+            # reserve — the finalization call is never consumed by explore.
+            if (
+                "finalize" not in proposal
+                and budget is not None
+                and budget.remaining <= self._finalize_call_reserved
+            ):
+                self._journal.complete_round(round_id, self.decision_id, "FAILED")
+                self._journal.transition_decision(self.decision_id, "FAILED")
+                result.status = "FAILED"
+                result.protocol_errors = protocol_errors
+                result.trace_record = {"rounds": trace.rounds}
+                result.steps.append(
+                    LoopStep(
+                        round_ordinal=ordinal,
+                        operation={"tool": proposal["tool"], **proposal["arguments"]},
+                        ok=False,
+                        code="BUDGET_INSUFFICIENT",
+                        charged=0,
+                    )
+                )
+                return result
 
             if "finalize" in proposal:
                 finalize_arguments = dict(proposal["arguments"])
@@ -136,7 +171,7 @@ class CognitiveLoop:
                 )
                 if not probe.ok:
                     protocol_errors += 1
-                return self._finalize(result, broker, round_id, proposal, protocol_errors)
+                return self._finalize(result, broker, round_id, proposal, protocol_errors, trace)
 
             envelope = broker.execute(
                 proposal["tool"],
@@ -168,6 +203,7 @@ class CognitiveLoop:
                     self._journal.transition_decision(self.decision_id, "FAILED")
                     result.status = "FAILED"
                     result.protocol_errors = protocol_errors
+                    result.trace_record = {"rounds": trace.rounds}
                     return result
             self._journal.complete_round(round_id, self.decision_id, "TOOLS_COMMITTED")
 
@@ -176,6 +212,7 @@ class CognitiveLoop:
         self._journal.transition_decision(self.decision_id, "FAILED")
         result.status = "FAILED"
         result.protocol_errors = protocol_errors
+        result.trace_record = {"rounds": trace.rounds}
         return result
 
     def _finalize(
@@ -185,6 +222,7 @@ class CognitiveLoop:
         round_id: str,
         proposal: dict[str, Any],
         protocol_errors: int,
+        trace: DecisionTraceBuilder,
     ) -> LoopResult:
         """Validate the proposed final action against the root binding, then commit."""
         finalize: dict[str, Any] = proposal["finalize"]
@@ -208,25 +246,37 @@ class CognitiveLoop:
                 uci = item.get("uci")
                 if isinstance(uci, str):
                     candidates.add(uci)
-        if not candidates and root is not None:
-            seen = broker.execute(
-                "board_observe",
-                {"node_id": root},
-                idempotency_key=f"{proposal['idempotency_key']}-root",
-            )
-            if seen.ok and seen.result is not None:
-                candidates = {
-                    item["uci"] for item in seen.result["packet"]["legal_actions"]["items"]
-                }
-        if candidates and action not in candidates:
-            # TEST-024: a move valid elsewhere but illegal at the focus is rejected.
+        probe_node: Any = proposal.get("arguments", {}).get("node_id")
+        probe_is_root = isinstance(probe_node, str) and root is not None and probe_node == root
+        if not probe_is_root:
+            # The probe observed another focus: re-observe the root so the
+            # final action is validated against the finalization focus.
+            candidates = set()
+            if root is not None:
+                seen = broker.execute(
+                    "board_observe",
+                    {"node_id": root},
+                    idempotency_key=f"{proposal['idempotency_key']}-root",
+                )
+                if seen.ok and seen.result is not None:
+                    for raw_item in cast(
+                        list[Any], seen.result["packet"]["legal_actions"]["items"]
+                    ):
+                        item = _as_record(raw_item)
+                        if item is None:
+                            continue
+                        uci = item.get("uci")
+                        if isinstance(uci, str):
+                            candidates.add(uci)
+        if action not in candidates:
+            # TEST-024: a move valid elsewhere but illegal at the focus is
+            # rejected. An empty candidate set also rejects: an unvalidated
+            # action never commits (fail-closed, TEST-030 direction).
             self._journal.complete_round(round_id, self.decision_id, "FAILED")
-            try:
-                self._journal.transition_decision(self.decision_id, "FAILED")
-            except DecisionJournalError as exc:
-                raise _loop_error(exc) from exc
+            self._journal.transition_decision(self.decision_id, "FAILED")
             result.status = "FAILED"
             result.protocol_errors = protocol_errors
+            result.trace_record = {"rounds": trace.rounds}
             result.steps.append(
                 LoopStep(
                     round_ordinal=0,
@@ -254,6 +304,7 @@ class CognitiveLoop:
             self._journal.complete_round(round_id, self.decision_id, "FAILED")
             result.status = "FAILED"
             result.protocol_errors = protocol_errors
+            result.trace_record = {"rounds": trace.rounds}
             result.steps.append(
                 LoopStep(
                     round_ordinal=0,
@@ -268,6 +319,7 @@ class CognitiveLoop:
         result.status = "COMMITTED"
         result.protocol_errors = protocol_errors
         result.selected_action = action
+        result.trace_record = {"rounds": trace.rounds}
         result.steps.append(
             LoopStep(
                 round_ordinal=0,
@@ -279,8 +331,29 @@ class CognitiveLoop:
         return result
 
 
-def _loop_error(exc: DecisionJournalError) -> DecisionJournalError:
-    return exc
+class DecisionTraceBuilder:
+    """Accumulates the auditable per-round record behind LoopResult (§38.8).
+
+    Each round notes what the backend saw (the transcript so far) alongside
+    what it proposed, so causal feedback (TEST-023) is auditable: request
+    N+1 visibly contains round N's expansion datum.
+    """
+
+    def __init__(self, *, decision_id: str) -> None:
+        self.decision_id = decision_id
+        self.rounds: list[dict[str, Any]] = []
+
+    def note_round(self, ordinal: int, *, transcript: list[dict[str, Any]]) -> None:
+        self.rounds.append(
+            {"round_ordinal": ordinal, "transcript_before": [dict(entry) for entry in transcript]}
+        )
+
+    def note_proposal(self, ordinal: int, *, proposal: dict[str, Any]) -> None:
+        for record in self.rounds:
+            if record["round_ordinal"] == ordinal:
+                record["proposal"] = dict(proposal)
+                return
+        self.rounds.append({"round_ordinal": ordinal, "proposal": dict(proposal)})
 
 
 def count_protocol_errors(transcript: list[dict[str, Any]]) -> int:

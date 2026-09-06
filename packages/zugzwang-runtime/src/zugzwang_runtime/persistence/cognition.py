@@ -259,15 +259,13 @@ class CognitionJournal:
             )
             conn.commit()
 
-    _ROUND_OPENING_TARGETS = frozenset({"REQUEST_PENDING", "RESPONSE_COMMITTED", "OUTCOME_UNKNOWN"})
-
     def open_round(self, round_id: str, decision_id: str, status: str) -> None:
         """Move a round from PREPARED to an open boundary status (§12.2).
 
         The loop opens each round before the backend proposal is executed;
         only forward motion out of PREPARED is legal here.
         """
-        if status not in self._ROUND_OPENING_TARGETS:
+        if status not in _ROUND_OPEN_STATUSES:
             raise DecisionJournalError("INVALID_ARGUMENTS", f"round cannot open into {status!r}")
         with self._connect() as conn:
             result = conn.execute(
@@ -512,7 +510,10 @@ class CognitionJournal:
     def bound_node_ids(self, decision_id: str) -> list[str]:
         with self._connect() as conn:
             rows = conn.execute(
-                sa.text("SELECT node_id FROM cb_node_bindings WHERE decision_id = :decision_id"),
+                sa.text(
+                    "SELECT node_id FROM cb_node_bindings WHERE decision_id = :decision_id "
+                    "ORDER BY created_sequence, node_id"
+                ),
                 {"decision_id": decision_id},
             ).fetchall()
         return [r[0] for r in rows]

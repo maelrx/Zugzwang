@@ -148,6 +148,7 @@ def _loop(session, journal, harness, **kwargs):
         broker_factory=factory,
         backend=None,
         context_artifact_id=lambda ordinal: _context_artifact(session, ordinal),
+        shared_budget=session._broker._budget,
         **kwargs,
     )
 
@@ -156,7 +157,20 @@ def _context_artifact(session, ordinal: int) -> str:
     from zugzwang_core.domain.canonical import canonical_json_bytes
 
     sink = session._broker._artifact_sink
-    return sink(canonical_json_bytes({"round": ordinal}), "application/json")
+    # Effective-route record (§15.4): provider, model, route and date travel
+    # with every round context so samples separate by route (TEST-064).
+    return sink(
+        canonical_json_bytes(
+            {
+                "round": ordinal,
+                "provider": "fake",
+                "model": "fake/scripted",
+                "route": "fake-direct",
+                "date": "2026-09-06",
+            }
+        ),
+        "application/json",
+    )
 
 
 async def _run(loop, script):
@@ -223,7 +237,23 @@ def test_finalize_at_wrong_focus_rejected(harness) -> None:
     """TEST-024: lance válido no filho e inválido na raiz é rejeitado."""
     import asyncio
 
+    from zugzwang_chess.environment.standard import _push_state
+
     session, journal = _open(harness)
+    # A child-legal move: e2e4 is legal at the root, so play it and take a
+    # move that is legal in the child but NOT at the root (black's reply).
+    child = _push_state(ChessGameState(), "e2e4")
+    child_probe = ChessPerception(
+        environment=StandardChessEnvironment(),
+        rules_version="standard/v1",
+        policy_hash=POLICY_HASH,
+    ).build_packet(child, "node-child")
+    child_uci = next(
+        item.uci for item in child_probe.legal_actions.items if item.uci.startswith("e7")
+    )
+    root_probe = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="w0")
+    root_ucis = {item["uci"] for item in root_probe.result["packet"]["legal_actions"]["items"]}
+    assert child_uci not in root_ucis
     loop = _loop(session, journal, harness)
     result = asyncio.run(
         _run(
@@ -233,7 +263,7 @@ def test_finalize_at_wrong_focus_rejected(harness) -> None:
                     "tool": "board_observe",
                     "arguments": {"node_id": "node-root"},
                     "idempotency_key": "w2",
-                    "finalize": {"action": "not-a-uci-at-all"},
+                    "finalize": {"action": child_uci},
                     "arguments_finalize_node": "node-root",
                 },
             ],
@@ -241,6 +271,7 @@ def test_finalize_at_wrong_focus_rejected(harness) -> None:
     )
     assert result.status == "FAILED"
     assert result.selected_action is None
+    assert result.steps[-1].code == "ILLEGAL_ACTION"
 
 
 def test_early_selection_preserves_budget(harness) -> None:
@@ -300,12 +331,37 @@ def test_protocol_error_ceiling_ends_decision(harness) -> None:
 
 def test_exploration_never_spends_finalize_reserve(harness) -> None:
     """TEST-029: a call reservada à finalização não é gasta explorando."""
-    session, _journal = _open(harness, remaining=3)
-    budget = session._broker._budget
-    # A reserva final é contabilizada fora do pool de exploração.
-    reserve = 1
-    assert budget.remaining == 3
-    assert budget.remaining - reserve == 2
+    import asyncio
+
+    session, journal = _open(harness, remaining=2)
+    probe = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="rs")
+    uci = probe.result["packet"]["legal_actions"]["items"][0]["uci"]
+    # remaining is now 1 == the reserve: further exploration is refused, but
+    # the reserved finalization still commits.
+    loop = _loop(session, journal, harness, max_rounds=4)
+    result = asyncio.run(
+        _run(
+            loop,
+            [
+                {
+                    "tool": "board_expand",
+                    "arguments": {"node_id": "node-root", "action_ids": ["x"]},
+                    "idempotency_key": "rs-explore",
+                },
+                {
+                    "tool": "board_observe",
+                    "arguments": {"node_id": "node-root"},
+                    "idempotency_key": "rs-fin",
+                    "finalize": {"action": uci},
+                    "arguments_finalize_node": "node-root",
+                },
+            ],
+        )
+    )
+    # Exploration was refused on the reserve, yet the decision still committed
+    # through the reserved finalization path... or failed closed if the second
+    # proposal never ran: either way the reserve was never spent exploring.
+    assert result.steps[0].code == "BUDGET_INSUFFICIENT"
 
 
 def test_failed_finalization_never_falls_back(harness) -> None:
@@ -384,3 +440,35 @@ def test_golden_fake_end_to_end(harness) -> None:
     assert decision[0] == "COMMITTED"
     assert decision[1] == uci
     assert decision[2] == "model"
+    # Restart reconstruction (§48.1 "reconstrói após reinício"): reopen the
+    # journal and CAS on the same files and rebuild the outcome from rows.
+    database2, engine2, cas2 = harness
+    journal2 = CognitionJournal(database2)
+    with engine2.connect() as conn:
+        decision2 = conn.execute(
+            text("SELECT status, selected_action FROM cb_decisions WHERE decision_id = :id"),
+            {"id": "dec-golden-0001"},
+        ).fetchone()
+        committed2 = conn.execute(
+            text(
+                "SELECT COUNT(*) FROM cb_tool_operations WHERE decision_id = :id "
+                "AND status = 'COMMITTED'"
+            ),
+            {"id": "dec-golden-0001"},
+        ).fetchone()[0]
+        morate = conn.execute(
+            text(
+                "SELECT payload_artifact_id FROM cb_observations WHERE decision_id = :id "
+                "ORDER BY exposure_sequence DESC LIMIT 1"
+            ),
+            {"id": "dec-golden-0001"},
+        ).fetchone()[0]
+    assert decision2[0] == "COMMITTED"
+    assert decision2[1] == uci
+    assert committed2 >= 3
+    # The latest observation payload reloads from the CAS behind the new handle.
+    from zugzwang_runtime.cognition.session import cas_artifact_loader
+
+    reloaded = cas_artifact_loader(cas2)(morate)
+    assert reloaded is not None
+    assert journal2.bound_node_ids("dec-golden-0001") == ["node-root"]

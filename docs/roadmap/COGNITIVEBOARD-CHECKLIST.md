@@ -82,7 +82,11 @@ flowchart TD
 
 ### Fase 5 — Loop
 
-- [ ] **CB-WO-07** — strategy adaptativa e loop (§38.8) → pending (depende W5+W6)
+- [x] **CB-WO-07** — strategy adaptativa e loop (§38.8) → **ZGW-0094** · PR [#32](https://github.com/maelrx/Zugzwang/pull/32) (empilhado no #31; review 2 eixos aplicado em 5fd9edf)
+  - [x] `CognitiveLoop`: rounds journaled, propostas via broker, feedback causal auditável (trace_record), teto de protocol errors, reserva final enforced, finalize validado na raiz, SELECTED→COMMITTED
+  - [x] `chess.cognitive_navigation` NOVA (baselines intactos) + `propose_from_transcript` pura
+  - [x] Journal `open_round`; rota efetiva {provider, model, route, date} por round (§15.4); restart reabre journal+CAS com mesma seleção
+  - [x] TEST-022/023/024/025/028/029/030 + golden fake §48.1 (8 testes); 358 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
 - [ ] **CB-WO-08** — durabilidade e segurança end-to-end (§38.9) → pending (depende W7)
 - [ ] **CB-WO-10** — viewer mínimo causal (§38.11) → pending (depende W7)
 - [ ] **CB-WO-09** — memória condicionada (§38.10) → pending (depende W8; retrieval elegível = ADR-CB-013)

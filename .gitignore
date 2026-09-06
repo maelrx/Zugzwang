@@ -23,8 +23,13 @@ runs/
 .vscode/
 graphify-out/
 
-# Generated private viewer snapshots; the tracked data.js is an empty fixture.
-viewer/data.json
+# Local read-only viewer snapshots; keep the UI source, ignore generated data.
+viewer/data.js
+viewer/pieces.js
 viewer/meta.json
+viewer/data.json
 viewer-next/public/data/
+
+# Generated local analysis is not portable source.
+.hypothesis/
 node_modules/

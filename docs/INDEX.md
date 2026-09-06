@@ -1,5 +1,7 @@
 # Documentation index
 
+Current entry point: [repository status and integration queue](engineering/REPOSITORY_STATUS.md). Historical design documents do not supersede accepted gates or the current PR state.
+
 The canonical documentation language for the foundation release is Portuguese, with an English public README. This policy is itself a human decision gate for later releases.
 
 ## Product
@@ -128,6 +130,7 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [ADR-058 Post-hoc engine firewall](adr/ADR-058-posthoc-engine-firewall.md)
 - [ADR-059 R5 multi-agent review por lance](adr/ADR-059-multi-agent-review.md)
 - [ADR-060 Legal tree e ablação de memória por episódio](adr/ADR-060-turn-scoped-legality-and-memory-ablation.md)
+- [ADR-061 Bateria controlada de agente único](adr/ADR-061-single-agent-tree-hypothesis-battery.md)
 
 ## Roadmap
 
@@ -176,3 +179,4 @@ The canonical documentation language for the foundation release is Portuguese, w
 - [Validacao real pos-mudancas](reports/REAL-VALIDATION-2026-09-04.md)
 - [Relatorio completo da run R5 multiagente](reports/R5-MULTI-AGENT-RUN-2026-09-04.md)
 - [Run R7 legal tree e memoria persistida](reports/R7-LEGAL-TREE-MEMORY-RUN-2026-09-04.md)
+- [Partida H3 do agente unico — relatorio cientifico](reports/R7-SINGLE-AGENT-TREE-GAME-H3-2026-09-05.md)

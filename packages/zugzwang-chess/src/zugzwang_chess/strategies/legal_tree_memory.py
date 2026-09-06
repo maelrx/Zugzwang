@@ -745,6 +745,22 @@ def _latest_attempt_id(backend: Any, before: tuple[str, ...], role: str) -> str:
     return new_ids[-1] if new_ids else f"att-legal-tree-memory-{role}"
 
 
+tree_affordance_text = _affordance_text
+tree_as_observation = _as_observation
+tree_call_verdict = _call_verdict
+tree_first_uci = _first_uci
+tree_latest_attempt_id = _latest_attempt_id
+tree_memory_mode = _memory_mode
+tree_move_values = _move_values
+tree_parse_move = _parse_move
+tree_parse_report = _parse_report
+tree_record_memory = _record_memory
+tree_recorded_attempt_ids = _recorded_attempt_ids
+tree_retrieve_memory = _retrieve_memory
+tree_search_int = _search_int
+tree_unique = _unique
+
+
 class _RetrievalBudget:
     def __init__(self, *, max_items: int) -> None:
         self.max_items = max_items

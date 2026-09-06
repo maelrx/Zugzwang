@@ -260,17 +260,194 @@ class TestBundleRoundtrip:
         result = importer.import_bundle(bundle_dir)
         assert int(result["artifacts_imported"]) >= 1
 
-        # offline re-evaluation from imported artifacts only
+        # ZGW-0085/#15: importing bytes alone does not reproduce a run —
+        # projections are rebuilt from the authoritative event stream, then
+        # offline re-evaluation replays the same committed moves.
+        rebuild = importer.rebuild_projections(
+            bundle_dir,
+            runs=second_services.runs,
+            episodes=second_services.episodes,
+            steps=second_services.steps,
+            events=second_services.events,
+        )
+        assert rebuild["steps"] >= 1
+        assert rebuild["episodes"] >= 1
+
         from zugzwang_runtime.application.evaluation import build_evaluation_steps
 
-        steps = build_evaluation_steps(
+        original_steps = build_evaluation_steps(
+            run_id=run_id,
+            runs=services.runs,
+            episodes=services.episodes,
+            steps=services.steps,
+            cas=services.cas,
+        )
+        rebuilt_steps = build_evaluation_steps(
             run_id=run_id,
             runs=second_services.runs,
             episodes=second_services.episodes,
             steps=second_services.steps,
             cas=second_services.cas,
         )
-        assert len(steps) == 0 or True  # projections aren't imported (artifacts are)
+        assert original_steps, "the source run must have committed model steps"
+        assert rebuilt_steps == original_steps, (
+            "reconstruction must reproduce exactly the committed (fen, action) sequence"
+        )
+
+    @pytest.mark.asyncio
+    async def test_rebuilt_run_yields_equivalent_fake_evaluation(
+        self, workspace: Workspace, tmp_path
+    ) -> None:
+        """ZGW-0085/#15 closing path: export -> import into an isolated
+        workspace -> rebuild projections -> identical moves -> equivalent
+        fake evaluation, without any access to the original workspace."""
+        from zgw_eval_stockfish.evaluator import StockfishEvaluator
+        from zgw_eval_stockfish.uci import FakeUciEngine
+
+        from zugzwang_runtime.application.evaluation import build_evaluation_steps
+
+        run_id = await _run_chess(workspace)
+        services = DurableRunServices(workspace, PluginRegistry())
+
+        exporter = ExportRunBundleService(
+            runs=services.runs,
+            episodes=services.episodes,
+            steps=services.steps,
+            metrics=MetricObservationRepository(services.database_engine),
+            events=services.events,
+            artifacts=ArtifactRepository(services.database_engine),
+            cas=services.cas,
+            run_dir=services.workspace.run_dir(run_id),
+        )
+        bundle_dir = exporter.export(run_id, tmp_path / "bundle-eval")
+
+        second_ws = Workspace.from_root(tmp_path / "ws-eval")
+        second_ws.ensure_layout()
+        second_services = DurableRunServices(second_ws, PluginRegistry())
+        importer = ImportRunBundleService(
+            cas=second_services.cas,
+            artifacts=ArtifactRepository(second_services.database_engine),
+        )
+        importer.import_bundle(bundle_dir)
+        importer.rebuild_projections(
+            bundle_dir,
+            runs=second_services.runs,
+            episodes=second_services.episodes,
+            steps=second_services.steps,
+            events=second_services.events,
+        )
+
+        assert build_evaluation_steps(
+            run_id=run_id,
+            runs=second_services.runs,
+            episodes=second_services.episodes,
+            steps=second_services.steps,
+            cas=second_services.cas,
+        ) == build_evaluation_steps(
+            run_id=run_id,
+            runs=services.runs,
+            episodes=services.episodes,
+            steps=services.steps,
+            cas=services.cas,
+        )
+
+        evaluator = StockfishEvaluator(FakeUciEngine())
+        evaluate = EvaluateRunService(
+            runs=services.runs,
+            episodes=services.episodes,
+            steps=services.steps,
+            metrics=MetricObservationRepository(services.database_engine),
+            cas=services.cas,
+        )
+        original_summary = await evaluate.evaluate(
+            run_id, evaluator, evaluator_id="evaluator.stockfish"
+        )
+        rebuilt_summary = await EvaluateRunService(
+            runs=second_services.runs,
+            episodes=second_services.episodes,
+            steps=second_services.steps,
+            metrics=MetricObservationRepository(second_services.database_engine),
+            cas=second_services.cas,
+        ).evaluate(run_id, StockfishEvaluator(FakeUciEngine()), evaluator_id="evaluator.stockfish")
+
+        assert original_summary.observations == rebuilt_summary.observations > 0
+        assert original_summary.metrics == rebuilt_summary.metrics, (
+            "the same evaluator over the reconstructed moves must agree exactly"
+        )
+
+    @pytest.mark.asyncio
+    async def test_reconstruction_detects_truncated_event_stream(
+        self, workspace: Workspace, tmp_path
+    ) -> None:
+        """Deliberate mutation: dropping the final commit must change what the
+        reconstruction replays, proving the equality assertions can fail."""
+        from zugzwang_runtime.application.evaluation import build_evaluation_steps
+
+        run_id = await _run_chess(workspace)
+        services = DurableRunServices(workspace, PluginRegistry())
+        exporter = ExportRunBundleService(
+            runs=services.runs,
+            episodes=services.episodes,
+            steps=services.steps,
+            metrics=MetricObservationRepository(services.database_engine),
+            events=services.events,
+            artifacts=ArtifactRepository(services.database_engine),
+            cas=services.cas,
+            run_dir=services.workspace.run_dir(run_id),
+        )
+        bundle_dir = exporter.export(run_id, tmp_path / "bundle-trunc")
+
+        def _rebuild(bd: Path, ws_root: str) -> list[dict]:
+            ws = Workspace.from_root(tmp_path / ws_root)
+            ws.ensure_layout()
+            ws_services = DurableRunServices(ws, PluginRegistry())
+            imp = ImportRunBundleService(
+                cas=ws_services.cas,
+                artifacts=ArtifactRepository(ws_services.database_engine),
+            )
+            imp.import_bundle(bd)
+            imp.rebuild_projections(
+                bd,
+                runs=ws_services.runs,
+                episodes=ws_services.episodes,
+                steps=ws_services.steps,
+                events=ws_services.events,
+            )
+            return build_evaluation_steps(
+                run_id=run_id,
+                runs=ws_services.runs,
+                episodes=ws_services.episodes,
+                steps=ws_services.steps,
+                cas=ws_services.cas,
+            )
+
+        full = _rebuild(bundle_dir, "ws-trunc-full")
+        truncated_path = tmp_path / "bundle-trunc-cut"
+        exporter.export(run_id, truncated_path)
+        committed_lines = [
+            line
+            for line in (truncated_path / "events.jsonl").read_text(encoding="utf-8").splitlines()
+            if '"step.committed"' in line
+        ]
+        events_text = (truncated_path / "events.jsonl").read_text(encoding="utf-8")
+        (truncated_path / "events.jsonl").write_text(
+            events_text.replace(committed_lines[-1] + "\n", ""), encoding="utf-8"
+        )
+        # the checksum manifest no longer matches; rewrite it for the mutation
+        import hashlib
+
+        lines = []
+        for path in sorted(truncated_path.rglob("*")):
+            if path.is_file() and path.name != "checksums.sha256":
+                rel = path.relative_to(truncated_path).as_posix()
+                lines.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {rel}")
+        (truncated_path / "checksums.sha256").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+        cut = _rebuild(truncated_path, "ws-trunc-cut")
+        assert full, "baseline reconstruction must have committed steps"
+        assert len(cut) < len(full), (
+            "truncating the last committed move must be visible to the replay"
+        )
 
     @pytest.mark.asyncio
     async def test_bundle_rejects_tampered_file(self, workspace: Workspace, tmp_path) -> None:

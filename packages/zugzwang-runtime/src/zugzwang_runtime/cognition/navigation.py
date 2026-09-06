@@ -128,9 +128,16 @@ class CognitiveNavigationStrategy:
         snapshot_id = bindings.get("memory_snapshot_id")
         skill_set_id = bindings.get("skill_set_id")
         skill_id = config.get("skill_id")
+        directive = config.get("directive")
 
         def build(ordinal: int) -> str:
             sections: list[str] = []
+            if isinstance(directive, str) and directive.strip():
+                # Operator instruction for a DIRECTED test (pilot §5): it may
+                # ask the model to exercise a tool, never dictates the move
+                # sequence — moves and calls remain the model's choice, and
+                # the directive is journaled verbatim in the request artifact.
+                sections.append(f"OPERATOR DIRECTIVE (directed test): {directive.strip()}")
             if memory_store is not None and snapshot_id:
                 recalled = memory_store.recall(
                     snapshot_id=str(snapshot_id),
@@ -161,8 +168,10 @@ class CognitiveNavigationStrategy:
                 )
             return "\n\n".join(sections)
 
-        if (memory_store is None or not snapshot_id) and not (
-            skill_registry is not None and skill_set_id and skill_id
+        if (
+            (memory_store is None or not snapshot_id)
+            and not (skill_registry is not None and skill_set_id and skill_id)
+            and not (isinstance(directive, str) and directive.strip())
         ):
             return None
         return build

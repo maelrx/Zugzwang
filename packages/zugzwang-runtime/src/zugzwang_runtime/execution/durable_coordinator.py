@@ -2295,6 +2295,11 @@ def _decision_config(
     search_config = condition.task.config.get("search")
     if isinstance(search_config, dict):
         config["search"] = dict(search_config)
+    cognitive_config = condition.task.config.get("cognitive")
+    if isinstance(cognitive_config, dict):
+        # Operator directive for the cognitive loop (directed pilot tests):
+        # journaled in the request artifact, never a scripted move sequence.
+        config["cognitive"] = dict(cognitive_config)
     if retry_feedback:
         config["retry_feedback"] = retry_feedback
     return config

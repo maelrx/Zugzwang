@@ -111,7 +111,10 @@ flowchart TD
   - [x] Migration 0009 CB-M3 (DDL §43.2 + triggers normativos de decisão NULL-aware documentados); downgrade recusa com dados
   - [x] `SkillRegistry`: propose→approve (release versionado)/reject (tombstone); activate por allowlist (texto ignorado); bind exige SEALED
   - [x] TEST-049/050/051 + contexto pareado (4 testes); 393 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
-- [ ] **CB-WO-13** — planos e premissas (§38.14) → pending (depende W9)
+- [x] **CB-WO-13** — planos e premissas (§38.14) → **ZGW-0100** · PR [#38](https://github.com/maelrx/Zugzwang/pull/38) (empilhado no #37; review 2 eixos aplicado em a2d0241)
+  - [x] Migration 0010 CB-M4 (DDL §43.2 + cb_plan_premises): investigations, plans, episode guard; downgrade recusa com dados
+  - [x] `PlanStore`: investigações ancoradas, planos por episódio/perspectiva, revise com premissas persistidas e escalação needs_review, DSL true/false/unknown
+  - [x] TEST-048/075 + fixtures false/unknown + recusa cross-episode (4 testes); 397 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
 - [ ] **CB-WO-14** — reancoragem (§38.15) → pending (depende W11; autorização por profiling)
 - [ ] **CB-WO-15** — paralelismo experimental (§38.15) → pending (depende W11; autorização por resultado)
 

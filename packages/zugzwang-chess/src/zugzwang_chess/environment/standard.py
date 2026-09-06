@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import chess
 
@@ -25,6 +25,7 @@ from zugzwang_core.ports.environment import (
     Termination,
     Transition,
 )
+from zugzwang_core.ports.rules import LegalityResult, ParseResult
 
 if TYPE_CHECKING:
     from chess import Board
@@ -223,10 +224,11 @@ class StandardChessEnvironment:
                     else list(state.move_stack)
                 )
         legal_settings = settings.get("legal_actions", {})
-        if isinstance(legal_settings, dict) and legal_settings.get("exposure") in {
-            "always",
-            "delayed",
-        }:
+        # ``delayed`` is a capability lease, not a precomputed field.  The
+        # environment deliberately does not materialize the legal set here;
+        # a strategy that is allowed to enumerate must ask the gateway in its
+        # phase-specific context.
+        if isinstance(legal_settings, dict) and legal_settings.get("exposure") == "always":
             encoding = str(legal_settings.get("encoding", "uci"))
             legal_set = self.legal_actions(state, encoding=encoding)
             if encoding == "opaque_index":
@@ -413,6 +415,94 @@ class StandardChessEnvironment:
             move_stack=tuple(str(m) for m in data.get("moves", [])),
             variant=str(data.get("variant", "standard")),
         )
+
+
+class StandardChessRulesKernel:
+    """Trusted rules adapter with no strategic evaluation or ranking."""
+
+    def __init__(self, environment: Any = None) -> None:
+        self._environment: StandardChessEnvironment = environment or StandardChessEnvironment()
+
+    def parse_action(self, raw: str, notation: str = "canonical") -> ParseResult:
+        candidate = raw.strip()
+        try:
+            if notation in {"canonical", "uci"}:
+                from ..codecs.uci import parse_uci
+
+                action = parse_uci(candidate)
+            elif notation == "san":
+                # SAN parsing is position-dependent and therefore requires a
+                # state-bound parser.  Keep this explicit rather than guessing
+                # from a global opening board.
+                return ParseResult(
+                    valid=False,
+                    error="SAN parsing requires parse_action_for_state",
+                    notation=notation,
+                )
+            else:
+                return ParseResult(valid=False, error=f"unsupported notation {notation!r}")
+        except Exception as exc:
+            return ParseResult(valid=False, error=str(exc)[:200], notation=notation)
+        return ParseResult(valid=True, parsed=action, notation=notation)
+
+    def parse_action_for_state(
+        self, state: ChessGameState, raw: str, notation: str = "canonical"
+    ) -> ParseResult:
+        if notation != "san":
+            return self.parse_action(raw, notation)
+        try:
+            move = chess.Move.from_uci(raw.strip())
+            return ParseResult(valid=True, parsed=ChessMove(move.uci()), notation=notation)
+        except ValueError:
+            try:
+                move = state.to_board().parse_san(raw.strip())
+            except ValueError as exc:
+                return ParseResult(valid=False, error=str(exc)[:200], notation=notation)
+            return ParseResult(valid=True, parsed=ChessMove(move.uci()), notation=notation)
+
+    def is_legal(self, state: ChessGameState, action: ChessMove) -> LegalityResult:
+        try:
+            board = state.to_board()
+            move = chess.Move.from_uci(action.uci)
+        except (AttributeError, ValueError):
+            return LegalityResult(
+                legal=False,
+                action=action,
+                reason="ILLEGAL_PARSE",
+                state_fingerprint=state.fingerprint(),
+            )
+        if move in board.legal_moves:
+            return LegalityResult(
+                legal=True,
+                action=action,
+                state_fingerprint=state.fingerprint(),
+            )
+        if board.is_pseudo_legal(move):
+            reason = "ILLEGAL_KING_EXPOSED"
+        else:
+            destination = board.piece_at(move.to_square)
+            reason = (
+                "ILLEGAL_DESTINATION_OCCUPIED_BY_OWN_PIECE"
+                if destination is not None and destination.color == board.turn
+                else "ILLEGAL_PIECE_MOVEMENT"
+            )
+        return LegalityResult(
+            legal=False,
+            action=action,
+            reason=reason,
+            state_fingerprint=state.fingerprint(),
+        )
+
+    def legal_actions(self, state: ChessGameState) -> LegalActionSet[ChessMove]:
+        return self._environment.legal_actions(state)
+
+    def transition(
+        self, state: ChessGameState, action: ChessMove
+    ) -> Transition[ChessGameState, ChessMove]:
+        return self._environment.transition(state, action)
+
+    def terminal(self, state: ChessGameState) -> Termination | None:
+        return state.termination
 
 
 class StandardChessEnvironmentDefinition:

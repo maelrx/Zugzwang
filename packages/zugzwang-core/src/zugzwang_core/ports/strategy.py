@@ -15,6 +15,7 @@ from ..domain.assistance import AssistanceImpact
 from ..domain.events import JsonValue
 from ..domain.money import CostEntry, TokenUsage
 from .model import ModelRef
+from .rules import DecisionCapabilities
 
 
 class StrategyDescriptor(BaseModel):
@@ -46,6 +47,14 @@ class DecisionContext(BaseModel):
     config: dict[str, JsonValue] = {}
     artifact_store: Any = None
     knowledge: tuple[Any, ...] = ()
+    # These are scoped per decision phase.  They are intentionally opaque to
+    # the core contract so the runtime can bind a concrete gateway/workspace
+    # without importing chess or a provider here.
+    state: Any = None
+    capabilities: DecisionCapabilities = DecisionCapabilities()
+    legality_gateway: Any = None
+    search_workspace: Any = None
+    search_memory: Any = None
 
 
 class Candidate(BaseModel):
@@ -96,6 +105,45 @@ class DecisionTrace(BaseModel):
     final_action: Any | None = None
     termination_reason: str = "selected"
     assistance_impacts: tuple[AssistanceImpact, ...] = ()
+    artifact_refs: tuple[str, ...] = ()
+
+
+class ObservationArtifact(BaseModel):
+    """Exact model-facing observation stored as a versioned CAS payload."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: str = "zgw.observation/v1"
+    run_id: str
+    episode_id: str
+    step_id: str
+    state_ref: str
+    state_fingerprint: str | None = None
+    sources: dict[str, JsonValue]
+    policy: dict[str, JsonValue]
+    payload: dict[str, JsonValue]
+    assistance: dict[str, JsonValue]
+
+
+class DecisionTraceArtifact(BaseModel):
+    """Durable form of one strategy decision."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: str = "zgw.decision-trace/v1"
+    run_id: str
+    episode_id: str
+    step_id: str
+    strategy: dict[str, JsonValue]
+    calls: tuple[CallRecord, ...] = ()
+    candidates: tuple[Candidate, ...] = ()
+    tool_invocations: tuple[str, ...] = ()
+    verdicts: tuple[Verdict, ...] = ()
+    selection_rationale: dict[str, JsonValue] | None = None
+    final_action: Any | None = None
+    termination_reason: str = "selected"
+    assistance_impacts: tuple[AssistanceImpact, ...] = ()
+    artifact_refs: tuple[str, ...] = ()
 
 
 @runtime_checkable

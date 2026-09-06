@@ -20,9 +20,14 @@ from .tables import (
     attempts,
     checkpoints,
     episodes,
+    evaluation_runs,
     events,
     metric_observations,
     runs,
+    search_edges,
+    search_nodes,
+    search_retrieval_events,
+    search_sessions,
     steps,
 )
 
@@ -30,6 +35,10 @@ from .tables import (
 class BaseRepository:
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
+
+    @property
+    def engine(self) -> Engine:
+        return self._engine
 
     @contextmanager  # pyright: ignore[reportDeprecated] - stdlib contextmanager is the intended tool here
     def connect(self) -> Iterator[Connection]:
@@ -154,6 +163,12 @@ class StepRepository(BaseRepository):
         with self._target(connection) as target:
             target.execute(steps.insert().values(**row))
 
+    def get(self, step_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            result = connection.execute(select(steps).where(steps.c.step_id == step_id))
+            row = result.mappings().first()
+            return dict(row) if row is not None else None
+
     def update_step(
         self, step_id: str, values: dict[str, Any], connection: Connection | None = None
     ) -> None:
@@ -229,11 +244,21 @@ class EventRepository(BaseRepository):
             )
             return [dict(row) for row in result.mappings()]
 
+    def for_step(self, step_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(events).where(events.c.step_id == step_id).order_by(events.c.event_id)
+            )
+            return [dict(row) for row in result.mappings()]
+
 
 class ArtifactRepository(BaseRepository):
     def insert_artifact(self, row: dict[str, Any], connection: Connection | None = None) -> None:
         with self._target(connection) as target:
-            target.execute(artifacts.insert().values(**row))
+            # CAS identity makes duplicate registration harmless.  Writers can
+            # legitimately enqueue the same immutable snapshot from more than
+            # one evidence path (event, projection and bundle reference).
+            target.execute(artifacts.insert().prefix_with("OR IGNORE").values(**row))
 
     def get(self, artifact_id: str) -> dict[str, Any] | None:
         with self.connect() as connection:
@@ -254,9 +279,14 @@ class ArtifactRepository(BaseRepository):
                 episodes.c.initial_state_artifact_id,
                 episodes.c.final_state_artifact_id,
                 steps.c.observation_artifact_id,
+                steps.c.decision_trace_artifact_id,
+                steps.c.search_graph_artifact_id,
                 steps.c.transition_artifact_id,
                 attempts.c.request_artifact_id,
+                attempts.c.wire_request_artifact_id,
+                attempts.c.wire_response_artifact_id,
                 attempts.c.response_artifact_id,
+                attempts.c.reasoning_telemetry_artifact_id,
                 metric_observations.c.provenance_artifact_id,
                 runs.c.resolved_manifest_artifact_id,
                 checkpoints.c.state_artifact_id,
@@ -276,6 +306,146 @@ class MetricObservationRepository(BaseRepository):
         with self.connect() as connection:
             result = connection.execute(
                 select(metric_observations).where(metric_observations.c.run_id == run_id)
+            )
+            return [dict(row) for row in result.mappings()]
+
+    def for_evaluation_run(self, evaluation_run_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(metric_observations).where(
+                    metric_observations.c.evaluation_run_id == evaluation_run_id
+                )
+            )
+            return [dict(row) for row in result.mappings()]
+
+    def legacy_for_run(self, run_id: str) -> list[dict[str, Any]]:
+        """Metrics recorded before evaluation-run generations existed (pre-0003).
+
+        Their provenance (evaluator generation) is unknown; callers must keep
+        them in a separate, clearly identified group.
+        """
+        with self.connect() as connection:
+            result = connection.execute(
+                select(metric_observations).where(
+                    (metric_observations.c.run_id == run_id)
+                    & (metric_observations.c.evaluation_run_id.is_(None))
+                )
+            )
+            return [dict(row) for row in result.mappings()]
+
+
+class EvaluationRunRepository(BaseRepository):
+    """Immutable-generation metadata for post-hoc evaluation passes."""
+
+    def insert(self, row: dict[str, Any], connection: Connection | None = None) -> None:
+        with self._target(connection) as target:
+            target.execute(evaluation_runs.insert().values(**row))
+
+    def update(
+        self, evaluation_run_id: str, values: dict[str, Any], connection: Connection | None = None
+    ) -> None:
+        with self._target(connection) as target:
+            target.execute(
+                update(evaluation_runs)
+                .where(evaluation_runs.c.evaluation_run_id == evaluation_run_id)
+                .values(**values)
+            )
+
+    def get(self, evaluation_run_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(evaluation_runs).where(
+                    evaluation_runs.c.evaluation_run_id == evaluation_run_id
+                )
+            )
+            row = result.mappings().first()
+            return dict(row) if row is not None else None
+
+    def for_run(self, run_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(evaluation_runs)
+                .where(evaluation_runs.c.source_run_id == run_id)
+                .order_by(
+                    evaluation_runs.c.created_at.desc(),
+                    evaluation_runs.c.evaluation_run_id.desc(),
+                )
+            )
+            return [dict(row) for row in result.mappings()]
+
+
+class SearchSessionRepository(BaseRepository):
+    def insert(self, row: dict[str, Any], connection: Connection | None = None) -> None:
+        with self._target(connection) as target:
+            target.execute(search_sessions.insert().values(**row))
+
+    def update(
+        self, search_session_id: str, values: dict[str, Any], connection: Connection | None = None
+    ) -> None:
+        with self._target(connection) as target:
+            target.execute(
+                update(search_sessions)
+                .where(search_sessions.c.search_session_id == search_session_id)
+                .values(**values)
+            )
+
+    def get(self, search_session_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(search_sessions).where(
+                    search_sessions.c.search_session_id == search_session_id
+                )
+            )
+            row = result.mappings().first()
+            return dict(row) if row is not None else None
+
+    def for_run(self, run_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(search_sessions)
+                .where(search_sessions.c.run_id == run_id)
+                .order_by(search_sessions.c.created_at.desc())
+            )
+            return [dict(row) for row in result.mappings()]
+
+
+class SearchNodeRepository(BaseRepository):
+    def insert(self, row: dict[str, Any], connection: Connection | None = None) -> None:
+        with self._target(connection) as target:
+            target.execute(search_nodes.insert().prefix_with("OR IGNORE").values(**row))
+
+    def for_session(self, search_session_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(search_nodes).where(search_nodes.c.search_session_id == search_session_id)
+            )
+            return [dict(row) for row in result.mappings()]
+
+
+class SearchEdgeRepository(BaseRepository):
+    def insert(self, row: dict[str, Any], connection: Connection | None = None) -> None:
+        with self._target(connection) as target:
+            target.execute(search_edges.insert().prefix_with("OR IGNORE").values(**row))
+
+    def for_session(self, search_session_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(search_edges).where(search_edges.c.search_session_id == search_session_id)
+            )
+            return [dict(row) for row in result.mappings()]
+
+
+class SearchRetrievalEventRepository(BaseRepository):
+    def insert(self, row: dict[str, Any], connection: Connection | None = None) -> None:
+        with self._target(connection) as target:
+            target.execute(search_retrieval_events.insert().values(**row))
+
+    def for_session(self, search_session_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            result = connection.execute(
+                select(search_retrieval_events).where(
+                    search_retrieval_events.c.search_session_id == search_session_id
+                )
             )
             return [dict(row) for row in result.mappings()]
 

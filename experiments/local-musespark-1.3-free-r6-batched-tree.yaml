@@ -1,0 +1,63 @@
+# Real R6 smoke through the local OpenCode-compatible router.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: local-musespark-1-3-free-r6-batched-tree
+  tags: [local, free-provider, r6, model-only-search]
+spec:
+  seed: 20260904
+  task:
+    plugin: chess.tasks
+    config:
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      search:
+        algorithm: adaptive_adversarial_beam
+        max_nodes: 16
+        max_depth_plies: 4
+        max_validation_queries: 32
+        max_transition_queries: 16
+        initial_candidates: 3
+        judges: 3
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 120
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: minimal
+        default_max_output_tokens: 2048
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor-free
+        strategy: chess.r6_batched_tree
+    black:
+      policy:
+        plugin: fake.stay
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true}
+      side_to_move: true
+      move_number: true
+      history: {mode: none}
+      legal_actions: {exposure: none}
+    legality:
+      validation: {enabled: true, feedback: binary}
+      enumerate: {enabled: false}
+      transition_sandbox: true
+      limits: {validations: 32, transitions: 16, depth_plies: 4, branch_states: 16}
+    retry_profile: no_retry
+    retries: {transport: 5, parse: 0, illegal: 0}
+  budget:
+    max_calls: 8
+    max_concurrent_episodes: 1
+  evaluation: []
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

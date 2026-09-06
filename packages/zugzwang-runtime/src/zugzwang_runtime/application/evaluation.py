@@ -11,13 +11,17 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from zugzwang_core.domain.artifacts import ArtifactRef
-from zugzwang_core.domain.events import JsonValue
+from zugzwang_core.domain.artifacts import ArtifactPayload, ArtifactRef
+from zugzwang_core.domain.canonical import canonical_json_bytes
+from zugzwang_core.domain.clocks import to_iso_z, utc_now
+from zugzwang_core.domain.events import EventContext, EventEnvelope, JsonValue
 from zugzwang_core.domain.ids import new_id
 
 from ..artifacts.cas import ContentAddressedStore
 from ..persistence.repositories import (
+    ArtifactRepository,
     EpisodeRepository,
+    EvaluationRunRepository,
     EventRepository,
     MetricObservationRepository,
     RunRepository,
@@ -32,6 +36,8 @@ class EvaluationSummary(BaseModel):
     evaluator_id: str
     observations: int
     metrics: dict[str, Any]
+    evaluation_run_id: str | None = None
+    evaluator_version: str | None = None
 
 
 def build_evaluation_steps(
@@ -56,7 +62,7 @@ def build_evaluation_steps(
         for index, row in enumerate(committed):
             action_json: dict[str, Any] = dict(row.get("action_json") or {})
             action = action_json.get("action")
-            if not isinstance(action, str) or action_json.get("kind"):
+            if not isinstance(action, str) or action_json.get("kind") or action_json.get("policy"):
                 continue
             state_ref_id = (
                 committed[index - 1]["transition_artifact_id"] if index > 0 else initial_ref
@@ -98,12 +104,16 @@ class EvaluateRunService:
         steps: StepRepository,
         metrics: MetricObservationRepository,
         cas: ContentAddressedStore,
+        evaluation_runs: EvaluationRunRepository | None = None,
+        events: EventRepository | None = None,
     ) -> None:
         self._runs = runs
         self._episodes = episodes
         self._steps = steps
         self._metrics = metrics
         self._cas = cas
+        self._evaluation_runs = evaluation_runs or EvaluationRunRepository(metrics.engine)
+        self._events = events or EventRepository(metrics.engine)
 
     async def evaluate(
         self,
@@ -117,6 +127,39 @@ class EvaluateRunService:
         row = self._runs.get_run(run_id)
         if row is None:
             raise ValueError(f"run {run_id} not found")
+        descriptor = getattr(evaluator, "descriptor", None)
+        evaluator_version = str(getattr(descriptor, "evaluator_version", "unknown"))
+        descriptor_data: dict[str, Any]
+        if descriptor is not None and hasattr(descriptor, "model_dump"):
+            descriptor_data = descriptor.model_dump(mode="json")
+        else:
+            descriptor_data = {
+                "evaluator_id": evaluator_id,
+                "evaluator_version": evaluator_version,
+            }
+        evaluator_metadata = getattr(evaluator, "evaluation_metadata", None)
+        if callable(evaluator_metadata):
+            evaluator_metadata = evaluator_metadata()
+        if isinstance(evaluator_metadata, dict):
+            descriptor_data = {"descriptor": descriptor_data, "engine": evaluator_metadata}
+        evaluation_run_id = str(new_id("eval"))
+        self._evaluation_runs.insert(
+            {
+                "evaluation_run_id": evaluation_run_id,
+                "source_run_id": run_id,
+                "evaluator_id": evaluator_id,
+                "evaluator_version": evaluator_version,
+                "engine_json": descriptor_data,
+                "config_json": {},
+                "status": "RUNNING",
+                "created_at": to_iso_z(utc_now()),
+            }
+        )
+        self._append_evaluation_event(
+            run_id,
+            "evaluation.run.started",
+            {"evaluation_run_id": evaluation_run_id, "evaluator_id": evaluator_id},
+        )
         evaluation_steps = build_evaluation_steps(
             run_id=run_id,
             runs=self._runs,
@@ -125,8 +168,22 @@ class EvaluateRunService:
             cas=self._cas,
         )
         if not evaluation_steps:
+            self._evaluation_runs.update(
+                evaluation_run_id,
+                {"status": "COMPLETED", "finished_at": to_iso_z(utc_now())},
+            )
+            self._append_evaluation_event(
+                run_id,
+                "evaluation.run.completed",
+                {"evaluation_run_id": evaluation_run_id, "observations": 0},
+            )
             return EvaluationSummary(
-                run_id=run_id, evaluator_id=evaluator_id, observations=0, metrics={}
+                run_id=run_id,
+                evaluator_id=evaluator_id,
+                observations=0,
+                metrics={},
+                evaluation_run_id=evaluation_run_id,
+                evaluator_version=evaluator_version,
             )
         context = EvaluationContext(
             run_id=run_id,
@@ -137,13 +194,68 @@ class EvaluateRunService:
                 )
             },
         )
-        result = await evaluator.evaluate(context)
+        try:
+            result = await evaluator.evaluate(context)
+        except Exception as exc:
+            self._evaluation_runs.update(
+                evaluation_run_id,
+                {
+                    "status": "FAILED",
+                    "finished_at": to_iso_z(utc_now()),
+                    "failure_code": str(getattr(exc, "stable_code", type(exc).__name__))[:128],
+                },
+            )
+            self._append_evaluation_event(
+                run_id,
+                "evaluation.run.failed",
+                {
+                    "evaluation_run_id": evaluation_run_id,
+                    "failure_code": str(getattr(exc, "stable_code", type(exc).__name__)),
+                },
+            )
+            raise
+        provenance_ref: ArtifactRef | None = None
+        analysis_records = getattr(evaluator, "analysis_records", ())
+        if isinstance(analysis_records, (list, tuple)) and analysis_records:
+            provenance_data = canonical_json_bytes(
+                {
+                    "schema_version": "zgw.evaluation-trace/v1",
+                    "evaluation_run_id": evaluation_run_id,
+                    "source_run_id": run_id,
+                    "evaluator_id": evaluator_id,
+                    "evaluator_version": evaluator_version,
+                    "records": analysis_records,
+                }
+            )
+            provenance_ref = self._cas.put(
+                ArtifactPayload(
+                    media_type="application/vnd.zugzwang.evaluation-trace+json",
+                    data=provenance_data,
+                ),
+                redaction_policy="standard",
+            )
+            ArtifactRepository(self._metrics.engine).insert_artifact(
+                {
+                    "artifact_id": provenance_ref.as_id(),
+                    "algorithm": "sha256",
+                    "size_bytes": len(provenance_data),
+                    "media_type": "application/vnd.zugzwang.evaluation-trace+json",
+                    "relative_path": provenance_ref.storage_path(),
+                    "created_at": to_iso_z(utc_now()),
+                    "redaction_policy": "standard",
+                }
+            )
+            self._evaluation_runs.update(
+                evaluation_run_id,
+                {"config_json": {"analysis_trace_artifact_id": provenance_ref.as_id()}},
+            )
         stored = 0
         for observation in result.observations:
             self._metrics.insert(
                 {
                     "metric_observation_id": str(new_id("evl")),
                     "run_id": observation.run_id or run_id,
+                    "evaluation_run_id": evaluation_run_id,
                     "episode_id": observation.episode_id,
                     "step_id": observation.step_id,
                     "metric_definition_id": observation.metric_id,
@@ -156,6 +268,8 @@ class EvaluateRunService:
                     "provenance_artifact_id": (
                         observation.provenance_artifact.as_id()
                         if observation.provenance_artifact is not None
+                        else provenance_ref.as_id()
+                        if provenance_ref is not None
                         else None
                     ),
                     "evaluator_id": observation.evaluator_id,
@@ -163,12 +277,53 @@ class EvaluateRunService:
                 }
             )
             stored += 1
+        self._evaluation_runs.update(
+            evaluation_run_id,
+            {"status": "COMPLETED", "finished_at": to_iso_z(utc_now())},
+        )
+        self._append_evaluation_event(
+            run_id,
+            "evaluation.run.completed",
+            {"evaluation_run_id": evaluation_run_id, "observations": stored},
+        )
         metrics = _aggregate_observations(result.observations)
         return EvaluationSummary(
             run_id=run_id,
             evaluator_id=evaluator_id,
             observations=stored,
             metrics=metrics,
+            evaluation_run_id=evaluation_run_id,
+            evaluator_version=evaluator_version,
+        )
+
+    def _append_evaluation_event(
+        self, run_id: str, event_type: str, payload: dict[str, JsonValue]
+    ) -> None:
+        envelope = EventEnvelope.create(
+            event_type=event_type,
+            payload=payload,
+            stream_type="run",
+            stream_id=run_id,
+            sequence=0,
+            context=EventContext(run_id=run_id),
+        )
+        self._events.append_event(
+            {
+                "event_id": envelope.event_id,
+                "run_id": run_id,
+                "episode_id": None,
+                "step_id": None,
+                "attempt_id": None,
+                "stream_type": "run",
+                "stream_id": run_id,
+                "sequence_no": self._events.max_sequence("run", run_id) + 1,
+                "event_type": event_type,
+                "event_version": 1,
+                "occurred_at": envelope.occurred_at.isoformat(),
+                "payload_json": payload,
+                "artifact_refs_json": [],
+                "trace_id": None,
+            }
         )
 
 
@@ -207,14 +362,16 @@ class ReportRunService:
         steps: StepRepository,
         metrics: MetricObservationRepository,
         events: EventRepository,
+        evaluation_runs: EvaluationRunRepository | None = None,
     ) -> None:
         self._runs = runs
         self._episodes = episodes
         self._steps = steps
         self._metrics = metrics
         self._events = events
+        self._evaluation_runs = evaluation_runs or EvaluationRunRepository(metrics.engine)
 
-    def report(self, run_id: str) -> dict[str, Any]:
+    def report(self, run_id: str, *, evaluation_run_id: str | None = None) -> dict[str, Any]:
         row = self._runs.get_run(run_id)
         if row is None:
             raise ValueError(f"run {run_id} not found")
@@ -231,7 +388,25 @@ class ReportRunService:
                     "steps_failed": sum(1 for s in steps_rows if s["status"] == "TERMINAL_FAILURE"),
                 }
             )
-        metrics_rows = self._metrics.for_run(run_id)
+        generations = self._evaluation_runs.for_run(run_id)
+        selected_evaluation = next(
+            (
+                generation
+                for generation in generations
+                if evaluation_run_id is None or generation["evaluation_run_id"] == evaluation_run_id
+            ),
+            None,
+        )
+        if evaluation_run_id is not None and selected_evaluation is None:
+            raise ValueError(
+                f"evaluation run {evaluation_run_id} not found for source run {run_id}"
+            )
+        metrics_rows = (
+            self._metrics.for_evaluation_run(selected_evaluation["evaluation_run_id"])
+            if selected_evaluation is not None
+            else []
+        )
+        legacy_metrics_rows = self._metrics.legacy_for_run(run_id)
         events_rows = self._events.for_run(run_id)
         provider_calls = sum(1 for e in events_rows if e["event_type"] == "provider.call.completed")
         provider_failures = sum(
@@ -254,6 +429,7 @@ class ReportRunService:
             "protocol_hash": row["protocol_hash"],
             "declared_assistance": row["declared_assistance"],
             "effective_assistance": row.get("effective_assistance") or "H2",
+            "assistance_violated": bool(row.get("assistance_violated", 0)),
             "episodes": episodes_typed,
             "operational": {
                 "provider_calls": provider_calls,
@@ -263,6 +439,23 @@ class ReportRunService:
                 "cost_status": "unknown",  # GATE-009 pending: no USD claims
             },
             "metrics": [dict(m) for m in metrics_rows],
+            "legacy_metrics": {
+                "note": (
+                    "recorded before evaluation-run generations existed (pre-0003); "
+                    "evaluator generation/provenance is unknown"
+                ),
+                "observations": [dict(m) for m in legacy_metrics_rows],
+            },
+            "evaluation": (
+                {
+                    "evaluation_run_id": selected_evaluation["evaluation_run_id"],
+                    "evaluator_id": selected_evaluation["evaluator_id"],
+                    "evaluator_version": selected_evaluation["evaluator_version"],
+                    "status": selected_evaluation["status"],
+                }
+                if selected_evaluation is not None
+                else None
+            ),
             "reproducibility": {
                 "auditability": True,
                 "offline_replay": True,
@@ -282,6 +475,7 @@ class ReportRunService:
             f"- Protocol hash: `{report['protocol_hash']}`",
             f"- Declared assistance: **{report['declared_assistance']}**",
             f"- Effective assistance: **{report['effective_assistance']}**",
+            f"- Assistance violation: **{report['assistance_violated']}**",
             "",
             "## Operational",
             "",
@@ -305,6 +499,29 @@ class ReportRunService:
             lines.append("## Metrics")
             lines.append("")
             for metric in report["metrics"]:
+                value = (
+                    metric.get("value_num")
+                    if metric.get("value_num") is not None
+                    else metric.get("value_text")
+                )
+                lines.append(
+                    f"- {metric['metric_definition_id']}@{metric['metric_version']}: "
+                    f"{value} {metric['unit']}"
+                )
+        legacy_metrics = cast(
+            "dict[str, Any]",
+            report.get("legacy_metrics") or {},
+        )
+        legacy_observations = cast(
+            "list[dict[str, Any]]",
+            legacy_metrics.get("observations") or [],
+        )
+        if legacy_observations:
+            lines.append("")
+            lines.append("## Legacy metrics")
+            lines.append("")
+            lines.append(f"- {legacy_metrics.get('note', '')}")
+            for metric in legacy_observations:
                 value = (
                     metric.get("value_num")
                     if metric.get("value_num") is not None

@@ -249,6 +249,7 @@ uv run python scripts/validate_foundation.py --strict
 uv run pytest -m "not e2e"
 ```
 
+The local runtime, providers, chess environment, evidence artifacts, post-hoc evaluator and model-only R6 search are implemented. Real provider data remains local and public raw-output export remains gated.
 ## Quality policy
 
 A result is not publishable unless it records:

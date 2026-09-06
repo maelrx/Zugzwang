@@ -1,0 +1,69 @@
+# Real strategy matrix: the same MuseSpark model and position under the
+# currently implemented chess strategies. The protocol is held constant;
+# only the decision strategy changes.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: local-musespark-1-3-free-strategy-suite
+  tags: [local, free-provider, move-selection, strategy-matrix]
+
+spec:
+  seed: 20260930
+
+  matrix:
+    mode: product
+    parameters:
+      strategy: [chess.direct, chess.grounded, chess.reason_then_ground, chess.repair, chess.structured]
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 120
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: minimal
+        default_max_output_tokens: 4096
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor-free
+        from_matrix: [strategy]
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H3
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      legal_actions: {exposure: always, encoding: uci}
+      history: {mode: none}
+    retries:
+      transport: 0
+      parse: 1
+      illegal: 1
+
+  budget:
+    max_calls: 8
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

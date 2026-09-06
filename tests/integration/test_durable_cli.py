@@ -46,12 +46,12 @@ class TestDurableCli:
         status = json.loads(db_result.output)
         assert status["tables_exist"] is True
 
-    def test_run_requires_workspace(self) -> None:
+    def test_run_requires_workspace(self, tmp_path) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "zugzwang_cli.main", "run", MANIFEST],
+            [sys.executable, "-m", "zugzwang_cli.main", "run", str(REPO_ROOT / MANIFEST)],
             capture_output=True,
             text=True,
-            cwd=REPO_ROOT,
+            cwd=tmp_path,
             check=False,
         )
         assert result.returncode != 0

@@ -9,6 +9,7 @@ cost stays ``unknown`` (GATE-009). Errors map to the typed provider taxonomy.
 
 from __future__ import annotations
 
+import json
 from typing import Any, cast
 
 import httpx
@@ -32,6 +33,8 @@ from zugzwang_core.ports.model import (
     NormalizedResponse,
     OnUnsupported,
     ProviderResult,
+    ReasoningAvailability,
+    ReasoningTelemetry,
     StopReason,
     TextPart,
     WireFidelity,
@@ -57,6 +60,8 @@ class OpenCodeBackend:
         self._base_url = base_url.rstrip("/")
         self._provider_id = provider_id
         self._image_input = image_input
+        self._last_wire_request: dict[str, Any] | None = None
+        self._last_wire_response: dict[str, Any] | None = None
         self._client = httpx.AsyncClient(
             base_url=self._base_url, transport=transport, timeout=timeout_seconds
         )
@@ -160,6 +165,13 @@ class OpenCodeBackend:
                         technical_context="parts are text or image only in v0.1",
                     )
         try:
+            self._last_wire_request = {
+                "model": {
+                    "providerID": self._provider_id,
+                    "modelID": request.model.model,
+                },
+                "parts": parts,
+            }
             response = await self._client.post(
                 f"/session/{session_id}/message",
                 json={
@@ -174,6 +186,11 @@ class OpenCodeBackend:
             raise ProviderConnectionError(
                 "opencode message call failed", technical_context=str(exc)
             ) from exc
+        try:
+            raw_data = response.json()
+            self._last_wire_response = raw_data if isinstance(raw_data, dict) else {}
+        except (ValueError, json.JSONDecodeError):
+            self._last_wire_response = {}
         if response.status_code == 429:
             raise ProviderThrottlingError(
                 "opencode rate limited (429)", technical_context=self._base_url
@@ -195,15 +212,51 @@ class OpenCodeBackend:
                     "opencode reported rate limiting", technical_context=message
                 )
             raise ProviderResponseError("opencode provider error", technical_context=message[:300])
+        parts_raw = data.get("parts")
+        response_parts: list[dict[str, Any]] = (
+            cast(list[dict[str, Any]], parts_raw) if isinstance(parts_raw, list) else []
+        )
         text_parts: list[TextPart] = []
-        for part in cast(list[dict[str, Any]], data.get("parts") or []):
+        for part in response_parts:
             if part.get("type") == "text" and isinstance(part.get("text"), str):
                 text_parts.append(TextPart(text=str(part["text"])))
-        tokens: dict[str, Any] = cast(dict[str, Any], info.get("tokens") or {})
+        tokens_raw = info.get("tokens")
+        tokens: dict[str, Any] = (
+            cast(dict[str, Any], tokens_raw) if isinstance(tokens_raw, dict) else {}
+        )
         usage = TokenUsage(
             input_tokens=int(tokens.get("input", 0) or 0),
             output_tokens=int(tokens.get("output", 0) or 0),
             source=UsageSource.PROVIDER,
+        )
+        reasoning_tokens = _reasoning_tokens(tokens)
+        reasoning_items = tuple(
+            dict(part)
+            for part in response_parts
+            if part.get("type") in {"reasoning", "reasoning_summary"}
+        )
+        reasoning_summary = (
+            "\n".join(
+                str(item.get("text"))
+                for item in reasoning_items
+                if isinstance(item.get("text"), str)
+            )
+            or None
+        )
+        telemetry = ReasoningTelemetry(
+            provider=self._provider_id,
+            model=str(info.get("modelID") or request.model.model),
+            usage=tokens,
+            reasoning_tokens=reasoning_tokens,
+            reasoning_items=reasoning_items,
+            reasoning_summary=reasoning_summary,
+            availability=ReasoningAvailability(
+                reasoning_tokens=reasoning_tokens is not None,
+                reasoning_items=bool(reasoning_items),
+                reasoning_summary=reasoning_summary is not None,
+            ),
+            wire_fidelity=WireFidelity.PARTIAL,
+            provider_metadata=info,
         )
         return ProviderResult(
             response=NormalizedResponse(
@@ -218,7 +271,17 @@ class OpenCodeBackend:
                 adapter_version=self.backend_version,
                 wire_fidelity=WireFidelity.PARTIAL,
                 warnings=("opencode system prompt contributes to input tokens",),
-            )
+            ),
+            wire_request={
+                "model": {
+                    "providerID": self._provider_id,
+                    "modelID": request.model.model,
+                },
+                "parts": parts,
+            },
+            wire_response=data,
+            reasoning_telemetry=telemetry,
+            wire_fidelity=WireFidelity.PARTIAL,
         )
 
     async def _dispose_session(self, session_id: str) -> None:
@@ -229,3 +292,17 @@ class OpenCodeBackend:
 
     async def close(self) -> None:
         await self._client.aclose()
+
+
+def _reasoning_tokens(tokens: dict[str, Any]) -> int | None:
+    for key in ("reasoning", "reasoning_tokens", "reasoningTokens"):
+        value = tokens.get(key)
+        if isinstance(value, int) and value >= 0:
+            return value
+    details_raw = tokens.get("details")
+    details = cast(dict[str, Any], details_raw) if isinstance(details_raw, dict) else {}
+    if details:
+        value = details.get("reasoning_tokens") or details.get("reasoningTokens")
+        if isinstance(value, int) and value >= 0:
+            return value
+    return None

@@ -29,6 +29,7 @@ from zugzwang_core.ports.strategy import (
     Verdict,
 )
 
+from ._prompt_hooks import append_retry_feedback
 from .direct import build_observation_text
 
 
@@ -39,9 +40,23 @@ class RepairStrategy:
     strategy_version = "0.1.0"
     plugin_api = "zgw.plugin/v1alpha1"
 
-    def __init__(self, *, max_retries: int = 1, feedback: str = "legality_only") -> None:
+    def __init__(
+        self,
+        *,
+        max_retries: int = 1,
+        feedback: str = "binary",
+        retry_profile: str | None = None,
+    ) -> None:
         self._max_retries = max_retries
-        self._feedback = feedback
+        self._feedback = retry_profile or (
+            "binary_legality"
+            if feedback in {"legality_only", "binary"}
+            else "legality_reason"
+            if feedback in {"reason_category", "legality_reason"}
+            else "enumerate_after_failure"
+            if feedback in {"enumerated", "constrained", "legal_actions"}
+            else feedback
+        )
 
     @property
     def descriptor(self) -> StrategyDescriptor:
@@ -50,7 +65,7 @@ class RepairStrategy:
             strategy_version=self.strategy_version,
             plugin_api=self.plugin_api,
             declared_regime="R2",
-            declared_assistance_h="H2",
+            declared_assistance_h=("H3" if self._feedback == "enumerate_after_failure" else "H2"),
             declared_assistance_k="K0",
             consumes_legal_actions=False,
             produces_candidates=False,
@@ -62,12 +77,20 @@ class RepairStrategy:
             cast(dict[str, JsonValue], observation) if isinstance(observation, dict) else {}
         )
         base_prompt = build_observation_text(obs)
+        base_prompt = append_retry_feedback(base_prompt, context)
         messages: list[Message] = [
             Message(role=MessageRole.USER, parts=(TextPart(text=base_prompt),))
         ]
         calls: list[CallRecord] = []
         verdicts: list[Verdict] = []
-        impact = AssistanceImpact(h=HClass.H0, source="formal_parser")
+        impact = AssistanceImpact(
+            h=(HClass.H3 if self._feedback == "enumerate_after_failure" else HClass.H1),
+            source=(
+                "legal_action_set"
+                if self._feedback == "enumerate_after_failure"
+                else "binary_legality"
+            ),
+        )
 
         for attempt_index in range(1 + self._max_retries):
             request = ModelRequest(
@@ -145,12 +168,23 @@ class RepairStrategy:
                         message=f"move {move} is not in the legal set (attempt {attempt_index + 1})",
                     )
                 )
-                if attempt_index < self._max_retries and self._feedback == "legality_only":
-                    feedback_text = (
-                        f"Move {move} is not legal in this position. "
-                        f"Legal moves: {', '.join(str(a) for a in legal)}. "
-                        "Reply with a legal UCI move."
-                    )
+                if attempt_index < self._max_retries:
+                    if self._feedback == "enumerate_after_failure":
+                        feedback_text = (
+                            f"Move {move} is not legal in this position. "
+                            f"Legal moves: {', '.join(str(a) for a in legal)}. "
+                            "Reply with a legal UCI move."
+                        )
+                    elif self._feedback == "legality_reason":
+                        feedback_text = (
+                            f"Move {move} is not legal in this position. "
+                            "Formal result: ILLEGAL. Reply with a different UCI move."
+                        )
+                    else:
+                        feedback_text = (
+                            f"Move {move} is not legal in this position. "
+                            "The formal result was ILLEGAL. Reply with a different UCI move."
+                        )
                     messages.append(
                         Message(
                             role=MessageRole.ASSISTANT,

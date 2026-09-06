@@ -392,7 +392,7 @@ class DoctorService:
             check="engine.stockfish",
             status="ok" if engine else "warn",
             message=(
-                f"stockfish found at {engine} (optional, post-hoc only)"
+                f"stockfish found at {engine} (post-hoc evaluator and live opponent)"
                 if engine
                 else "no stockfish binary found (fake UCI engine is used offline)"
             ),
@@ -435,8 +435,23 @@ def _protocol_incompatibilities(condition: ResolvedCondition) -> tuple[str, ...]
             f"{declared_h} declared but observation exposes no legal action set "
             "(grounding requires legal_actions exposure)"
         )
-    if KClass[declared_k] > KClass.K0 and not condition.protocol.knowledge_packets:
+    if (
+        KClass[declared_k] > KClass.K0
+        and not condition.protocol.knowledge_packets
+        and not _has_episode_search_memory(condition)
+    ):
         issues.append(f"{declared_k} declared but no knowledge_packets are configured")
     if condition.protocol.retries.illegal > 0 and declared_h == "H0":
         issues.append("illegal-action retries are declared but H0 has no legality feedback path")
     return tuple(issues)
+
+
+def _has_episode_search_memory(condition: ResolvedCondition) -> bool:
+    """K6 may be supplied by the explicit endogenous R7 memory fabric."""
+    search = condition.task.config.get("search")
+    if not isinstance(search, dict) or search.get("memory_mode") != "persistent":
+        return False
+    return any(
+        player.model is not None and player.model.strategy == "chess.legal_tree_memory"
+        for player in condition.players.values()
+    )

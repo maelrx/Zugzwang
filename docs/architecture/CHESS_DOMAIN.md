@@ -100,3 +100,11 @@ Engines run as external subprocesses:
 ## 8. Standard chess first
 
 Chess960 and variants remain test targets in research, but happy-path implementation is standard chess until GATE-008/ADR-042.
+
+## 9. RulesKernel and delayed legality
+
+`StandardChessRulesKernel` is the formal adapter over python-chess. The runtime
+does not put a delayed legal-action list into the model observation. A
+`LegalityGateway` lease decides whether a phase receives binary validation,
+reason categories or enumeration. The canonical executor validates again
+before committing the move.

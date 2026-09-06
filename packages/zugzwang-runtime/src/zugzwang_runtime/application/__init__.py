@@ -21,6 +21,7 @@ from .services import (
     StartRunService,
     ValidateManifestService,
 )
+from .trace import TraceStepService
 
 __all__ = [
     "ConditionPlan",
@@ -36,6 +37,7 @@ __all__ = [
     "RunResult",
     "StartRunCommand",
     "StartRunService",
+    "TraceStepService",
     "ValidateManifestCommand",
     "ValidateManifestService",
     "ValidateResult",

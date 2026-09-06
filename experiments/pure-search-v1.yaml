@@ -1,0 +1,65 @@
+# Canonical R6 smoke: model-only search with formal transitions and no engine.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: pure-search-v1
+  tags: [r6, model-only, offline]
+
+spec:
+  seed: 20260904
+  task:
+    plugin: chess.tasks
+    config:
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      search:
+        algorithm: adaptive_adversarial_beam
+        max_nodes: 64
+        max_depth_plies: 6
+        max_validation_queries: 128
+        max_transition_queries: 64
+        initial_candidates: 4
+        judges: 3
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: chess.r6_batched_tree
+    black:
+      policy:
+        plugin: fake.stay
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true}
+      side_to_move: true
+      move_number: true
+      history: {mode: none}
+      legal_actions: {exposure: none}
+    legality:
+      parse_feedback: true
+      validation: {enabled: true, feedback: binary}
+      enumerate: {enabled: false}
+      transition_sandbox: true
+      limits:
+        validations: 128
+        transitions: 64
+        depth_plies: 6
+        branch_states: 64
+    retry_profile: no_retry
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+  budget:
+    max_calls: 8
+    max_concurrent_episodes: 1
+  evaluation: []
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

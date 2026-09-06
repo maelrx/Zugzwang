@@ -58,6 +58,9 @@ class TestPerft:
         board = chess.Board(fen)
         assert _perft(board, 2) == expected
 
+    def test_start_position_depth4(self) -> None:
+        assert _perft(chess.Board(START_FEN), 4) == 197281
+
 
 @pytest.mark.unit
 class TestCodecs:
@@ -129,6 +132,20 @@ class TestChessState:
         restored = env.restore(snapshot)
         assert restored.fen == state.fen
         assert restored.move_stack == state.move_stack
+
+    def test_environment_differential_walk_matches_python_chess(self) -> None:
+        from zugzwang_chess.environment.standard import ChessMove
+
+        state = ChessGameState(fen=START_FEN)
+        reference = chess.Board(START_FEN)
+        for _ in range(6):
+            expected = {move.uci() for move in reference.legal_moves}
+            actual = {move.uci for move in env.legal_actions(state).actions}
+            assert actual == expected
+            chosen = next(iter(reference.legal_moves))
+            state = env.transition(state, ChessMove(chosen.uci())).state
+            reference.push(chosen)
+            assert state.fen == reference.fen()
 
     @given(st.lists(st.sampled_from(["e2e4", "d2d4", "g1f3", "c2c4", "b1c3"]), max_size=6))
     def test_random_legal_walk(self, moves: list[str]) -> None:

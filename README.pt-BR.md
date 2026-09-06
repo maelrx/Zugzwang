@@ -19,7 +19,7 @@
 </div>
 
 > [!IMPORTANT]
-> O kernel experimental está implementado: uv workspace, CLI, SQLite/CAS, estratégias e testes offline. O [estado operacional](docs/engineering/REPOSITORY_STATUS.md) distingue a main das extensões em revisão. Reprodução independente e validação científica ainda têm pendências.
+> O kernel experimental está implementado: uv workspace, CLI, SQLite/CAS, estratégias e testes offline. O [estado operacional](docs/engineering/REPOSITORY_STATUS.md) distingue a main das extensões em revisão. Reprodução independente e validação científica ainda têm pendências. O caminho de pesquisa continua privado por padrão: provider, reasoning telemetry e outputs de Stockfish ficam em CAS/SQLite local, e export público segue bloqueado pelo GATE-005.
 
 ## A tese
 
@@ -45,6 +45,9 @@ O xadrez é o primeiro domínio porque combina estado determinístico, ações f
 - classes de assistência operacional `H` e de conhecimento `K`;
 - suporte tipado a conteúdo textual, simbólico e visual;
 - experimentos pareados que distinguem perception, tracking, legalidade e decisão.
+- evidência por decisão, wire request/response, telemetry do provider e EvaluationRun;
+- `LegalityGateway` com feedback binário, leases de capacidade e busca R6 model-only;
+- SearchWorkspace imutável com memória endógena e firewall para avaliação pós-jogo.
 
 ## Programa científico inicial
 
@@ -102,14 +105,18 @@ Abra o [Console de Decisões do Mestre Mael](docs/decisions/HUMAN_DECISION_GATES
 ```bash
 cat START_HERE.md
 cat docs/decisions/HUMAN_DECISION_GATES.pt-BR.md
-python scripts/validate_foundation.py
+uv run python scripts/validate_foundation.py --strict
+uv run pytest -m 'not e2e'
+uv run zugzwang trace step STEP_ID --workspace PATH --output json
 ```
+
+Os testes reais usam o proxy local configurado pelo operador. Eles exigem autorização explícita do ambiente e não fazem fallback silencioso para fake.
 
 Para desenvolvimento, use `uv sync --all-packages --all-extras --locked` e `uv run pytest -m "not e2e"`. Novos trabalhos precisam de work order e base explícita; gates pendentes continuam sob autoridade de Mestre Mael.
 
 ## Estado do projeto
 
-O runtime e `uv.lock` existem. M0-M6 têm entregas implementadas e testes; isso não declara todos os critérios de aceitação concluídos. GATE-001/002/003/004/006 foram aceitos; os demais mantêm os defaults de DECISIONS.yaml. Consulte a [fila de integração](docs/engineering/REPOSITORY_STATUS.md).
+O monorepo contém o runtime, os plugins, migrations, evaluator, bundles e a suite de testes. M0-M6 têm entregas implementadas e testes; isso não declara todos os critérios de aceitação concluídos. GATE-001/002/003/004/006 foram aceitos; a matriz de modelo paga e a redistribuição pública continuam sujeitas aos gates humanos correspondentes. Consulte a [fila de integração](docs/engineering/REPOSITORY_STATUS.md).
 
 ## Licença
 

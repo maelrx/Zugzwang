@@ -7,6 +7,8 @@ protocol. No network, no secrets (ADR-031, M3 exit gate).
 
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -33,6 +35,32 @@ def _chat_response(
         "usage": usage or {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
     }
     return httpx.Response(200, json=body)
+
+
+def _responses_response(content: str, *, model: str = "test-model") -> httpx.Response:
+    return httpx.Response(
+        200,
+        json={
+            "id": "resp-test",
+            "status": "completed",
+            "model": model,
+            "output": [
+                {
+                    "type": "reasoning",
+                    "id": "rs-test",
+                    "summary": [],
+                },
+                {
+                    "type": "message",
+                    "id": "msg-test",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [{"type": "output_text", "text": content, "annotations": []}],
+                },
+            ],
+            "usage": {"input_tokens": 12, "output_tokens": 7, "total_tokens": 19},
+        },
+    )
 
 
 @pytest.mark.contract
@@ -181,6 +209,64 @@ class TestOpenAiCompatibleAdapter:
         assert result.response.stop_reason.canonical == "tool_calls"
         assert result.response.tool_calls[0].tool_name == "lookup"
         assert result.response.tool_calls[0].arguments == {"square": "e4"}
+        await backend.close()
+
+    async def test_responses_profile_lowers_and_normalizes_nested_message(self) -> None:
+        from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend
+
+        from zugzwang_core.domain.money import UsageSource
+        from zugzwang_core.ports.model import (
+            CallContext,
+            Message,
+            MessageRole,
+            ModelRef,
+            ModelRequest,
+            TextPart,
+        )
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            assert request.url.path.endswith("/responses")
+            payload = json.loads(request.content)
+            assert payload["model"] == "muse-spark-1.3-contributor-free"
+            assert payload["input"][0]["content"][0]["type"] == "output_text"
+            assert payload["input"][1]["content"][0]["type"] == "input_text"
+            assert payload["reasoning"] == {"effort": "low"}
+            assert payload["max_output_tokens"] == 1024
+            assert "chess.strategy" not in payload
+            assert payload["top_p"] == 0.1
+            return _responses_response("e2e4")
+
+        backend = OpenAiCompatibleBackend(
+            base_url="http://mock.local/v1",
+            transport=_mock_transport(handler),
+            profile="openai-responses",
+            reasoning_effort="low",
+            default_max_output_tokens=1024,
+        )
+        request = ModelRequest(
+            model=ModelRef(
+                backend="provider.openai_compatible",
+                provider="opencode-router",
+                model="muse-spark-1.3-contributor-free",
+            ),
+            messages=(
+                Message(role=MessageRole.ASSISTANT, parts=(TextPart(text="analysis"),)),
+                Message(role=MessageRole.USER, parts=(TextPart(text="choose"),)),
+            ),
+            extensions={
+                "chess.strategy": "direct",
+                "provider.openai_compatible.top_p": 0.1,
+            },
+        )
+        result = await backend.infer(request, CallContext(run_id="run_test"))
+        assert result.response.text() == "e2e4"
+        assert result.response.request_id == "resp-test"
+        assert result.response.usage.source is UsageSource.PROVIDER
+        assert result.response.stop_reason.canonical == "end_turn"
+        assert result.wire_request is not None
+        assert result.wire_response is not None
+        assert result.reasoning_telemetry is not None
+        assert result.reasoning_telemetry.availability.reasoning_items
         await backend.close()
 
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -23,6 +23,7 @@ from ..artifacts.cas import ContentAddressedStore
 from ..persistence.repositories import (
     ArtifactRepository,
     EpisodeRepository,
+    EvaluationRunRepository,
     EventRepository,
     MetricObservationRepository,
     RunRepository,
@@ -45,6 +46,9 @@ class BundleManifest(BaseModel):
     reproducibility: dict[str, bool | list[str]]
     declared_assistance: str
     effective_assistance: str
+    assistance_violated: bool = False
+    evaluation_generations: int = 0
+    selected_evaluation_run_id: str | None = None
     checksums_file: str = "checksums.sha256"
 
 
@@ -60,6 +64,7 @@ class ExportRunBundleService:
         artifacts: ArtifactRepository,
         cas: ContentAddressedStore,
         run_dir: Path,
+        evaluation_runs: EvaluationRunRepository | None = None,
     ) -> None:
         self._runs = runs
         self._episodes = episodes
@@ -69,6 +74,7 @@ class ExportRunBundleService:
         self._artifacts = artifacts
         self._cas = cas
         self._run_dir = run_dir
+        self._evaluation_runs = evaluation_runs or EvaluationRunRepository(metrics.engine)
 
     def export(self, run_id: str, output: Path) -> Path:
         row = self._runs.get_run(run_id)
@@ -79,6 +85,22 @@ class ExportRunBundleService:
         artifacts_dir.mkdir(parents=True)
 
         referenced: set[str] = set()
+        for field in ("resolved_manifest_artifact_id",):
+            if row.get(field):
+                referenced.add(str(row[field]))
+        for episode in self._episodes.for_run(run_id):
+            for field in ("initial_state_artifact_id", "final_state_artifact_id"):
+                if episode.get(field):
+                    referenced.add(str(episode[field]))
+            for step in self._steps.for_episode(episode["episode_id"]):
+                for field in (
+                    "observation_artifact_id",
+                    "decision_trace_artifact_id",
+                    "transition_artifact_id",
+                    "search_graph_artifact_id",
+                ):
+                    if step.get(field):
+                        referenced.add(str(step[field]))
         event_rows = self._events.for_run(run_id)
         lines: list[str] = []
         for event in event_rows:
@@ -139,12 +161,28 @@ class ExportRunBundleService:
                     checksums[rel] = sha256_hex(path.read_bytes())
 
         metrics_rows = self._metrics.for_run(run_id)
+        for metric in metrics_rows:
+            if metric.get("provenance_artifact_id"):
+                referenced.add(str(metric["provenance_artifact_id"]))
         (output / "metrics.json").write_text(
             json.dumps([dict(m) for m in metrics_rows], indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
         checksums["metrics.json"] = sha256_hex((output / "metrics.json").read_bytes())
         checksums["events.jsonl"] = sha256_hex((output / "events.jsonl").read_bytes())
+        evaluations = self._evaluation_runs.for_run(run_id)
+        (output / "evaluation_runs.json").write_text(
+            json.dumps(evaluations, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        checksums["evaluation_runs.json"] = sha256_hex(
+            (output / "evaluation_runs.json").read_bytes()
+        )
+
+        artifact_rows = {
+            str(artifact_id): artifact
+            for artifact_id in referenced
+            if (artifact := self._artifacts.get(str(artifact_id))) is not None
+        }
 
         bundle = BundleManifest(
             bundle_id=f"bundle_{run_id}",
@@ -155,10 +193,29 @@ class ExportRunBundleService:
                 "source_manifest": False,
                 "resolved_manifest": bool(row.get("resolved_manifest_artifact_id")),
                 "events": True,
-                "raw_requests": any("model-request" in r for r in referenced),
-                "raw_responses": any("model-response" in r for r in referenced),
+                "raw_requests": any(
+                    artifact["media_type"].endswith("model-request+json")
+                    for artifact in artifact_rows.values()
+                ),
+                "raw_responses": any(
+                    artifact["media_type"].endswith("model-response+json")
+                    for artifact in artifact_rows.values()
+                ),
                 "metrics": True,
                 "environment_snapshots": True,
+                "observation_artifacts": any(
+                    artifact["media_type"].endswith("observation+json")
+                    for artifact in artifact_rows.values()
+                ),
+                "decision_traces": any(
+                    artifact["media_type"].endswith("decision-trace+json")
+                    for artifact in artifact_rows.values()
+                ),
+                "reasoning_telemetry": any(
+                    artifact["media_type"].endswith("reasoning-telemetry+json")
+                    for artifact in artifact_rows.values()
+                ),
+                "evaluation_runs": True,
             },
             redactions={"policy": "standard/v1", "content_removed": False},
             reproducibility={
@@ -170,6 +227,11 @@ class ExportRunBundleService:
             },
             declared_assistance=row["declared_assistance"],
             effective_assistance=row.get("effective_assistance") or "H2",
+            assistance_violated=bool(row.get("assistance_violated", 0)),
+            evaluation_generations=len(evaluations),
+            selected_evaluation_run_id=(
+                evaluations[0]["evaluation_run_id"] if evaluations else None
+            ),
         )
         (output / "bundle.json").write_text(bundle.model_dump_json(indent=2), encoding="utf-8")
         checksums["bundle.json"] = sha256_hex((output / "bundle.json").read_bytes())
@@ -185,9 +247,16 @@ class ExportRunBundleService:
 class ImportRunBundleService:
     """Validates and imports a bundle into a workspace (schema + checksums)."""
 
-    def __init__(self, *, cas: ContentAddressedStore, artifacts: ArtifactRepository) -> None:
+    def __init__(
+        self,
+        *,
+        cas: ContentAddressedStore,
+        artifacts: ArtifactRepository,
+        evaluation_runs: EvaluationRunRepository | None = None,
+    ) -> None:
         self._cas = cas
         self._artifacts = artifacts
+        self._evaluation_runs = evaluation_runs
 
     def import_bundle(self, bundle_dir: Path) -> dict[str, str]:
         bundle_path = bundle_dir / "bundle.json"
@@ -198,6 +267,7 @@ class ImportRunBundleService:
             raise SecurityError(f"unsupported bundle schema {bundle.schema_version!r}")
         self._verify_checksums(bundle_dir)
         imported = 0
+        imported_evaluations = 0
         artifacts_dir = bundle_dir / "artifacts"
         if artifacts_dir.exists():
             for path in artifacts_dir.rglob("*"):
@@ -226,10 +296,22 @@ class ImportRunBundleService:
                     }
                 )
                 imported += 1
+        evaluations_path = bundle_dir / "evaluation_runs.json"
+        if evaluations_path.exists() and self._evaluation_runs is not None:
+            evaluations = json.loads(evaluations_path.read_text(encoding="utf-8"))
+            if not isinstance(evaluations, list):
+                raise SecurityError("evaluation_runs.json must contain a list")
+            evaluation_rows = cast(list[Any], evaluations)
+            for raw in evaluation_rows:
+                if not isinstance(raw, dict):
+                    raise SecurityError("evaluation_runs.json contains a non-object")
+                self._evaluation_runs.insert(cast(dict[str, Any], raw))
+                imported_evaluations += 1
         return {
             "bundle_id": bundle.bundle_id,
             "run_id": bundle.run_id,
             "artifacts_imported": str(imported),
+            "evaluation_runs_imported": str(imported_evaluations),
         }
 
     @staticmethod

@@ -16,6 +16,9 @@ dependencies = [
 [project.entry-points."zugzwang.evaluators"]
 stockfish = "zgw_eval_stockfish:plugin"
 
+[project.entry-points."zugzwang.policies"]
+stockfish = "zgw_eval_stockfish:policy"
+
 [tool.uv.sources]
 zugzwang-core = { workspace = true }
 zugzwang-chess = { workspace = true }

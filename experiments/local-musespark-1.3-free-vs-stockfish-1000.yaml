@@ -1,0 +1,70 @@
+# Real lower-strength bucket: Stockfish 16 has no native UCI_Elo=1000.
+# This opts into the weakest Skill Level profile and records the approximation.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: local-musespark-1-3-free-vs-stockfish-1000
+  tags: [local, free-provider, full-game, stockfish-opponent, approximate-strength]
+
+spec:
+  seed: 20260925
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 8
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 120
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: minimal
+        default_max_output_tokens: 2048
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor-free
+        strategy: chess.direct
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1000
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 8
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

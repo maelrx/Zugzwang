@@ -7,6 +7,7 @@ writer, CAS, coordinator. The CLI only passes commands in.
 from __future__ import annotations
 
 import asyncio
+import inspect
 from pathlib import Path
 from typing import Any, cast
 
@@ -17,12 +18,14 @@ from zugzwang_core.domain.manifests import ResolvedCondition, ResolvedManifest
 
 from ..artifacts.cas import ContentAddressedStore
 from ..execution.durable_coordinator import DurableRunCoordinator
+from ..execution.evidence import store_artifact
 from ..execution.rate_limiting import RateLimiter
 from ..execution.registry import PluginRegistry
 from ..fakes import DeterministicModelBackend
 from ..persistence.database import Database
 from ..persistence.event_sink import PersistentEventSink
 from ..persistence.repositories import (
+    AttemptRepository,
     CheckpointRepository,
     EpisodeRepository,
     EventRepository,
@@ -44,6 +47,8 @@ class RunSummary(BaseModel):
     condition_id: str
     protocol_hash: str
     declared_assistance: str
+    effective_assistance: str | None = None
+    assistance_violated: bool = False
     started_at: str | None
     finished_at: str | None
     episodes: int = 0
@@ -66,6 +71,7 @@ class DurableRunServices:
         self._runs = RunRepository(engine)
         self._episodes = EpisodeRepository(engine)
         self._steps = StepRepository(engine)
+        self._attempts = AttemptRepository(engine)
         self._events = EventRepository(engine)
         self._checkpoints = CheckpointRepository(engine)
         self._cas = ContentAddressedStore(workspace.objects_dir())
@@ -81,6 +87,10 @@ class DurableRunServices:
     @property
     def steps(self) -> StepRepository:
         return self._steps
+
+    @property
+    def attempts(self) -> AttemptRepository:
+        return self._attempts
 
     @property
     def events(self) -> EventRepository:
@@ -101,7 +111,6 @@ class DurableRunServices:
     def _build_writer(self) -> PersistenceWriter:
         from ..persistence.repositories import (
             ArtifactRepository,
-            AttemptRepository,
             MetricObservationRepository,
         )
 
@@ -109,7 +118,7 @@ class DurableRunServices:
             runs=self._runs,
             episodes=self._episodes,
             steps=self._steps,
-            attempts=AttemptRepository(self._database.engine()),
+            attempts=self._attempts,
             events=self._events,
             metrics=MetricObservationRepository(self._database.engine()),
             checkpoints=self._checkpoints,
@@ -149,11 +158,13 @@ class DurableRunServices:
         else:
             conditions = resolved.conditions
 
-        resolved_artifact = self._cas.put(
-            ArtifactPayload(
+        resolved_artifact = store_artifact(
+            cas=self._cas,
+            writer=writer,
+            payload=ArtifactPayload(
                 media_type="application/vnd.zugzwang.manifest-resolved+json",
                 data=resolved.model_dump_json().encode("utf-8"),
-            )
+            ),
         )
         last_run_id: str | None = None
         for condition in conditions:
@@ -164,6 +175,11 @@ class DurableRunServices:
             last_run_id = run_id
         await writer.flush()
         await writer.stop()
+        close_backend = getattr(backend, "close", None)
+        if callable(close_backend):
+            closed = close_backend()
+            if inspect.isawaitable(closed):
+                await closed
         if last_run_id is None:
             raise ValueError("no conditions to run")
         row = self._runs.get_run(last_run_id)
@@ -180,7 +196,13 @@ class DurableRunServices:
         writer = self._build_writer()
         await writer.start()
         event_sink = PersistentEventSink(self._events, writer)
-        backend = DeterministicModelBackend(rules=_default_fake_rules())
+        existing = self._runs.get_run(run_id)
+        if existing is None:
+            raise ValueError(f"run {run_id} not found")
+        condition = resolved.condition_by_id(str(existing["condition_id"]))
+        if condition is None:
+            raise ValueError(f"condition for run {run_id} not found in manifest")
+        backend = self._backend_for(condition)
         coordinator = DurableRunCoordinator(
             registry=self._registry,
             backend=backend,
@@ -196,6 +218,11 @@ class DurableRunServices:
         await coordinator.resume(run_id, resolved, stop_event)
         await writer.flush()
         await writer.stop()
+        close_backend = getattr(backend, "close", None)
+        if callable(close_backend):
+            closed = close_backend()
+            if inspect.isawaitable(closed):
+                await closed
         row = self._runs.get_run(run_id)
         return self._run_result(row)
 
@@ -221,11 +248,9 @@ class DurableRunServices:
         steps_committed = 0
         attempts = 0
         for episode in episodes:
-            steps_committed += sum(
-                1
-                for s in self._steps.for_episode(episode["episode_id"])
-                if s["status"] == "COMMITTED"
-            )
+            episode_steps = self._steps.for_episode(episode["episode_id"])
+            steps_committed += sum(1 for s in episode_steps if s["status"] == "COMMITTED")
+            attempts += sum(len(self._attempts.for_step(s["step_id"])) for s in episode_steps)
         events = len(self._events.for_run(run_id))
         return RunSummary(
             run_id=row["run_id"],
@@ -233,6 +258,8 @@ class DurableRunServices:
             condition_id=row["condition_id"],
             protocol_hash=row["protocol_hash"],
             declared_assistance=row["declared_assistance"],
+            effective_assistance=row.get("effective_assistance"),
+            assistance_violated=bool(row.get("assistance_violated", 0)),
             started_at=row["started_at"],
             finished_at=row["finished_at"],
             episodes=len(episodes),
@@ -285,7 +312,20 @@ class DurableRunServices:
                     api_key=resolve_secret(
                         str(backend_config["api_key"]) if backend_config.get("api_key") else None
                     ),
+                    timeout_seconds=float(backend_config.get("timeout_seconds", 60) or 60),
+                    profile=str(backend_config.get("profile", "openai-chat-completions")),
+                    allow_private_network=bool(backend_config.get("allow_private_network", False)),
                     image_input=bool(backend_config.get("image_input", False)),
+                    reasoning_effort=(
+                        str(backend_config["reasoning_effort"])
+                        if backend_config.get("reasoning_effort")
+                        else None
+                    ),
+                    default_max_output_tokens=(
+                        int(backend_config["default_max_output_tokens"])
+                        if backend_config.get("default_max_output_tokens")
+                        else None
+                    ),
                 )
         return DeterministicModelBackend(rules=_default_fake_rules())
 
@@ -346,6 +386,150 @@ def _default_fake_rules():
         ),
         FakeBackendRule(
             when={"fingerprint_contains": "chess-structured"}, output=structured_output
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-r6-candidates"},
+            output='{"candidates":[{"move":"e2e4"},{"move":"e2e5"},{"move":"g1f3"}]}',
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-r6-judge"},
+            output="1",
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-r6-refuter"},
+            output="e7e5",
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-multi-agent:critical-scout"},
+            output=_json.dumps(
+                {
+                    "critical_map": "opening development",
+                    "hanging_pieces": [],
+                    "tactical_ideas": ["control the center"],
+                    "candidate_moves": ["e2e4", "g1f3"],
+                    "confidence": 0.7,
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-multi-agent:strategy-planner"},
+            output=_json.dumps(
+                {
+                    "plan": "develop while contesting the center",
+                    "candidate_moves": ["e2e4", "g1f3"],
+                    "preferred_move": "e2e4",
+                    "risks": [],
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={"fingerprint_contains": "chess-multi-agent:final-reviewer"},
+            output=_json.dumps(
+                {
+                    "move": "e2e4",
+                    "review": "the move is consistent with the position",
+                    "critical_risks_addressed": ["development"],
+                    "confidence": 0.8,
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
+                "call_index": 0,
+                "fingerprint_contains": "chess-legal-tree-memory:position-mapper",
+            },
+            output=_json.dumps(
+                {
+                    "critical_map": "opening development",
+                    "hanging_pieces": [],
+                    "tactical_ideas": ["control the center"],
+                    "candidate_moves": ["e2e4"],
+                    "illegal_probes": ["e2e5"],
+                    "confidence": 0.8,
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
+                "call_index": 1,
+                "fingerprint_contains": "chess-legal-tree-memory:variant-analyst",
+            },
+            output=_json.dumps(
+                {
+                    "variants": [
+                        {
+                            "root_move": "e2e4",
+                            "reply_move": "e7e5",
+                            "assessment": "central contest",
+                            "risks": [],
+                        }
+                    ],
+                    "preferred_root": "e2e4",
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
+                "call_index": 2,
+                "fingerprint_contains": "chess-legal-tree-memory:final-reviewer",
+            },
+            output=_json.dumps(
+                {
+                    "move": "e2e4",
+                    "review": "legal opening move",
+                    "critical_risks_addressed": ["king safety"],
+                    "confidence": 0.9,
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
+                "call_index": 3,
+                "fingerprint_contains": "chess-legal-tree-memory:position-mapper",
+            },
+            output=_json.dumps(
+                {
+                    "critical_map": "develop the knight",
+                    "hanging_pieces": [],
+                    "tactical_ideas": ["develop"],
+                    "candidate_moves": ["g1f3"],
+                    "illegal_probes": [],
+                    "confidence": 0.8,
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
+                "call_index": 4,
+                "fingerprint_contains": "chess-legal-tree-memory:variant-analyst",
+            },
+            output=_json.dumps(
+                {
+                    "variants": [
+                        {
+                            "root_move": "g1f3",
+                            "reply_move": "g8f6",
+                            "assessment": "develop both knights",
+                            "risks": [],
+                        }
+                    ],
+                    "preferred_root": "g1f3",
+                }
+            ),
+        ),
+        FakeBackendRule(
+            when={
+                "call_index": 5,
+                "fingerprint_contains": "chess-legal-tree-memory:final-reviewer",
+            },
+            output=_json.dumps(
+                {
+                    "move": "g1f3",
+                    "review": "legal development move",
+                    "critical_risks_addressed": ["development"],
+                    "confidence": 0.9,
+                }
+            ),
         ),
         FakeBackendRule(
             when={"fingerprint_contains": "chess-reconstruct"},

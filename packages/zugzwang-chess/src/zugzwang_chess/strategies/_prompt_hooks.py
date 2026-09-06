@@ -56,3 +56,11 @@ def apply_prompt_override_text(prompt_text: str, context: DecisionContext) -> st
                 example = cast(dict[str, str], raw_example)
                 sections.append(f"Example {example.get('label', '')}:\n{example.get('text', '')}")
     return "\n\n".join(sections)
+
+
+def append_retry_feedback(prompt_text: str, context: DecisionContext) -> str:
+    """Add formal legality feedback when the runtime rejected a prior move."""
+    feedback = context.config.get("retry_feedback")
+    if isinstance(feedback, str) and feedback:
+        return f"{prompt_text}\n\n{feedback}"
+    return prompt_text

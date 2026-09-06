@@ -32,11 +32,11 @@ from zugzwang_core.ports.model import (
 
 from ..persistence.event_sink import PersistentEventSink
 from ..persistence.writer import (
-    InsertArtifactCommand,
     InsertAttemptCommand,
     PersistenceWriter,
     UpdateAttemptCommand,
 )
+from .evidence import sanitize_wire_payload, store_json_artifact
 
 
 class RecordingBackend:
@@ -64,6 +64,25 @@ class RecordingBackend:
         self._artifact_store = artifact_store
         self._capture_requests = capture_raw_requests
         self._capture_responses = capture_raw_responses
+        self._evidence_by_attempt: dict[str, dict[str, str | None]] = {}
+        self._decision_attempt_ids: list[str] = []
+
+    def begin_decision(self) -> None:
+        """Start a local correlation window for one strategy decision."""
+        self._decision_attempt_ids = []
+
+    def evidence_for_attempt(self, attempt_id: str) -> dict[str, str | None]:
+        return dict(self._evidence_by_attempt.get(attempt_id, {}))
+
+    def evidence_for_attempts(self) -> dict[str, dict[str, str | None]]:
+        return {attempt_id: dict(refs) for attempt_id, refs in self._evidence_by_attempt.items()}
+
+    def evidence_for_current_decision(self) -> dict[str, dict[str, str | None]]:
+        return {
+            attempt_id: dict(self._evidence_by_attempt[attempt_id])
+            for attempt_id in self._decision_attempt_ids
+            if attempt_id in self._evidence_by_attempt
+        }
 
     @property
     def descriptor(self) -> BackendDescriptor:
@@ -96,6 +115,7 @@ class RecordingBackend:
         ordinal = self._attempt_counter.get(key, 0)
         while True:
             attempt_id = str(new_id("att"))
+            self._decision_attempt_ids.append(attempt_id)
             attempt_context = context.model_copy(update={"attempt_id": attempt_id})
             started = time.monotonic()
             event_context = EventContext(
@@ -105,6 +125,16 @@ class RecordingBackend:
                 attempt_id=attempt_id,
                 trace_id=context.trace_id,
             )
+            request_ref: str | None = None
+            if self._capture_requests and self._artifact_store is not None:
+                request_ref = self._capture_request(request)
+            self._evidence_by_attempt[attempt_id] = {
+                "request_artifact_ref": request_ref,
+                "wire_request_artifact_ref": None,
+                "wire_response_artifact_ref": None,
+                "response_artifact_ref": None,
+                "reasoning_telemetry_artifact_ref": None,
+            }
             self._writer.enqueue(
                 InsertAttemptCommand(
                     row={
@@ -114,12 +144,11 @@ class RecordingBackend:
                         "ordinal": ordinal,
                         "status": "started",
                         "outcome_unknown": 0,
+                        "request_artifact_id": request_ref,
                     }
                 )
             )
-            request_refs: tuple[str, ...] = ()
-            if self._capture_requests and self._artifact_store is not None:
-                request_refs = (self._capture_request(request, attempt_id),)
+            request_refs: tuple[str, ...] = (request_ref,) if request_ref else ()
             self._emit(
                 event_context,
                 "provider.call.started",
@@ -129,6 +158,8 @@ class RecordingBackend:
             try:
                 result = await self._inner.infer(request, attempt_context)
             except ProviderTimeoutError as exc:
+                failed_wire_ref = self._capture_failed_wire_request(attempt_id)
+                failed_response_ref = self._capture_failed_wire_response(attempt_id)
                 latency = int((time.monotonic() - started) * 1000)
                 self._record_outcome(
                     attempt_id, "timeout_unknown", exc.stable_code, latency, unknown=True
@@ -137,16 +168,24 @@ class RecordingBackend:
                     event_context,
                     "provider.call.timeout_unknown",
                     {"ordinal": ordinal, "stable_code": exc.stable_code, "latency_ms": latency},
+                    artifact_refs=tuple(
+                        ref for ref in (failed_wire_ref, failed_response_ref) if ref
+                    ),
                 )
                 self._attempt_counter[key] = ordinal + 1
                 raise
             except ProviderTransportError as exc:
+                failed_wire_ref = self._capture_failed_wire_request(attempt_id)
+                failed_response_ref = self._capture_failed_wire_response(attempt_id)
                 latency = int((time.monotonic() - started) * 1000)
                 self._record_outcome(attempt_id, "failed", exc.stable_code, latency)
                 self._emit(
                     event_context,
                     "provider.call.failed",
                     {"ordinal": ordinal, "stable_code": exc.stable_code, "latency_ms": latency},
+                    artifact_refs=tuple(
+                        ref for ref in (failed_wire_ref, failed_response_ref) if ref
+                    ),
                 )
                 if ordinal < self._max_transport_retries and exc.retryability in (
                     Retryability.TRANSPORT,
@@ -157,6 +196,8 @@ class RecordingBackend:
                 self._attempt_counter[key] = ordinal + 1
                 raise
             except Exception as exc:
+                failed_wire_ref = self._capture_failed_wire_request(attempt_id)
+                failed_response_ref = self._capture_failed_wire_response(attempt_id)
                 latency = int((time.monotonic() - started) * 1000)
                 code = getattr(exc, "stable_code", "ZGZ-PROVIDER_RESPONSE-000")
                 self._record_outcome(attempt_id, "failed", code, latency)
@@ -164,12 +205,56 @@ class RecordingBackend:
                     event_context,
                     "provider.call.failed",
                     {"ordinal": ordinal, "stable_code": code, "latency_ms": latency},
+                    artifact_refs=tuple(
+                        ref for ref in (failed_wire_ref, failed_response_ref) if ref
+                    ),
                 )
                 self._attempt_counter[key] = ordinal + 1
                 raise
 
             latency = int((time.monotonic() - started) * 1000)
             response = result.response
+            normalized_ref: str | None = None
+            wire_request_ref: str | None = None
+            wire_response_ref: str | None = None
+            reasoning_ref: str | None = None
+            evidence_refs: list[str] = []
+            if self._capture_responses and self._artifact_store is not None:
+                normalized_ref = self._capture_response(response)
+                evidence_refs.append(normalized_ref)
+                if result.wire_request is not None:
+                    wire_request_ref = self._capture_json(
+                        sanitize_wire_payload(result.wire_request),
+                        "application/vnd.zugzwang.wire-request+json",
+                    )
+                    evidence_refs.append(wire_request_ref)
+                if result.wire_response is not None:
+                    wire_response_ref = self._capture_json(
+                        sanitize_wire_payload(result.wire_response),
+                        "application/vnd.zugzwang.wire-response+json",
+                    )
+                    evidence_refs.append(wire_response_ref)
+                if result.reasoning_telemetry is not None:
+                    reasoning_ref = self._capture_json(
+                        result.reasoning_telemetry.model_dump(mode="json"),
+                        "application/vnd.zugzwang.reasoning-telemetry+json",
+                    )
+                    evidence_refs.append(reasoning_ref)
+            self._evidence_by_attempt[attempt_id] = {
+                "request_artifact_ref": request_ref,
+                "wire_request_artifact_ref": wire_request_ref,
+                "wire_response_artifact_ref": wire_response_ref,
+                "response_artifact_ref": normalized_ref,
+                "reasoning_telemetry_artifact_ref": reasoning_ref,
+            }
+            usage_json: dict[str, Any] = {
+                "input_tokens": response.usage.input_tokens,
+                "output_tokens": response.usage.output_tokens,
+                "source": response.usage.source.value,
+            }
+            if result.reasoning_telemetry is not None:
+                usage_json["reasoning_tokens"] = result.reasoning_telemetry.reasoning_tokens
+                usage_json["provider_usage"] = result.reasoning_telemetry.usage
             self._writer.enqueue(
                 UpdateAttemptCommand(
                     attempt_id=attempt_id,
@@ -177,11 +262,12 @@ class RecordingBackend:
                         "status": "completed",
                         "outcome_unknown": 0,
                         "latency_ms": latency,
-                        "usage_json": {
-                            "input_tokens": response.usage.input_tokens,
-                            "output_tokens": response.usage.output_tokens,
-                            "source": response.usage.source.value,
-                        },
+                        "usage_json": usage_json,
+                        "request_artifact_id": request_ref,
+                        "wire_request_artifact_id": wire_request_ref,
+                        "wire_response_artifact_id": wire_response_ref,
+                        "response_artifact_id": normalized_ref,
+                        "reasoning_telemetry_artifact_id": reasoning_ref,
                         "cost_json": (
                             {
                                 "amount": str(response.cost.amount.amount),
@@ -193,9 +279,7 @@ class RecordingBackend:
                     },
                 )
             )
-            response_refs: tuple[str, ...] = ()
-            if self._capture_responses and self._artifact_store is not None:
-                response_refs = (self._capture_response(response, attempt_id),)
+            response_refs: tuple[str, ...] = tuple(evidence_refs)
             self._emit(
                 event_context,
                 "provider.call.completed",
@@ -208,57 +292,79 @@ class RecordingBackend:
                     },
                     "latency_ms": latency,
                     "wire_fidelity": response.wire_fidelity.value,
+                    "provider_wire_fidelity": result.wire_fidelity.value,
                 },
                 artifact_refs=response_refs,
             )
             self._attempt_counter[key] = ordinal + 1
             return result
 
-    def _capture_request(self, request: ModelRequest, attempt_id: str) -> str:
-        from zugzwang_core.domain.artifacts import ArtifactPayload
-        from zugzwang_core.domain.canonical import canonical_json_bytes
-        from zugzwang_core.domain.clocks import to_iso_z, utc_now
+    def _capture_request(self, request: ModelRequest) -> str:
+        return store_json_artifact(
+            cas=self._artifact_store,
+            writer=self._writer,
+            payload=request.model_dump(mode="json"),
+            media_type="application/vnd.zugzwang.model-request+json",
+            redaction_policy="standard",
+        ).as_id()
 
-        data = canonical_json_bytes(request.model_dump(mode="json"))
-        ref = self._artifact_store.put(
-            ArtifactPayload(media_type="application/vnd.zugzwang.model-request+json", data=data)
+    def _capture_response(self, response: NormalizedResponse) -> str:
+        return store_json_artifact(
+            cas=self._artifact_store,
+            writer=self._writer,
+            payload=response.model_dump(mode="json"),
+            media_type="application/vnd.zugzwang.model-response+json",
+            redaction_policy="standard",
+        ).as_id()
+
+    def _capture_json(self, payload: Any, media_type: str) -> str:
+        return store_json_artifact(
+            cas=self._artifact_store,
+            writer=self._writer,
+            payload=payload,
+            media_type=media_type,
+            redaction_policy="standard",
+        ).as_id()
+
+    def _capture_failed_wire_request(self, attempt_id: str) -> str | None:
+        if not (self._capture_requests or self._capture_responses) or self._artifact_store is None:
+            return None
+        payload = getattr(self._inner, "_last_wire_request", None)
+        if not isinstance(payload, dict):
+            return None
+        ref = self._capture_json(
+            sanitize_wire_payload(payload),
+            "application/vnd.zugzwang.wire-request+json",
         )
+        refs = self._evidence_by_attempt.setdefault(attempt_id, {})
+        refs["wire_request_artifact_ref"] = ref
         self._writer.enqueue(
-            InsertArtifactCommand(
-                row={
-                    "artifact_id": ref.as_id(),
-                    "algorithm": "sha256",
-                    "size_bytes": len(data),
-                    "media_type": "application/vnd.zugzwang.model-request+json",
-                    "relative_path": ref.storage_path(),
-                    "created_at": to_iso_z(utc_now()),
-                }
+            UpdateAttemptCommand(
+                attempt_id=attempt_id,
+                values={"wire_request_artifact_id": ref},
             )
         )
-        return ref.as_id()
+        return ref
 
-    def _capture_response(self, response: NormalizedResponse, attempt_id: str) -> str:
-        from zugzwang_core.domain.artifacts import ArtifactPayload
-        from zugzwang_core.domain.canonical import canonical_json_bytes
-        from zugzwang_core.domain.clocks import to_iso_z, utc_now
-
-        data = canonical_json_bytes(response.model_dump(mode="json"))
-        ref = self._artifact_store.put(
-            ArtifactPayload(media_type="application/vnd.zugzwang.model-response+json", data=data)
+    def _capture_failed_wire_response(self, attempt_id: str) -> str | None:
+        if not self._capture_responses or self._artifact_store is None:
+            return None
+        payload = getattr(self._inner, "_last_wire_response", None)
+        if not isinstance(payload, dict):
+            return None
+        ref = self._capture_json(
+            sanitize_wire_payload(payload),
+            "application/vnd.zugzwang.wire-response+json",
         )
+        refs = self._evidence_by_attempt.setdefault(attempt_id, {})
+        refs["wire_response_artifact_ref"] = ref
         self._writer.enqueue(
-            InsertArtifactCommand(
-                row={
-                    "artifact_id": ref.as_id(),
-                    "algorithm": "sha256",
-                    "size_bytes": len(data),
-                    "media_type": "application/vnd.zugzwang.model-response+json",
-                    "relative_path": ref.storage_path(),
-                    "created_at": to_iso_z(utc_now()),
-                }
+            UpdateAttemptCommand(
+                attempt_id=attempt_id,
+                values={"wire_response_artifact_id": ref},
             )
         )
-        return ref.as_id()
+        return ref
 
     def _record_outcome(
         self,

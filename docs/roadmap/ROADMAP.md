@@ -52,6 +52,14 @@ flowchart LR
 - marketplace de plugins;
 - variant families além do contrato mínimo;
 - leaderboard público único;
+
+## ZGW-0079 foundation slice
+
+The current work order adds the first research-kernel pieces without changing
+the modular-local deployment plan: direct per-step evidence, provider wire
+telemetry, explicit legality exposure, EvaluationRun generations and a local
+R6 model-only search graph. Full interactive search and any public export still
+need their own gates.
 - execução arbitrária de código por agentes.
 
 ## Documentos por milestone

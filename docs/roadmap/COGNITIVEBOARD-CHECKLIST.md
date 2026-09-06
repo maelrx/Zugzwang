@@ -53,12 +53,13 @@ flowchart TD
 
 ### Fase 3 — Percepção
 
-- [ ] **CB-WO-03** — percepção e deltas (§38.4) → pending (após ZGW-0089)
-  - [ ] `ChessPerception` determinístico + `PositionPacket` (L0-S básico/relacional)
-  - [ ] Ações como objetos vinculados ao estado (L0-A) + relações (cravada/pin)
-  - [ ] PositionDelta de avanço único
-  - [ ] Snapshots v2 paralelos ao legado
-  - [ ] TEST-001 a TEST-018 + microbench documentado
+- [x] **CB-WO-03** — percepção e deltas (§38.4) → **ZGW-0090** · PR [#28](https://github.com/maelrx/Zugzwang/pull/28) (empilhado no #27)
+  - [x] `ChessPerception` determinístico + `PositionPacket` (§8.2 integral: state/representation/legal_actions/relations/terminal/provenance)
+  - [x] Ações como objetos vinculados ao estado (L0-A: action_id + from/to/piece/capture/castling/promotion) + relações (checkers, cravada absoluta por raio)
+  - [x] PositionDelta adjacente (com ação responsável validada) × arbitrária, com reconstrução completa da projeção
+  - [x] TEST-005 a TEST-017 aplicáveis (12 do catálogo) + determinismo do content hash + microbench (0,39 ms/packet) no README do módulo
+  - [ ] TEST-001–004/018 (snapshot/âncora/raiz-imutável com persistência) → CB-WO-04/05
+  - [ ] Codec textual da view básica → CB-WO-05 (broker de exposição)
 
 ### Fase 4 — Persistência e executor
 
@@ -106,4 +107,4 @@ flowchart TD
 | 2026-09-06 | Fase 1 — baseline | ZGW-0087 | #25 | Code review 2 eixos aplicado; 261 offline; TEST-081 verde |
 | 2026-09-06 | Tracking | ZGW-0088 | este PR | Este checklist |
 | 2026-09-06 | Fase 2 — contratos | ZGW-0089 | [#27](https://github.com/maelrx/Zugzwang/pull/27) | Contratos de cognição fiéis ao §42.6/§12.2/§15; 34 testes de contrato; review aplicado |
-| — | Fase 3 — percepção | ZGW-0090 | pending | Depende do merge de ZGW-0089 (contracts) |
+| 2026-09-06 | Fase 3 — percepção | ZGW-0090 | [#28](https://github.com/maelrx/Zugzwang/pull/28) | Percepção L0 + delta reconstrutível; TEST-005–017; review aplicado; empilhado no #27 |

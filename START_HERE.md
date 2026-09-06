@@ -80,3 +80,15 @@ O script confere:
 ## 6. Regra de ouro
 
 Nenhum agente pode “resolver” uma ambiguidade científica mudando silenciosamente o protocolo. Alterou representação, retries, tools, legal moves, knowledge packet, budget, engine ou seletor: alterou a condição experimental.
+
+## 7. O que cada nível de evidência prova (e o que não prova)
+
+Ao comunicar resultados, distinga sempre estes quatro níveis — nunca trate um pelo outro:
+
+1. **Implementação**: o código existe e os contratos estão tipados/testados. Não prova comportamento correto em execução.
+2. **Teste offline (fake)**: a suíte `pytest -m "not e2e"` cobre mecanismos com backend/engine fakes determinísticos. Prova os mecanismos do kernel; não prova nada sobre nenhum modelo real.
+3. **Evidência real local**: runs com provider/engine reais (suite 0.1, bateria overnight) gravados em bundle/CAS. Prova o que aconteceu naquele run específico; com `n=1` é exploração, não comparação.
+4. **Reprodução independente**: exportar um bundle, importá-lo em workspace sem acesso ao original, reconstruir as projeções do event stream e obter as mesmas jogadas e métricas equivalentes (prova offline: `tests/integration/test_m4_bundle.py`). É o piso para qualquer claim de reprodução; não substitui replicação estatística.
+
+Reprodução independente de máquina limpa e validação científica da suite completa continuam pendências explícitas do roadmap (issues #13/#14/#15, GATE-011 para execução paga).
+

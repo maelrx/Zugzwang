@@ -26,3 +26,23 @@ O log registra somente gates efetivamente ratificados. Decisões pendentes perma
   em manifests, gerador, ADR-046, GATE-011 packet e docs da suite.
 - GATE-011 continua pendente para ratificação formal de matriz/orçamento; a escolha do
   modelo de visão está registrada como diretiva do operador.
+
+## 2026-09-06 — GATE-011 ratificado: matriz muse-spark-1.3 e default de memória (ZGW-0086)
+
+- **GATE-011 → accepted.** Mestre Mael decidiu a matriz inaugural: acesso
+  opencode (plano free + Go, router local `127.0.0.1:8788`, perfil
+  `openai-responses` — o padrão validado nas baterias overnight), usando apenas
+  `muse-spark-1.3-contributor` com fallback `muse-spark-1.3-free` até esgotar a
+  cota free. O modelo possui visão nativa; `mimo-v2.5` e `deepseek-v4-flash`
+  saem da matriz. Piloto ~210 calls n=10; full batch n>=24 após análise.
+- **Default experimental de memória:** os primeiros resultados positivos
+  validados do projeto (vitória `46.Rb8#` no jogo H3, sobrevivência do H2
+  persistente, empate em 224 plies da condição `a` da triple limpa) vêm de
+  estratégias com memória persistente — `memory_mode: persistent` passa a ser
+  o default experimental para experimentos full-game.
+- Consequências: ADR-046 recebe emenda do modelo de visão; suite 0.1 recebe
+  Emenda 002 (pré-execução) e os 14 manifests são regenerados com corpus 1.1.0
+  e a nova matriz; console de decisões sincronizado (6 aceitos: 001/002/003/
+  004/006/011; 6 pendentes: 005/007/008/009/010/012).
+- Nenhuma execução paga é disparada por este registro; orçamento = cota da
+  assinatura; sem claims em USD (GATE-009 pendente).

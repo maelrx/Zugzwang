@@ -9,8 +9,11 @@ Blocks (per operator design):
   SKILL-001: baseline, persona, correct, wrong, irrelevant
   MM-002:    consistent text+vision, single-piece conflict
 
-Text model:  opencode-go/deepseek-v4-flash (subscription)
-Vision model: opencode-go/mimo-v2.5 (subscription, attachment=true; operator directive 2026-08-16)
+Single model for text AND vision (GATE-011 ratified, ZGW-0086):
+muse-spark-1.3-contributor (Go plan) with muse-spark-1.3-free as the manual
+fallback once the free quota is exhausted; native vision, accessed via the
+opencode router (127.0.0.1:8788, openai-responses profile) — the operationally
+validated overnight access pattern. Operator directive 2026-09-06.
 """
 
 from __future__ import annotations
@@ -21,12 +24,17 @@ from pathlib import Path
 import yaml
 
 SUITE_DIR = Path(__file__).resolve().parent
-CORPUS_PATH = SUITE_DIR.parent.parent / "datasets" / "positions_v1" / "positions.yaml"
+CORPUS_PATH = SUITE_DIR.parent.parent / "datasets" / "positions_v1_1" / "positions.yaml"
 
+# Operationally validated connection (ZGW-0083/0084 overnight runs): local
+# opencode router, openai-responses profile, hardening limits from ZGW-0084.
 TEXT_BACKEND = {
-    "base_url": "http://127.0.0.1:4100",
-    "provider_id": "opencode-go",
-    "timeout_seconds": 300,
+    "base_url": "http://127.0.0.1:8788/v1",
+    "provider_id": "opencode-router",
+    "timeout_seconds": 600,
+    "profile": "openai-responses",
+    "allow_private_network": True,
+    "default_max_output_tokens": 65536,
     "image_input": False,
 }
 VISION_BACKEND = {**TEXT_BACKEND, "image_input": True}
@@ -130,18 +138,15 @@ def main() -> None:
     positions = corpus_raw["positions"]
     corpus_bytes = CORPUS_PATH.read_bytes()
     corpus_sha = hashlib.sha256(corpus_bytes).hexdigest()
-    (SUITE_DIR / "corpus.sha256").write_text(f"{corpus_sha}  positions.yaml\n")
+    (SUITE_DIR / "corpus.sha256").write_text(f"{corpus_sha}  positions_v1_1/positions.yaml\n")
 
+    # GATE-011 (ratified 2026-09-06): one model for both modalities.
     text_model = {
-        "backend": "provider.opencode",
-        "provider": "opencode-go",
-        "model": "deepseek-v4-flash",
+        "backend": "provider.openai_compatible",
+        "provider": "opencode-router",
+        "model": "muse-spark-1.3-contributor",
     }
-    vision_model = {
-        "backend": "provider.opencode",
-        "provider": "opencode-go",
-        "model": "mimo-v2.5",
-    }
+    vision_model = dict(text_model)
 
     fen_obs = {
         "position": {"fen": True},

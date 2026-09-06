@@ -88,3 +88,34 @@ manifesto congelado foi reescrito. Correções e esclarecimentos:
    denominadores explícitos (n por condição, exclusões listadas) e
    agrupamento por posição-base; sem pooling de condições com modelos
    distintos.
+
+## Amendment 002 — 2026-09-06 (GATE-011 ratificado, ZGW-0086)
+
+Registrado ANTES de qualquer execução paga (nenhum run pago da suite existe).
+
+1. **Matriz de modelos ratificada pelo operador** (GATE-011 → accepted): todas
+   as 14 condições passam a usar um único modelo, `muse-spark-1.3-contributor`
+   (plano Go via router opencode local `127.0.0.1:8788`, perfil
+   `openai-responses`), com `muse-spark-1.3-free` como substituto manual do
+   campo `model` quando a cota Go/free esgotar. `deepseek-v4-flash` e
+   `mimo-v2.5` saem da matriz.
+2. **Efeito sobre a Emenda 001:** com texto e visão no mesmo modelo, o
+   confundimento modelo×condição do bloco RGB deixa de existir. As comparações
+   REP-001 (FEN vs PGN vs RGB vs FEN+RGB) e MM-002 passam a ser intra-modelo.
+3. **Manifests regenerados** pelo `generate_manifests.py` com corpus
+   `positions_v1_1` (1.1.0, corrigido pela ZGW-0085). Os hashes de protocolo
+   das condições mudam em relação aos manifests pré-emenda — os antigos
+   permanecem no histórico como evidência do preregistro original.
+4. **Orçamento:** cota da assinatura free+Go do operador; ~210 calls no piloto
+   n=10; full batch n>=24 só após análise do piloto. Sem claims em USD
+   (GATE-009 pendente); usage/tokens gravados com `cost_status=unknown`.
+5. **Default experimental de memória (diretiva do operador):** experimentos
+   full-game passam a usar estratégias com memória persistente como default
+   (`memory_mode: persistent` em `chess.single_agent_tree`), com base nos
+   primeiros resultados positivos validados do projeto — vitória `46.Rb8#` no
+   jogo H3, sobrevivência do H2 persistente e empate em 224 plies na
+   condição `a` da triple limpa (ZGW-0083/0084). As condições move-selection
+   da suite 0.1 não são afetadas (não usam memória).
+6. Critérios de stop da preregistration original permanecem: assistência
+   efetiva > declarada, custo > 2× o piloto, ou visão < 50% legal interrompem
+   a execução para revisão.

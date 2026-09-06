@@ -315,17 +315,13 @@ def test_plan_revised_from_real_round_results(harness) -> None:
                 lambda messages: {"tool": "board_observe", "arguments": {"node_id": "node-root"}},
             ]
             + [
-                (
-                    lambda uci: (
-                        lambda messages: {
-                            "tool": "board_expand",
-                            "arguments": {
-                                "node_id": node_of(messages, uci),
-                                "action_ids": [aid_of(messages, uci)],
-                            },
-                        }
-                    )
-                )(uci)
+                lambda messages, _uci=uci: {
+                    "tool": "board_expand",
+                    "arguments": {
+                        "node_id": node_of(messages, _uci),
+                        "action_ids": [aid_of(messages, _uci)],
+                    },
+                }
                 for uci in ("f2f3", "e7e5", "g2g4")
             ]
             + [

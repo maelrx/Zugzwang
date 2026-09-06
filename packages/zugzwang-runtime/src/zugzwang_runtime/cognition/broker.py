@@ -630,11 +630,10 @@ class CognitionToolBroker:
                     raise ToolExecutionError(
                         "OUTPUT_CONTRACT_VIOLATION", "expand row not marked expanded"
                     )
-        elif tool == "board_compare":
-            if not isinstance(differences, dict):
-                raise ToolExecutionError(
-                    "OUTPUT_CONTRACT_VIOLATION", "compare result lacks formal_differences"
-                )
+        elif tool == "board_compare" and not isinstance(differences, dict):
+            raise ToolExecutionError(
+                "OUTPUT_CONTRACT_VIOLATION", "compare result lacks formal_differences"
+            )
 
     def _build_packet(self, state: Any, node_id: str, **kwargs: Any) -> Any:
         """Packet build = one physical legal-set query, accounted (§13.1)."""

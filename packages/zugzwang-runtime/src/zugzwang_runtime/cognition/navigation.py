@@ -192,10 +192,9 @@ class CognitiveNavigationStrategy:
                 for item in list(items):
                     row_data: Any = dict(cast(Any, item)) if isinstance(item, dict) else {}
                     terminal: Any = row_data.get("terminal")
-                    if terminal is True:
-                        if premises.get("position_terminal") != "true":
-                            premises["position_terminal"] = "true"
-                            changed = True
+                    if terminal is True and premises.get("position_terminal") != "true":
+                        premises["position_terminal"] = "true"
+                        changed = True
             if changed:
                 plan_store.revise_plan(
                     plan_id=str(plan_id), status="needs_review", premises=premises

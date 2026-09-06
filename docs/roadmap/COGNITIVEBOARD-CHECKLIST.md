@@ -74,7 +74,11 @@ flowchart TD
   - [x] `DecisionSession.open` (§26.1): abertura §12.2 PREPARING→READY→ACTIVE, snapshots, bindings, primeiro round; sink/loader CAS-coerentes
   - [x] Journal: `command_ordinal` e `exposure_sequence` como sequências duráveis (MAX+1); `bound_node_ids(decision_id)` explícito
   - [x] TEST-019/020/021/031/032/033/034/035/036/077/078 (15 testes); 343 passed/1 skipped offline; ruff + pyright strict + foundation --strict verdes
-- [ ] **CB-WO-06** — providers round-trip (§38.7) → pending (depende W2)
+- [x] **CB-WO-06** — providers round-trip (§38.7) → **ZGW-0093** · PR [#31](https://github.com/maelrx/Zugzwang/pull/31) (empilhado no #30; review 2 eixos aplicado em aca6c30)
+  - [x] Round-trip de tool calls no lowering chat (call/result IDs estáveis) + JsonDataPart no wire (modo JSON com interaction_mode distinto)
+  - [x] Capability gate dentro do adapter (imagem/required sem suporte recusam antes de qualquer POST, zero requests)
+  - [x] TEST-026/027/039/064/065/066 (7 testes offline MockTransport); 350 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
+  - [ ] Artefato de preflight {provider, model, route, date} (§15.4) → DEFERIDO para CB-WO-07 (journal da rota efetiva por round)
 
 ### Fase 5 — Loop
 

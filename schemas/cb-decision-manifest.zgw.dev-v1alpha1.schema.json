@@ -46,7 +46,6 @@
       "type": "integer"
     },
     "max_protocol_errors": {
-      "default": 3,
       "minimum": 1,
       "title": "Max Protocol Errors",
       "type": "integer"
@@ -73,6 +72,7 @@
     "model_ref",
     "seed",
     "max_rounds",
+    "max_protocol_errors",
     "content_sha256"
   ],
   "title": "DecisionManifest",

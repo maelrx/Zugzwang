@@ -10,12 +10,7 @@ from typing import Any
 
 from pydantic import TypeAdapter
 
-from ..domain.cognition import (
-    CognitiveBoardConfig,
-    DecisionManifest,
-    ToolEnvelope,
-    ToolResult,
-)
+from ..domain.cognition import CognitiveBoardConfig, DecisionManifest, ToolEnvelope
 from ..domain.events import EventEnvelope
 from ..domain.manifests import ResolvedManifest, SourceManifest
 from ..ports.evaluator import MetricDefinition, MetricObservation
@@ -31,7 +26,6 @@ SCHEMA_TARGETS: dict[str, Any] = {
     "model-request": ModelRequest,
     "plugin-descriptor": PluginDescriptor,
     "cb-tool-envelope": ToolEnvelope,
-    "cb-tool-result": ToolResult,
     "cb-decision-manifest": DecisionManifest,
     "cb-config": CognitiveBoardConfig,
 }

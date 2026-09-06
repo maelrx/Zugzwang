@@ -30,7 +30,7 @@ class StateIdentityPort(Protocol):
         """Equivalent-position projection (position_key_v2)."""
         ...
 
-    def action_key(self, state: Any, uci: str, policy_hash: str) -> str:
+    def action_key(self, state: Any, uci: str, action_schema_version: str, policy_hash: str) -> str:
         """State-bound action identity (action_id_v2)."""
         ...
 

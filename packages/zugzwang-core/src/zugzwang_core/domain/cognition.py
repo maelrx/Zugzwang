@@ -1,10 +1,11 @@
-"""CognitiveBoard decision contracts (PRD §7.2, §12.2, §15, §26, §42).
+"""CognitiveBoard decision contracts (PRD §7.2, §12.2, §15, §26, §42.6).
 
 Strict DTOs for the CognitiveBoard decision layer: identity keys with distinct
-semantics, the tool envelope with the error catalogue, the decision state
-machine, the resolved decision manifest and the bounded configuration. All
-models are frozen and forbid unknown fields; identity keys are built from
-canonical JSON + SHA-256 so equal semantics always hash identically.
+semantics, the §42.6 tool-result envelope with the §15.1 error catalogue, the
+§12.2 decision state machine, the resolved decision manifest and the bounded
+configuration. All models are frozen and forbid unknown fields; identity keys
+are built from canonical JSON + full SHA-256 so equal semantics always hash
+identically.
 
 This module is contract-only: no chess, runtime or provider imports.
 """
@@ -13,17 +14,24 @@ from __future__ import annotations
 
 import hashlib
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .canonical import canonical_json_bytes
 
 COGNITION_CONTRACT_VERSION = Literal[2]
+ENVELOPE_SCHEMA_VERSION = Literal["zgw.cognitive-tool-result/v1"]
+
+# Keys stripped from packet content before hashing (PRD §7.2: the content hash
+# covers the semantic packet content, "sem timestamp/telemetria").
+TELEMETRY_KEYS = frozenset({"timestamp", "telemetry", "observed_at", "wall_clock_ms"})
+
+_ID_PATTERN = r"^[A-Za-z][A-Za-z0-9:_-]{0,127}$"
 
 
 def _key(kind: str, version: int, *parts: str) -> str:
-    """Deterministic key: kind prefix + version + sha256 over canonical parts.
+    """Deterministic key: kind prefix + version + full sha256 over canonical parts.
 
     Equal semantics always produce the same key; any difference in the labelled
     parts (including a part's absence) changes the hash. The version is hashed
@@ -31,7 +39,18 @@ def _key(kind: str, version: int, *parts: str) -> str:
     """
     payload = {"kind": kind, "version": version, "parts": list(parts)}
     digest = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
-    return f"{kind}:v{version}:{digest[:32]}"
+    return f"{kind}:v{version}:{digest}"
+
+
+def _strip_telemetry(value: Any) -> Any:
+    """Recursively remove reserved telemetry keys from a JSON-like value."""
+    if isinstance(value, dict):
+        mapping = cast(dict[str, Any], value)
+        entries: list[tuple[str, Any]] = list(mapping.items())
+        return {k: _strip_telemetry(v) for k, v in entries if k not in TELEMETRY_KEYS}
+    if isinstance(value, list):
+        return [_strip_telemetry(v) for v in cast(list[Any], value)]
+    return value
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +66,9 @@ def state_key_v2(integral_state: str, variant: str, rules_context: str, version:
 def position_key_v2(
     placement: str, side_to_move: str, castling_rights: str, legal_en_passant: str
 ) -> str:
-    """Equivalent-position projection: placement, side, castling, legal ep."""
+    """Equivalent-position projection (PRD §7.4: only the normalized legal
+    en-passant opportunity enters the key — normalization of the opportunity
+    itself is the caller's perception concern, CB-WO-03)."""
     return _key(
         "position_key",
         2,
@@ -69,13 +90,19 @@ def node_id_v2(session_id: str, trajectory_key: str) -> str:
 
 
 def action_id_v2(state_key: str, uci: str, action_schema_version: str, policy_hash: str) -> str:
-    """State-bound action identity: prevents use in the wrong state."""
+    """State-bound action identity (state_key + UCI + rules/action-schema +
+    policy/lease hash) — prevents use in the wrong state."""
     return _key("action_id", 2, state_key, uci, action_schema_version, policy_hash)
 
 
 def packet_content_hash_v2(packet: dict[str, Any]) -> str:
-    """Semantic packet content (no timestamps, no telemetry)."""
-    return _key("packet_content_hash", 2, canonical_json_bytes(packet).decode("utf-8"))
+    """Semantic packet content hash: reserved telemetry keys (TELEMETRY_KEYS)
+    are stripped recursively before hashing, per §7.2."""
+    return _key(
+        "packet_content_hash",
+        2,
+        canonical_json_bytes(_strip_telemetry(packet)).decode("utf-8"),
+    )
 
 
 def observation_id_v2(packet_content_hash: str, round_no: int, exposure: int) -> str:
@@ -112,7 +139,7 @@ class ToolErrorCategory(StrEnum):
 
 
 class RetryClass(StrEnum):
-    """Loop effect of an error (PRD §15.1 'Efeito no loop' + §15.2)."""
+    """Loop effect of an error — one class per §15.1 'Efeito no loop'."""
 
     REPAIR_ALLOWED = "repair_allowed"  # consumes a logical op; model may correct
     NO_EXECUTION_AUDITED = "no_execution_audited"  # never executed; always audited
@@ -121,11 +148,13 @@ class RetryClass(StrEnum):
     REQUEST_CORRECT_INPUT = "request_correct_input"  # ask for the right observation
     NO_CHILD = "no_child"  # formal: no child node is produced
     NO_TRANSITION = "no_transition"  # formal: node already terminal
-    REDUCE_OR_FINALIZE = "reduce_or_finalize"  # shrink the batch or finish
+    EXPLORE_ELSEWHERE = "explore_elsewhere"  # depth limit: explore another node
+    REDUCE_OR_FINALIZE = "reduce_or_finalize"  # budget: shrink batch or finish
     COMPACT_OR_FINALIZE = "compact_or_finalize"  # compact by policy or finish
     FAIL_CLOSED = "fail_closed"  # hard failure of the decision
     PAUSE_OR_EXPLICIT_RETRY = "pause_or_explicit_retry"  # ambiguous outcome only
     NO_EFFECT_ACKNOWLEDGED = "no_effect_acknowledged"  # do not claim the effect
+    REDESIGN_OR_FAIL = "redesign_or_fail"  # incompatible version: reproject or fail
     NO_PARTIAL_OUTPUT = "no_partial_output"  # never expose partial output
 
 
@@ -137,12 +166,12 @@ ERROR_CATALOGUE: dict[str, tuple[ToolErrorCategory, RetryClass]] = {
     "ACTION_STATE_MISMATCH": (ToolErrorCategory.STATE, RetryClass.REQUEST_CORRECT_INPUT),
     "ILLEGAL_ACTION": (ToolErrorCategory.FORMAL, RetryClass.NO_CHILD),
     "TERMINAL_NODE": (ToolErrorCategory.FORMAL, RetryClass.NO_TRANSITION),
-    "DEPTH_LIMIT": (ToolErrorCategory.BUDGET, RetryClass.REDUCE_OR_FINALIZE),
+    "DEPTH_LIMIT": (ToolErrorCategory.BUDGET, RetryClass.EXPLORE_ELSEWHERE),
     "BUDGET_INSUFFICIENT": (ToolErrorCategory.BUDGET, RetryClass.REDUCE_OR_FINALIZE),
     "CONTEXT_LIMIT": (ToolErrorCategory.OPERATIONAL, RetryClass.COMPACT_OR_FINALIZE),
     "SOURCE_NOT_ALLOWED": (ToolErrorCategory.PROVENANCE, RetryClass.WITHHOLD_FACT),
     "STATE_REPLAY_MISMATCH": (ToolErrorCategory.INTEGRITY, RetryClass.FAIL_CLOSED),
-    "SEMANTICS_MISMATCH": (ToolErrorCategory.COMPATIBILITY, RetryClass.NO_PARTIAL_OUTPUT),
+    "SEMANTICS_MISMATCH": (ToolErrorCategory.COMPATIBILITY, RetryClass.REDESIGN_OR_FAIL),
     "PROVIDER_OUTCOME_UNKNOWN": (ToolErrorCategory.TRANSPORT, RetryClass.PAUSE_OR_EXPLICIT_RETRY),
     "PERSISTENCE_FAILED": (ToolErrorCategory.INFRASTRUCTURE, RetryClass.NO_EFFECT_ACKNOWLEDGED),
     "OUTPUT_CONTRACT_VIOLATION": (
@@ -152,40 +181,85 @@ ERROR_CATALOGUE: dict[str, tuple[ToolErrorCategory, RetryClass]] = {
 }
 
 TOOL_ERROR_CODES = frozenset(ERROR_CATALOGUE)
-DEFAULT_MAX_PROTOCOL_ERRORS = 3
+
+# §15.1/§15.2: the only feedback codes under which the loop may retry the same
+# operation under an explicit policy (protocol errors are counted against
+# ``max_protocol_errors``; everything else is terminal for the operation).
+RETRYABLE_UNDER_POLICY = frozenset(
+    {"INVALID_ARGUMENTS", "ACTION_STATE_MISMATCH", "PROVIDER_OUTCOME_UNKNOWN"}
+)
 
 
 class ToolError(BaseModel):
-    """One error result inside a tool envelope (PRD §15.1)."""
+    """Envelope error (PRD §42.6): code from the §15.1 catalogue only."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     code: str
     message: str
-    category: ToolErrorCategory
-    retry_class: RetryClass
-    details: dict[str, Any] = {}
+    retryable_under_policy: bool
 
     @classmethod
-    def build(cls, code: str, message: str, details: dict[str, Any] | None = None) -> ToolError:
+    def build(cls, code: str, message: str) -> ToolError:
         """Build from the catalogue; unknown codes are a contract error."""
         if code not in ERROR_CATALOGUE:
             raise ValueError(
                 f"unknown tool error code {code!r}; expected one of {TOOL_ERROR_CODES}"
             )
-        category, retry_class = ERROR_CATALOGUE[code]
         return cls(
-            code=code,
-            message=message,
-            category=category,
-            retry_class=retry_class,
-            details=details or {},
+            code=code, message=message, retryable_under_policy=code in RETRYABLE_UNDER_POLICY
         )
 
 
 # ---------------------------------------------------------------------------
-# §42.6 — normalized tool envelope
+# §42.6 — normalized tool-result envelope
 # ---------------------------------------------------------------------------
+
+
+class EnvelopeMeta(BaseModel):
+    """Provenance and budget meta of one tool result (PRD §42.6)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    decision_id: str = Field(pattern=_ID_PATTERN)
+    round_id: str = Field(pattern=_ID_PATTERN)
+    operation_id: str = Field(pattern=_ID_PATTERN)
+    tool_call_id: str = Field(pattern=_ID_PATTERN)
+    exposure_sequence: int = Field(ge=0)
+    policy_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    semantic_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    logical_operations_charged: int = Field(ge=0)
+    physical_rules_queries: int = Field(ge=0)
+    remaining_model_calls: int = Field(ge=0)
+    remaining_tool_operations: int = Field(ge=0)
+
+
+class ToolEnvelope(BaseModel):
+    """Normalized tool-result envelope (PRD §42.6).
+
+    ``ok=True`` requires ``result`` and forbids ``error``; ``ok=False``
+    requires a catalogue ``error`` and forbids ``result``.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: ENVELOPE_SCHEMA_VERSION = "zgw.cognitive-tool-result/v1"
+    ok: bool
+    meta: EnvelopeMeta
+    result: dict[str, Any] | None = None
+    error: ToolError | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.ok:
+            if self.error is not None:
+                raise ValueError("successful envelope must not carry an error")
+            if self.result is None:
+                raise ValueError("successful envelope must carry a result")
+        else:
+            if self.error is None:
+                raise ValueError("failed envelope must carry a catalogue error")
+            if self.result is not None:
+                raise ValueError("failed envelope must not carry a result")
 
 
 class ToolRequest(BaseModel):
@@ -193,50 +267,11 @@ class ToolRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    operation_id: str = Field(min_length=8)
-    decision_id: str = Field(min_length=4)
+    operation_id: str = Field(pattern=_ID_PATTERN)
+    decision_id: str = Field(pattern=_ID_PATTERN)
     round_no: int = Field(ge=0)
     tool: str = Field(min_length=1)
     arguments: dict[str, Any]
-
-
-class ToolResult(BaseModel):
-    """Normalized tool outcome: payload or catalogue error, never both."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    operation_id: str = Field(min_length=8)
-    ok: bool
-    payload: dict[str, Any] | None = None
-    error: ToolError | None = None
-    duration_ms: int | None = Field(default=None, ge=0)
-
-    @classmethod
-    def success(cls, operation_id: str, payload: dict[str, Any]) -> ToolResult:
-        return cls(operation_id=operation_id, ok=True, payload=payload)
-
-    @classmethod
-    def failure(cls, operation_id: str, error: ToolError) -> ToolResult:
-        return cls(operation_id=operation_id, ok=False, error=error)
-
-
-class ToolEnvelope(BaseModel):
-    """Request + result pair for one idempotent operation (PRD §42.6)."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    request: ToolRequest
-    result: ToolResult
-
-    def model_post_init(self, __context: Any) -> None:
-        if self.request.operation_id != self.result.operation_id:
-            raise ValueError("envelope operation_id mismatch between request and result")
-        if self.result.ok and self.result.error is not None:
-            raise ValueError("successful result must not carry an error")
-        if not self.result.ok and self.result.error is None:
-            raise ValueError("failed result must carry a catalogue error")
-        if not self.result.ok and self.result.payload is not None:
-            raise ValueError("failed result must not carry a payload")
 
 
 # ---------------------------------------------------------------------------
@@ -259,7 +294,9 @@ class DecisionStatus(StrEnum):
 
 
 class DecisionPhase(StrEnum):
-    """Internal controller phases; all map to the ACTIVE aggregate."""
+    """Internal controller phases; the five in INTERNAL_ACTIVE_PHASES map to
+    the ACTIVE aggregate (PRD §12.2). CANCELLED is an explicit aggregate set
+    by the operator — no agent transition enters it."""
 
     PREPARING = "PREPARING"
     READY = "READY"
@@ -286,9 +323,10 @@ INTERNAL_ACTIVE_PHASES = frozenset(
     }
 )
 
-_LEGAL_TRANSITIONS: dict[DecisionPhase, frozenset[DecisionPhase]] = {
-    DecisionPhase.PREPARING: frozenset({DecisionPhase.READY, DecisionPhase.FAILED}),
-    DecisionPhase.READY: frozenset({DecisionPhase.REQUEST_PENDING, DecisionPhase.CANCELLED}),
+# Exactly the edges of the §12.2 state diagram.
+LEGAL_TRANSITIONS: dict[DecisionPhase, frozenset[DecisionPhase]] = {
+    DecisionPhase.PREPARING: frozenset({DecisionPhase.READY}),
+    DecisionPhase.READY: frozenset({DecisionPhase.REQUEST_PENDING}),
     DecisionPhase.REQUEST_PENDING: frozenset(
         {DecisionPhase.RESPONSE_COMMITTED, DecisionPhase.OUTCOME_UNKNOWN, DecisionPhase.FAILED}
     ),
@@ -305,8 +343,6 @@ _LEGAL_TRANSITIONS: dict[DecisionPhase, frozenset[DecisionPhase]] = {
     DecisionPhase.FAILED: frozenset(),
     DecisionPhase.CANCELLED: frozenset(),
 }
-
-LEGAL_TRANSITIONS = dict(_LEGAL_TRANSITIONS)
 
 
 def decision_aggregate(phase: DecisionPhase) -> DecisionStatus:
@@ -339,7 +375,7 @@ class _DecisionManifestFields(BaseModel):
     seed: int
     tool_registry: tuple[str, ...] = ()
     max_rounds: int = Field(ge=1)
-    max_protocol_errors: int = Field(ge=1, default=DEFAULT_MAX_PROTOCOL_ERRORS)
+    max_protocol_errors: int = Field(ge=1)
     feature_flags: frozenset[str] = frozenset()
 
 
@@ -361,7 +397,7 @@ class DecisionManifest(BaseModel):
     seed: int
     tool_registry: tuple[str, ...] = ()
     max_rounds: int = Field(ge=1)
-    max_protocol_errors: int = Field(ge=1, default=DEFAULT_MAX_PROTOCOL_ERRORS)
+    max_protocol_errors: int = Field(ge=1)
     feature_flags: frozenset[str] = frozenset()
     content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
@@ -375,17 +411,19 @@ class DecisionManifest(BaseModel):
 
 
 class CognitiveBoardConfig(BaseModel):
-    """Bounded configuration; conservative defaults per PRD §48.3.
+    """Bounded configuration (PRD §38.3 'schema de config').
 
-    Feature flags are all off by default (G-CB-08: reanchoring, parallelism
-    and visual stay disabled until ratified and capability-tested).
+    ``max_protocol_errors`` is an explicit operational decision (§15.2) with
+    no default — callers must choose it. Feature flags are all off by default
+    (G-CB-08: reanchoring, parallelism, visual and skills stay disabled until
+    ratified and capability-tested).
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     contract_version: COGNITION_CONTRACT_VERSION = 2
-    max_rounds: int = Field(ge=1, default=8)
-    max_protocol_errors: int = Field(ge=1, default=DEFAULT_MAX_PROTOCOL_ERRORS)
+    max_rounds: int = Field(ge=1)
+    max_protocol_errors: int = Field(ge=1)
     enable_reanchoring: bool = False
     enable_parallelism: bool = False
     enable_visual: bool = False

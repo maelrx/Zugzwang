@@ -2,8 +2,9 @@
 
 Examples from fixtures validate against the strict models and the generated
 JSON Schemas; unknown fields are rejected; the §15.1 error catalogue is
-exhaustive; only §12.2 transitions are legal; §7.2 key builders are
-deterministic with distinct semantics; legacy DecisionContext stays valid.
+exhaustive with §15.2 retry semantics; only §12.2 transitions are legal; §7.2
+key builders are deterministic with distinct semantics; legacy
+DecisionContext stays valid.
 """
 
 import json
@@ -17,9 +18,9 @@ from pydantic import BaseModel, ValidationError
 
 from zugzwang_core.domain.cognition import (
     COGNITION_CONTRACT_VERSION,
-    DEFAULT_MAX_PROTOCOL_ERRORS,
     INTERNAL_ACTIVE_PHASES,
     LEGAL_TRANSITIONS,
+    RETRYABLE_UNDER_POLICY,
     TOOL_ERROR_CODES,
     CognitiveBoardConfig,
     DecisionManifest,
@@ -28,10 +29,10 @@ from zugzwang_core.domain.cognition import (
     ToolEnvelope,
     ToolError,
     ToolRequest,
-    ToolResult,
     action_id_v2,
     can_transition,
     decision_aggregate,
+    packet_content_hash_v2,
     state_key_v2,
 )
 from zugzwang_core.ports.cognition import CognitiveSession, StateIdentityPort
@@ -62,7 +63,8 @@ def _schema_for(target: str) -> dict[str, Any]:
 def test_tool_envelope_example_against_model_and_schema() -> None:
     example = _load("tool-envelope-ok.json")
     envelope = ToolEnvelope.model_validate(example)
-    assert envelope.request.tool == "board_observe"
+    assert envelope.ok is True
+    assert envelope.schema_version == "zgw.cognitive-tool-result/v1"
     Draft202012Validator(_schema_for("cb-tool-envelope")).validate(example)
 
 
@@ -92,19 +94,20 @@ def test_manifest_build_reproduces_fixture_hash() -> None:
 
 
 @pytest.mark.parametrize(
-    ("model", "example_fixture", "bad_field"),
+    ("model", "fixture_name", "path"),
     [
-        (ToolRequest, "tool-envelope-ok.json", "request"),
-        (ToolResult, "tool-envelope-ok.json", "result"),
-        (DecisionManifest, "decision-manifest-ok.json", None),
-        (CognitiveBoardConfig, "config-ok.json", None),
+        (ToolEnvelope, "tool-envelope-ok.json", ()),
+        (DecisionManifest, "decision-manifest-ok.json", ()),
+        (CognitiveBoardConfig, "config-ok.json", ()),
     ],
 )
 def test_unknown_fields_are_rejected(
-    model: type[BaseModel], example_fixture: str, bad_field: str | None, tmp_path: Path
+    model: type[BaseModel], fixture_name: str, path: tuple[str, ...], tmp_path: Path
 ) -> None:
-    example = json.loads((FIXTURES / example_fixture).read_text(encoding="utf-8"))
-    target = example[bad_field] if bad_field else example
+    example = _load(fixture_name)
+    target: Any = example
+    for key in path:
+        target = target[key]
     target["totally_unknown_field"] = 1
     with pytest.raises(ValidationError):
         model.model_validate(target)
@@ -115,8 +118,23 @@ def test_unknown_tool_error_code_is_rejected() -> None:
         ToolError.build("NOT_IN_CATALOGUE", "nope")
 
 
+def test_tool_request_rejects_unknown_fields() -> None:
+    from zugzwang_core.domain.cognition import operation_id_v2
+
+    request = {
+        "operation_id": operation_id_v2("dec-cb0001-0000", 1, "call-1"),
+        "decision_id": "dec-cb0001-0000",
+        "round_no": 1,
+        "tool": "board_observe",
+        "arguments": {},
+        "unknown_field": True,
+    }
+    with pytest.raises(ValidationError):
+        ToolRequest.model_validate(request)
+
+
 # ---------------------------------------------------------------------------
-# §15.1/§15.2 — exhaustive error catalogue
+# §15.1/§15.2 — exhaustive error catalogue and retry policy
 # ---------------------------------------------------------------------------
 
 
@@ -142,18 +160,34 @@ def test_error_catalogue_covers_all_sixteen_codes() -> None:
     assert expected == TOOL_ERROR_CODES
     for code in expected:
         error = ToolError.build(code, f"diagnostic for {code}")
-        assert error.category.value
-        assert error.retry_class.value
+        assert error.code == code
 
 
-def test_transport_unknown_outcome_is_pause_or_explicit_retry() -> None:
-    error = ToolError.build("PROVIDER_OUTCOME_UNKNOWN", "timeout, result unknown")
-    assert error.retry_class.value == "pause_or_explicit_retry"
+def test_retryable_under_policy_matches_section_15() -> None:
+    """Only §15.1 feedback that explicitly allows correction/retry is retryable."""
+    assert (
+        frozenset({"INVALID_ARGUMENTS", "ACTION_STATE_MISMATCH", "PROVIDER_OUTCOME_UNKNOWN"})
+        == RETRYABLE_UNDER_POLICY
+    )
+    for code in TOOL_ERROR_CODES - RETRYABLE_UNDER_POLICY:
+        assert ToolError.build(code, "x").retryable_under_policy is False
 
 
-def test_max_protocol_errors_conservative_default() -> None:
-    assert DEFAULT_MAX_PROTOCOL_ERRORS >= 1
-    assert CognitiveBoardConfig().max_protocol_errors == DEFAULT_MAX_PROTOCOL_ERRORS
+def test_depth_limit_and_budget_insufficient_have_distinct_loop_effects() -> None:
+    """§15.1: depth limit explores elsewhere; insufficient budget reduces/finalizes."""
+    from zugzwang_core.domain.cognition import ERROR_CATALOGUE
+
+    assert ERROR_CATALOGUE["DEPTH_LIMIT"][1].value == "explore_elsewhere"
+    assert ERROR_CATALOGUE["BUDGET_INSUFFICIENT"][1].value == "reduce_or_finalize"
+    assert ERROR_CATALOGUE["SEMANTICS_MISMATCH"][1].value == "redesign_or_fail"
+
+
+def test_max_protocol_errors_is_an_explicit_choice() -> None:
+    """§15.2: the policy is configured — the contract gives no hidden default."""
+    with pytest.raises(ValidationError):
+        CognitiveBoardConfig(max_rounds=1)
+    config = CognitiveBoardConfig(max_rounds=1, max_protocol_errors=3)
+    assert config.max_protocol_errors == 3
 
 
 # ---------------------------------------------------------------------------
@@ -180,10 +214,18 @@ def test_happy_path_transitions_are_legal() -> None:
         assert can_transition(current, target), f"{current} -> {target}"
 
 
+def test_ambiguous_outcome_recovers_or_pauses() -> None:
+    assert can_transition(DecisionPhase.REQUEST_PENDING, DecisionPhase.OUTCOME_UNKNOWN)
+    assert can_transition(DecisionPhase.OUTCOME_UNKNOWN, DecisionPhase.READY)
+    assert can_transition(DecisionPhase.OUTCOME_UNKNOWN, DecisionPhase.PAUSED)
+
+
 @pytest.mark.parametrize(
     ("current", "target"),
     [
         (DecisionPhase.PREPARING, DecisionPhase.SELECTED),
+        (DecisionPhase.PREPARING, DecisionPhase.FAILED),
+        (DecisionPhase.READY, DecisionPhase.CANCELLED),
         (DecisionPhase.READY, DecisionPhase.COMMITTED),
         (DecisionPhase.REQUEST_PENDING, DecisionPhase.SELECTED),
         (DecisionPhase.PAUSED, DecisionPhase.READY),
@@ -217,16 +259,16 @@ def test_internal_phases_map_to_active_aggregate() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_identity_keys_are_deterministic_and_versioned() -> None:
+def test_identity_keys_are_deterministic_full_hash_and_versioned() -> None:
     k1 = state_key_v2("fen-a", "standard", "rules-ctx")
-    k2 = state_key_v2("fen-a", "standard", "rules-ctx")
-    assert k1 == k2
+    assert k1 == state_key_v2("fen-a", "standard", "rules-ctx")
     assert k1.startswith("state_key:v2:")
+    assert len(k1.split(":")[-1]) == 64  # full sha256, no truncation
     assert state_key_v2("fen-b", "standard", "rules-ctx") != k1
     assert state_key_v2("fen-a", "chess960", "rules-ctx") != k1
 
 
-def test_action_key_binds_state_uci_and_policy() -> None:
+def test_action_key_binds_state_uci_schema_and_policy() -> None:
     state = state_key_v2("fen-a", "standard", "rules-ctx")
     other = state_key_v2("fen-b", "standard", "rules-ctx")
     assert action_id_v2(state, "e2e4", "v1", "policy-aaa") != action_id_v2(
@@ -235,6 +277,21 @@ def test_action_key_binds_state_uci_and_policy() -> None:
     assert action_id_v2(state, "e2e4", "v1", "policy-aaa") != action_id_v2(
         other, "e2e4", "v1", "policy-aaa"
     )
+    assert action_id_v2(state, "e2e4", "v1", "policy-aaa") != action_id_v2(
+        state, "d2d4", "v1", "policy-aaa"
+    )
+
+
+def test_packet_content_hash_strips_telemetry_keys() -> None:
+    """§7.2: the hash covers semantic content, without timestamp/telemetry."""
+    base = {"views": {"basic": "x"}, "stats": {"nodes": 3}}
+    with_telemetry = {
+        **base,
+        "timestamp": "2026-09-06T00:00:00Z",
+        "telemetry": {"latency_ms": 10},
+        "stats": {"nodes": 3, "observed_at": "2026-09-06T00:00:01Z"},
+    }
+    assert packet_content_hash_v2(with_telemetry) == packet_content_hash_v2(base)
 
 
 # ---------------------------------------------------------------------------
@@ -285,5 +342,5 @@ def test_identity_and_session_protocols_are_runtime_checkable() -> None:
 
 # contract version is pinned
 def test_contract_version_is_two() -> None:
-    assert CognitiveBoardConfig().contract_version == 2
+    assert CognitiveBoardConfig(max_rounds=1, max_protocol_errors=1).contract_version == 2
     assert Literal[2] == COGNITION_CONTRACT_VERSION

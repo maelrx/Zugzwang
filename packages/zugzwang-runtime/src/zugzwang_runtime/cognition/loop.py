@@ -176,6 +176,7 @@ class CognitiveLoop:
         shared_budget: ToolOperationBudget | None = None,
         call_context: CallContext | None = None,
         system_prompt: str | None = None,
+        root_node_id: str | None = None,
         model_reservation_id: str | None = None,
         context_sections: Callable[[int], str] | None = None,
         round_feedback: Callable[[int, list[dict[str, Any]]], None] | None = None,
@@ -200,6 +201,8 @@ class CognitiveLoop:
         self._interaction_mode = interaction_mode
         self._shared_budget = shared_budget
         self._call_context = call_context
+        self._system_prompt_override = system_prompt
+        self._root_node_id = root_node_id
         self._model_reservation_id = model_reservation_id
         self._context_sections = context_sections
         self._round_feedback = round_feedback
@@ -432,22 +435,31 @@ class CognitiveLoop:
         )
 
     def _system_prompt_for(self, ordinal: int) -> str:
-        base = self._default_system_prompt()
+        base = self._system_prompt_override or self._default_system_prompt()
         if self._context_sections is None:
             return base
         extra = self._context_sections(ordinal)
         return f"{base}\n\n{extra}" if extra else base
 
     def _default_system_prompt(self) -> str:
+        # The root node id is the graph address every tool call must use for
+        # the initial position: a real model cannot guess it (pilot: Kimi
+        # addressed ROOT/root/0/1 and every observe was NODE_SCOPE_MISMATCH).
+        # The id is decision-scoped and already journaled — exposing it is
+        # addressing, not hidden state.
+        root = self._root_node_id or "the root node"
         if self._interaction_mode == "native_tools":
             return (
                 "You are navigating one decision's hypothetical search graph. "
+                f"The root node id is {root!r}: use it as node_id to observe "
+                "the initial position. "
                 "Use the board tools to observe the root, expand legal actions "
                 f"(action ids come from observations), and when ready call "
                 f"{FINALIZE_TOOL} with the ROOT node and the chosen action_id."
             )
         return (
             "You are navigating one decision's hypothetical search graph. "
+            f"The root node id is {root!r}: use it as node_id. "
             'Reply with ONE JSON command: {"command": <tool>, "arguments": {...}}. '
             f'To finish, use {{"command": "{FINALIZE_TOOL}", '
             '"arguments": {"node_id": <root>, "action_id": <id>}}}.'

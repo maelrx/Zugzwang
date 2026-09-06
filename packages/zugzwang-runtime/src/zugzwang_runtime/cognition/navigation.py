@@ -89,6 +89,7 @@ class CognitiveNavigationStrategy:
             model=context.model,
             max_rounds=self._max_rounds,
             interaction_mode=session.interaction_mode,
+            root_node_id=session.root_node_id,
             shared_budget=session.budget,
             model_reservation_id=session.model_reservation_id,
             context_sections=section_builder,

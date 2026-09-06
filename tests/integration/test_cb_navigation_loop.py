@@ -215,6 +215,7 @@ def _loop(
         context_artifact_id=session.round_context_artifact_id,
         max_rounds=kwargs.pop("max_rounds", 4),
         interaction_mode=interaction_mode or session.interaction_mode,
+        root_node_id=session.root_node_id,
         **kwargs,
     )
 
@@ -445,3 +446,16 @@ def test_round_context_carries_exact_request(harness) -> None:
     stored = json.loads(payload.decode("utf-8"))["request"]
     assert stored["metadata"]["round_ordinal"] == ordinal
     assert stored["messages"][0]["parts"][0]["text"].startswith("You are navigating")
+
+
+def test_system_prompt_names_real_root_node_id(harness) -> None:
+    """Pilot regression: the first request names the decision's REAL root node
+    id, so a model that follows the prompt cannot address ROOT/root/0/1 and
+    collect NODE_SCOPE_MISMATCH on every observe (real pilot 2026-09-06)."""
+    session, _journal = _open(harness)
+    backend = FakeCognitiveBackend([propose_observe])
+    loop = _loop(session, backend, harness, max_rounds=2)
+    assert loop._root_node_id == "node-root"
+    _run(loop)
+    system_text = backend.seen_requests[0].messages[0].parts[0].text
+    assert "'node-root'" in system_text, system_text[:400]

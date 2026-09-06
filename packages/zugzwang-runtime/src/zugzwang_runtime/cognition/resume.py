@@ -71,7 +71,6 @@ def resume_decision(journal: CognitionJournal, decision_id: str) -> ResumePlan:
             ),
             {"id": decision_id},
         ).fetchone()
-        conn.commit()
     balance = journal.reconcile_budget(decision_id)
     return ResumePlan(
         decision_id=decision_id,
@@ -96,7 +95,6 @@ def open_operations(journal: CognitionJournal, decision_id: str) -> list[dict[st
             ),
             {"id": decision_id},
         ).fetchall()
-        conn.commit()
     return [
         {
             "operation_id": row[0],

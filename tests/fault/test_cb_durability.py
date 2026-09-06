@@ -19,7 +19,7 @@ from sqlalchemy import text
 from zugzwang_chess.cognition import ChessPerception
 from zugzwang_chess.environment.standard import ChessGameState, StandardChessEnvironment
 from zugzwang_runtime.artifacts.cas import ContentAddressedStore
-from zugzwang_runtime.cognition.audit import export_report, validate_artifact_id
+from zugzwang_runtime.cognition.audit import validate_artifact_id
 from zugzwang_runtime.cognition.resume import open_operations, resume_decision
 from zugzwang_runtime.cognition.session import DecisionSession
 from zugzwang_runtime.persistence.cognition import CognitionJournal
@@ -215,6 +215,12 @@ def test_resume_reproduces_transcript_snapshots_budget(harness) -> None:
     assert plan.operations_settled == 2
     assert plan.exposure_watermark == 2
     assert open_operations(journal2, "dec-resume-0001") == []
+    # Transcript rows survived the handle drop: same two committed observes.
+    from zugzwang_runtime.cognition.audit import audit_decision
+
+    report = audit_decision(journal2, harness[2], "dec-resume-0001")
+    assert [op["status"] for op in report.operations] == ["COMMITTED", "COMMITTED"]
+    assert report.observations == 2
 
 
 def test_malformed_refs_never_leave_cas(harness) -> None:
@@ -288,4 +294,3 @@ def test_export_carries_no_secrets(harness) -> None:
     assert exported["wire"]["access_token"] == "[REDACTED]"
     assert exported["wire"]["api_key"] == "[REDACTED]"
     assert exported["wire"]["ok"] == 1
-    assert export_report is not None

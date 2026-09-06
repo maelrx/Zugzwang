@@ -20,8 +20,21 @@ from zugzwang_core.domain.canonical import sha256_hex
 from ..artifacts.cas import ContentAddressedStore
 from ..persistence.cognition import CognitionJournal
 
+# Single redaction policy: the same credential-shaped keys as the execution
+# evidence layer (no forked set). "token" is covered via "access_token" and
+# explicit bearer handling stays in the evidence sanitizer.
 _SECRET_KEYS = frozenset(
-    {"access_token", "cookie", "set-cookie", "secret", "client_secret", "api_key", "token"}
+    {
+        "authorization",
+        "api_key",
+        "apikey",
+        "access_token",
+        "cookie",
+        "set-cookie",
+        "secret",
+        "client_secret",
+        "token",
+    }
 )
 
 _ARTIFACT_ID_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -91,7 +104,6 @@ def audit_decision(
             ),
             {"id": decision_id},
         ).fetchone()
-        conn.commit()
     balance = journal.reconcile_budget(decision_id)
 
     verified = 0
@@ -136,19 +148,19 @@ def audit_decision(
 def _verify_artifact(cas: ContentAddressedStore, artifact_id: str) -> tuple[bool, bytes | None]:
     """Hash-verify one CAS object; corruption fails before exposure (TEST-054)."""
     from zugzwang_core.domain.artifacts import ArtifactRef
-    from zugzwang_core.domain.errors import ArtifactError
+    from zugzwang_core.domain.errors import ZugzwangError
 
     if not validate_artifact_id(artifact_id):
         return False, None
     try:
         ref = ArtifactRef.parse(artifact_id)
-    except ArtifactError:
+    except ZugzwangError:
         return False, None
     if not cas.exists(ref):
         return False, None
     try:
         payload = cas.get(ref)
-    except (ArtifactError, OSError):
+    except (ZugzwangError, OSError):
         return False, None
     digest = sha256_hex(payload.data)
     if digest != ref.digest.lower():

@@ -145,11 +145,12 @@ def test_redaction_strips_credentials(harness) -> None:
             "nested": {"list": [{"secret": "s", "ok": 1}]},
         }
     )
-    assert exported["headers"]["Authorization"] == "Bearer x" or True
-    flat = str(exported)
-    assert "Bearer x" in flat  # header values are transport, not credential keys
+    # No credential value survives the export in any key.
+    assert exported["headers"]["Authorization"] == "[REDACTED]"
+    assert "Bearer x" not in str(exported)
     assert exported["nested"]["list"][0]["secret"] == "[REDACTED]"
     assert exported["usage"]["input_tokens"] == 3
+    assert exported["headers"]["Content-Type"] == "application/json"
 
 
 def test_end_to_end_audit_rebuilds_decision(harness) -> None:
@@ -169,9 +170,14 @@ def test_end_to_end_audit_rebuilds_decision(harness) -> None:
     assert report.selected_action == uci
     assert report.observations == 1
     assert report.exposure_watermark == 1
+    # Costs and limits: the committed observe verified its result artifact.
+    assert report.operations[0]["status"] == "COMMITTED"
+    assert report.operations[0]["artifact_verified"] is True
+    assert report.artifacts_failed == []
     exported = export_report(report)
     assert exported["selected_action"] == uci
     assert exported["status"] == "COMMITTED"
+    assert exported["artifacts_failed"] == []
 
 
 def test_guards_anchored_in_persistence_suite() -> None:

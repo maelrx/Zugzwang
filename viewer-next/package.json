@@ -1,0 +1,35 @@
+{
+  "name": "viewer-next",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "setup:engine": "node scripts/setup-engine.cjs",
+    "predev": "npm run setup:engine",
+    "prebuild": "npm run setup:engine",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/three": "^0.185.4",
+    "chessground": "^9.2.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "stockfish": "^18.0.8",
+    "three": "^0.185.1",
+    "uplot": "^1.6.32"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "oxlint": "^1.79.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}

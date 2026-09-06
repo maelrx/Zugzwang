@@ -277,8 +277,19 @@ class TestArtifactCrashProtocol:
             "SELECT count(*) FROM steps WHERE status='COMMITTED'"
         ).fetchone()[0]
         assert committed == 0
-        # no dangling references: every stored ref points to an existing artifact
+        # no dangling references: every stored ref points to a registered artifact
+        import json as _json
+
         refs = connection.execute(
             "SELECT artifact_refs_json FROM events WHERE artifact_refs_json != '[]'"
         ).fetchall()
-        assert refs == [] or refs is not None
+        known = {
+            row[0] for row in connection.execute("SELECT artifact_id FROM artifacts").fetchall()
+        }
+        dangling = [
+            ref
+            for (refs_json,) in refs
+            for ref in (refs_json if isinstance(refs_json, list) else _json.loads(refs_json))
+            if ref not in known
+        ]
+        assert dangling == [], "event refs point to missing artifacts: " + repr(dangling)

@@ -11,6 +11,7 @@ import pytest
 from zugzwang_chess.cognition import (
     ActionStateMismatch,
     ChessPerception,
+    CognitionError,
     PositionPacket,
     compute_delta,
     reconstruct,
@@ -222,8 +223,9 @@ def test_castling_delta_moves_king_and_rook() -> None:
 def test_arbitrary_delta_never_blames_a_single_action() -> None:
     """TEST-017: comparação arbitrária não atribui diferença a uma ação."""
     origin, target, _ = _adjacent_packets(START, "e2e4")
-    with pytest.raises(ValueError):
+    with pytest.raises(CognitionError) as exc:
         compute_delta(origin, target, responsible_action_id="some-action")
+    assert exc.value.code == "INVALID_ARGUMENTS"
     delta = compute_delta(origin, target)
     assert delta.comparison_kind == "arbitrary"
     assert delta.responsible_action_id is None

@@ -9,11 +9,14 @@ file" is formal; "it abandoned the attack" is interpretation.
 
 from __future__ import annotations
 
-from typing import Literal
+import json
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .packet import PositionPacket
+from zugzwang_core.domain.cognition import action_id_v2
+
+from .packet import ActionStateMismatch, CognitionError, PositionPacket
 
 
 class PieceChange(BaseModel):
@@ -43,6 +46,8 @@ class PositionDelta(BaseModel):
     promoted: tuple[PieceChange, ...] = ()
     removed: tuple[PieceChange, ...] = ()
     replaced: tuple[PieceChange, ...] = ()
+    relations_added: tuple[dict[str, Any], ...] = ()
+    relations_removed: tuple[dict[str, Any], ...] = ()
     side_changed: bool = False
     castling_rights_changed: bool = False
     halfmove_clock_from: int = 0
@@ -50,6 +55,8 @@ class PositionDelta(BaseModel):
     fullmove_from: int = 0
     fullmove_to: int = 0
     responsible_action_id: str | None = None
+    target_side_to_move: str | None = None
+    target_castling_rights: str | None = None
 
 
 def _fen_parts(packet: PositionPacket) -> list[str]:
@@ -114,9 +121,19 @@ def compute_delta(
 
     if responsible_action_id is not None:
         if responsible_action_uci is None:
-            raise ValueError("adjacent delta requires the responsible action uci")
+            raise CognitionError(
+                "INVALID_ARGUMENTS", "adjacent delta requires the responsible action uci"
+            )
         if len(responsible_action_uci) not in (4, 5):
-            raise ValueError(f"invalid uci {responsible_action_uci!r}")
+            raise CognitionError("INVALID_ARGUMENTS", f"invalid uci {responsible_action_uci!r}")
+        expected_id = action_id_v2(
+            origin.state.state_key,
+            responsible_action_uci,
+            "uci/v1",
+            origin.provenance.policy_hash,
+        )
+        if expected_id != responsible_action_id:
+            raise ActionStateMismatch("responsible action is not bound to the origin state")
         from_sq, to_sq = responsible_action_uci[:2], responsible_action_uci[2:4]
         is_promotion = len(responsible_action_uci) == 5
 
@@ -124,9 +141,11 @@ def compute_delta(
         replaced_squares = [
             s for s in sorted(set(origin_map) & set(target_map)) if origin_map[s] != target_map[s]
         ]
-        # The mover leaves from_sq (disappeared or replaced there).
+        # The mover leaves from_sq; the victim (if capture) sits at to_sq.
         if from_sq not in origin_map:
-            raise ValueError("responsible action from_square has no piece in origin")
+            raise CognitionError(
+                "ACTION_STATE_MISMATCH", "responsible action from_square has no piece in origin"
+            )
         mover_piece = origin_map[from_sq]
         if to_sq in origin_map and to_sq != from_sq:
             removed.append(PieceChange(piece=origin_map[to_sq], from_square=to_sq))
@@ -149,25 +168,16 @@ def compute_delta(
         moved_rest, left_out, left_in = _pair_moved(leftovers, [a for a in added if a[0] != to_sq])
         moved.extend(moved_rest)
         for sq, piece in left_out:
-            if sq == to_sq:
-                continue  # captured piece already recorded
             removed.append(PieceChange(piece=piece, from_square=sq))
-        for sq in replaced_squares:
-            replaced.append(
-                PieceChange(
-                    piece=target_map[sq],
-                    from_square=sq,
-                    to_square=sq,
-                    previous_piece=origin_map[sq],
-                )
-            )
-        if left_out and all(d[0] == to_sq for d in left_out):
-            for sq, piece in left_out:
-                if sq == to_sq:
-                    removed.append(PieceChange(piece=piece, from_square=sq))
-            left_out = [d for d in left_out if d[0] != to_sq]
+        for sq, piece in left_in:
+            moved.append(PieceChange(piece=piece, to_square=sq))
+        # A single legal move touches only from/to; any other same-square swap
+        # would be an unexplained change for an adjacent comparison.
+        replaced = []
         if left_out or left_in:
-            raise ValueError("adjacent delta could not explain all piece changes")
+            raise CognitionError(
+                "STATE_REPLAY_MISMATCH", "adjacent delta could not explain all piece changes"
+            )
     else:
         disappeared, added = _removed_added(origin_map, target_map)
         for sq, piece in disappeared:
@@ -187,10 +197,23 @@ def compute_delta(
                 )
             )
 
+    origin_relations = {json.dumps(r, sort_keys=True): r for r in origin.relations.items}
+    target_relations = {json.dumps(r, sort_keys=True): r for r in target.relations.items}
+    relations_added = tuple(
+        target_relations[k] for k in sorted(target_relations.keys() - origin_relations.keys())
+    )
+    relations_removed = tuple(
+        origin_relations[k] for k in sorted(origin_relations.keys() - target_relations.keys())
+    )
+
     return PositionDelta(
         comparison_kind="adjacent" if responsible_action_id is not None else "arbitrary",
         origin_state_key=origin.state.state_key,
         target_state_key=target.state.state_key,
+        relations_added=relations_added,
+        relations_removed=relations_removed,
+        target_side_to_move=target_parts[1],
+        target_castling_rights=target_parts[2],
         moved=tuple(moved),
         promoted=tuple(promoted),
         removed=tuple(removed),
@@ -205,14 +228,16 @@ def compute_delta(
     )
 
 
-def reconstruct(origin: PositionPacket, delta: PositionDelta) -> dict[str, str]:
+def reconstruct(origin: PositionPacket, delta: PositionDelta) -> dict[str, Any]:
     """Apply the delta to the origin projection (TEST-016).
 
-    Returns the reconstructed piece map. The integral snapshot remains the
-    authority for replay; reconstruction covers the projection only.
+    Returns the reconstructed projection: piece map plus side to move, rights
+    and clocks. The integral snapshot remains the authority for replay.
     """
     if delta.comparison_kind != "adjacent":
-        raise ValueError("only adjacent deltas reconstruct a target projection")
+        raise CognitionError(
+            "INVALID_ARGUMENTS", "only adjacent deltas reconstruct a target projection"
+        )
     board_map = dict(_piece_map(origin))
     for change in delta.moved + delta.promoted:
         if change.from_square is None or change.to_square is None:

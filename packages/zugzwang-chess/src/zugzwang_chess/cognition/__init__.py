@@ -8,6 +8,7 @@ those live above the L0 contract (ADR-CB-002).
 from .delta import PieceChange, PositionDelta, compute_delta, reconstruct
 from .packet import (
     ActionStateMismatch,
+    CognitionError,
     LegalActionItem,
     PacketLegalActions,
     PacketProvenance,
@@ -16,7 +17,6 @@ from .packet import (
     PacketState,
     PacketTerminal,
     PositionPacket,
-    position_keys,
     require_action_belongs,
 )
 from .perception import PERCEPTION_VERSION, ChessPerception
@@ -25,6 +25,7 @@ __all__ = [
     "PERCEPTION_VERSION",
     "ActionStateMismatch",
     "ChessPerception",
+    "CognitionError",
     "LegalActionItem",
     "PacketLegalActions",
     "PacketProvenance",
@@ -36,7 +37,6 @@ __all__ = [
     "PositionDelta",
     "PositionPacket",
     "compute_delta",
-    "position_keys",
     "reconstruct",
     "require_action_belongs",
 ]

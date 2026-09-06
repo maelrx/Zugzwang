@@ -12,12 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from zugzwang_core.domain.cognition import (
-    action_id_v2,
-    packet_content_hash_v2,
-    position_key_v2,
-    state_key_v2,
-)
+from zugzwang_core.domain.cognition import action_id_v2, packet_content_hash_v2
 
 PACKET_SCHEMA_VERSION = "zgw.position-packet/v1"
 RELATIONS_SEMANTICS_VERSION = "l0r-minimal/v1"
@@ -45,44 +40,79 @@ class PacketRepresentation(BaseModel):
     image_ref: str | None = None
 
 
+class CognitionError(Exception):
+    """Contract error with machine code (CODING_STANDARDS / Errors)."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class ActionStateMismatch(CognitionError):
+    """An action key was used against a state it is not bound to (§15.1)."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__("ACTION_STATE_MISMATCH", message)
+
+
 class LegalActionItem(BaseModel):
-    """One action as an object, bound to the packet's state key (§8.3)."""
+    """One action as an object, bound to the packet's state key (§8.3).
+
+    Formal descriptors only: squares, piece, capture/castling/promotion flags.
+    No SAN annotation (TEST-007 belongs to the exposure broker, CB-WO-05).
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     index: int = Field(ge=0)
     uci: str = Field(min_length=4)
     action_id: str = Field(min_length=8)
+    from_square: str = Field(min_length=2)
+    to_square: str = Field(min_length=2)
+    piece: str = Field(min_length=1)
+    is_capture: bool = False
+    is_castling: bool = False
+    promotion: str | None = None
 
     @classmethod
     def build(
-        cls, index: int, uci: str, state_key: str, action_schema_version: str, policy_hash: str
+        cls,
+        index: int,
+        uci: str,
+        state_key: str,
+        action_schema_version: str,
+        policy_hash: str,
+        *,
+        from_square: str,
+        to_square: str,
+        piece: str,
+        is_capture: bool = False,
+        is_castling: bool = False,
+        promotion: str | None = None,
     ) -> LegalActionItem:
         return cls(
             index=index,
             uci=uci,
             action_id=action_id_v2(state_key, uci, action_schema_version, policy_hash),
+            from_square=from_square,
+            to_square=to_square,
+            piece=piece,
+            is_capture=is_capture,
+            is_castling=is_castling,
+            promotion=promotion,
         )
 
 
 def require_action_belongs(
-    state_key: str, item: LegalActionItem, action_schema_version: str, policy_hash: str
+    state_key: str,
+    item: LegalActionItem,
+    action_schema_version: str,
+    policy_hash: str,
 ) -> None:
     """Raise ACTION_STATE_MISMATCH when the action is not bound to this state."""
     expected = action_id_v2(state_key, item.uci, action_schema_version, policy_hash)
     if item.action_id != expected:
-        raise ActionStateMismatch(
-            "action does not belong to this state",
-            code="ACTION_STATE_MISMATCH",
-        )
-
-
-class ActionStateMismatch(Exception):
-    """An action key was used against a state it is not bound to."""
-
-    def __init__(self, message: str, code: str) -> None:
-        super().__init__(message)
-        self.code = code
+        raise ActionStateMismatch("action does not belong to this state")
 
 
 class PacketLegalActions(BaseModel):
@@ -146,19 +176,3 @@ class PositionPacket(BaseModel):
     def content_hash(self) -> str:
         """Semantic content hash (packet_content_hash_v2, no telemetry)."""
         return packet_content_hash_v2(self.model_dump(mode="json"))
-
-
-def position_keys(
-    state_fingerprint: str,
-    variant: str,
-    rules_context: str,
-    fen_placement: str,
-    side_to_move: str,
-    castling_rights: str,
-    legal_en_passant: str,
-) -> tuple[str, str]:
-    """Distinct §7.2 keys for one position: (state_key_v2, position_key_v2)."""
-    return (
-        state_key_v2(state_fingerprint, variant, rules_context),
-        position_key_v2(fen_placement, side_to_move, castling_rights, legal_en_passant),
-    )

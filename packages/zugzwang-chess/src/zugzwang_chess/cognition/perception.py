@@ -14,6 +14,7 @@ import chess
 
 from ..environment.standard import ChessGameState, StandardChessEnvironment
 from .packet import (
+    CognitionError,
     LegalActionItem,
     PacketLegalActions,
     PacketProvenance,
@@ -42,7 +43,7 @@ class ChessPerception:
         self._rules_version = rules_version
         self._policy_hash = policy_hash
         if page_size < 1:
-            raise ValueError("page_size must be >= 1")
+            raise CognitionError("INVALID_ARGUMENTS", "page_size must be >= 1")
         self._page_size = page_size
 
     def build_packet(
@@ -62,16 +63,27 @@ class ChessPerception:
         actions = legal_set.actions
         start = max(0, cursor)
         page = actions[start : start + self._page_size]
-        items = tuple(
-            LegalActionItem.build(
-                index=start + offset,
-                uci=move.uci,
-                state_key=state_key,
-                action_schema_version="uci/v1",
-                policy_hash=self._policy_hash,
+        items: list[LegalActionItem] = []
+        for offset, move in enumerate(page):
+            chess_move = chess.Move.from_uci(move.uci)
+            origin_piece = board.piece_at(chess_move.from_square)
+            items.append(
+                LegalActionItem.build(
+                    index=start + offset,
+                    uci=move.uci,
+                    state_key=state_key,
+                    action_schema_version="uci/v1",
+                    policy_hash=self._policy_hash,
+                    from_square=chess.square_name(chess_move.from_square),
+                    to_square=chess.square_name(chess_move.to_square),
+                    piece=origin_piece.symbol() if origin_piece else "?",
+                    is_capture=board.is_capture(chess_move),
+                    is_castling=board.is_castling(chess_move),
+                    promotion=chess.piece_symbol(chess_move.promotion)
+                    if chess_move.promotion
+                    else None,
+                )
             )
-            for offset, move in enumerate(page)
-        )
         next_cursor = start + self._page_size if start + self._page_size < len(actions) else None
 
         termination = state.termination
@@ -98,7 +110,7 @@ class ChessPerception:
                 total_count=len(actions),
                 set_hash=legal_set.legal_hash,
                 ordering=legal_set.ordering_policy,
-                items=items,
+                items=tuple(items),
                 next_cursor=next_cursor,
                 complete=next_cursor is None and start == 0,
             ),
@@ -143,7 +155,10 @@ class ChessPerception:
 
     def _relations(self, board: chess.Board, requested_scope: str) -> tuple[dict[str, Any], ...]:
         if requested_scope != "minimal":
-            raise ValueError(f"unknown relations scope {requested_scope!r}; expected 'minimal'")
+            raise CognitionError(
+                "INVALID_ARGUMENTS",
+                f"unknown relations scope {requested_scope!r}; expected 'minimal'",
+            )
         return (*checkers(board), *absolute_pins(board))
 
 

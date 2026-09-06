@@ -312,6 +312,7 @@ class CognitionToolBroker:
         self._packet_query_count = 0
         try:
             payload = self._execute_tool(tool, arguments)
+            self._validate_payload(tool, payload)
         except ToolExecutionError as exc:
             return self._settle_failure(
                 stored_operation_id,
@@ -532,6 +533,58 @@ class CognitionToolBroker:
         if not isinstance(other_node_id, str):
             raise ToolExecutionError("INVALID_ARGUMENTS", "other_node_id must be a string")
         return self._compare(node_id, other_node_id)
+
+    def _validate_payload(self, tool: str, payload: Any) -> None:
+        """Contract-check the tool's OWN result shape BEFORE settle (TEST-021).
+
+        ``COMMITTED`` may never publish an unvalidated payload: a successful
+        return with a malformed body is an OUTPUT_CONTRACT_VIOLATION and the
+        operation settles FAILED with no exposed result (§15.1).
+        """
+        if not isinstance(payload, dict):
+            raise ToolExecutionError("OUTPUT_CONTRACT_VIOLATION", "result is not an object")
+        if not isinstance(payload.get("content_hash"), str):
+            raise ToolExecutionError(
+                "OUTPUT_CONTRACT_VIOLATION", "result lacks a content_hash"
+            )
+        if tool == "board_observe":
+            packet = payload.get("packet")
+            if not isinstance(packet, dict) or not isinstance(
+                packet.get("state"), dict
+            ) or not isinstance(packet.get("legal_actions"), dict):
+                raise ToolExecutionError(
+                    "OUTPUT_CONTRACT_VIOLATION", "observe result lacks a valid packet"
+                )
+        elif tool == "board_inspect":
+            if not isinstance(payload.get("facts"), dict):
+                raise ToolExecutionError(
+                    "OUTPUT_CONTRACT_VIOLATION", "inspect result lacks facts"
+                )
+        elif tool == "board_expand":
+            results = payload.get("results")
+            if not isinstance(results, list) or not results:
+                raise ToolExecutionError(
+                    "OUTPUT_CONTRACT_VIOLATION", "expand result lacks a results list"
+                )
+            required = {
+                "action_id", "uci", "expanded", "child_node_id",
+                "state_key", "depth", "root_action", "terminal", "edge_id",
+            }
+            for row in results:
+                if not isinstance(row, dict) or not required.issubset(row):
+                    raise ToolExecutionError(
+                        "OUTPUT_CONTRACT_VIOLATION",
+                        "expand result row lacks the child reference fields",
+                    )
+                if row.get("expanded") is not True:
+                    raise ToolExecutionError(
+                        "OUTPUT_CONTRACT_VIOLATION", "expand row not marked expanded"
+                    )
+        elif tool == "board_compare":
+            if not isinstance(payload.get("formal_differences"), dict):
+                raise ToolExecutionError(
+                    "OUTPUT_CONTRACT_VIOLATION", "compare result lacks formal_differences"
+                )
 
     def _build_packet(self, state: Any, node_id: str, **kwargs: Any) -> Any:
         """Packet build = one physical legal-set query, accounted (§13.1)."""

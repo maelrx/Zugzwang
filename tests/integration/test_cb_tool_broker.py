@@ -682,3 +682,40 @@ def test_expand_reports_real_physical_rules_queries(harness) -> None:
     )
     observe = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="q-obs")
     assert observe.meta.physical_rules_queries >= 1
+
+
+def test_invalid_payload_settles_failed_not_committed(harness, monkeypatch) -> None:
+    """TEST-021/ZGW-0101: a tool returning a malformed payload (not raising)
+    settles FAILED with OUTPUT_CONTRACT_VIOLATION and exposes no result."""
+    session = _open_session(harness)
+
+    def malformed(tool, arguments):
+        return {"results": "not-a-list", "content_hash": "packet_content_hash:v2:x"}
+
+    monkeypatch.setattr(session._broker, "_execute_tool", malformed)
+    envelope = session.execute(
+        "board_expand",
+        {"node_id": "node-root", "action_ids": [_legal_action_id(session, "e2e4")]},
+        idempotency_key="bad-payload",
+    )
+    assert envelope.ok is False
+    assert envelope.error is not None
+    assert envelope.error.code == "OUTPUT_CONTRACT_VIOLATION"
+    assert envelope.result is None, "an unvalidated payload is never exposed"
+    database, engine, _cas = harness
+    with engine.connect() as conn:
+        status, error_code = conn.execute(
+            text(
+                "SELECT status, error_code FROM cb_tool_operations "
+                "WHERE decision_id = :id AND idempotency_key = 'bad-payload'"
+            ),
+            {"id": session.decision_id},
+        ).fetchone()
+        observations = conn.execute(
+            text("SELECT COUNT(*) FROM cb_observations WHERE decision_id = :id"),
+            {"id": session.decision_id},
+        ).scalar_one()
+    assert (status, error_code) == ("FAILED", "OUTPUT_CONTRACT_VIOLATION")
+    assert observations == 1, "the failure exposure exists (error artifact), not the result"
+    # No partial expansion happened either: the malformed body produced no child.
+    assert CognitionJournal(database).bound_node_ids("dec-test-0001") == ["node-root"]

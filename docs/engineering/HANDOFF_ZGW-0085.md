@@ -25,3 +25,9 @@ Alterações locais foram copiadas para evidência privada. Nenhuma branch não 
 - Novas fontes em drafts #17/#18/#19: diff e sintaxe conferidos; build/QA visual e execução real não repetidos.
 
 Os PRs #9-#12 têm comentários de bloqueio e descrições atualizadas. O commit final documental deve ter seus próprios checks remotos verdes antes de merge.
+
+## Encerramento da fila (2026-09-06)
+
+A fila foi concluída conforme o plano: #13 resolvido no #9 (merge `a18a4a1`), #10 trazido à main pelo #20 (`cc86bcb`), #11 (`fd33f49`) com `viewer/data.js` desrastreado (GATE-005), #12 (`79ac81a`) com correções da #14 e corpus 1.1.0, #21 (`ccec405`) com a reprodução por bundle da #15, e preservações #18/#19 e viewer-next #17 integradas por último. Issues #13/#14/#15 fechadas com evidência; detalhes em [REPOSITORY_STATUS.md](REPOSITORY_STATUS.md).
+
+Gates humanos e ZGW-0084 permanecem como registrados; nenhum gate foi ratificado por esta organização.

@@ -15,6 +15,7 @@ PRD TEST id:
 """
 
 import pytest
+import sqlalchemy.exc
 from sqlalchemy import text
 
 from zugzwang_runtime.cognition.memory import MemoryError, ScopedMemoryStore
@@ -110,6 +111,12 @@ def test_sealed_snapshot_refuses_members_and_links(store) -> None:
         memory.link(memory_id="mem-1-r1", link_kind="node", target_key="node-x")
     with engine.connect() as conn:
         conn.rollback()
+    with pytest.raises(sqlalchemy.exc.IntegrityError), engine.connect() as conn2:
+        conn2.execute(
+            text("DELETE FROM cb_memory_snapshot_members WHERE snapshot_id = 'snap-1'")
+        )
+    with engine.connect() as conn:
+        conn.rollback()
 
 
 def test_revision_is_immutable(store) -> None:
@@ -122,7 +129,8 @@ def test_revision_is_immutable(store) -> None:
         revision=2,
         content_hash="d" * 64,
     )
-    with memory._connect() as conn:
+    _, engine = store
+    with engine.connect() as conn:
         rows = conn.execute(
             text(
                 "SELECT memory_id, revision, content_hash FROM cb_memory_items "
@@ -133,6 +141,15 @@ def test_revision_is_immutable(store) -> None:
     assert [(row[0], row[1]) for row in rows] == [("mem-1-r1", 1), ("mem-1-r2", 2)]
     assert rows[0][2] == "c" * 64
     assert rows[1][2] == "d" * 64
+    # The old revision row is immutable: a direct UPDATE aborts.
+    with pytest.raises(sqlalchemy.exc.IntegrityError), engine.connect() as conn2:
+        conn2.execute(
+            text(
+                "UPDATE cb_memory_items SET content_hash = 'f' * 64 WHERE memory_id = 'mem-1-r1'"
+            )
+        )
+    with engine.connect() as conn:
+        conn.rollback()
 
 
 def test_eligibility_before_ranking(store) -> None:
@@ -162,10 +179,37 @@ def test_eligibility_before_ranking(store) -> None:
 
 def test_contaminated_source_refused(store) -> None:
     """TEST-045: fonte de engine/eval é negada também na restauração."""
-    _memory, _ = store
+    memory, _ = store
     with pytest.raises(MemoryError) as exc:
         _note(store, origin_class="evaluation")
     assert exc.value.code == "SOURCE_NOT_ALLOWED"
+    # Restore path enforces the same gate: a contaminated seed row is refused.
+    with pytest.raises(MemoryError) as exc2:
+        memory.restore_notes(
+            [
+                {
+                    "memory_id": "mem-x-r1",
+                    "logical_memory_id": "mem-x",
+                    "payload_artifact_id": "art:cb-memory-seed",
+                    "source_manifest_artifact_id": "art:cb-memory-manifest",
+                    "origin_class": "evaluation",
+                }
+            ]
+        )
+    assert exc2.value.code == "SOURCE_NOT_ALLOWED"
+    restored = memory.restore_notes(
+        [
+            {
+                "memory_id": "mem-y-r1",
+                "logical_memory_id": "mem-y",
+                "payload_artifact_id": "art:cb-memory-seed",
+                "source_manifest_artifact_id": "art:cb-memory-manifest",
+                "origin_class": "human",
+                "scope_owner_id": "ep-1",
+            }
+        ]
+    )
+    assert restored == 1
 
 
 def test_memory_across_turns_scoped_to_episode(store) -> None:
@@ -199,7 +243,19 @@ def test_test_partition_isolated(store) -> None:
     )
     memory.add_member(snapshot_id="snap-p", memory_id="mem-1-r1", ordinal=0)
     result = memory.recall(snapshot_id="snap-p", scope_kind="episode", scope_owner_id="ep-1")
-    assert result.items == []
+    # Test-scoped snapshot recalls test notes as test-only; a development
+    # snapshot never sees them (isolation from train/selection).
+    assert [item.memory_id for item in result.items] == ["mem-1-r1"]
+    assert result.items[0].eligibility_reason == "eligible-test-scope-only"
+    memory.open_snapshot(
+        snapshot_id="snap-dev",
+        scope_kind="episode",
+        scope_owner_id="ep-1",
+        partition_name="development",
+        policy_hash="p" * 64,
+    )
+    dev = memory.recall(snapshot_id="snap-dev", scope_kind="episode", scope_owner_id="ep-1")
+    assert dev.items == [] and dev.evaluative == []
 
 
 def test_premise_change_marks_needs_review(store) -> None:
@@ -213,7 +269,8 @@ def test_premise_change_marks_needs_review(store) -> None:
         premise_changed=True,
         content_hash="e" * 64,
     )
-    with memory._connect() as conn:
+    _, engine = store
+    with engine.connect() as conn:
         row = conn.execute(
             text("SELECT validity_status FROM cb_memory_items WHERE memory_id = 'mem-1-r2'")
         ).fetchone()
@@ -242,9 +299,10 @@ def test_real_frontier_uses_graph_not_notes(store) -> None:
     memory.add_member(snapshot_id="snap-f", memory_id="mem-f-r1", ordinal=0)
     memory.add_member(snapshot_id="snap-f", memory_id="mem-a-r1", ordinal=1)
     result = memory.recall(snapshot_id="snap-f", scope_kind="episode", scope_owner_id="ep-1")
-    reasons = {item.memory_id: item.eligibility_reason for item in result.items}
-    assert reasons["mem-a-r1"] == "eligible-evaluative-separate-section"
-    assert reasons["mem-f-r1"] == "eligible-scope-partition-validity"
+    assert [item.memory_id for item in result.items] == ["mem-f-r1"]
+    assert [item.memory_id for item in result.evaluative] == ["mem-a-r1"]
+    assert result.evaluative[0].eligibility_reason == "eligible-evaluative-separate-section"
+    assert result.items[0].eligibility_reason == "eligible-scope-partition-validity"
 
 
 def test_legacy_reader_marks_unknowns(store) -> None:

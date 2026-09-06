@@ -20,6 +20,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy.engine import Connection
+from sqlalchemy.exc import IntegrityError
 
 from ..persistence.database import Database
 
@@ -44,6 +45,13 @@ _EVALUATIVE_EPISTEMICS = frozenset({"model_assessment"})
 
 def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _optional_str(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value)
+    return text if text else None
 
 
 class MemoryError(Exception):
@@ -76,9 +84,14 @@ class RecalledItem:
 
 @dataclass(slots=True)
 class RecallResult:
-    """Typed retrieval answer: eligible items + reasons, never bare text."""
+    """Typed retrieval answer: facts plus a separate evaluative section.
+
+    Evaluative notes (model assessments) never ride ``items`` as facts —
+    they surface in ``evaluative`` with authorship (TEST-052).
+    """
 
     items: list[RecalledItem] = field(default_factory=list["RecalledItem"])
+    evaluative: list[RecalledItem] = field(default_factory=list["RecalledItem"])
     snapshot_id: str | None = None
     policy_hash: str = ""
 
@@ -172,10 +185,18 @@ class ScopedMemoryStore:
         logical_memory_id: str,
         revision: int,
         premise_changed: bool = False,
-        **fields: Any,
+        kind: str | None = None,
+        perspective: str | None = None,
+        payload_artifact_id: str | None = None,
+        content_hash: str | None = None,
     ) -> None:
         """A change produces a NEW revision; the old row is never rewritten
-        (TEST-043). A changed premise marks needs_review (TEST-048)."""
+        (TEST-043). A changed premise marks needs_review (TEST-048). Only
+        presentation/content fields are revisable — identity (logical id,
+        origin, scope, partition, sources) never changes across revisions."""
+        for label, value in (("kind", kind), ("perspective", perspective)):
+            if value is not None and not value:
+                raise MemoryError("INVALID_ARGUMENTS", f"empty revisable field {label!r}")
         with self._connect() as conn:
             row = conn.execute(
                 sa.text(
@@ -191,37 +212,44 @@ class ScopedMemoryStore:
             if row is None:
                 raise MemoryError("SEMANTICS_MISMATCH", f"unknown note {logical_memory_id!r}")
             (
-                kind,
+                prev_kind,
                 epistemic,
                 origin,
                 scope_kind,
                 owner,
                 partition,
-                perspective,
+                prev_perspective,
                 run_id,
                 episode_id,
-                payload,
-                content_hash,
+                prev_payload,
+                prev_hash,
                 manifest,
                 sequence,
             ) = row
             conn.commit()
         merged: dict[str, Any] = {
-            "kind": kind,
+            "kind": prev_kind,
             "epistemic_status": epistemic,
             "origin_class": origin,
             "scope_kind": scope_kind,
             "scope_owner_id": owner,
             "partition_name": partition,
-            "perspective": perspective,
+            "perspective": prev_perspective,
             "source_run_id": run_id,
             "source_episode_id": episode_id,
-            "payload_artifact_id": payload,
-            "content_hash": content_hash,
+            "payload_artifact_id": prev_payload,
+            "content_hash": prev_hash,
             "source_manifest_artifact_id": manifest,
             "created_sequence": int(sequence) + 1,
         }
-        merged.update(fields)
+        if kind is not None:
+            merged["kind"] = kind
+        if perspective is not None:
+            merged["perspective"] = perspective
+        if payload_artifact_id is not None:
+            merged["payload_artifact_id"] = payload_artifact_id
+        if content_hash is not None:
+            merged["content_hash"] = content_hash
         if premise_changed:
             # A changed premise marks needs_review on the new revision itself
             # (TEST-048) — no strategic refutation is declared.
@@ -233,59 +261,83 @@ class ScopedMemoryStore:
             memory_id=memory_id,
             logical_memory_id=logical_memory_id,
             revision=revision,
+            kind=str(merged["kind"]),
+            epistemic_status=str(merged["epistemic_status"]),
+            origin_class=str(merged["origin_class"]),
+            scope_kind=str(merged["scope_kind"]),
+            scope_owner_id=str(merged["scope_owner_id"]),
+            partition_name=str(merged["partition_name"]),
+            perspective=str(merged["perspective"]),
+            payload_artifact_id=str(merged["payload_artifact_id"]),
+            content_hash=str(merged["content_hash"]),
+            source_manifest_artifact_id=str(merged["source_manifest_artifact_id"]),
+            source_run_id=merged["source_run_id"],
+            source_episode_id=merged["source_episode_id"],
+            created_sequence=int(merged["created_sequence"]),
             validity_status=validity,
-            **merged,  # type: ignore[arg-type]
         )
 
     def mark_validity(self, memory_id: str, validity: str) -> None:
-        """Validity transitions append a superseding revision, never an UPDATE."""
+        """Validity transitions append a superseding revision, never an UPDATE.
+
+        Single connection: the latest revision is read and the successor
+        inserted atomically, so concurrent markers cannot collide on
+        UNIQUE(logical_memory_id, revision). Integrity conflicts surface as
+        MemoryError, never raw DB errors.
+        """
         if validity not in _VALIDITY:
             raise MemoryError("INVALID_ARGUMENTS", f"unknown validity {validity!r}")
         with self._connect() as conn:
-            row = conn.execute(
+            latest = conn.execute(
                 sa.text(
-                    "SELECT logical_memory_id, MAX(revision) FROM cb_memory_items "
-                    "WHERE memory_id = :id OR logical_memory_id = "
-                    "(SELECT logical_memory_id FROM cb_memory_items WHERE memory_id = :id)"
+                    "SELECT logical_memory_id, revision FROM cb_memory_items "
+                    "WHERE logical_memory_id = "
+                    "(SELECT logical_memory_id FROM cb_memory_items WHERE memory_id = :id) "
+                    "ORDER BY revision DESC LIMIT 1"
                 ),
                 {"id": memory_id},
             ).fetchone()
-            current = conn.execute(
-                sa.text(
-                    "SELECT kind, epistemic_status, origin_class, scope_kind, "
-                    "scope_owner_id, partition_name, perspective, source_run_id, "
-                    "source_episode_id, payload_artifact_id, content_hash, "
-                    "source_manifest_artifact_id, created_sequence "
-                    "FROM cb_memory_items WHERE memory_id = :id"
-                ),
-                {"id": memory_id},
-            ).fetchone()
-            if row is None or current is None:
+            if latest is None:
                 raise MemoryError("SEMANTICS_MISMATCH", f"unknown memory {memory_id!r}")
-            logical, max_revision = row[0], int(row[1])
-            conn.commit()
-        with self._connect() as conn:
-            conn.execute(
-                sa.text(
-                    "INSERT INTO cb_memory_items (memory_id, logical_memory_id, revision, "
-                    "kind, epistemic_status, validity_status, origin_class, scope_kind, "
-                    "scope_owner_id, partition_name, perspective, source_run_id, "
-                    "source_episode_id, payload_artifact_id, content_hash, "
-                    "source_manifest_artifact_id, created_sequence, created_at) "
-                    "SELECT :new_id, logical_memory_id, :revision, kind, epistemic_status, "
-                    ":validity, origin_class, scope_kind, scope_owner_id, partition_name, "
-                    "perspective, source_run_id, source_episode_id, payload_artifact_id, "
-                    "content_hash, source_manifest_artifact_id, created_sequence + 1, "
-                    ":created_at FROM cb_memory_items WHERE memory_id = :id"
-                ),
-                {
-                    "new_id": f"{logical}-r{int(max_revision) + 1}",
-                    "revision": int(max_revision) + 1,
-                    "validity": validity,
-                    "created_at": self._clock(),
-                    "id": memory_id,
-                },
-            )
+            logical, max_revision = latest[0], int(latest[1])
+            new_id = f"{logical}-r{int(max_revision) + 1}"
+            taken = conn.execute(
+                sa.text("SELECT 1 FROM cb_memory_items WHERE memory_id = :new_id"),
+                {"new_id": new_id},
+            ).fetchone()
+            if taken is not None:
+                raise MemoryError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"successor id {new_id!r} already exists; revise explicitly",
+                )
+            try:
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_memory_items (memory_id, logical_memory_id, revision, "
+                        "kind, epistemic_status, validity_status, origin_class, scope_kind, "
+                        "scope_owner_id, partition_name, perspective, source_run_id, "
+                        "source_episode_id, payload_artifact_id, content_hash, "
+                        "source_manifest_artifact_id, created_sequence, created_at) "
+                        "SELECT :new_id, logical_memory_id, :revision, kind, epistemic_status, "
+                        ":validity, origin_class, scope_kind, scope_owner_id, partition_name, "
+                        "perspective, source_run_id, source_episode_id, payload_artifact_id, "
+                        "content_hash, source_manifest_artifact_id, created_sequence + 1, "
+                        ":created_at FROM cb_memory_items "
+                        "WHERE logical_memory_id = :logical ORDER BY revision DESC LIMIT 1"
+                    ),
+                    {
+                        "new_id": new_id,
+                        "logical": logical,
+                        "revision": int(max_revision) + 1,
+                        "validity": validity,
+                        "created_at": self._clock(),
+                    },
+                )
+            except IntegrityError as exc:
+                raise MemoryError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"concurrent validity transition for {logical!r}",
+                ) from exc
             conn.commit()
 
     def link(
@@ -390,12 +442,17 @@ class ScopedMemoryStore:
         evaluative notes surface only in a separate authored section, never
         as facts (TEST-052 direction — enforced by kind filter here)."""
         with self._connect() as conn:
-            status = conn.execute(
-                sa.text("SELECT status FROM cb_memory_snapshots WHERE snapshot_id = :id"),
+            snap = conn.execute(
+                sa.text(
+                    "SELECT status, partition_name FROM cb_memory_snapshots WHERE snapshot_id = :id"
+                ),
                 {"id": snapshot_id},
             ).fetchone()
-            if status is None:
+            if snap is None:
                 raise MemoryError("SEMANTICS_MISMATCH", f"unknown snapshot {snapshot_id!r}")
+            snap_status, snap_partition = snap[0], snap[1]
+            if snap_status not in {"DRAFT", "SEALED"}:
+                raise MemoryError("SEMANTICS_MISMATCH", f"bad snapshot {snapshot_id!r}")
             rows = conn.execute(
                 sa.text(
                     "SELECT i.memory_id, i.logical_memory_id, i.revision, i.kind, "
@@ -409,6 +466,8 @@ class ScopedMemoryStore:
             ).fetchall()
             conn.commit()
         items: list[RecalledItem] = []
+        evaluative: list[RecalledItem] = []
+        superseded: list[str] = []
         for row in rows:
             (
                 memory_id,
@@ -428,6 +487,7 @@ class ScopedMemoryStore:
                 item_scope=item_scope,
                 owner=owner,
                 partition=partition,
+                snapshot_partition=str(snap_partition),
                 validity=validity,
                 kind=kind,
                 epistemic=epistemic,
@@ -438,27 +498,36 @@ class ScopedMemoryStore:
             )
             if reason is None:
                 continue
-            items.append(
-                RecalledItem(
-                    memory_id=memory_id,
-                    logical_memory_id=logical,
-                    revision=int(revision),
-                    kind=kind,
-                    scope_kind=item_scope,
-                    scope_owner_id=owner,
-                    partition_name=partition,
-                    perspective=item_perspective,
-                    epistemic_status=epistemic,
-                    validity_status=validity,
-                    content_hash=content_hash,
-                    payload_artifact_id=payload,
-                    eligibility_reason=reason,
-                    origin_context=f"{item_scope}:{owner}/{partition}",
-                )
+            item = RecalledItem(
+                memory_id=memory_id,
+                logical_memory_id=logical,
+                revision=int(revision),
+                kind=kind,
+                scope_kind=item_scope,
+                scope_owner_id=owner,
+                partition_name=partition,
+                perspective=item_perspective,
+                epistemic_status=epistemic,
+                validity_status=validity,
+                content_hash=content_hash,
+                payload_artifact_id=payload,
+                eligibility_reason=reason,
+                origin_context=f"{item_scope}:{owner}/{partition}",
             )
-            if len(items) >= limit:
+            if reason == "eligible-evaluative-separate-section":
+                evaluative.append(item)
+            else:
+                if validity == "superseded":
+                    superseded.append(memory_id)
+                items.append(item)
+            if len(items) + len(evaluative) >= limit:
                 break
-        return RecallResult(items=items, snapshot_id=snapshot_id, policy_hash=policy_hash)
+        return RecallResult(
+            items=items,
+            evaluative=evaluative,
+            snapshot_id=snapshot_id,
+            policy_hash=policy_hash,
+        )
 
     def _eligibility(
         self,
@@ -466,8 +535,9 @@ class ScopedMemoryStore:
         item_scope: str,
         owner: str,
         partition: str,
-        validity: str,
-        kind: str,
+        snapshot_partition: str = "development",
+        validity: str = "active",
+        kind: str = "note",
         epistemic: str = "formal_fact",
         scope_kind: str,
         scope_owner_id: str,
@@ -479,9 +549,12 @@ class ScopedMemoryStore:
         # from the same run's committed steps (TEST-046 — owner match).
         if item_scope != scope_kind or owner != scope_owner_id:
             return None
-        # Test partition is isolated from train/selection (TEST-047).
+        # Test partition is isolated from train/selection (TEST-047): test
+        # notes recall only inside a test-scoped query, never elsewhere.
         if partition == "test":
-            return None
+            if snapshot_partition != "test":
+                return None
+            return "eligible-test-scope-only"
         # Quarantined/contradicted notes are ineligible until reviewed.
         if validity in {"quarantined", "contradicted"}:
             return None
@@ -490,6 +563,46 @@ class ScopedMemoryStore:
         if epistemic in _EVALUATIVE_EPISTEMICS:
             return "eligible-evaluative-separate-section"
         return "eligible-scope-partition-validity"
+
+    # -- restore ------------------------------------------------------------------
+
+    def restore_notes(self, records: list[dict[str, Any]]) -> int:
+        """Seed/import path: every record passes the same origin gate as writes.
+
+        TEST-045 'também na restauração': a contaminated engine/eval source is
+        refused here exactly as in write_note — restoration never launders
+        provenance. Returns the count restored.
+        """
+        restored = 0
+        for record in records:
+            origin = record.get("origin_class", "endogenous")
+            if origin in _CONTAMINATED_ORIGINS:
+                raise MemoryError(
+                    "SOURCE_NOT_ALLOWED",
+                    f"origin {origin!r} is not admissible as memory",
+                )
+            raw_revision: Any = record.get("revision", 1)
+            raw_sequence: Any = record.get("created_sequence", 0)
+            self.write_note(
+                memory_id=str(record["memory_id"]),
+                logical_memory_id=str(record["logical_memory_id"]),
+                revision=int(raw_revision),
+                kind=str(record.get("kind", "note")),
+                epistemic_status=str(record.get("epistemic_status", "model_hypothesis")),
+                origin_class=str(origin),
+                scope_kind=str(record.get("scope_kind", "episode")),
+                scope_owner_id=str(record.get("scope_owner_id", "")),
+                partition_name=str(record.get("partition_name", "unspecified")),
+                perspective=str(record.get("perspective", "neutral")),
+                payload_artifact_id=str(record["payload_artifact_id"]),
+                content_hash=str(record.get("content_hash", "0" * 64)),
+                source_manifest_artifact_id=str(record["source_manifest_artifact_id"]),
+                source_run_id=_optional_str(record.get("source_run_id")),
+                source_episode_id=_optional_str(record.get("source_episode_id")),
+                created_sequence=int(raw_sequence),
+            )
+            restored += 1
+        return restored
 
     # -- legacy -----------------------------------------------------------------
 
@@ -500,9 +613,17 @@ class ScopedMemoryStore:
             "logical_memory_id",
             "revision",
             "kind",
-            "content_hash",
+            "epistemic_status",
+            "validity_status",
+            "origin_class",
             "scope_kind",
             "scope_owner_id",
+            "partition_name",
+            "perspective",
+            "content_hash",
+            "payload_artifact_id",
+            "source_run_id",
+            "source_episode_id",
         }
         out: dict[str, Any] = {key: record[key] for key in known if key in record}
         unknown = sorted(key for key in record if key not in known and key != "origin")

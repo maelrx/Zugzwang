@@ -169,13 +169,24 @@ def test_observe_round_trip_records_operation_and_observation(harness) -> None:
     assert observations[0][1] == "view"
 
 
-def test_foreign_node_denied_before_projection(harness) -> None:
+def test_foreign_node_denied_before_projection(harness, monkeypatch) -> None:
     """TEST-019: node outside the decision scope is denied with NODE_SCOPE_MISMATCH."""
     session = _open_session(harness)
+    calls: list[str] = []
+    original = ChessPerception.build_packet
+
+    def _spy(self, state, node_id, **kwargs):
+        calls.append(node_id)
+        return original(self, state, node_id, **kwargs)
+
+    monkeypatch.setattr(ChessPerception, "build_packet", _spy)
     envelope = session.execute("board_observe", {"node_id": "node-ghost"}, idempotency_key="k19")
     assert envelope.ok is False
     assert envelope.error is not None
     assert envelope.error.code == "NODE_SCOPE_MISMATCH"
+    # Denied before any projection is built, and the scope probe is not charged.
+    assert calls == []
+    assert envelope.meta.logical_operations_charged == 0
     # No observation confirms the foreign node's (non-)existence in the timeline.
     assert _observations(harness[1], session.decision_id) == []
 
@@ -335,6 +346,49 @@ def test_insufficient_budget_refuses_batch_before_execution(harness) -> None:
     assert refused.meta.remaining_tool_operations == 0
     operations = _operations(engine, session.decision_id)
     assert [row[2] for row in operations] == ["COMMITTED", "REJECTED"]
+
+
+def test_observe_refused_at_zero_balance_before_execution(harness, monkeypatch) -> None:
+    """Non-expand tools are budget-checked in preflight too: at zero balance the
+    observe is REJECTED before any projection runs (fail-closed, no stuck PREPARED)."""
+    session = _open_session(harness, remaining=0)
+    calls: list[str] = []
+    original = ChessPerception.build_packet
+
+    def _spy(self, state, node_id, **kwargs):
+        calls.append(node_id)
+        return original(self, state, node_id, **kwargs)
+
+    monkeypatch.setattr(ChessPerception, "build_packet", _spy)
+    envelope = session.execute("board_observe", {"node_id": "node-root"}, idempotency_key="zero")
+    assert envelope.ok is False
+    assert envelope.error is not None
+    assert envelope.error.code == "BUDGET_INSUFFICIENT"
+    assert calls == []
+    assert envelope.meta.logical_operations_charged == 0
+
+
+def test_malformed_arguments_rejected_as_client_error(harness) -> None:
+    """Absent node ids, bad cursor and unknown inspect query are INVALID_ARGUMENTS."""
+    session = _open_session(harness)
+    missing = session.execute("board_observe", {}, idempotency_key="m1")
+    assert missing.error is not None
+    assert missing.error.code == "INVALID_ARGUMENTS"
+    cursor = session.execute(
+        "board_observe", {"node_id": "node-root", "cursor": -1}, idempotency_key="m2"
+    )
+    assert cursor.error is not None
+    assert cursor.error.code == "INVALID_ARGUMENTS"
+    query = session.execute(
+        "board_inspect",
+        {"node_id": "node-root", "query": "evaluate"},
+        idempotency_key="m3",
+    )
+    assert query.error is not None
+    assert query.error.code == "INVALID_ARGUMENTS"
+    other = session.execute("board_compare", {"node_id": "node-root"}, idempotency_key="m4")
+    assert other.error is not None
+    assert other.error.code == "INVALID_ARGUMENTS"
 
 
 def test_expand_repeats_same_edge_without_duplication(harness) -> None:

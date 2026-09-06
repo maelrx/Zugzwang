@@ -146,6 +146,21 @@ class CognitionToolBroker:
                 ToolError.build("INVALID_ARGUMENTS", "arguments exceed the request size limit"),
             )
 
+        # Structural batch-count gate before persistence: an unbounded batch is
+        # refused before CAS storage and journaling ("limites antes da reserva
+        # e execução", §30.2). Semantic layers (budget, scope) stay in preflight.
+        if tool == "board_expand":
+            gate_batch: Any = arguments.get("action_ids", [])
+            gate_items = cast(list[Any], gate_batch) if isinstance(gate_batch, list) else []
+            if gate_items and len(gate_items) > self._max_batch:
+                return self._unrecorded_failure(
+                    idempotency_key,
+                    ToolError.build(
+                        "INVALID_ARGUMENTS",
+                        f"action_ids exceeds the batch limit of {self._max_batch}",
+                    ),
+                )
+
         try:
             stored_operation_id, created = self._journal.record_tool_operation(
                 operation_id=operation_id,
@@ -158,10 +173,9 @@ class CognitionToolBroker:
                 arguments_artifact_id=self._artifact_sink(raw, "application/json"),
             )
         except DecisionJournalError as exc:
-            return self._unrecorded_failure(
-                idempotency_key,
-                ToolError(code=exc.code, message=str(exc), retryable_under_policy=False),
-            )
+            # Catalogue-derived flags only: ToolError.build validates the code
+            # against §15.1 and derives retryable_under_policy (never hand-set).
+            return self._unrecorded_failure(idempotency_key, ToolError.build(exc.code, str(exc)))
 
         if not created:
             return self._replay(stored_operation_id)
@@ -217,18 +231,26 @@ class CognitionToolBroker:
                 stored_operation_id,
                 ToolError.build("PERSISTENCE_FAILED", "result artifact failed integrity check"),
             )
-        payload = _decode_artifact(data)
+        try:
+            payload = _decode_artifact(data)
+        except ValueError:
+            # A malformed stored payload is an integrity failure, never a crash:
+            # fail closed without re-executing (§10.5, TEST-021).
+            return self._unrecorded_failure(
+                stored_operation_id,
+                ToolError.build("PERSISTENCE_FAILED", "stored result failed contract check"),
+            )
         semantic_hash = sha256_hex(data)
-        error_part = (
-            cast(dict[str, Any], payload.get("error"))
-            if isinstance(payload.get("error"), dict)
-            else None
-        )
+        raw_error: Any = payload.get("error")
+        error_part = cast(dict[str, Any], raw_error) if isinstance(raw_error, dict) else None
         if error_part is not None:
             code = error_part.get("code")
             message = error_part.get("message")
             if not isinstance(code, str) or not isinstance(message, str):
-                raise ValueError("stored error payload is not a catalogue error")
+                return self._unrecorded_failure(
+                    stored_operation_id,
+                    ToolError.build("PERSISTENCE_FAILED", "stored error failed contract check"),
+                )
             return ToolEnvelope(
                 ok=False,
                 meta=self._meta(stored_operation_id, charged=0, semantic_hash=None),
@@ -245,13 +267,18 @@ class CognitionToolBroker:
     # -- preflight (§11.2 validation in layers) ---------------------------------
 
     def _preflight(self, tool: str, arguments: dict[str, Any]) -> ToolError | None:
-        node_id = arguments.get("node_id")
-        if not isinstance(node_id, str) or not node_id or node_id not in self._states:
+        raw_node: Any = arguments.get("node_id")
+        if not isinstance(raw_node, str) or not raw_node:
+            # Absent or malformed is a client error, not a scope probe.
+            return ToolError.build("INVALID_ARGUMENTS", "node_id must be a non-empty string")
+        node_id = raw_node
+        if node_id not in self._states:
             # TEST-019: foreign node denied before any projection is built.
             return ToolError.build("NODE_SCOPE_MISMATCH", "node is not bound to this decision")
         scope_error = self._check_scope(node_id)
         if scope_error is not None:
             return scope_error
+        cost = 1
         if tool == "board_expand":
             raw_batch: Any = arguments.get("action_ids", [])
             if not isinstance(raw_batch, list) or not raw_batch:
@@ -264,19 +291,35 @@ class CognitionToolBroker:
                     "INVALID_ARGUMENTS",
                     f"action_ids exceeds the batch limit of {self._max_batch}",
                 )
-            # TEST-036: the whole batch is refused before any item runs.
-            if not self._budget.allows(len(batch)):
+            cost = len(batch)
+        if tool == "board_observe":
+            raw_cursor: Any = arguments.get("cursor", 0)
+            if isinstance(raw_cursor, bool) or not isinstance(raw_cursor, int) or raw_cursor < 0:
+                return ToolError.build("INVALID_ARGUMENTS", "cursor must be an integer >= 0")
+        if tool == "board_inspect":
+            raw_query: Any = arguments.get("query", "terminal")
+            if raw_query not in {"terminal", "relations", "complete"}:
                 return ToolError.build(
-                    "BUDGET_INSUFFICIENT",
-                    f"batch of {len(batch)} exceeds the {self._budget.remaining} "
-                    "remaining tool operations",
+                    "INVALID_ARGUMENTS",
+                    "query must be one of terminal, relations, complete",
                 )
         if tool == "board_compare":
-            other = arguments.get("other_node_id")
-            if not isinstance(other, str) or other not in self._states:
+            raw_other: Any = arguments.get("other_node_id")
+            if not isinstance(raw_other, str) or not raw_other:
+                return ToolError.build(
+                    "INVALID_ARGUMENTS", "other_node_id must be a non-empty string"
+                )
+            if raw_other not in self._states:
                 return ToolError.build(
                     "NODE_SCOPE_MISMATCH", "other node is not bound to this decision"
                 )
+        # Every recorded operation is budget-checked before it runs — a
+        # ValueError from debit can never escape execute() (fail-closed).
+        if not self._budget.allows(cost):
+            return ToolError.build(
+                "BUDGET_INSUFFICIENT",
+                f"cost of {cost} exceeds the {self._budget.remaining} remaining tool operations",
+            )
         return None
 
     def _check_scope(self, node_id: str) -> ToolError | None:
@@ -387,9 +430,20 @@ class CognitionToolBroker:
         self, operation_id: str, tool: str, arguments: dict[str, Any], error: ToolError
     ) -> ToolEnvelope:
         status = "REJECTED" if error.code in _REJECTED_CODES else "FAILED"
-        # BUDGET_INSUFFICIENT never charges (TEST-036); every other recorded
-        # operation was attempted and audited, so it charges its logical ops.
-        charged = 0 if error.code == "BUDGET_INSUFFICIENT" else self._charge(tool, arguments)
+        # Scope probes and budget refusals never charge: authorization itself
+        # costs no rules (§15.2), and a refused batch costs nothing (TEST-036).
+        # Every other recorded operation was attempted and audited, so it
+        # charges its logical ops. Preflight already validated the budget, so
+        # debit cannot raise here; len() falls back defensively to 1.
+        if error.code in {"BUDGET_INSUFFICIENT", "NODE_SCOPE_MISMATCH"}:
+            charged = 0
+        elif tool == "board_expand" and isinstance(arguments.get("action_ids"), list):
+            charged = self._charge(tool, arguments)
+        elif tool == "board_expand":
+            charged = 1
+            self._budget.debit(charged)
+        else:
+            charged = self._charge(tool, arguments)
         error_bytes = canonical_json_bytes({"error": error.model_dump(mode="json")})
         error_artifact_id = self._artifact_sink(error_bytes, "application/json")
         self._journal.settle_tool_operation(
@@ -399,16 +453,20 @@ class CognitionToolBroker:
             result_artifact_id=error_artifact_id,
             error_code=error.code,
         )
-        if error.code != "NODE_SCOPE_MISMATCH":
+        raw_node_id: Any = arguments.get("node_id")
+        node_id_for_timeline = raw_node_id if isinstance(raw_node_id, str) else ""
+        if error.code != "NODE_SCOPE_MISMATCH" and node_id_for_timeline:
             # A foreign node must not be confirmed to exist in the timeline
             # (§42.6: "não retornar o conteúdo ou confirmar a existência").
+            # A malformed request carries no node to expose, so it settles
+            # without an observation row.
             self._exposure_sequence = self._journal.next_exposure_sequence(self.decision_id)
             self._journal.record_observation(
                 observation_id=observation_id_v2(
                     sha256_hex(error_bytes), self._round_ordinal, self._exposure_sequence
                 ),
                 decision_id=self.decision_id,
-                node_id=arguments["node_id"],
+                node_id=node_id_for_timeline,
                 round_id=self._round_id,
                 operation_id=operation_id,
                 kind=_TOOL_KIND[tool],

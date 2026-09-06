@@ -24,7 +24,7 @@ const CLS_LABEL: Record<string, string> = {
   best_or_good: "preciso",
   inaccuracy: "imprecisão",
   mistake: "erro",
-  blunder: "brinde",
+  blunder: "erro grave",
   none: "—",
 };
 
@@ -34,7 +34,7 @@ const CLS_LABEL: Record<string, string> = {
  * real complete backend analysis ever appears here. The in-browser live
  * engine has no code path into this panel.
  */
-export function AnalysisPanel({ episode, metrics }: { episode: Episode; metrics: Metric[] }) {
+export function AnalysisPanel({ episode, metrics, onSelectPly }: { episode: Episode; metrics: Metric[]; onSelectPly?: (ply: number) => void }) {
   const rows = useMemo<Row[] | null>(() => {
     const mine = (metrics ?? []).filter((m) => m.episodeId === episode.id);
     if (mine.length === 0) return null;
@@ -87,11 +87,11 @@ export function AnalysisPanel({ episode, metrics }: { episode: Episode; metrics:
     return (
       <section className="rounded-lg border border-line bg-panel">
         <div className="border-b border-line px-4 py-2.5">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-faint">oficial · pós-jogo</p>
-          <h3 className="text-sm font-semibold">Análise profunda</h3>
+          <p className="font-mono text-[length:calc(10px*var(--fs-scale))] uppercase tracking-widest text-faint">oficial · pós-jogo</p>
+          <h3 className="text-sm font-semibold">Qualidade das decisões</h3>
         </div>
-        <div className="py-10 text-center text-[12.5px] text-muted">
-          sem análise oficial ainda — roda <code className="font-mono text-paper">scripts/analyze_deep.py</code>
+        <div className="py-10 text-center text-[length:calc(12.5px*var(--fs-scale))] text-muted">
+          Ainda não há análise registrada para este episódio.
         </div>
       </section>
     );
@@ -107,25 +107,25 @@ export function AnalysisPanel({ episode, metrics }: { episode: Episode; metrics:
     <section className="rounded-lg border border-line bg-panel">
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-faint">oficial · pós-jogo · depth 20</p>
-          <h3 className="text-sm font-semibold">Análise profunda</h3>
+          <p className="font-mono text-[length:calc(10px*var(--fs-scale))] uppercase tracking-widest text-faint">avaliador registrado · pós-jogo</p>
+          <h3 className="text-sm font-semibold">Qualidade das decisões</h3>
         </div>
-        <small className="font-mono text-[10.5px] text-faint">só análise real do backend</small>
+        <small className="font-mono text-[length:calc(10.5px*var(--fs-scale))] text-faint">métricas disponíveis nesta leitura</small>
       </div>
 
       <div className="grid grid-cols-3 gap-2 border-b border-line px-4 py-3 text-center md:grid-cols-6">
-        <div><div className="font-mono text-[9.5px] uppercase tracking-wider text-faint">lances</div><div className="text-lg font-semibold">{stats.n}</div></div>
-        <div><div className="font-mono text-[9.5px] uppercase tracking-wider text-faint">cpl médio</div><div className="text-lg font-semibold">{stats.avgCpl !== null ? stats.avgCpl.toFixed(0) : "—"}</div></div>
-        <div><div className="font-mono text-[9.5px] uppercase tracking-wider text-faint">acordo SF</div><div className="text-lg font-semibold">{stats.agrPct !== null ? `${stats.agrPct}%` : "—"}</div></div>
-        <div><div className="font-mono text-[9.5px] uppercase tracking-wider text-faint">brindes</div><div className={`text-lg font-semibold ${stats.blunders ? "text-err" : ""}`}>{stats.blunders}</div></div>
-        <div><div className="font-mono text-[9.5px] uppercase tracking-wider text-faint">erros</div><div className={`text-lg font-semibold ${stats.mistakes ? "text-warn" : ""}`}>{stats.mistakes}</div></div>
-        <div><div className="font-mono text-[9.5px] uppercase tracking-wider text-faint">imprecisões</div><div className="text-lg font-semibold">{stats.inacc}</div></div>
+        <div><div className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">lances</div><div className="text-lg font-semibold">{stats.n}</div></div>
+        <div><div className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">cpl médio</div><div className="text-lg font-semibold">{stats.avgCpl !== null ? stats.avgCpl.toFixed(0) : "—"}</div></div>
+        <div><div className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">acordo SF</div><div className="text-lg font-semibold">{stats.agrPct !== null ? `${stats.agrPct}%` : "—"}</div></div>
+        <div><div className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">erros graves</div><div className={`text-lg font-semibold ${stats.blunders ? "text-err" : ""}`}>{stats.blunders}</div></div>
+        <div><div className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">erros</div><div className={`text-lg font-semibold ${stats.mistakes ? "text-warn" : ""}`}>{stats.mistakes}</div></div>
+        <div><div className="font-mono text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">imprecisões</div><div className="text-lg font-semibold">{stats.inacc}</div></div>
       </div>
 
       <div className="max-h-80 overflow-y-auto">
-        <table className="w-full font-mono text-[11.5px]">
+        <table className="w-full font-mono text-[length:calc(11.5px*var(--fs-scale))]">
           <thead className="sticky top-0 bg-panel">
-            <tr className="border-b border-line text-left text-[9.5px] uppercase tracking-wider text-faint">
+            <tr className="border-b border-line text-left text-[length:calc(9.5px*var(--fs-scale))] uppercase tracking-wider text-faint">
               <th className="px-3 py-1.5 font-medium">#</th>
               <th className="px-2 py-1.5 font-medium">lance</th>
               <th className="px-2 py-1.5 text-right font-medium">eval</th>
@@ -139,7 +139,7 @@ export function AnalysisPanel({ episode, metrics }: { episode: Episode; metrics:
             {rows.map((r) => (
               <tr key={r.ply} className="border-b border-line last:border-0 hover:bg-panel2">
                 <td className="px-3 py-1 text-faint">{r.n}</td>
-                <td className="px-2 py-1 text-paper">{r.san}</td>
+                <td className="px-2 py-1 text-paper"><button className="analysis-move" onClick={() => onSelectPly?.(r.ply)} title="Ver este lance no tabuleiro">{r.san}</button></td>
                 <td className="px-2 py-1 text-right text-muted">{fmtEv(r.evalBefore)}</td>
                 <td className="px-2 py-1 text-right text-muted">{r.cpl !== null ? r.cpl.toFixed(0) : "—"}</td>
                 <td className={`px-2 py-1 ${r.cls ? CLS_STYLE[r.cls] ?? "" : "text-faint"}`}>

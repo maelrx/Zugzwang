@@ -6,7 +6,7 @@ import path from "node:path";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: { "@": path.resolve(import.meta.dirname, "src") },
   },
   server: {
     port: 5173,
@@ -16,13 +16,5 @@ export default defineConfig({
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "require-corp",
     },
-    proxy: {
-      // snapshot read-only do workspace (gerado por scripts/build_readonly_viewer.py)
-      "/data": {
-        target: "http://127.0.0.1:4173",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/data/, ""),
-      },
     },
-  },
 });

@@ -23,6 +23,10 @@ Comece trabalho independente em branch/worktree da main atualizada (`4bbe579` ou
 
 Issues [#13](https://github.com/maelrx/Zugzwang/issues/13), [#14](https://github.com/maelrx/Zugzwang/issues/14) e [#15](https://github.com/maelrx/Zugzwang/issues/15) fechadas com evidência nos comentários.
 
+## Viewer oficial (ZGW-0102, 2026-09-06)
+
+A experiência "Research workspace" do viewer-next (biblioteca de execuções, replay, análise, evidências, comparação) é o viewer oficial, com sistema de aparência (temas/texturas/escala de fonte) e snapshot ao vivo via `viewer-next/scripts/regen-snapshot.sh`. A linhagem anterior de camadas L0/L1/L2 (ZGW-0097/CB-WO-10) foi removida da UI; dados cognitivos permanecem no banco e na análise oficial. Branch `codex/zgw-viewer-appearance`.
+
 ## Notas de integração
 
 - A divisão #9/#10 foi corrigida: a fundação falha fechada nas strategies R5/R7 e o PR que as introduz faz o wiring (`durable_coordinator.py`).

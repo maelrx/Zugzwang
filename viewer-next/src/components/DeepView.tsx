@@ -1,134 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Run } from "@/lib/types";
-import { runStats } from "@/lib/types";
-import { fmtNum, fmtMs, fmtDur } from "@/lib/format";
-
-function Fact({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-faint">{label}</div>
-      <div className={`mt-0.5 truncate text-[12.5px] ${mono ? "font-mono text-[11.5px]" : ""}`} title={value}>{value}</div>
-    </div>
-  );
-}
-
-export function DeepView({ run, onBack }: { run: Run; onBack: () => void }) {
-  const s = useMemo(() => runStats(run), [run]);
-  const events = useMemo(() => [...(run.events ?? [])].reverse().slice(0, 160), [run]);
-
-  const evTone = (t: string) =>
-    /failed|illegal|timeout/.test(t)
-      ? "text-err"
-      : /completed|committed/.test(t)
-        ? "text-muted"
-        : "text-info";
-
-  return (
-    <div className="space-y-3.5">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <h2 className="text-lg font-semibold">Profundo · {run.experiment}</h2>
-        <span className="font-mono text-[11px] text-muted">{run.id}</span>
-        <div className="flex-1" />
-        <button onClick={onBack} className="rounded-md border border-line bg-panel px-3 py-1.5 text-[12.5px] hover:border-faint">
-          ← partida
-        </button>
-      </div>
-
-      <section className="rounded-lg border border-line bg-panel">
-        <div className="border-b border-line px-4 py-2.5">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-faint">proveniência</p>
-          <h3 className="text-sm font-semibold">Identidade do run</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 p-4 md:grid-cols-4">
-          <Fact label="run" value={run.id} />
-          <Fact label="condição" value={run.conditionId ?? "—"} />
-          <Fact label="protocol hash" value={run.protocolHash ?? "—"} />
-          <Fact label="assistência declarada→efetiva" value={`${run.declaredAssistance ?? "—"} → ${run.effectiveAssistance ?? "—"}`} mono={false} />
-          <Fact label="janela (UTC)" value={`${run.startedAt?.slice(11, 19) ?? "—"} → ${run.finishedAt?.slice(11, 19) ?? "—"}`} />
-          <Fact label="duração" value={fmtDur(run.startedAt, run.finishedAt)} mono={false} />
-          <Fact label="snapshot" value="viewer/data.json" />
-          <Fact label="custo" value={run.provider.costStatus} mono={false} />
-        </div>
-      </section>
-
-      <div className="grid gap-3.5 lg:grid-cols-2">
-        <section className="rounded-lg border border-line bg-panel">
-          <div className="border-b border-line px-4 py-2.5">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">jogadores</p>
-            <h3 className="text-sm font-semibold">Modelo & oponente</h3>
-          </div>
-          <div className="space-y-3 p-4">
-            <div>
-              <div className="font-mono text-[10px] text-faint">white/decision-maker</div>
-              <pre className="mt-1 overflow-x-auto rounded bg-panel2 p-2 font-mono text-[10.5px] leading-5 text-muted">{JSON.stringify(run.model ?? run.players?.[0], null, 1)}</pre>
-            </div>
-            <div>
-              <div className="font-mono text-[10px] text-faint">black/opponent policy</div>
-              <pre className="mt-1 overflow-x-auto rounded bg-panel2 p-2 font-mono text-[10.5px] leading-5 text-muted">{JSON.stringify(run.opponents?.[0]?.policy ?? run.opponents?.[0], null, 1)}</pre>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-line bg-panel">
-          <div className="border-b border-line px-4 py-2.5">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">configuração efetiva</p>
-            <h3 className="text-sm font-semibold">Task (redigido)</h3>
-          </div>
-          <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all p-4 font-mono text-[10.5px] leading-5 text-muted">{JSON.stringify(run.task, null, 1)}</pre>
-        </section>
-      </div>
-
-      <section className="rounded-lg border border-line bg-panel">
-        <div className="border-b border-line px-4 py-2.5">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-faint">sinais operacionais</p>
-          <h3 className="text-sm font-semibold">Resumo técnico</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 p-4 md:grid-cols-5">
-          <Fact label="lances / episódios" value={`${s.plies} / ${s.episodes.length}`} mono={false} />
-          <Fact label="calls ok / attempts" value={`${s.calls} / ${s.attempts}`} mono={false} />
-          <Fact label="latência média" value={s.latencies.length ? fmtMs(s.latencies.reduce((a, b) => a + b, 0) / s.latencies.length) : "—"} mono={false} />
-          <Fact label="latência p95" value={s.latencies.length ? fmtMs([...s.latencies].sort((a, b) => a - b)[Math.floor(s.latencies.length * 0.95)]) : "—"} mono={false} />
-          <Fact label="tokens in/out" value={`${fmtNum(s.tokensIn)} / ${fmtNum(s.tokensOut)}`} mono={false} />
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-line bg-panel">
-        <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">linha do tempo</p>
-            <h3 className="text-sm font-semibold">Eventos brutos</h3>
-          </div>
-          <small className="font-mono text-[10.5px] text-faint">{(run.events ?? []).length} eventos · 160 recentes</small>
-        </div>
-        <div className="max-h-96 overflow-y-auto font-mono text-[11px]">
-          {events.map((e, i) => (
-            <div key={i} className="grid grid-cols-[70px_230px_1fr] gap-2.5 border-b border-line px-3 py-[3px] last:border-0 hover:bg-panel2">
-              <span className="text-faint">{e.at?.slice(11, 19) ?? "—"}</span>
-              <span className={evTone(e.type)}>{e.type}</span>
-              <span className="truncate text-muted">{JSON.stringify(e.payload).slice(0, 130)}</span>
-            </div>
-          ))}
-          {events.length === 0 && <div className="py-10 text-center text-muted">sem eventos</div>}
-        </div>
-      </section>
-
-      {(run.metrics?.length ?? 0) > 0 && (
-        <section className="rounded-lg border border-line bg-panel">
-          <div className="border-b border-line px-4 py-2.5">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">pós-jogo</p>
-            <h3 className="text-sm font-semibold">Métricas de avaliadores</h3>
-          </div>
-          <div className="max-h-72 overflow-y-auto font-mono text-[11px]">
-            {run.metrics.slice(0, 120).map((m, mi) => (
-              <div key={m.id ?? `metric-${mi}`} className="grid grid-cols-[190px_110px_1fr] gap-2.5 border-b border-line px-3 py-[3px] last:border-0">
-                <span className="text-info">{m.metric ?? "—"}</span>
-                <span className="text-paper">{m.valueNum ?? m.valueText ?? "—"}</span>
-                <span className="truncate text-faint">{m.evaluator} {m.stepId ? `· ${m.stepId.slice(0, 12)}` : ""}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  );
+import { conditionLabel, modelLabel, runState } from "@/lib/presentation";
+import { CopyButton } from "./CopyButton";
+import { Icon } from "./Icon";
+export function DeepView({ run }: { run: Run }) {
+  const [query, setQuery] = useState("");
+  const [errorsOnly, setErrorsOnly] = useState(false);
+  const [limit, setLimit] = useState(30);
+  const events = useMemo(() => [...(run.events ?? [])].reverse().filter(e => (!errorsOnly || /failed|error|timeout|rejected|violation/.test(e.type)) && (!query || e.type.toLowerCase().includes(query.toLowerCase()))), [run.events, query, errorsOnly]);
+  const state = runState(run);
+  return <div className="evidence-view">
+    {state.label === "Revisar status" && <div className="notice"><Icon name="alert"/><div><strong>Divergência nos registros</strong><p>{state.detail} Os valores originais estão preservados abaixo.</p></div></div>}
+    <section className="surface"><div className="section-heading"><div><h2>Identidade e proveniência</h2><p>O contexto registrado desta execução.</p></div><CopyButton text={run.id} label="Copiar ID"/></div><dl className="facts-grid provenance-grid">
+      <div><dt>Modelo</dt><dd>{modelLabel(run)}</dd></div><div><dt>Condição</dt><dd>{conditionLabel(run)}</dd></div><div><dt>Status do run</dt><dd>{run.status}</dd></div><div><dt>Status dos episódios</dt><dd>{run.episodes.map(e => e.status).join(" · ") || "Não informado"}</dd></div><div><dt>Assistência declarada</dt><dd>{run.declaredAssistance ?? "Não informada"}</dd></div><div><dt>Assistência efetiva</dt><dd>{run.effectiveAssistance ?? "Não informada"}</dd></div><div><dt>Início</dt><dd>{run.startedAt ? new Date(run.startedAt).toLocaleString("pt-BR") : "Não informado"}</dd></div><div><dt>Fim</dt><dd>{run.finishedAt ? new Date(run.finishedAt).toLocaleString("pt-BR") : "Não informado"}</dd></div>
+    </dl><div className="hash-field"><span className="quiet-label">Hash do protocolo</span><code>{run.protocolHash ?? "Não informado nesta leitura"}</code>{run.protocolHash && <CopyButton text={run.protocolHash} label="Copiar hash"/>}</div></section>
+    <section className="surface events-section"><div className="section-heading"><div><h2>Histórico de eventos</h2><p>Registros disponíveis no snapshot, do mais recente ao mais antigo.</p></div><span className="quiet-label">{events.length} eventos</span></div><div className="event-toolbar"><label className="search-field"><Icon name="search" size={16}/><span className="sr-only">Filtrar eventos</span><input placeholder="Buscar tipo de evento" value={query} onChange={e => { setQuery(e.target.value); setLimit(30); }}/></label><label className="checkbox-label"><input type="checkbox" checked={errorsOnly} onChange={e => { setErrorsOnly(e.target.checked); setLimit(30); }}/>Somente falhas e rejeições</label></div>
+      <div className="event-list">{events.slice(0, limit).map((e, i) => <details className="event" key={`${e.at}:${e.type}:${i}`}><summary><span className={/failed|error|timeout|rejected/.test(e.type) ? "event-dot error-dot" : "event-dot"}/><span className="event-name">{e.type}</span><time>{e.at ? new Date(e.at).toLocaleTimeString("pt-BR") : "Sem horário"}</time><Icon name="chevron" size={14}/></summary><pre>{JSON.stringify(e.payload, null, 2)}</pre></details>)}</div>
+      {!events.length && <p className="empty-inline">{query || errorsOnly ? "Nenhum evento corresponde a este filtro." : "Esta leitura não inclui eventos."}</p>}{events.length > limit && <div className="load-more"><button className="button" onClick={() => setLimit(n => n + 30)}>Mostrar mais 30 eventos</button></div>}
+    </section>
+    <div className="raw-grid">{([["Configuração da tarefa", run.task], ["Jogadores", run.players], ["Orçamento declarado", run.budget], ["Consumo reportado", run.provider]] as const).map(([title, data]) => <details className="technical-details" key={title}><summary>{title}</summary><pre>{JSON.stringify(data ?? {}, null, 2)}</pre></details>)}</div>
+  </div>;
 }

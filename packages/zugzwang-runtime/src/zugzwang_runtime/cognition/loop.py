@@ -45,7 +45,7 @@ from zugzwang_core.ports.model import (
 )
 
 from ..persistence.cognition import CognitionJournal, DecisionJournalError
-from .broker import CognitionToolBroker, ToolOperationBudget
+from .broker import CognitionToolBroker, DecisionBudget, ToolOperationBudget
 
 FINALIZE_TOOL = "board_finalize"
 
@@ -176,6 +176,7 @@ class CognitiveLoop:
         shared_budget: ToolOperationBudget | None = None,
         call_context: CallContext | None = None,
         system_prompt: str | None = None,
+        model_reservation_id: str | None = None,
     ) -> None:
         if max_rounds < 1:
             raise ValueError("max_rounds must be >= 1")
@@ -197,6 +198,7 @@ class CognitiveLoop:
         self._interaction_mode = interaction_mode
         self._shared_budget = shared_budget
         self._call_context = call_context
+        self._model_reservation_id = model_reservation_id
 
     # -- productive entry point -------------------------------------------------
 
@@ -264,6 +266,7 @@ class CognitiveLoop:
                 continue
 
             normalized = response.response
+            self._spend_model_call(request_artifact_id)
             self._record_call(
                 result,
                 proposal_round,
@@ -327,6 +330,27 @@ class CognitiveLoop:
 
     def _broker_for_round(self, round_id: str, ordinal: int) -> CognitionToolBroker:
         return self._broker_factory(round_id, ordinal)
+
+    def _spend_model_call(self, evidence_artifact_id: str) -> None:
+        """Debit ONE model call from the decision budget — memory AND ledger.
+
+        The in-memory pool feeds the §42.6 meta; the journal entry keeps the
+        budget reconcilable after a crash (§13; TEST-032). Exhaustion here is
+        impossible while the loop's round bound holds: rounds ≤ max_model_calls.
+        """
+        budget = self._shared_budget
+        if isinstance(budget, DecisionBudget):
+            budget.spend_model_call()
+        if self._model_reservation_id is not None:
+            with contextlib.suppress(DecisionJournalError):
+                self._journal.adjust_budget(
+                    decision_id=self.decision_id,
+                    reservation_id=self._model_reservation_id,
+                    unit="model_calls",
+                    delta_reserved=0,
+                    delta_used=1,
+                    evidence_artifact_id=evidence_artifact_id,
+                )
 
     def _call_context_for(self, ordinal: int) -> CallContext:
         if self._call_context is not None:

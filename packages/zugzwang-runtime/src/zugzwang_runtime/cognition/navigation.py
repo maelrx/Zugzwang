@@ -85,6 +85,8 @@ class CognitiveNavigationStrategy:
             model=context.model,
             max_rounds=self._max_rounds,
             interaction_mode=session.interaction_mode,
+            shared_budget=session.budget,
+            model_reservation_id=session.model_reservation_id,
         )
         result = await loop.run()
         return self._trace_from(result, context)

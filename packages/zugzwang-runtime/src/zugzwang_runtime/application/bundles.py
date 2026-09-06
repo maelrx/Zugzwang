@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 from typing import Any, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from zugzwang_core.domain.artifacts import ArtifactRef
 from zugzwang_core.domain.canonical import sha256_hex
@@ -51,6 +51,18 @@ class BundleManifest(BaseModel):
     evaluation_generations: int = 0
     selected_evaluation_run_id: str | None = None
     checksums_file: str = "checksums.sha256"
+    run_class: str = "disposable-smoke"
+
+    @field_validator("run_class")
+    @classmethod
+    def _validate_run_class(cls, value: str) -> str:
+        # CB-WO-08 gate (ZGW-0101): until the durability trail is human-closed,
+        # every bundle is a DISPOSABLE SMOKE. "research-ready" requires the
+        # operator's explicit flag — an agent can never set it (§48.3).
+        allowed = {"disposable-smoke", "research-ready"}
+        if value not in allowed:
+            raise ValueError(f"run_class must be one of {sorted(allowed)}")
+        return value
 
 
 class ExportRunBundleService:

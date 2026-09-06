@@ -167,6 +167,7 @@ class DurableRunServices:
                 policy_hash=policy_hash,
                 config={},
                 states={root_node_id: state},
+                max_model_calls=max(1, int(getattr(strategy.descriptor, "max_model_calls", 4))),
                 journal=journal,
                 perception=ChessPerception(
                     environment=StandardChessEnvironment(),

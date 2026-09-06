@@ -22,14 +22,17 @@ from collections.abc import Callable
 from typing import Any, cast
 
 from zugzwang_chess.cognition import ChessPerception
-from zugzwang_chess.environment.standard import START_FEN, StandardChessRulesKernel
+from zugzwang_chess.environment.standard import (
+    START_FEN,
+    STATE_MEDIA_TYPE,
+    StandardChessRulesKernel,
+)
 from zugzwang_core.domain.canonical import canonical_json_bytes, sha256_hex
 from zugzwang_core.domain.cognition import (
     EnvelopeMeta,
     ToolEnvelope,
     ToolError,
     action_id_v2,
-    observation_id_v2,
     operation_id_v2,
 )
 
@@ -70,10 +73,8 @@ class ToolExecutionError(Exception):
 class ToolOperationBudget:
     """Shared tool-operations pool of one decision (§21; TEST-031/032/036).
 
-    One authority instance is passed to every broker of the decision (and, in
-    later work orders, to the loop): changing focus or branching never creates
-    a new pool. Wiring to the run-level budget ledger arrives with CB-WO-07;
-    the invariant exercised here is the single shared pool itself.
+    One authority instance is passed to every broker of the decision and to
+    the loop: changing focus or branching never creates a new pool (INV-06).
     """
 
     def __init__(self, remaining: int) -> None:
@@ -88,6 +89,30 @@ class ToolOperationBudget:
         if amount < 0 or amount > self.remaining:
             raise ValueError(f"cannot debit {amount} tool operations; only {self.remaining} remain")
         self.remaining -= amount
+
+
+class DecisionBudget(ToolOperationBudget):
+    """Multi-unit budget authority of one decision (§13; TEST-031/032).
+
+    Distinct units per the PRD ledger: logical tool operations (this pool),
+    model calls (spent by the loop, reported in §42.6 meta), plus depth and
+    node counts enforced by the decision's SearchWorkspace. Tokens/time stay
+    with the run-level BudgetLedger. The finalize reserve is MODEL calls and
+    is enforced by the loop — never by board operations.
+    """
+
+    def __init__(self, *, tool_operations: int, model_calls: int) -> None:
+        super().__init__(tool_operations)
+        if model_calls < 0:
+            raise ValueError("model_calls must be >= 0")
+        self.remaining_model_calls = model_calls
+
+    def spend_model_call(self) -> bool:
+        """Debit one model call; False when the model-call budget is exhausted."""
+        if self.remaining_model_calls <= 0:
+            return False
+        self.remaining_model_calls -= 1
+        return True
 
 
 class CognitionToolBroker:
@@ -111,6 +136,7 @@ class CognitionToolBroker:
         rules_kernel: Any | None = None,
         search_workspace: SearchWorkspace | None = None,
         search_session_id: str | None = None,
+        budget_reservation_id: str | None = None,
     ) -> None:
         self.decision_id = decision_id
         self._round_id = round_id
@@ -127,6 +153,7 @@ class CognitionToolBroker:
         self._kernel = rules_kernel or StandardChessRulesKernel()
         self._workspace = search_workspace
         self._search_session_id = search_session_id
+        self._budget_reservation_id = budget_reservation_id
         # broker node id -> workspace node id. Children minted by expansion use
         # the workspace id directly; externally bound initial nodes are mapped
         # onto anchors of the same graph (§9.1: one graph per decision).
@@ -176,6 +203,7 @@ class CognitionToolBroker:
             rules_kernel=self._kernel,
             search_workspace=self._workspace,
             search_session_id=self._search_session_id,
+            budget_reservation_id=self._budget_reservation_id,
         )
         # The ctor copies its states argument defensively; round brokers must
         # observe later registrations, so restore the shared identity here.
@@ -332,21 +360,34 @@ class CognitionToolBroker:
 
         result_bytes = canonical_json_bytes(payload)
         result_artifact_id = self._artifact_sink(result_bytes, "application/json")
-        self._journal.settle_tool_operation(
+        charged = self._charge(tool, arguments)
+        self._exposure_sequence = self._journal.settle_tool_operation_with_exposure(
             operation_id=stored_operation_id,
             decision_id=self.decision_id,
             status="COMMITTED",
             result_artifact_id=result_artifact_id,
             error_code=None,
+            observation={
+                "node_id": arguments["node_id"],
+                "round_id": self._round_id,
+                "kind": _TOOL_KIND[tool],
+                "semantic_hash": sha256_hex(result_bytes),
+                "policy_hash": self._policy_hash,
+                "round_ordinal": self._round_ordinal,
+                "available_before_selection": True,
+            },
+            budget_entry=self._budget_entry(charged),
         )
-        return self._expose(
-            stored_operation_id,
-            tool,
-            arguments,
-            payload,
-            result_artifact_id,
-            result_bytes,
-            physical_rules_queries=self._physical_rules_spent(rules_before),
+        return ToolEnvelope(
+            ok=True,
+            meta=self._meta(
+                stored_operation_id,
+                charged=charged,
+                semantic_hash=sha256_hex(result_bytes),
+                physical_rules_queries=self._physical_rules_spent(rules_before),
+            ),
+            result=payload,
+            error=None,
         )
 
     def _ws_rules_queries(self) -> int:
@@ -541,37 +582,46 @@ class CognitionToolBroker:
         return with a malformed body is an OUTPUT_CONTRACT_VIOLATION and the
         operation settles FAILED with no exposed result (§15.1).
         """
-        if not isinstance(payload, dict):
-            raise ToolExecutionError("OUTPUT_CONTRACT_VIOLATION", "result is not an object")
-        if not isinstance(payload.get("content_hash"), str):
-            raise ToolExecutionError(
-                "OUTPUT_CONTRACT_VIOLATION", "result lacks a content_hash"
-            )
+        record = cast("dict[str, Any]", payload)
+        content_hash: Any = record.get("content_hash")
+        if not isinstance(content_hash, str):
+            raise ToolExecutionError("OUTPUT_CONTRACT_VIOLATION", "result lacks a content_hash")
+        packet: Any = record.get("packet")
+        packet_dict = cast("dict[str, Any]", packet) if isinstance(packet, dict) else None
+        facts: Any = record.get("facts")
+        results: Any = record.get("results")
+        differences: Any = record.get("formal_differences")
         if tool == "board_observe":
-            packet = payload.get("packet")
-            if not isinstance(packet, dict) or not isinstance(
-                packet.get("state"), dict
-            ) or not isinstance(packet.get("legal_actions"), dict):
+            if (
+                packet_dict is None
+                or not isinstance(packet_dict.get("state"), dict)
+                or not isinstance(packet_dict.get("legal_actions"), dict)
+            ):
                 raise ToolExecutionError(
                     "OUTPUT_CONTRACT_VIOLATION", "observe result lacks a valid packet"
                 )
         elif tool == "board_inspect":
-            if not isinstance(payload.get("facts"), dict):
-                raise ToolExecutionError(
-                    "OUTPUT_CONTRACT_VIOLATION", "inspect result lacks facts"
-                )
+            if not isinstance(facts, dict):
+                raise ToolExecutionError("OUTPUT_CONTRACT_VIOLATION", "inspect result lacks facts")
         elif tool == "board_expand":
-            results = payload.get("results")
             if not isinstance(results, list) or not results:
                 raise ToolExecutionError(
                     "OUTPUT_CONTRACT_VIOLATION", "expand result lacks a results list"
                 )
             required = {
-                "action_id", "uci", "expanded", "child_node_id",
-                "state_key", "depth", "root_action", "terminal", "edge_id",
+                "action_id",
+                "uci",
+                "expanded",
+                "child_node_id",
+                "state_key",
+                "depth",
+                "root_action",
+                "terminal",
+                "edge_id",
             }
-            for row in results:
-                if not isinstance(row, dict) or not required.issubset(row):
+            for item in cast("list[Any]", results):
+                row = cast("dict[str, Any]", item) if isinstance(item, dict) else None
+                if row is None or not required.issubset(row):
                     raise ToolExecutionError(
                         "OUTPUT_CONTRACT_VIOLATION",
                         "expand result row lacks the child reference fields",
@@ -581,7 +631,7 @@ class CognitionToolBroker:
                         "OUTPUT_CONTRACT_VIOLATION", "expand row not marked expanded"
                     )
         elif tool == "board_compare":
-            if not isinstance(payload.get("formal_differences"), dict):
+            if not isinstance(differences, dict):
                 raise ToolExecutionError(
                     "OUTPUT_CONTRACT_VIOLATION", "compare result lacks formal_differences"
                 )
@@ -701,7 +751,7 @@ class CognitionToolBroker:
                     "synthetic_clock": child_state.synthetic_clock,
                 }
             ),
-            "application/json",
+            STATE_MEDIA_TYPE,
         )
         edge = self._last_edge_id(ws_parent.node_id, uci)
         self._bound_sequence += 1
@@ -744,51 +794,31 @@ class CognitionToolBroker:
 
     # -- exposure and envelopes ----------------------------------------------------
 
-    def _expose(
-        self,
-        operation_id: str,
-        tool: str,
-        arguments: dict[str, Any],
-        payload: dict[str, Any],
-        result_artifact_id: str,
-        result_bytes: bytes,
-        *,
-        physical_rules_queries: int = 0,
-    ) -> ToolEnvelope:
-        charged = self._charge(tool, arguments)
-        self._exposure_sequence = self._journal.next_exposure_sequence(self.decision_id)
-        semantic_hash = sha256_hex(result_bytes)
-        self._journal.record_observation(
-            observation_id=observation_id_v2(
-                semantic_hash, self._round_ordinal, self._exposure_sequence
-            ),
-            decision_id=self.decision_id,
-            node_id=arguments["node_id"],
-            round_id=self._round_id,
-            operation_id=operation_id,
-            kind=_TOOL_KIND[tool],
-            payload_artifact_id=result_artifact_id,
-            semantic_hash=semantic_hash,
-            policy_hash=self._policy_hash,
-            exposure_sequence=self._exposure_sequence,
-            available_before_selection=True,
-        )
-        return ToolEnvelope(
-            ok=True,
-            meta=self._meta(
-                operation_id,
-                charged=charged,
-                semantic_hash=semantic_hash,
-                physical_rules_queries=physical_rules_queries,
-            ),
-            result=payload,
-            error=None,
-        )
+    def _budget_entry(self, charged: int) -> dict[str, Any] | None:
+        """Ledger entry of one settled operation (None without a reservation)."""
+        if self._budget_reservation_id is None or charged <= 0:
+            return None
+        return {
+            "reservation_id": self._budget_reservation_id,
+            "unit": "tool_operations",
+            "delta_used": charged,
+        }
 
     def _charge(self, tool: str, arguments: dict[str, Any]) -> int:
         """Debit the shared pool; expand charges per item, others per call."""
         charged = len(arguments["action_ids"]) if tool == "board_expand" else 1
         self._budget.debit(charged)
+        return charged
+
+    def _charge_clamped(self, tool: str, arguments: dict[str, Any]) -> int:
+        """Charge what the balance still allows; never raise on settlement."""
+        try:
+            charged = len(arguments["action_ids"]) if tool == "board_expand" else 1
+        except (KeyError, TypeError):
+            charged = 1
+        charged = min(charged, self._budget.remaining)
+        if charged > 0:
+            self._budget.debit(charged)
         return charged
 
     def _settle_failure(
@@ -804,49 +834,41 @@ class CognitionToolBroker:
         # Scope probes and budget refusals never charge: authorization itself
         # costs no rules (§15.2), and a refused batch costs nothing (TEST-036).
         # Every other recorded operation was attempted and audited, so it
-        # charges its logical ops. Preflight already validated the budget, so
-        # debit cannot raise here; len() falls back defensively to 1.
+        # charges its logical ops — CLAMPED to the remaining balance so a
+        # settlement can never raise ValueError nor strand the row PREPARED
+        # when the pool is exhausted (ZGW-0101; TEST-036 zero-balance case).
         if error.code in {"BUDGET_INSUFFICIENT", "NODE_SCOPE_MISMATCH"}:
             charged = 0
-        elif tool == "board_expand" and isinstance(arguments.get("action_ids"), list):
-            charged = self._charge(tool, arguments)
-        elif tool == "board_expand":
-            charged = 1
-            self._budget.debit(charged)
         else:
-            charged = self._charge(tool, arguments)
+            charged = self._charge_clamped(tool, arguments)
         error_bytes = canonical_json_bytes({"error": error.model_dump(mode="json")})
         error_artifact_id = self._artifact_sink(error_bytes, "application/json")
-        self._journal.settle_tool_operation(
+        raw_node_id: Any = arguments.get("node_id")
+        node_id_for_timeline = raw_node_id if isinstance(raw_node_id, str) else ""
+        # Settle + error exposure + ledger debit share ONE transaction: there
+        # is no window in which a settled operation lacks its timeline row
+        # (ZGW-0101; §14.2). A foreign node is never confirmed to exist in
+        # the timeline (§42.6), and a malformed request carries no node to
+        # expose, so it settles without an observation.
+        self._exposure_sequence = self._journal.settle_tool_operation_with_exposure(
             operation_id=operation_id,
             decision_id=self.decision_id,
             status=status,
             result_artifact_id=error_artifact_id,
             error_code=error.code,
+            observation={
+                "node_id": node_id_for_timeline,
+                "round_id": self._round_id,
+                "kind": _TOOL_KIND[tool],
+                "semantic_hash": sha256_hex(error_bytes),
+                "policy_hash": self._policy_hash,
+                "round_ordinal": self._round_ordinal,
+                "available_before_selection": True,
+            }
+            if error.code != "NODE_SCOPE_MISMATCH" and node_id_for_timeline
+            else None,
+            budget_entry=self._budget_entry(charged),
         )
-        raw_node_id: Any = arguments.get("node_id")
-        node_id_for_timeline = raw_node_id if isinstance(raw_node_id, str) else ""
-        if error.code != "NODE_SCOPE_MISMATCH" and node_id_for_timeline:
-            # A foreign node must not be confirmed to exist in the timeline
-            # (§42.6: "não retornar o conteúdo ou confirmar a existência").
-            # A malformed request carries no node to expose, so it settles
-            # without an observation row.
-            self._exposure_sequence = self._journal.next_exposure_sequence(self.decision_id)
-            self._journal.record_observation(
-                observation_id=observation_id_v2(
-                    sha256_hex(error_bytes), self._round_ordinal, self._exposure_sequence
-                ),
-                decision_id=self.decision_id,
-                node_id=node_id_for_timeline,
-                round_id=self._round_id,
-                operation_id=operation_id,
-                kind=_TOOL_KIND[tool],
-                payload_artifact_id=error_artifact_id,
-                semantic_hash=sha256_hex(error_bytes),
-                policy_hash=self._policy_hash,
-                exposure_sequence=self._exposure_sequence,
-                available_before_selection=True,
-            )
         return ToolEnvelope(
             ok=False,
             meta=self._meta(

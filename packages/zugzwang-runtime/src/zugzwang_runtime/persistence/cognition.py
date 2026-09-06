@@ -16,6 +16,8 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.engine import Connection
 
+from zugzwang_core.domain.cognition import observation_id_v2
+
 from .database import Database
 
 _DECISION_TRANSITIONS: dict[str, frozenset[str]] = {
@@ -717,6 +719,112 @@ class CognitionJournal:
                     f"operation {operation_id!r} is not open for settlement",
                 )
             conn.commit()
+
+    def settle_tool_operation_with_exposure(
+        self,
+        *,
+        operation_id: str,
+        decision_id: str,
+        status: str,
+        result_artifact_id: str | None,
+        error_code: str | None,
+        elapsed_us: int | None = None,
+        observation: dict[str, Any] | None = None,
+        budget_entry: dict[str, Any] | None = None,
+    ) -> int:
+        """Settle ONE operation, expose its observation and debit the ledger
+        in a SINGLE transaction (§14.2; ZGW-0101).
+
+        There is no commit point at which ``COMMITTED`` exists without its
+        exposure row or without the budget entry: the three writes share one
+        transaction, and the exposure sequence is allocated inside it (no
+        MAX+1 race across connections). ``observation`` carries node_id,
+        round_id, kind, semantic_hash, policy_hash, round_ordinal and
+        available_before_selection; ``budget_entry`` carries reservation_id,
+        unit and delta_used (appended only when delta_used > 0).
+        """
+        if status not in {"COMMITTED", "REJECTED", "FAILED"}:
+            raise DecisionJournalError("INVALID_ARGUMENTS", f"cannot settle into {status!r}")
+        if status in {"COMMITTED", "REJECTED"} and result_artifact_id is None:
+            raise DecisionJournalError("INVALID_ARGUMENTS", f"{status} requires a result artifact")
+        with self._connect() as conn:
+            result = conn.execute(
+                sa.text(
+                    "UPDATE cb_tool_operations SET status = :status, result_artifact_id = "
+                    ":result_artifact_id, error_code = :error_code, elapsed_us = :elapsed_us, "
+                    "completed_at = :completed_at "
+                    "WHERE operation_id = :operation_id AND decision_id = :decision_id "
+                    "AND status = 'PREPARED'"
+                ),
+                {
+                    "status": status,
+                    "result_artifact_id": result_artifact_id,
+                    "error_code": error_code,
+                    "elapsed_us": elapsed_us,
+                    "completed_at": self._clock(),
+                    "operation_id": operation_id,
+                    "decision_id": decision_id,
+                },
+            )
+            if result.rowcount != 1:
+                raise DecisionJournalError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"operation {operation_id!r} is not open for settlement",
+                )
+            exposure_sequence = 0
+            if observation is not None:
+                row = conn.execute(
+                    sa.text(
+                        "SELECT COALESCE(MAX(exposure_sequence), 0) FROM cb_observations "
+                        "WHERE decision_id = :decision_id"
+                    ),
+                    {"decision_id": decision_id},
+                ).fetchone()
+                exposure_sequence = int(row[0]) + 1 if row is not None else 1
+                observation_id = observation_id_v2(
+                    str(observation["semantic_hash"]),
+                    int(observation["round_ordinal"]),
+                    exposure_sequence,
+                )
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_observations (observation_id, decision_id, node_id, "
+                        "round_id, operation_id, kind, payload_artifact_id, semantic_hash, "
+                        "policy_hash, exposure_sequence, available_before_selection, created_at) "
+                        "VALUES (:observation_id, :decision_id, :node_id, :round_id, "
+                        ":operation_id, :kind, :payload_artifact_id, :semantic_hash, "
+                        ":policy_hash, :exposure_sequence, :available_before_selection, :created_at)"
+                    ),
+                    {
+                        "observation_id": observation_id,
+                        "decision_id": decision_id,
+                        "node_id": observation["node_id"],
+                        "round_id": observation["round_id"],
+                        "operation_id": operation_id,
+                        "kind": observation["kind"],
+                        "payload_artifact_id": result_artifact_id,
+                        "semantic_hash": observation["semantic_hash"],
+                        "policy_hash": observation["policy_hash"],
+                        "exposure_sequence": exposure_sequence,
+                        "available_before_selection": int(
+                            bool(observation.get("available_before_selection", True))
+                        ),
+                        "created_at": self._clock(),
+                    },
+                )
+            if budget_entry is not None and int(budget_entry.get("delta_used", 0)) > 0:
+                self._append_entry(
+                    conn,
+                    decision_id=decision_id,
+                    reservation_id=str(budget_entry["reservation_id"]),
+                    event_kind="adjustment",
+                    unit=str(budget_entry["unit"]),
+                    delta_reserved=0,
+                    delta_used=int(budget_entry["delta_used"]),
+                    evidence_artifact_id=result_artifact_id or "",
+                )
+            conn.commit()
+        return exposure_sequence
 
     def result_artifact_id(self, operation_id: str) -> str | None:
         with self._connect() as conn:

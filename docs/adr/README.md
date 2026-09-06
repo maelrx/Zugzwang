@@ -50,6 +50,8 @@ Status values: `proposed`, `accepted`, `rejected`, `superseded`.
 | [ADR-044](ADR-044-versao-minima-segura-do-sqlite-para-wal.md) | Versão mínima segura do SQLite para WAL | `accepted` | `none` |
 
 | [ADR-045](ADR-045-topologia-de-publicacao-dos-packages.md) | Topologia de publicação dos packages | `proposed` | `GATE-012` |
+| [ADR-059](ADR-059-multi-agent-review.md) | R5 multi-agent review por lance | `accepted` | `none` |
+| [ADR-060](ADR-060-turn-scoped-legality-and-memory-ablation.md) | Legal tree e ablação de memória por episódio | `proposed` | `none` |
 
 ## Normative rule
 

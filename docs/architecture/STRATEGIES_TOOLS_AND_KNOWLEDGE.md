@@ -23,7 +23,19 @@ Strategies own orchestration. Backends own transport.
 - `R2RepairStrategy`;
 - `R3StructuredStrategy`.
 
+The experimental `chess.multi_agent_review` strategy is an R5 per-move chain:
+Critical Scout, Strategic Planner and Final Reviewer. It uses the same model
+backend for all three calls, records each role in the trace, and does not
+receive legal-action enumeration or live engine values.
+
 No generic graph DSL is required.
+
+The experimental chess.legal_tree_memory strategy is an R7 condition. At
+every model turn, Position Mapper, Variant Analyst and Final Reviewer receive
+the finite legal root-action set from the delayed LegalityGateway and the
+bounded SearchMemory projection. Candidate roots and replies are tested in an
+immutable SearchWorkspace. Episodic memory starts empty per turn; persistent
+memory is reseeded only from the latest committed graph in the same episode.
 
 ## 3. Tool descriptor
 
@@ -94,3 +106,12 @@ v0.1 supports explicit history policies:
 - generated summary as an artifact.
 
 There is no hidden long-term memory.
+
+R7 makes the memory ablation explicit:
+
+- episodic: a new fabric for every decision;
+- persistent: notes from the latest committed search graph, scoped to one
+  episode and carrying source position keys for exact-state retrieval.
+
+Every retrieval call and returned memory ID is recorded in the search graph
+and retrieval-event projection.

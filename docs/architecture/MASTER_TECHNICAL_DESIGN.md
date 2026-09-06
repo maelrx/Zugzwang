@@ -39,6 +39,15 @@ O desenho-base permanece válido, com as seguintes extensões normativas:
 
 Um monólito modular hexagonal, local-first e retomável, que transforma manifestos em evidence bundles sem permitir que providers, tools, engines ou retries escondam sua participação.
 
+## Extensão experimental R7
+
+O R7 legal-tree-memory é uma exceção experimental explicitamente registrada,
+não uma antecipação de RAG. Ele expõe o conjunto finito de ações legais pelo
+gateway em cada turno, cria variantes somente no SearchWorkspace formal e
+compara memória episódica com memória persistida no escopo de um episódio.
+Não há corpus externo, vector database, Stockfish live ou compartilhamento de
+memória entre episódios.
+
 ---
 
 # Corpo do design greenfield integrado
@@ -142,7 +151,7 @@ O sistema deve reconhecer regimes comparáveis, sem confundir estratégia com pr
 | R2 | repair apenas de parsing/legalidade | v0.1 |
 | R3 | análise estruturada → candidatos → decisão | v0.1 |
 | R4 | Best-of-N com seleção model-only | depois do núcleo |
-| R5 | debate e árbitro cego | adiado |
+| R5 | cadeia de revisão multiagent model-only | experimental local (ZGW-0080) |
 | R6 | tree search model-only | adiado |
 | R7 | memória/RAG sem engine online | adiado |
 | R8 | engine critic live | plugin posterior, leaderboard separado |
@@ -228,7 +237,7 @@ O Zugzwang deve oferecer:
 - treinamento, SFT, RLVR ou fine-tuning;
 - vector database e RAG;
 - arbitrary shell/code tools;
-- multiagent debate;
+- benchmark de debate multiagent com proposers independentes;
 - MCTS/model-only tree search;
 - public leaderboard;
 - marketplace de plugins;
@@ -4713,3 +4722,14 @@ Também foram consultadas documentações oficiais ou primárias de:
 - Stockfish e sua licença/distribuição.
 
 Resultados de preprints, preços, versões e políticas de providers devem continuar sendo tratados como dados temporais e congelados por run.
+
+## 36. Implementacao do kernel de pesquisa
+
+O work order ZGW-0079 adiciona uma camada de evidência por decisão sem apagar
+as fronteiras deste desenho. `RulesKernel` responde apenas perguntas formais;
+`LegalityGateway` controla exposição por lease. Observações, traces, wire
+payloads e reasoning telemetry ficam no CAS com referências diretas em SQLite.
+
+Avaliações Stockfish vivem em `evaluation_runs` e não são legíveis pelo
+`SearchWorkspace`. O primeiro R6 usa `BatchedTree` e juízes do mesmo modelo;
+memória de busca guarda apenas material produzido dentro do próprio search.

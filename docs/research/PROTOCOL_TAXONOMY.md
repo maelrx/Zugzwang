@@ -11,9 +11,9 @@ O Zugzwang descreve uma condição por eixos independentes. Reduzir tudo a um no
 | `R2` | Repair | retry apenas para parsing ou legalidade | sim |
 | `R3` | Structured | decomposição explícita em análise, candidatos, linhas e decisão | sim |
 | `R4` | Best-of-N | múltiplas propostas e seletor model-only | depois |
-| `R5` | Debate | proposers independentes e árbitro | depois |
+| `R5` | Debate | cadeia explícita de revisão model-only | experimental local |
 | `R6` | Tree | search model-only com transições canônicas | depois |
-| `R7` | Retrieved knowledge | retrieval position-conditioned sem engine live | depois |
+| `R7` | Retrieved knowledge | legal tree + retrieval position-conditioned sem engine live | experimental local |
 | `R8` | Engine critic | engine avalia candidatos durante decisão | separado |
 | `R9` | Engine candidates | engine gera candidatos | separado |
 
@@ -144,3 +144,17 @@ A comparable condition hash includes:
 - budget and retry policy.
 
 Changing any of these creates a new condition identity.
+
+## 9. R6 and formal exposure
+
+R6 is model-only search over formal transitions. R7 adds an explicit legal root
+action set and an episode-scoped retrieval ablation. Both may use a bounded
+`SearchWorkspace` and endogenous Search Memory, but neither can read
+Stockfish, tablebases, opening books or external chess retrieval. The gateway
+records the effective H class for every operation. Binary legality is H1; an
+enumerated legal-action set is H3; model-only search is H4. The complement of
+the legal set is not enumerable; only model-proposed illegal probes are
+recorded with formal rejection reasons.
+
+Provider-exposed reasoning fields are telemetry. Private hidden reasoning is
+unavailable unless the provider explicitly exposes a permitted representation.

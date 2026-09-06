@@ -87,7 +87,11 @@ flowchart TD
   - [x] `chess.cognitive_navigation` NOVA (baselines intactos) + `propose_from_transcript` pura
   - [x] Journal `open_round`; rota efetiva {provider, model, route, date} por round (§15.4); restart reabre journal+CAS com mesma seleção
   - [x] TEST-022/023/024/025/028/029/030 + golden fake §48.1 (8 testes); 358 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
-- [ ] **CB-WO-08** — durabilidade e segurança end-to-end (§38.9) → pending (depende W7)
+- [x] **CB-WO-08** — durabilidade e segurança end-to-end (§38.9) → **ZGW-0095** · PR [#33](https://github.com/maelrx/Zugzwang/pull/33) (empilhado no #32; review 2 eixos aplicado em a0e1ab0)
+  - [x] `resume_decision`/`open_operations`: next ordinal, settled/open, watermark, budget, selection — sem provider/engine
+  - [x] `audit_decision`: escolha/custos/exposição/limites hash-verificados; `redact`/`export_report` sem segredos; `validate_artifact_id`
+  - [x] TEST-037/038/040/041/053/054/067/068 (fault) + TEST-057/058/059/080 e âncoras 055/056/079 (audit); 372 passed/1 skipped; ruff + pyright strict + foundation --strict verdes
+  - [x] Gate §38.9 levantado: baterias não-smoke liberadas (exactly-once remoto segue fora do escopo)
 - [ ] **CB-WO-10** — viewer mínimo causal (§38.11) → pending (depende W7)
 - [ ] **CB-WO-09** — memória condicionada (§38.10) → pending (depende W8; retrieval elegível = ADR-CB-013)
 

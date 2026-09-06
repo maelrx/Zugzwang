@@ -161,11 +161,18 @@ class SingleAgentTreeStrategy:
         root_branches: dict[str, str] = {}
         root_summaries: list[dict[str, JsonValue]] = []
         if reply_scope == "all":
+            # ZGW-0085/#14: an explicitly configured max_root_branches must
+            # control root width in the `all` scope too (previously only
+            # max_affordance_roots applied, so width ablations were inert).
             root_branches, root_summaries = self._prepare_all_root_affordances(
                 legal_moves=legal_moves,
                 gateway=gateway,
                 workspace=workspace,
-                max_roots=tree_search_int(context, "max_affordance_roots", 64),
+                max_roots=tree_search_int(
+                    context,
+                    "max_root_branches",
+                    tree_search_int(context, "max_affordance_roots", 64),
+                ),
             )
 
         position = build_observation_text(tree_as_observation(observation))
@@ -247,7 +254,13 @@ class SingleAgentTreeStrategy:
             "position_report": cast(JsonValue, report),
             "memory_mode": mode,
             "reply_scope": reply_scope,
+            # ZGW-0085/#14: reply_scope=candidate_only prepares child replies
+            # AFTER the selecting call; it is not pre-selection exposure.
+            "root_affordance_timing": (
+                "pre_selection" if reply_scope == "all" else "post_selection"
+            ),
             "legal_action_set": legal_context,
+            "memory_summary": _memory_summary(retrieved),
             "retrieved_memory": cast(JsonValue, retrieved),
             "illegal_probes": cast(JsonValue, illegal_probes),
             "root_branches": cast(JsonValue, root_summaries),
@@ -426,11 +439,20 @@ class SingleAgentTreeStrategy:
                 ],
             }
             if result.get("legal") and result.get("child_node_id"):
+                # ZGW-0085/#14: memory carries the assessment and risks, not
+                # only the move pair, so later relevance audits have signal.
+                assessment = str(record["assessment"])
+                risks = ", ".join(str(r) for r in cast(list[Any], record["risks"]))
+                content = f"single agent variant {root} reply {reply}"
+                if assessment:
+                    content += f" | assessment: {assessment}"
+                if risks:
+                    content += f" | risks: {risks}"
                 tree_record_memory(
                     memory,
                     node_id=str(result["child_node_id"]),
                     kind="refutation",
-                    content=f"single agent variant {root} reply {reply}",
+                    content=content,
                     generated_by=str(context.model),
                     verdicts=verdicts,
                 )
@@ -540,6 +562,32 @@ def _search_value(context: DecisionContext, name: str, default: str) -> str:
         if isinstance(value, str):
             return value
     return default
+
+
+_POSITION_GROUNDED_RETRIEVERS = frozenset({"exact_state", "ancestors", "siblings", "transposition"})
+
+
+def _memory_summary(retrieved: list[dict[str, JsonValue]]) -> dict[str, JsonValue]:
+    """Availability and relevance of retrieved memory, measured separately.
+
+    ZGW-0085/#14: availability counts what memory returned; relevance counts
+    only entries grounded in the current position (exact/transposition/
+    ancestor/sibling retrievers), which is the subset that can inform this
+    decision. Structured entries additionally carry assessment/risks content.
+    """
+    items = retrieved or []
+    return {
+        "available": bool(items),
+        "item_count": len(items),
+        "position_grounded_count": sum(
+            1 for item in items if str(item.get("retriever")) in _POSITION_GROUNDED_RETRIEVERS
+        ),
+        "structured_content_count": sum(
+            1
+            for item in items
+            if "assessment" in str(item.get("content")) or "risks" in str(item.get("content"))
+        ),
+    }
 
 
 def _root_affordance_text(summaries: list[dict[str, JsonValue]]) -> str:

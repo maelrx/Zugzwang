@@ -53,3 +53,38 @@ efetivo auditado por episódio; prompt/packets/observação entram no protocol h
 
 Mudanças pós-preregistration exigem card revision v2 e registro no
 `DECISION_LOG.md` antes de re-executar.
+
+## Amendment 001 — 2026-09-06 (ZGW-0085, issue #14)
+
+Registrado ANTES de qualquer execução paga da suite (GATE-011 segue pendente).
+Runs overnight já executados permanecem evidência exploratória n=1; nenhum
+manifesto congelado foi reescrito. Correções e esclarecimentos:
+
+1. **rep-001-pgn**: a condição parte de FEN sem trajetória prévia e produz
+   histórico vazio — não compara "PGN vs FEN" como preregistrado. Fica
+   reclassificada como réplica de FEN com prompt de histórico; a hipótese H1
+   (FEN ≥ PGN) só é testável com corpus de posições com histórico real
+   (batch 2).
+2. **rep-001-rgb / rep-001-fen-rgb**: modelo × condição permanece confundido
+   (texto=deepseek-v4-flash, imagem=mimo-v2.5). Análise intrabloco com
+   pareamento por posição e denominadores por condição; sem ranking entre
+   modelos. Alternativa de modelo para RGB é decisão separada do operador.
+3. **MM-002**: consistent vs conflict altera simultaneamente o conflito
+   fen-image e a instrução de autoridade (`modality_authority: text`).
+   O efeito da autoridade é reportado separadamente do efeito do conflito,
+   com condição adicional de conflito sem override planejada para batch 2.
+4. **SKILL-001**: o packet Najdorf (S4) não é controle de conhecimento
+   pertinente para todas as 10 posições (ex.: finais P07/P08). Relevância
+   por posição passa a ser reportada (nº de posições da casa do packet),
+   e a comparação S4>S5 usa apenas posições da mesma estrutura.
+5. **Bateria single-agent (H1–H5)**: os nomes de hipótese não substituem
+   classes H/K. Mapeamento explícito — H1/H2/H3: R7/H4 (K0 episódica, K6
+   persistente, K6 persistente + checklist); H4: R7/H4 com largura de raiz
+   controlada; H5: R7/H4 com materialização pós-seleção. Correções de
+   mecanismo (max_root_branches ativo no escopo `all`; rótulo
+   root_affordance_timing; memory_summary com disponibilidade e relevância
+   separadas) têm prova offline em tests/integration/test_single_agent_tree.py.
+6. **Análise pareada**: toda comparação usa pareamento por pair_id com
+   denominadores explícitos (n por condição, exclusões listadas) e
+   agrupamento por posição-base; sem pooling de condições com modelos
+   distintos.

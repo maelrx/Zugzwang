@@ -318,6 +318,21 @@ class MetricObservationRepository(BaseRepository):
             )
             return [dict(row) for row in result.mappings()]
 
+    def legacy_for_run(self, run_id: str) -> list[dict[str, Any]]:
+        """Metrics recorded before evaluation-run generations existed (pre-0003).
+
+        Their provenance (evaluator generation) is unknown; callers must keep
+        them in a separate, clearly identified group.
+        """
+        with self.connect() as connection:
+            result = connection.execute(
+                select(metric_observations).where(
+                    (metric_observations.c.run_id == run_id)
+                    & (metric_observations.c.evaluation_run_id.is_(None))
+                )
+            )
+            return [dict(row) for row in result.mappings()]
+
 
 class EvaluationRunRepository(BaseRepository):
     """Immutable-generation metadata for post-hoc evaluation passes."""

@@ -61,3 +61,13 @@
 
 - Condição só sobe para full-game se: efeito observado > mínimo prático
   (ACPL médio) E custo por observação dentro do orçamento E atribuição H/K íntegra.
+
+## Amendment 001 — 2026-09-06 (ZGW-0085, issue #14)
+
+- Corpus: nova versão `datasets/positions_v1_1` (1.1.0) corrige P01 (FEN
+  agora consistente com a nota "após 1.d4 d5 2.c4") e P09
+  (BAD_CASTLING_RIGHTS). O corpus 1.0.0 permanece congelado como evidência;
+  validação automática em tests/compatibility/test_corpus_positions.py.
+- Limitações 1–3 acima continuam válidas; a 4 (GATE-011) segue pendente.
+- Suite passa a referenciar corpus 1.1.0 em execuções futuras; manifestos já
+  congelados não são reescritos (hash original preservado).

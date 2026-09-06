@@ -33,3 +33,6 @@ viewer-next/public/data/
 # Generated local analysis is not portable source.
 .hypothesis/
 node_modules/
+
+# Derived retrieval context (ZGW-0087): rebuilt deterministically from the PRD.
+tools/prd-retrieval/context/

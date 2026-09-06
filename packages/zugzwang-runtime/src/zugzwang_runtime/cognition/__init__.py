@@ -22,9 +22,11 @@ from .session import (
     cas_artifact_sink,
     identity_keys,
 )
+from .skills import ActivationResult, SkillError, SkillRegistry
 
 __all__ = [
     "TOOL_CATALOG",
+    "ActivationResult",
     "ArtifactLoader",
     "ArtifactSink",
     "AuditReport",
@@ -38,6 +40,8 @@ __all__ = [
     "RecalledItem",
     "ResumePlan",
     "ScopedMemoryStore",
+    "SkillError",
+    "SkillRegistry",
     "ToolExecutionError",
     "ToolOperationBudget",
     "audit_decision",

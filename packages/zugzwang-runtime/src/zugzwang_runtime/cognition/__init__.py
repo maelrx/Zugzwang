@@ -14,6 +14,7 @@ from .broker import (
     ToolOperationBudget,
 )
 from .loop import CognitiveLoop, LoopResult, LoopStep, count_protocol_errors, is_retryable
+from .memory import MemoryError, RecalledItem, RecallResult, ScopedMemoryStore
 from .resume import ResumePlan, open_operations, resume_decision
 from .session import (
     DecisionSession,
@@ -32,7 +33,11 @@ __all__ = [
     "DecisionSession",
     "LoopResult",
     "LoopStep",
+    "MemoryError",
+    "RecallResult",
+    "RecalledItem",
     "ResumePlan",
+    "ScopedMemoryStore",
     "ToolExecutionError",
     "ToolOperationBudget",
     "audit_decision",

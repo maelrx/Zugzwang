@@ -1,5 +1,7 @@
 # Documentation index
 
+Current entry point: [repository status and integration queue](engineering/REPOSITORY_STATUS.md). Historical design documents do not supersede accepted gates or the current PR state.
+
 The canonical documentation language for the foundation release is Portuguese, with an English public README. This policy is itself a human decision gate for later releases.
 
 ## Product
@@ -171,8 +173,6 @@ The canonical documentation language for the foundation release is Portuguese, w
 
 ## Execution reports
 
-- [Real pipeline — MuseSpark 1.3 Free and Stockfish](reports/REAL-PIPELINE-2026-09-04.md)
-- [Bateria MuseSpark 1.3 contra Stockfish](reports/MUSESPARK-STOCKFISH-BATTERY-2026-09-04.md)
-- [Validacao real pos-mudancas](reports/REAL-VALIDATION-2026-09-04.md)
-- [Relatorio completo da run R5 multiagente](reports/R5-MULTI-AGENT-RUN-2026-09-04.md)
-- [Run R7 legal tree e memoria persistida](reports/R7-LEGAL-TREE-MEMORY-RUN-2026-09-04.md)
+Overnight execution reports (R5/R7, MuseSpark battery, real pipeline) are preserved
+locally and will be indexed here when their documentation PR is integrated; the
+reports are not part of this branch's tree.

@@ -44,7 +44,7 @@ Every implementation change needs a `ZGW-XXXX` work order with requirements, ADR
 
 ## Skills
 
-Use an explicit skill when applicable. Important skills include:
+Use an explicit skill when applicable. Resolve skills from the active host catalog or `.agents/skills/` when present; do not commit host-specific symlinks. Report a missing required skill rather than pretending it ran. Important workflows include:
 
 - `bootstrap-workspace`
 - `implement-domain-contract`
@@ -65,7 +65,7 @@ Use an explicit skill when applicable. Important skills include:
 - `code-review`
 - `release-readiness`
 
-## Commands available in this pre-scaffold corpus
+## Documentation utilities
 
 ```bash
 python scripts/validate_foundation.py
@@ -75,7 +75,7 @@ python scripts/new_adr.py --help
 python scripts/new_experiment.py --help
 ```
 
-After M0, update this file with exact `uv run` commands. Do not invent commands before they exist.
+The workspace is implemented. Use the post-M0 commands below and consult `docs/engineering/REPOSITORY_STATUS.md` before choosing a base branch. Preserve other agents' worktrees and shared virtual environments.
 
 ## Commands (post-M0, uv workspace)
 

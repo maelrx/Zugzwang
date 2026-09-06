@@ -22,3 +22,14 @@ runs/
 .idea/
 .vscode/
 graphify-out/
+
+# Local read-only viewer snapshots; keep the UI source, ignore generated data.
+viewer/data.js
+viewer/pieces.js
+viewer/meta.json
+viewer/data.json
+viewer-next/public/data/
+
+# Generated local analysis is not portable source.
+.hypothesis/
+node_modules/

@@ -30,7 +30,11 @@ DEFAULT_CONTEXT = Path(__file__).resolve().parent / "context"
 def ensure_context(
     doc_path: Path, context_dir: Path, rebuild: bool
 ) -> tuple[list[prd_retrieval.Chunk], str, bool]:
-    """Load chunks from disk; rebuild automatically when missing or stale."""
+    """Load chunks from disk; rebuild automatically when missing or stale.
+
+    Stale means: missing context, format_version mismatch, source sha256
+    mismatch, or any derived artifact failing its MANIFEST digest.
+    """
     doc_sha = prd_retrieval.sha256_bytes(doc_path.read_bytes())
     manifest_path = context_dir / "MANIFEST.json"
     if manifest_path.exists():
@@ -40,24 +44,40 @@ def ensure_context(
         if (
             same_format
             and source.get("sha256") == doc_sha
-            and (context_dir / "chunks.jsonl").exists()
+            and prd_retrieval.artifacts_intact(context_dir)
         ):
             return prd_retrieval.load_chunks(context_dir), doc_sha, False
         if not rebuild:
-            print(
-                "erro: contexto stale/ausente e --no-rebuild ativo — rode build_context.py",
-                file=sys.stderr,
+            raise SystemExit(
+                prd_retrieval.fail(
+                    "E-CONTEXT-STALE-NO-REBUILD",
+                    "contexto stale/ausente com --no-rebuild ativo",
+                    f"--context-dir {context_dir}",
+                    "rodar build_context.py ou reexecutar sem --no-rebuild",
+                    f"{context_dir}/MANIFEST.json",
+                )
             )
-            raise SystemExit(1)
-        reason = "formato" if not same_format else f"sha256 {source.get('sha256', '?')[:12]}…"
+        if not same_format:
+            reason = "format_version divergente"
+        elif source.get("sha256") != doc_sha:
+            reason = f"sha256 da fonte {source.get('sha256', '?')[:12]}… ≠ {doc_sha[:12]}…"
+        else:
+            reason = "digest de artefato divergente"
         print(f"aviso: contexto stale ({reason}) — rebuild determinístico", file=sys.stderr)
     else:
         if not rebuild:
-            print(
-                f"erro: contexto inexistente em {context_dir} e --no-rebuild ativo", file=sys.stderr
+            raise SystemExit(
+                prd_retrieval.fail(
+                    "E-CONTEXT-MISSING",
+                    "contexto inexistente com --no-rebuild ativo",
+                    f"--context-dir {context_dir}",
+                    "rodar build_context.py ou reexecutar sem --no-rebuild",
+                    f"{context_dir}/MANIFEST.json",
+                )
             )
-            raise SystemExit(1)
-        print(f"aviso: contexto inexistente em {context_dir} — build", file=sys.stderr)
+        print(
+            f"aviso: contexto inexistente em {context_dir} — build determinístico", file=sys.stderr
+        )
     source_text = doc_path.read_text(encoding="utf-8")
     chunks = prd_retrieval.build_chunks(source_text)
     prd_retrieval.write_context(context_dir, doc_path, source_text, chunks)
@@ -88,8 +108,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.doc.exists():
-        print(f"erro: documento-fonte não encontrado: {args.doc}", file=sys.stderr)
-        return 1
+        return prd_retrieval.fail(
+            "E-SOURCE-MISSING",
+            "documento-fonte inexistente",
+            f"--doc {args.doc}",
+            "corrigir --doc e refazer",
+            f"Path.exists() em {args.doc}",
+        )
 
     chunks, doc_sha, rebuilt = ensure_context(args.doc, args.context_dir, not args.no_rebuild)
     query = " ".join(args.query)
@@ -97,19 +122,26 @@ def main(argv: list[str] | None = None) -> int:
     allowed: set[int] | None = None
     if args.facet or args.section or args.heading_substr:
         wanted_facets = set(args.facet)
-        heading_needle = prd_retrieval.fold(args.heading_substr) if args.heading_substr else None
+        heading_needle = (
+            prd_retrieval.accent_fold(args.heading_substr) if args.heading_substr else None
+        )
         allowed = set()
         for i, chunk in enumerate(chunks):
             if wanted_facets and not wanted_facets.issubset(set(chunk.facets)):
                 continue
             if args.section and chunk.section != args.section:
                 continue
-            if heading_needle and heading_needle not in prd_retrieval.fold(chunk.heading):
+            if heading_needle and heading_needle not in prd_retrieval.accent_fold(chunk.heading):
                 continue
             allowed.add(i)
         if not allowed:
-            print("nenhum chunk passa nos filtros (facet/seção/heading)", file=sys.stderr)
-            return 1
+            return prd_retrieval.fail(
+                "E-FILTER-EMPTY",
+                "nenhum chunk passa nos filtros",
+                f"facets={args.facet} section={args.section} heading~{args.heading_substr}",
+                "afrouxar filtros e refazer a consulta",
+                f"{args.context_dir}/facets.json",
+            )
 
     ctx = prd_retrieval.RetrievalContext(chunks)
     t0 = time.perf_counter()

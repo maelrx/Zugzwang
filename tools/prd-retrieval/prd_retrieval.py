@@ -17,15 +17,20 @@ import hashlib
 import json
 import math
 import re
+import sys
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 FORMAT_VERSION = 1
 MAX_CHARS_SPLIT = 1800
 RRF_K = 60
 CANDIDATE_DEPTH = 100
+TFIDF_MIN_NGRAM = 1
+TFIDF_MAX_NGRAM = 2
 METHODS = ("rrf", "bm25", "tfidf", "exact")
+Method = Literal["rrf", "bm25", "tfidf", "exact"]
 
 HEADING_RE = re.compile(r"^(#{1,3}) (.+)$")
 TOKEN_RE = re.compile(r"\w+", re.UNICODE)
@@ -60,10 +65,25 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def fold(text: str) -> str:
+def accent_fold(text: str) -> str:
     """NFKD-fold to ASCII lowercase without combining marks (deterministic)."""
     decomposed = unicodedata.normalize("NFKD", text.lower())
     return COMBINING_MARKS_RE.sub("", decomposed)
+
+
+def fail(error_class: str, what: str, where: str, retry: str, evidence: str, code: int = 1) -> int:
+    """Emit a structured error line (CODING_STANDARDS.md / Errors) and return a code.
+
+    Every error answers: what failed, where, retryability class, whether external
+    work may have been accepted (always none here — no external calls), and the
+    evidence artifact supporting the diagnosis.
+    """
+    print(
+        f"erro [{error_class}] o_que={what} onde={where} "
+        f"retryability={retry} trabalho_externo=nenhum evidencia={evidence}",
+        file=sys.stderr,
+    )
+    return code
 
 
 def tokenize(text: str) -> list[str]:
@@ -111,8 +131,8 @@ class Chunk:
 
 def derive_facets(parent_title: str, title: str, section: str) -> tuple[str, ...]:
     """Deterministic facet extraction from heading text (accent-folded) + section."""
-    t = fold(title)
-    p = fold(parent_title)
+    t = accent_fold(title)
+    p = accent_fold(parent_title)
     facets: set[str] = set()
 
     if re.search(r"adr-cb-\d+", t) or re.search(r"adr-cb-\d+", p) or "catalogo de adrs" in t:
@@ -228,7 +248,7 @@ def build_chunks(text: str, max_chars: int = MAX_CHARS_SPLIT) -> list[Chunk]:
     ordinal = 0
 
     first_sub = subs[0][0] if subs else len(lines)
-    if first_sub > 0 and any(line.strip() for line in lines[:first_sub]):
+    if first_sub > 0:
         chunks.append(
             Chunk(
                 chunk_id=f"c{ordinal:04d}#0",
@@ -306,12 +326,12 @@ class _Index:
     folded_texts: list[str]
 
 
-def _build_index(chunks: list[Chunk], min_ngram: int = 1, max_ngram: int = 2) -> _Index:
+def _build_index(chunks: list[Chunk]) -> _Index:
     n_docs = len(chunks)
     token_lists = [tokenize(c.text) for c in chunks]
 
     doc_len = [len(toks) for toks in token_lists]
-    avgdl = sum(doc_len) / n_docs if n_docs else 0.0
+    avgdl = (sum(doc_len) / n_docs) if n_docs and any(doc_len) else 1.0
 
     df: dict[str, int] = {}
     for toks in token_lists:
@@ -334,7 +354,7 @@ def _build_index(chunks: list[Chunk], min_ngram: int = 1, max_ngram: int = 2) ->
 
     tf_counts: list[dict[str, int]] = []
     for toks in token_lists:
-        grams = _ngram_tokens(toks, min_ngram, max_ngram)
+        grams = _ngram_tokens(toks, TFIDF_MIN_NGRAM, TFIDF_MAX_NGRAM)
         counts: dict[str, int] = {}
         for g in grams:
             counts[g] = counts.get(g, 0) + 1
@@ -360,17 +380,16 @@ def _build_index(chunks: list[Chunk], min_ngram: int = 1, max_ngram: int = 2) ->
         for term in sorted(weights):
             tfidf_postings.setdefault(term, []).append((doc_id, weights[term]))
 
-    folded = [fold(c.text) for c in chunks]
+    folded = [accent_fold(c.text) for c in chunks]
     return _Index(bm25_idf, bm25_postings, doc_len, avgdl, tfidf_postings, folded)
 
 
 class RetrievalContext:
     """In-memory deterministic retrieval over built chunks."""
 
-    def __init__(self, chunks: list[Chunk], max_ngram: int = 2):
+    def __init__(self, chunks: list[Chunk]):
         self.chunks = chunks
-        self.max_ngram = max_ngram
-        self._index = _build_index(chunks, 1, max_ngram)
+        self._index = _build_index(chunks)
 
     def _rank_bm25(
         self, query_tokens: list[str], top: int, allowed: set[int] | None = None
@@ -388,13 +407,16 @@ class RetrievalContext:
                     continue
                 denom = tf + k1 * (1.0 - b + b * idx.bm25_doc_len[doc_id] / idx.bm25_avgdl)
                 scores[doc_id] += weight * tf * (k1 + 1.0) / denom
-        return self._rank_scores(scores, top, allowed)
+        pairs = [
+            (i, s) for i, s in enumerate(scores) if s > 0.0 and (allowed is None or i in allowed)
+        ]
+        return self._rank_pairs(pairs, top)
 
     def _rank_tfidf(
         self, query_tokens: list[str], top: int, allowed: set[int] | None = None
     ) -> list[tuple[int, float]]:
         q_counts: dict[str, int] = {}
-        for gram in _ngram_tokens(query_tokens, 1, self.max_ngram):
+        for gram in _ngram_tokens(query_tokens, TFIDF_MIN_NGRAM, TFIDF_MAX_NGRAM):
             q_counts[gram] = q_counts.get(gram, 0) + 1
         q_weights = {
             term: (1.0 + math.log(tf)) * self._query_idf(term) for term, tf in q_counts.items()
@@ -409,8 +431,7 @@ class RetrievalContext:
                 if allowed is not None and doc_id not in allowed:
                     continue
                 acc[doc_id] = acc.get(doc_id, 0.0) + q_w * d_w
-        ranked = sorted(acc.items(), key=lambda kv: (-kv[1], self.chunks[kv[0]].chunk_id))
-        return ranked[:top]
+        return self._rank_pairs(list(acc.items()), top)
 
     def _query_idf(self, term: str) -> float:
         n_docs = len(self.chunks)
@@ -420,7 +441,7 @@ class RetrievalContext:
     def _rank_exact(
         self, query: str, top: int, allowed: set[int] | None = None
     ) -> list[tuple[int, float]]:
-        needle = fold(query)
+        needle = accent_fold(query)
         if not needle:
             return []
         hits = [
@@ -431,19 +452,15 @@ class RetrievalContext:
         hits.sort(key=lambda iv: (len(self.chunks[iv[0]].text), self.chunks[iv[0]].chunk_id))
         return hits[:top]
 
-    def _rank_scores(
-        self, scores: list[float], top: int, allowed: set[int] | None = None
-    ) -> list[tuple[int, float]]:
-        ranked = [
-            (i, s) for i, s in enumerate(scores) if s > 0.0 and (allowed is None or i in allowed)
-        ]
-        ranked.sort(key=lambda iv: (-iv[1], self.chunks[iv[0]].chunk_id))
+    def _rank_pairs(self, pairs: list[tuple[int, float]], top: int) -> list[tuple[int, float]]:
+        """Sort (doc_id, score) by (-score, chunk_id); the shared ranking shape."""
+        ranked = sorted(pairs, key=lambda iv: (-iv[1], self.chunks[iv[0]].chunk_id))
         return ranked[:top]
 
     def search(
         self,
         query: str,
-        method: str = "rrf",
+        method: Method = "rrf",
         top: int = 10,
         allowed: set[int] | None = None,
     ) -> list[tuple[Chunk, float]]:
@@ -476,10 +493,7 @@ class RetrievalContext:
                 ):
                     for rank, (doc_id, _) in enumerate(ranking, 1):
                         fused[doc_id] = fused.get(doc_id, 0.0) + 1.0 / (RRF_K + rank)
-                ordered = sorted(
-                    fused.items(), key=lambda kv: (-kv[1], self.chunks[kv[0]].chunk_id)
-                )
-                hits = ordered[:depth]
+                hits = self._rank_pairs(list(fused.items()), depth)
         return [(self.chunks[i], score) for i, score in hits[:top]]
 
 
@@ -565,6 +579,17 @@ def write_context(
 
 def rendered_names() -> tuple[str, ...]:
     return ("chunks.jsonl", "facets.json", "MANIFEST.json")
+
+
+def artifacts_intact(context_dir: Path) -> bool:
+    """Verify every derived artifact matches the digests recorded in MANIFEST.json."""
+    manifest = read_manifest(context_dir)
+    artifacts = manifest.get("artifacts", {})
+    for name, digest in artifacts.items():  # type: ignore[union-attr]
+        path = context_dir / str(name)
+        if not path.exists() or sha256_bytes(path.read_bytes()) != digest:
+            return False
+    return True
 
 
 def load_chunks(context_dir: Path) -> list[Chunk]:

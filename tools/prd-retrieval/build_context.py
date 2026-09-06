@@ -31,18 +31,25 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.doc.exists():
-        print(f"erro: documento-fonte não encontrado: {args.doc}", file=sys.stderr)
-        return 1
+        return prd_retrieval.fail(
+            "E-SOURCE-MISSING",
+            "documento-fonte inexistente",
+            f"--doc {args.doc}",
+            "corrigir --doc e refazer",
+            f"Path.exists() em {args.doc}",
+        )
     source_text = args.doc.read_text(encoding="utf-8")
     chunks = prd_retrieval.build_chunks(source_text)
 
     if args.check:
         if not all((args.out / name).exists() for name in prd_retrieval.rendered_names()):
-            print(
-                f"erro: contexto inexistente em {args.out} — rode sem --check primeiro",
-                file=sys.stderr,
+            return prd_retrieval.fail(
+                "E-CONTEXT-MISSING",
+                "contexto inexistente",
+                f"--out {args.out}",
+                "rodar build_context.py (sem --check) e repetir",
+                f"{args.out}/MANIFEST.json",
             )
-            return 1
         rendered = prd_retrieval.render_context(args.doc, source_text, chunks)
         ok = True
         for name, payload in rendered.items():
@@ -51,8 +58,18 @@ def main(argv: list[str] | None = None) -> int:
             ok = ok and same
             status = "ok" if same else "DIFERE"
             print(f"  {name}: {prd_retrieval.sha256_bytes(on_disk)[:16]}… {status}")
-        print("verificação: PASS" if ok else "verificação: FAIL (contexto stale — rebuild)")
-        return 0 if ok else 2
+        if not ok:
+            print("verificação: FAIL (contexto stale — rebuild determinístico)")
+            return prd_retrieval.fail(
+                "E-CONTEXT-STALE",
+                "artefatos diferem do rebuild determinístico",
+                f"--out {args.out}",
+                "rebuild determinístico seguro (mesma fonte/config)",
+                f"{args.out}/MANIFEST.json",
+                code=2,
+            )
+        print("verificação: PASS")
+        return 0
 
     digests = prd_retrieval.write_context(args.out, args.doc, source_text, chunks)
     manifest = prd_retrieval.read_manifest(args.out)

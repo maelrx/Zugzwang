@@ -195,10 +195,18 @@ def test_query_cli_json_and_stale_rebuild(
     assert [r["chunk_id"] for r in second["results"]] == [r["chunk_id"] for r in first["results"]]
 
     stale_argv = [*argv, "--no-rebuild"]
+    pristine_manifest = (ctx_dir / "MANIFEST.json").read_bytes()
     (ctx_dir / "MANIFEST.json").write_text('{"source": {"sha256": "stale"}}', encoding="utf-8")
     with pytest.raises(SystemExit) as exc:
         query.main(stale_argv)
     assert exc.value.code == 1
+
+    # tampered artifact with intact manifest is also stale (digest verification)
+    (ctx_dir / "MANIFEST.json").write_bytes(pristine_manifest)
+    (ctx_dir / "facets.json").write_bytes(b"corrompido\n")
+    assert query.main(argv) == 0
+    third = json.loads(capsys.readouterr().out)
+    assert third["rebuilt"] is True
     _ = capsys.readouterr()
 
 
@@ -295,3 +303,21 @@ def test_prd_real_natural_questions_acceptance() -> None:
     cov = _metrics(cov_ranks)
     assert cov["r1"] == 1.0
     assert cov["r10"] == 1.0
+
+
+def test_blank_preamble_and_no_subsections_are_covered() -> None:
+    blank_preamble = "\n\n\n# Título\n\n## 1.1. Seção\n\ntexto\n"
+    chunks = prd_retrieval.build_chunks(blank_preamble)
+    spans = _chunk_spans(chunks)
+    assert spans[0][0] == 0
+    assert spans[-1][1] == len(blank_preamble.splitlines())
+    for (_, a_end), (b_start, _) in pairwise(spans):
+        assert a_end == b_start
+
+    no_subs = "# Só título\n\ntexto solto sem subseções\n"
+    chunks2 = prd_retrieval.build_chunks(no_subs)
+    assert len(chunks2) == 1
+    assert chunks2[0].start_line == 1
+    assert chunks2[0].end_line == len(no_subs.splitlines())
+    ctx2 = prd_retrieval.RetrievalContext(chunks2)
+    assert ctx2.search("texto solto", method="rrf", top=3)

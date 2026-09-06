@@ -37,8 +37,11 @@ e facets. `--json` entrega texto integral estruturado para consumo por agentes.
    (front matter + cada subseção `##`, com split de blocos longos em limites de
    parágrafo, ≤ 1.800 chars). Testado contra o PRD real.
 3. **Ordenação estável**: empates quebram por `(-score, chunk_id)`.
-4. **Índice nunca stale silenciosamente**: `MANIFEST.json` grava o sha256 da fonte e
-   `format_version`; a consulta reconstrói automaticamente quando o PRD muda.
+4. **Índice nunca stale silenciosamente**: `MANIFEST.json` grava o sha256 da fonte,
+   `format_version` e os digests dos artefatos; a consulta reconstrói automaticamente
+   quando o PRD muda ou quando qualquer artefato derivado não bate com o digest.
+   Erros de CLI são estruturados (classe, onde, retryability, evidência) conforme
+   `docs/engineering/CODING_STANDARDS.md`.
 
 Artefatos derivados (`context/`) são **gitignored** — derivados, nunca evidência;
 reconstruídos de forma idêntica em qualquer máquina a partir do documento + config.

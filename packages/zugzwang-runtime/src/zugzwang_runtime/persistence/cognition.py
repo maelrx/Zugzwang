@@ -28,7 +28,11 @@ _DECISION_TRANSITIONS: dict[str, frozenset[str]] = {
     "PAUSED": frozenset(),
     "SELECTED": frozenset({"COMMITTED"}),
     "COMMITTED": frozenset(),
-    "FAILED": frozenset(),
+    # FAILED -> ACTIVE exists solely for the step-level retry: a fail-closed
+    # attempt marks the aggregate FAILED, but the coordinator may retry the
+    # step (retries.illegal). Only CognitiveLoop.run re-entry may take this
+    # edge (reopen_decision_for_retry); a step that gave up never retries.
+    "FAILED": frozenset({"ACTIVE"}),
     "CANCELLED": frozenset(),
 }
 
@@ -510,6 +514,53 @@ class CognitionJournal:
                     f"round {round_id!r} is not prepared for opening",
                 )
             conn.commit()
+
+    def reprepare_round(self, round_id: str, decision_id: str) -> None:
+        """Reset a TERMINAL round to PREPARED so a new decision attempt can
+        re-drive it (step-level retry after a fail-closed attempt).
+
+        A fail-closed attempt leaves rounds TOOLS_COMMITTED/FAILED/COMPLETED;
+        without this reset the retry crashes on ``open_round`` with
+        STATE_REPLAY_MISMATCH ("not prepared for opening") — unmasked the
+        moment manifests allowed step-level retries (arena full games
+        2026-09-07; every pilot manifest used retries 0 and never re-entered).
+        Re-execution stays safe: committed tool operations replay from the
+        ledger by idempotency key, never re-execute. OPEN rounds (mid-round
+        crash resume) are NOT reset — that stays an honest mismatch.
+        """
+        with self._connect() as conn:
+            row = conn.execute(
+                sa.text(
+                    "SELECT status FROM cb_rounds "
+                    "WHERE round_id = :round_id AND decision_id = :decision_id"
+                ),
+                {"round_id": round_id, "decision_id": decision_id},
+            ).fetchone()
+            if row is None:
+                return
+            status = row[0]
+            if status == "PREPARED":
+                return
+            if status in _ROUND_OPEN_STATUSES:
+                raise DecisionJournalError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"round {round_id!r} is still open; cannot reprepare",
+                )
+            conn.execute(
+                sa.text(
+                    "UPDATE cb_rounds SET status = 'PREPARED', completed_at = NULL "
+                    "WHERE round_id = :round_id AND decision_id = :decision_id"
+                ),
+                {"round_id": round_id, "decision_id": decision_id},
+            )
+            conn.commit()
+
+    def reopen_decision_for_retry(self, decision_id: str) -> None:
+        """Reopen a decision FAILED by a previous attempt (FAILED -> ACTIVE)
+        so a step-level retry can re-drive it. No-op on any other status —
+        fresh attempts are already ACTIVE; PAUSED/CANCELLED never reopen."""
+        if self.decision_status(decision_id) == "FAILED":
+            self.transition_decision(decision_id, "ACTIVE")
 
     def complete_round(self, round_id: str, decision_id: str, status: str) -> None:
         """Close a round from an open boundary status (§12.2 round statuses)."""

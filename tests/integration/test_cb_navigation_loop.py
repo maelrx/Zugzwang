@@ -480,3 +480,55 @@ def test_system_prompt_states_round_budget_and_declares_finalize(harness) -> Non
     assert len(finalize) == 1, [t.name for t in tools]
     assert set(finalize[0].parameters["required"]) == {"node_id", "action_id"}
     assert any(t.name == FINALIZE_TOOL for t in BOARD_TOOL_DEFINITIONS)
+
+
+def test_step_retry_reopens_failed_decision_and_rounds(harness) -> None:
+    """Arena full games 2026-09-07: a fail-closed attempt left rounds
+    TOOLS_COMMITTED/FAILED and the aggregate FAILED; the coordinator's
+    step-level retry re-entered the loop and crashed with
+    STATE_REPLAY_MISMATCH "round ... is not prepared for opening"
+    (episode decision_error, 6/6 arena runs). Masked until now because
+    every pilot manifest used retries 0 — no step-level retry ever ran.
+    The retry must reopen the decision (FAILED -> ACTIVE), reprepare the
+    terminal rounds, and replay committed tool operations by idempotency
+    key instead of crashing."""
+    session, _journal = _open(harness)
+
+    # Attempt 1: explores but never finalizes -> fail-closed (TEST-030 shape).
+    first = _run(
+        _loop(
+            session,
+            FakeCognitiveBackend([propose_observe, propose_expand_first_action]),
+            harness,
+            max_rounds=2,
+        )
+    )
+    assert first.status == "FAILED"
+    with harness[1].connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT ordinal, status FROM cb_rounds WHERE decision_id = :id "
+                "ORDER BY ordinal"
+            ),
+            {"id": session.decision_id},
+        ).fetchall()
+    assert dict(rows) == {1: "PREPARED", 2: "TOOLS_COMMITTED", 3: "FAILED"}
+
+    # Attempt 2 (step-level retry): same decision, fresh loop, finalize script.
+    retry = _run(
+        _loop(
+            session,
+            FakeCognitiveBackend([propose_observe, propose_finalize_root_action]),
+            harness,
+            max_rounds=2,
+        )
+    )
+    assert retry.status == "COMMITTED", retry.trace_record
+    assert retry.selected_action is not None
+    with harness[1].connect() as conn:
+        row = conn.execute(
+            text("SELECT status, selected_action, selection_source FROM cb_decisions "
+                 "WHERE decision_id = :id"),
+            {"id": session.decision_id},
+        ).fetchone()
+    assert row[0] == "COMMITTED" and row[2] == "model"

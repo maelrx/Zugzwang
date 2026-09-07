@@ -232,6 +232,7 @@ class CognitiveLoop:
 
         # Round 0001 is the decision opening record (session.open); the loop
         # drives bounded rounds starting at ordinal 2 (§12.2).
+        self._journal.reopen_decision_for_retry(self.decision_id)
         first_ordinal = 2
         last_ordinal = self._max_rounds + 1
         for ordinal in range(first_ordinal, last_ordinal + 1):
@@ -259,6 +260,12 @@ class CognitiveLoop:
                     purpose=round_purpose,
                     context_artifact_id=request_artifact_id,
                 )
+            else:
+                # This decision is on a step-level retry attempt: rounds from
+                # the failed attempt are terminal and must re-enter PREPARED
+                # before open_round. Committed tool operations replay from the
+                # ledger by idempotency key — never re-execute.
+                self._journal.reprepare_round(round_id, self.decision_id)
             self._journal.open_round(round_id, self.decision_id, "RESPONSE_COMMITTED")
             trace.note_round(
                 ordinal,

@@ -458,13 +458,14 @@ class CognitiveLoop:
 
     def _default_system_prompt(self, ordinal: int | None = None) -> str:
         # The root node id is the graph address every tool call must use for
-        # the initial position: a real model cannot guess it (pilot: Kimi
-        # addressed ROOT/root/0/1 and every observe was NODE_SCOPE_MISMATCH).
-        # The id is decision-scoped and already journaled — exposing it is
-        # addressing, not hidden state. The round budget is likewise harness
-        # information the model needs to plan: without it the model explores
-        # until the finalize reserve refuses (pilot round 5) and the decision
-        # fails closed without ever hearing a limit existed.
+        # the initial position: a real model cannot guess it (pilot run:
+        # the model addressed ROOT/root/0/1 and every observe was
+        # NODE_SCOPE_MISMATCH). The id is decision-scoped and already
+        # journaled — exposing it is addressing, not hidden state. The round
+        # budget is likewise harness information the model needs to plan:
+        # without it the model explores until the finalize reserve refuses
+        # (pilot round 5) and the decision fails closed without ever hearing
+        # a limit existed.
         root = self._root_node_id or "the root node"
         if ordinal is None:
             budget_note = ""

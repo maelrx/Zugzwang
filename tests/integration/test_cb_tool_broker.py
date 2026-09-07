@@ -786,3 +786,56 @@ def test_identical_exposures_across_decisions_do_not_collide(harness, monkeypatc
     assert first_obs[0][0].startswith("observation_id:v3:")
     assert second_obs[0][0].startswith("observation_id:v3:")
     assert first_obs[0][0] != second_obs[0][0]
+
+
+def test_expand_works_at_midgame_anchor_depth(harness) -> None:
+    """Pilot regression (real game vs Stockfish, 2026-09-07): the decision
+    anchor registered depth=len(move_stack), so the workspace's decision-local
+    depth budget (6) refused EVERY expansion once the game passed ply 6 —
+    'expansion exceeds the decision search budgets' — while start-position
+    tests never noticed. The anchor is a decision-local root: depth 0."""
+    env = StandardChessEnvironment()
+    midgame = env.state_from_moves(
+        [
+            "e2e4",
+            "e7e5",
+            "g1f3",
+            "b8c6",
+            "f1b5",
+            "f8c5",
+            "e1g1",
+            "g8f6",
+            "d2d4",
+            "c5d4",
+            "f3d4",
+            "e5d4",
+            "e4e5",
+            "c6e5",
+            "d1d4",
+            "e5c6",
+            "b1c3",
+            "c6d4",
+            "b5d7",
+            "f6d7",
+            "c1e3",
+            "d4e6",
+            "c3d5",
+            "a7a5",
+        ]
+    )
+    assert len(midgame.move_stack) == 24
+    session = _open_session(harness, decision_id="dec-midgame")
+    session._broker._states["node-root"] = midgame
+    state_key, _ = session._broker._perception.identity_keys(midgame)
+    first_legal = sorted(midgame.to_board().legal_moves, key=lambda m: m.uci())[0]
+    envelope = session.execute(
+        "board_expand",
+        {
+            "node_id": "node-root",
+            "action_ids": [action_id_v2(state_key, first_legal.uci(), "uci/v1", POLICY_HASH)],
+        },
+        idempotency_key="midgame-1",
+    )
+    assert envelope.ok is True, envelope.error
+    assert envelope.result["results"][0]["depth"] == 1
+    assert envelope.result["results"][0]["uci"] == first_legal.uci()

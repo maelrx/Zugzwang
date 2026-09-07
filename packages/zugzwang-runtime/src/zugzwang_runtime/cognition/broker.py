@@ -239,9 +239,13 @@ class CognitionToolBroker:
             if self._root_node_id:
                 self._node_map[self._root_node_id] = self._workspace.root_id
         if node_id not in self._workspace.nodes:
-            self._workspace.register_anchor(
-                node_id=node_id, state=state, depth=len(state.move_stack)
-            )
+            # Decision-LOCAL depth: the workspace depth budget bounds this
+            # decision's exploration, not the game's move count. Anchoring
+            # with the game ply made every expand past ply 6 trip
+            # BUDGET_INSUFFICIENT ("expansion exceeds the decision search
+            # budgets") — real pilot games died mid-game while start-position
+            # tests never noticed (real run vs Stockfish, 2026-09-07).
+            self._workspace.register_anchor(node_id=node_id, state=state, depth=0)
         self._node_map[node_id] = node_id
         return node_id
 

@@ -236,6 +236,11 @@ class DurableRunServices:
         )
         return ref.as_id()
 
+    def _artifacts_repo(self):
+        from ..persistence.repositories import ArtifactRepository
+
+        return ArtifactRepository(self._database.engine())
+
     def _build_writer(self) -> PersistenceWriter:
         from ..persistence.repositories import (
             ArtifactRepository,
@@ -280,6 +285,7 @@ class DurableRunServices:
             checkpoints=self._checkpoints,
             rate_limiter=rate_limiter,
             cognitive_session_factory=self._cognitive_session_factory(),
+            artifacts=self._artifacts_repo(),
         )
 
         if command.condition_index is not None:
@@ -344,6 +350,7 @@ class DurableRunServices:
             checkpoints=self._checkpoints,
             rate_limiter=RateLimiter(),
             cognitive_session_factory=self._cognitive_session_factory(),
+            artifacts=self._artifacts_repo(),
         )
         await coordinator.resume(run_id, resolved, stop_event)
         await writer.flush()

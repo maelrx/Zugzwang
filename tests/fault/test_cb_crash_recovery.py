@@ -438,3 +438,124 @@ def harness_factory(tmp_path):
 
     factory.harness = made  # type: ignore[attr-defined]
     return factory
+
+
+@pytest.mark.asyncio
+async def test_s4_rebuild_state_restores_transition_media_type(tmp_path) -> None:
+    """Pilot regression (real run 2026-09-06): resume rebuilds episode state
+    from a COMMITTED step's transition artifact. The stored ref is a bare
+    digest, so ArtifactRef.parse defaults media_type to octet-stream and
+    environment.restore died with 'cannot restore chess state from
+    application/octet-stream' (episode ZGZ-INTERNAL-000). The coordinator
+    must rehydrate the database-recorded media type before restoring."""
+    import asyncio as _asyncio
+
+    from zugzwang_core.ports.model import (
+        CallContext,
+        Capability,
+        CapabilityReport,
+        ModelRef,
+        ModelRequest,
+        OnUnsupported,
+        ProviderResult,
+    )
+    from zugzwang_runtime.execution import PluginRegistry
+    from zugzwang_runtime.execution.durable_coordinator import DurableRunCoordinator
+    from zugzwang_runtime.execution.rate_limiting import RateLimiter
+    from zugzwang_runtime.persistence.event_sink import PersistentEventSink
+    from zugzwang_runtime.persistence.repositories import (
+        ArtifactRepository,
+        AttemptRepository,
+        CheckpointRepository,
+        EpisodeRepository,
+        EventRepository,
+        MetricObservationRepository,
+        RunRepository,
+        StepRepository,
+    )
+    from zugzwang_runtime.persistence.writer import PersistenceWriter
+
+    class _NoopBackend:
+        """_rebuild_state never infers; the ctor only stores the backend."""
+
+        async def infer(self, request: ModelRequest, context: CallContext) -> ProviderResult:
+            raise AssertionError("resume state rebuild must not call the provider")
+
+        async def inspect_capabilities(
+            self,
+            model: ModelRef,
+            required: frozenset[Capability] = frozenset(),
+            preferred: frozenset[Capability] = frozenset(),
+            on_unsupported: OnUnsupported = OnUnsupported.FAIL,
+        ) -> CapabilityReport:
+            return CapabilityReport(
+                model=model,
+                supported=frozenset(),
+                missing_required=frozenset(),
+                missing_preferred=frozenset(),
+                on_unsupported=on_unsupported,
+            )
+
+    database = Database(tmp_path / "s4.db", wal_policy="ephemeral")
+    engine = database.open()
+    SchemaManager(engine).upgrade()
+    cas = ContentAddressedStore(tmp_path / "cas")
+
+    environment = StandardChessEnvironment()
+    start = ChessGameState()
+    after_e2e4 = environment.state_from_moves(["e2e4"])
+    snapshot = environment.snapshot(after_e2e4)
+    ref = cas.put(snapshot)
+    with engine.connect() as conn:
+        for stmt in (
+            "INSERT INTO artifacts (artifact_id, algorithm, size_bytes, media_type, "
+            "relative_path, created_at) VALUES ('art:seed','sha256',1,"
+            "'application/json','cb/seed.json','2026-09-06T00:00:00Z')",
+            f"INSERT INTO artifacts (artifact_id, algorithm, size_bytes, media_type, "
+            f"relative_path, created_at) VALUES ('{ref.as_id()}','sha256',"
+            f"{len(snapshot.data)},'{snapshot.media_type}','{ref.storage_path()}',"
+            f"'2026-09-06T00:00:00Z')",
+            "INSERT INTO runs (run_id, condition_id, status, protocol_hash, "
+            "declared_assistance, projection_version, assistance_violated) "
+            "VALUES ('run-s4','cond-1','RUNNING','proto','H0',0,0)",
+            "INSERT INTO episodes (episode_id, run_id, ordinal, task_type, seed, "
+            "status, assistance_violated) VALUES ('ep-s4','run-s4',0,"
+            "'chess.full_game',7,'RUNNING',0)",
+            "INSERT INTO steps (step_id, episode_id, ordinal, actor_id, status, "
+            "action_json, transition_artifact_id, assistance_violated) VALUES "
+            "('st-s4','ep-s4',0,'model:main','COMMITTED','{\"action\": \"e2e4\"}',"
+            f"'{ref.as_id()}',0)",
+        ):
+            conn.execute(text(stmt))
+        conn.commit()
+
+    writer = PersistenceWriter(
+        runs=RunRepository(engine),
+        episodes=EpisodeRepository(engine),
+        steps=StepRepository(engine),
+        attempts=AttemptRepository(engine),
+        events=EventRepository(engine),
+        metrics=MetricObservationRepository(engine),
+        checkpoints=CheckpointRepository(engine),
+        artifacts_repo=ArtifactRepository(engine),
+    )
+    coordinator = DurableRunCoordinator(
+        registry=PluginRegistry(),
+        backend=_NoopBackend(),
+        writer=writer,
+        event_sink=PersistentEventSink(EventRepository(engine), writer),
+        artifact_store=cas,
+        runs=RunRepository(engine),
+        episodes=EpisodeRepository(engine),
+        steps=StepRepository(engine),
+        checkpoints=CheckpointRepository(engine),
+        rate_limiter=RateLimiter(),
+        artifacts=ArtifactRepository(engine),
+    )
+    state, rebuilt = await _asyncio.wait_for(
+        coordinator._rebuild_state("run-s4", "ep-s4", environment, ChessGameState()),
+        timeout=10,
+    )
+    assert rebuilt == 1
+    assert state.fen == after_e2e4.fen
+    assert state.fen != start.fen

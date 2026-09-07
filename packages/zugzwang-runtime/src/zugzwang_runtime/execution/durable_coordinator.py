@@ -268,6 +268,7 @@ class DurableRunCoordinator:
         checkpoints: CheckpointRepository,
         rate_limiter: RateLimiter,
         cognitive_session_factory: Any | None = None,
+        artifacts: Any | None = None,
     ) -> None:
         self._registry = registry
         self._backend = backend
@@ -280,6 +281,7 @@ class DurableRunCoordinator:
         self._checkpoints = checkpoints
         self._rate_limiter = rate_limiter
         self._cognitive_session_factory = cognitive_session_factory
+        self._artifacts = artifacts
         self._run_assistance: dict[str, tuple[HClass, KClass]] = {}
         self._run_assistance_violated: dict[str, bool] = {}
 
@@ -559,6 +561,14 @@ class DurableRunCoordinator:
 
             ref = ArtifactRef.parse(last["transition_artifact_id"])
             payload = self._artifact_store.get(ref)
+            if payload.media_type == "application/octet-stream":
+                # Bare-digest refs parse without a media type, but the
+                # artifacts table records the true one (design §11.7:
+                # metadata lives in the database). Resume is the only
+                # reader of this path — fresh runs keep state in memory —
+                # which is why the octet-stream default survived until the
+                # real pilot (2026-09-06: "cannot restore chess state").
+                payload = self._retype_payload(ref)
             state = environment.restore(payload)
         else:
             for row in committed:
@@ -567,6 +577,27 @@ class DurableRunCoordinator:
                 if action is not None:
                     state = environment.transition(state, action).state
         return state, len(committed)
+
+    def _retype_payload(self, ref: Any) -> Any:
+        """Rehydrate a CAS payload with its database-recorded media type.
+
+        Falls back to the octet-stream payload (and lets ``restore`` raise
+        its honest error) when the artifacts row is absent — never invents
+        a type.
+        """
+        from zugzwang_core.domain.artifacts import ArtifactPayload
+
+        payload = self._artifact_store.get(ref)
+        get_row = getattr(self._artifacts, "get", None)
+        if get_row is None:
+            return payload
+        row: dict[str, Any] | None = cast("dict[str, Any] | None", get_row(ref.as_id()))
+        if not row:
+            return payload
+        media_type = row.get("media_type")
+        if not isinstance(media_type, str) or "/" not in media_type:
+            return payload
+        return ArtifactPayload(media_type=media_type, data=payload.data)
 
     async def _run_episode(
         self,

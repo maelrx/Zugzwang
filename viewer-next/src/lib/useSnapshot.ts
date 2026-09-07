@@ -7,17 +7,20 @@ const DATA_URL = "/data/data.json";
 export function useSnapshot(pollMs = 15000): {
   snap: Snapshot | null;
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
   refreshedAt: number | null;
   reload: () => void;
 } {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
   const alive = useRef(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (soft = false) => {
+    if (soft) setRefreshing(true);
     try {
       const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -46,9 +49,9 @@ export function useSnapshot(pollMs = 15000): {
   }, [pollMs, load]);
 
   const reload = useCallback(() => {
-    setLoading(true);
-    load();
+    setRefreshing(true);
+    load(true);
   }, [load]);
 
-  return { snap, loading, error, refreshedAt, reload };
+  return { snap, loading, refreshing, error, refreshedAt, reload };
 }

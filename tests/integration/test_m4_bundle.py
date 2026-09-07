@@ -591,3 +591,61 @@ def _rows_provider(services: DurableRunServices):
         return [dict(row) for row in rows]
 
     return provider
+
+
+@pytest.mark.integration
+def test_readonly_export_never_touches_source(tmp_path: Path) -> None:
+    """ZGW-0101: the exporter opens the SOURCE read-only — header, PRAGMAs,
+    content and schema are identical before/after; writes are refused."""
+    import sqlite3
+
+    import sqlalchemy as sa
+
+    from zugzwang_runtime.persistence.database import Database
+
+    source = tmp_path / "source.db"
+    conn = sqlite3.connect(str(source))
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+    conn.execute("INSERT INTO t VALUES (1,'hello')")
+    conn.commit()
+    # Settle the WAL into the main file and remove sidecars, so any
+    # exporter-created -wal/-shm file is detectable below.
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    for sidecar in (source.with_suffix(".db-wal"), source.with_suffix(".db-shm")):
+        sidecar.unlink(missing_ok=True)
+    before = {
+        "journal": conn.execute("PRAGMA journal_mode").fetchone()[0],
+        "synchronous": conn.execute("PRAGMA synchronous").fetchone()[0],
+        "rows": conn.execute("SELECT * FROM t").fetchall(),
+        "schema": conn.execute("SELECT sql FROM sqlite_master WHERE name='t'").fetchone()[0],
+        "size": source.stat().st_size,
+        "bytes": source.read_bytes(),
+    }
+    conn.close()
+
+    assert before["journal"] == "wal", "precondition: source is a WAL database"
+    database = Database(source, wal_policy="enforce", read_only=True)
+    engine = database.open()
+    with engine.connect() as read:
+        assert read.execute(sa.text("SELECT v FROM t")).fetchone()[0] == "hello"
+    with (
+        pytest.raises(Exception, match=r"(?i)read.?only|attempt to write"),
+        engine.begin() as write,
+    ):
+        write.execute(sa.text("INSERT INTO t VALUES (2,'hack')"))
+    database.close()
+
+    conn = sqlite3.connect(str(source))
+    after = {
+        "journal": conn.execute("PRAGMA journal_mode").fetchone()[0],
+        "synchronous": conn.execute("PRAGMA synchronous").fetchone()[0],
+        "rows": conn.execute("SELECT * FROM t").fetchall(),
+        "schema": conn.execute("SELECT sql FROM sqlite_master WHERE name='t'").fetchone()[0],
+    }
+    conn.close()
+    assert after == {k: before[k] for k in after}
+    assert source.stat().st_size == before["size"], "source file byte-identical"
+    assert not source.with_suffix(".db-wal").exists(), "no WAL sidecar created"
+    assert not source.with_suffix(".db-shm").exists(), "no SHM sidecar created"
+    assert source.read_bytes() == before["bytes"]

@@ -10,13 +10,20 @@ the journal tables directly.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.engine import Engine
 
-from zugzwang_chess.environment.standard import START_FEN
+from zugzwang_chess.environment.standard import (
+    START_FEN,
+    STATE_MEDIA_TYPE,
+    ChessGameState,
+    StandardChessRulesKernel,
+)
 from zugzwang_core.domain.artifacts import ArtifactPayload, ArtifactRef
 from zugzwang_core.domain.canonical import canonical_json_bytes
 from zugzwang_core.domain.cognition import ToolEnvelope, position_key_v2, state_key_v2
@@ -25,18 +32,38 @@ from zugzwang_core.domain.errors import ArtifactError
 from ..artifacts.cas import ContentAddressedStore
 from ..persistence.cognition import CognitionJournal
 from ..persistence.repositories import ArtifactRepository
+from ..search.workspace import SearchWorkspace
 from .broker import (
     ArtifactLoader,
     ArtifactSink,
     CognitionToolBroker,
+    DecisionBudget,
     ToolOperationBudget,
 )
 
 if TYPE_CHECKING:
     from zugzwang_chess.cognition import ChessPerception
-    from zugzwang_chess.environment.standard import ChessGameState
 
 ROOT_ROUND_ID_SUFFIX = "round-0001"
+
+
+@dataclass(frozen=True, slots=True)
+class SessionComponents:
+    """Decision-scoped components shared by every round's broker."""
+
+    journal: CognitionJournal
+    perception: Any
+    cas: ContentAddressedStore
+    engine: Engine
+    sink: ArtifactSink
+    loader: ArtifactLoader
+    rules_kernel: StandardChessRulesKernel
+    workspace: SearchWorkspace
+    policy_hash: str
+    max_batch: int
+    max_argument_bytes: int
+    search_session_id: str
+    clock: Callable[[], str]
 
 
 def _default_clock() -> str:
@@ -129,6 +156,13 @@ def _state_record(state: ChessGameState) -> dict[str, Any]:
 class DecisionSession:
     """One decision's authorized surface: journal + perception + broker (§26.1)."""
 
+    _factory: SessionComponents | None = None
+    _interaction_mode: str = "native_tools"
+    _model_reservation_id: str | None = None
+    memory_store: Any | None = None
+    skill_registry: Any | None = None
+    plan_store: Any | None = None
+
     def __init__(
         self,
         *,
@@ -149,6 +183,45 @@ class DecisionSession:
     @property
     def bound_node_ids(self) -> list[str]:
         return self._journal.bound_node_ids(self.decision_id)
+
+    @property
+    def journal(self) -> CognitionJournal:
+        return self._journal
+
+    @property
+    def workspace(self) -> SearchWorkspace | None:
+        return self._broker.workspace
+
+    @property
+    def root_node_id(self) -> str | None:
+        return self._broker.root_node_id
+
+    @property
+    def interaction_mode(self) -> str:
+        """native_tools or json_commands, frozen at decision open (§12.1)."""
+        return self._interaction_mode
+
+    @property
+    def model_reservation_id(self) -> str | None:
+        """Ledger reservation of the model-calls unit (None when unbounded)."""
+        return self._model_reservation_id
+
+    @property
+    def budget(self) -> ToolOperationBudget:
+        """The decision's budget authority (multi-unit, decision-scoped)."""
+        return self._broker.budget
+
+    def round_context_artifact_id(self, ordinal: int, request: Any) -> str:
+        """CAS-artifact the EXACT model request of one round (§22.1/FR-020).
+
+        The round's context row points at the canonical request bytes, so the
+        timeline shows what the model actually received — not a summary.
+        """
+        factory = self._factory
+        if factory is None:
+            raise ValueError("session was not opened through DecisionSession.open")
+        payload = canonical_json_bytes({"request": json.loads(request.model_dump_json())})
+        return factory.sink(payload, "application/vnd.zugzwang.model-request+json")
 
     @classmethod
     def open(
@@ -172,6 +245,9 @@ class DecisionSession:
         max_batch: int = 16,
         max_argument_bytes: int = 8192,
         remaining_tool_operations: int = 32,
+        max_depth_plies: int = 6,
+        max_nodes: int = 64,
+        max_model_calls: int = 0,
     ) -> DecisionSession:
         """Open a decision: journal the opening, then expose the broker (§26.1)."""
         clock = clock or _default_clock
@@ -185,6 +261,34 @@ class DecisionSession:
         node_keys = {node_id: identity_keys(state) for node_id, state in states.items()}
         root_state_key, root_position_key = node_keys[root_node_id]
 
+        rules_kernel = StandardChessRulesKernel()
+        workspace = SearchWorkspace(
+            kernel=rules_kernel,
+            root_state=states[root_node_id],
+            session_id=search_session_id,
+            max_depth_plies=max_depth_plies,
+            max_nodes=max_nodes,
+        )
+        # Every bound initial node must exist in the search-graph projection:
+        # cb_node_bindings references search_nodes with a session scope guard.
+        for node_id, state in states.items():
+            state_key, position_key = node_keys[node_id]
+            journal.ensure_search_node(
+                node_id=node_id,
+                search_session_id=search_session_id,
+                parent_id=None,
+                position_key=position_key,
+                trajectory_key=f"anchor:{state_key}",
+                state_ref=f"decision://{decision_id}/{node_id}",
+                action_from_parent=None,
+                root_action=None,
+                depth=_depth_plies(state),
+                side_to_move=state.side_to_move,
+                terminal=state.termination is not None,
+                created_by="root",
+                status="terminal" if state.termination is not None else "frontier",
+            )
+
         journal.ensure_state_snapshot(
             state_key=root_state_key,
             state_schema_version="state/v2",
@@ -193,7 +297,7 @@ class DecisionSession:
             position_key=root_position_key,
             history_completeness=_history_completeness(states[root_node_id]),
             state_artifact_id=sink(
-                _canonical(_state_record(states[root_node_id])), "application/json"
+                _canonical(_state_record(states[root_node_id])), STATE_MEDIA_TYPE
             ),
         )
         config_artifact_id = sink(_canonical(config), "application/json")
@@ -209,6 +313,30 @@ class DecisionSession:
             policy_hash=policy_hash,
             config_artifact_id=config_artifact_id,
         )
+        # Decision-scoped budget reservations (§13; INV-06): distinct units,
+        # one authority per decision — branching/focus never re-creates them.
+        tool_reservation_id = f"bres:{decision_id}:tool_operations"
+        journal.reserve_budget(
+            reservation_id=tool_reservation_id,
+            decision_id=decision_id,
+            owner_kind="tool_operation",
+            owner_id=decision_id,
+            unit="tool_operations",
+            amount=remaining_tool_operations,
+            evidence_artifact_id=config_artifact_id,
+        )
+        model_reservation_id: str | None = None
+        if max_model_calls > 0:
+            model_reservation_id = f"bres:{decision_id}:model_calls"
+            journal.reserve_budget(
+                reservation_id=model_reservation_id,
+                decision_id=decision_id,
+                owner_kind="finalization",
+                owner_id=decision_id,
+                unit="model_calls",
+                amount=max_model_calls,
+                evidence_artifact_id=config_artifact_id,
+            )
         journal.transition_decision(decision_id, "READY")
         journal.transition_decision(decision_id, "ACTIVE")
 
@@ -221,7 +349,7 @@ class DecisionSession:
                 variant=state.variant,
                 position_key=node_keys[node_id][1],
                 history_completeness=_history_completeness(state),
-                state_artifact_id=sink(_canonical(_state_record(state)), "application/json"),
+                state_artifact_id=sink(_canonical(_state_record(state)), STATE_MEDIA_TYPE),
             )
             journal.bind_node(
                 decision_id=decision_id,
@@ -231,13 +359,16 @@ class DecisionSession:
                 created_sequence=sequence,
             )
 
-        round_id = f"{decision_id}:{ROOT_ROUND_ID_SUFFIX}"
+        # Round 0001 is the decision OPENING record (§12.2: journaled before
+        # any tool call). The loop creates every subsequent round with the
+        # EXACT ModelRequest as its context (FR-020/§22.1; cb_rounds context
+        # is immutable by trigger, so it must be submitted at creation).
         round_context_artifact_id = sink(
-            _canonical({"root_state_key": root_state_key, "purpose": "explore"}),
+            _canonical({"root_state_key": root_state_key, "purpose": "open"}),
             "application/json",
         )
         journal.add_round(
-            round_id=round_id,
+            round_id=f"{decision_id}:{ROOT_ROUND_ID_SUFFIX}",
             decision_id=decision_id,
             ordinal=1,
             purpose="explore",
@@ -246,19 +377,59 @@ class DecisionSession:
 
         broker = CognitionToolBroker(
             decision_id=decision_id,
-            round_id=round_id,
+            round_id=f"{decision_id}:{ROOT_ROUND_ID_SUFFIX}",
             round_ordinal=1,
             journal=journal,
             perception=perception,
             policy_hash=policy_hash,
             states=dict(states),
-            budget=ToolOperationBudget(remaining_tool_operations),
+            budget=DecisionBudget(
+                tool_operations=remaining_tool_operations, model_calls=max_model_calls
+            ),
             artifact_sink=sink,
             artifact_loader=loader,
             max_batch=max_batch,
             max_argument_bytes=max_argument_bytes,
+            rules_kernel=rules_kernel,
+            search_workspace=workspace,
+            search_session_id=search_session_id,
+            budget_reservation_id=tool_reservation_id,
         )
-        return cls(decision_id=decision_id, broker=broker, journal=journal)
+        session = cls(decision_id=decision_id, broker=broker, journal=journal)
+        session._model_reservation_id = model_reservation_id
+        session._interaction_mode = interaction_mode
+        session._factory = SessionComponents(
+            journal=journal,
+            perception=perception,
+            cas=cas,
+            engine=engine,
+            sink=sink,
+            loader=loader,
+            rules_kernel=rules_kernel,
+            workspace=workspace,
+            policy_hash=policy_hash,
+            max_batch=max_batch,
+            max_argument_bytes=max_argument_bytes,
+            search_session_id=search_session_id,
+            clock=clock,
+        )
+        return session
+
+    def attach_components(self, components: SessionComponents) -> None:
+        """Bind decision-scoped components on a RESUMED session (§14.4)."""
+        self._factory = components
+
+    def new_broker_for_round(self, round_id: str, ordinal: int) -> CognitionToolBroker:
+        """Broker for a later round sharing this decision's graph and budget.
+
+        Rounds are journal boundaries; the workspace, the kernel, the states
+        reached so far and the tool-operation pool are decision-scoped and
+        must never reset between rounds (§9.1, TEST-031).
+        """
+        factory = self._factory
+        if factory is None:
+            raise ValueError("session was not opened through DecisionSession.open")
+        return self._broker.round_broker(round_id, ordinal)
 
 
 def _canonical(payload: dict[str, Any]) -> bytes:

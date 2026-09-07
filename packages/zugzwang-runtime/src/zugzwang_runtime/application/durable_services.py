@@ -115,6 +115,132 @@ class DurableRunServices:
     def workspace(self) -> Workspace:
         return self._workspace
 
+    def _cognitive_session_factory(self):
+        """Factory opening one CognitiveBoard decision session per step (§26.1).
+
+        Keeps the coordinator free of SQL/CAS wiring while the productive
+        cognitive path runs through the same durable workspace: the journal,
+        the CAS and the perception share this run's storage (ZGW-0101).
+        """
+        from zugzwang_chess.cognition import ChessPerception
+        from zugzwang_chess.environment.standard import StandardChessEnvironment
+        from zugzwang_core.domain.canonical import hash_canonical
+
+        from ..cognition.session import DecisionSession
+        from ..persistence.cognition import CognitionJournal
+
+        def factory(
+            *,
+            run_id: str,
+            episode_id: str,
+            step_id: str,
+            decision_ordinal: int,
+            state: Any,
+            strategy: Any,
+            interaction_mode: str = "native_tools",
+        ):
+            decision_id = f"dec-{step_id}-{decision_ordinal}"[:128]
+            search_session_id = f"ses-{step_id}-{decision_ordinal}"[:32]
+            root_node_id = f"node_{decision_id}"[:128]
+            journal = CognitionJournal(self._database)
+            policy_hash = hash_canonical(
+                {
+                    "rules": "standard/v1",
+                    "perception": "chess-perception/v0.1",
+                    "strategy": strategy.strategy_id,
+                }
+            )
+            journal.ensure_search_session(
+                search_session_id=search_session_id,
+                run_id=run_id,
+                episode_id=episode_id,
+                step_id=step_id,
+                root_node_id=root_node_id,
+            )
+            # The decision row references the root state snapshot
+            # (cb_state_snapshots FK): ensure it before opening the session.
+            from zugzwang_chess.cognition import ChessPerception as _Perception
+
+            perception = _Perception(
+                environment=StandardChessEnvironment(),
+                rules_version="standard/v1",
+                policy_hash=policy_hash,
+            )
+            root_state_key, root_position_key = perception.identity_keys(state)
+            journal.ensure_state_snapshot(
+                state_key=root_state_key,
+                state_schema_version="state/v2",
+                rules_version="standard/v1",
+                variant=getattr(state, "variant", "standard"),
+                position_key=root_position_key,
+                history_completeness="complete"
+                if getattr(state, "initial_fen", "") == getattr(state, "fen", "")
+                and not getattr(state, "move_stack", ())
+                else "from_anchor",
+                state_artifact_id=self._store_root_state_artifact(state),
+            )
+            return DecisionSession.open(
+                decision_id=decision_id,
+                step_id=step_id,
+                decision_ordinal=decision_ordinal,
+                search_session_id=search_session_id,
+                strategy_id=strategy.strategy_id,
+                strategy_version=strategy.strategy_version,
+                interaction_mode=interaction_mode,
+                policy_hash=policy_hash,
+                config={},
+                states={root_node_id: state},
+                max_model_calls=max(1, int(getattr(strategy.descriptor, "max_model_calls", 4))),
+                journal=journal,
+                perception=ChessPerception(
+                    environment=StandardChessEnvironment(),
+                    rules_version="standard/v1",
+                    policy_hash=policy_hash,
+                ),
+                cas=self._cas,
+                engine=self._database.engine(),
+            )
+
+        return factory
+
+    def _store_root_state_artifact(self, state: Any) -> str:
+        """CAS-store one integral chess state in the canonical record form."""
+        from zugzwang_chess.environment.standard import STATE_MEDIA_TYPE
+        from zugzwang_core.domain.artifacts import ArtifactPayload
+        from zugzwang_core.domain.canonical import canonical_json_bytes
+
+        payload = ArtifactPayload(
+            media_type=STATE_MEDIA_TYPE,
+            data=canonical_json_bytes(
+                {
+                    "fen": state.fen,
+                    "initial_fen": state.initial_fen,
+                    "move_stack": list(state.move_stack),
+                    "variant": state.variant,
+                    "synthetic_clock": state.synthetic_clock,
+                }
+            ),
+        )
+        ref = self._cas.put(payload)
+        from ..persistence.repositories import ArtifactRepository
+
+        ArtifactRepository(self._database.engine()).insert_artifact(
+            row={
+                "artifact_id": ref.as_id(),
+                "algorithm": "sha256",
+                "size_bytes": len(payload.data),
+                "media_type": payload.media_type,
+                "relative_path": ref.storage_path(),
+                "created_at": "2026-09-06T00:00:00Z",
+            }
+        )
+        return ref.as_id()
+
+    def _artifacts_repo(self):
+        from ..persistence.repositories import ArtifactRepository
+
+        return ArtifactRepository(self._database.engine())
+
     def _build_writer(self) -> PersistenceWriter:
         from ..persistence.repositories import (
             ArtifactRepository,
@@ -158,6 +284,8 @@ class DurableRunServices:
             steps=self._steps,
             checkpoints=self._checkpoints,
             rate_limiter=rate_limiter,
+            cognitive_session_factory=self._cognitive_session_factory(),
+            artifacts=self._artifacts_repo(),
         )
 
         if command.condition_index is not None:
@@ -221,6 +349,8 @@ class DurableRunServices:
             steps=self._steps,
             checkpoints=self._checkpoints,
             rate_limiter=RateLimiter(),
+            cognitive_session_factory=self._cognitive_session_factory(),
+            artifacts=self._artifacts_repo(),
         )
         await coordinator.resume(run_id, resolved, stop_event)
         await writer.flush()
@@ -366,6 +496,9 @@ def _default_fake_rules():
     # Counter domain: always increment.
     # Chess domain: cycle a small legal white opening script so full games
     # with the fake backend stay legal regardless of the opponent's replies.
+    # Cognitive domain: the loop speaks json_commands; the fake answers the
+    # opening round with an observe, then expands e2e4 by UCI (the loop
+    # resolves it over the complete legal set), then finalizes it.
     import json as _json
 
     from ..fakes import FakeBackendRule
@@ -379,8 +512,34 @@ def _default_fake_rules():
             "chosen_move": "g1f3",
         }
     )
+    cognitive_observe = _json.dumps({"command": "board_observe", "arguments": {}})
+    cognitive_expand_e4 = _json.dumps({"command": "board_expand", "arguments": {"action": "e2e4"}})
+    cognitive_finalize_e4 = _json.dumps(
+        {"command": "board_finalize", "arguments": {"action": "e2e4"}}
+    )
     return (
         FakeBackendRule(when={"fingerprint_contains": "fake-direct"}, output="inc"),
+        FakeBackendRule(
+            when={
+                "fingerprint_contains": "cognitive-navigation",
+                "call_index_modulo": [3, 0],
+            },
+            output=cognitive_observe,
+        ),
+        FakeBackendRule(
+            when={
+                "fingerprint_contains": "cognitive-navigation",
+                "call_index_modulo": [3, 1],
+            },
+            output=cognitive_expand_e4,
+        ),
+        FakeBackendRule(
+            when={
+                "fingerprint_contains": "cognitive-navigation",
+                "call_index_modulo": [3, 2],
+            },
+            output=cognitive_finalize_e4,
+        ),
         FakeBackendRule(when={"fingerprint_contains": "chess-grounded"}, output="e2e4"),
         FakeBackendRule(when={"fingerprint_contains": "chess-repair"}, output="e2e4"),
         FakeBackendRule(

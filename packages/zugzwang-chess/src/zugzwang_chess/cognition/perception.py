@@ -129,6 +129,12 @@ class ChessPerception:
         )
         return packet
 
+    def identity_keys(self, state: ChessGameState) -> tuple[str, str]:
+        """(state_key, position_key) of one state (§7.2) — the same derivation
+        the packet uses, exposed for action-id validation over the complete
+        legal set (not only the first packet page)."""
+        return self._keys(state, state.to_board())
+
     def _keys(self, state: ChessGameState, board: chess.Board) -> tuple[str, str]:
         parts = state.fen.split(" ")
         placement = parts[0]

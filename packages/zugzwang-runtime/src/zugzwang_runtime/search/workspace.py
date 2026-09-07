@@ -100,6 +100,50 @@ class SearchWorkspace:
         self._position_index.setdefault(root.position_key, []).append(root.node_id)
         self._event("search.session.started", {"root_node_id": self.root_id})
 
+    def register_anchor(
+        self,
+        *,
+        node_id: str,
+        state: Any,
+        depth: int = 0,
+        created_by: str = "anchor",
+    ) -> str:
+        """Register an externally-addressed integral state as an expansion root.
+
+        Decision sessions bind nodes under caller-chosen ids; the workspace
+        normally mints content-addressed ids from the trajectory. Anchoring
+        lets ``try_move`` operate on the caller's node id directly so both
+        graphs stay in one identity namespace (§9.1: one graph per decision).
+        The anchor is a root-like node: no parent, caller-supplied depth.
+        """
+        if node_id in self.nodes:
+            raise ValueError(f"anchor {node_id!r} already exists in the workspace")
+        position_key = _position_key(state)
+        trajectory_key = hash_canonical(
+            {"parent": None, "action": None, "state": _state_fingerprint(state)}
+        )
+        terminal = bool(self.kernel.terminal(state))
+        node = SearchNode(
+            node_id=node_id,
+            parent_id=None,
+            position_key=position_key,
+            trajectory_key=trajectory_key,
+            state_ref=_state_ref(state),
+            action_from_parent=None,
+            root_action=None,
+            depth=depth,
+            side_to_move=_side_to_move(state),
+            terminal=terminal,
+            created_by=created_by,
+            status="terminal" if terminal else "frontier",
+        )
+        self.nodes[node.node_id] = node
+        self._states[node.node_id] = state
+        self._trajectory_index.setdefault(trajectory_key, node.node_id)
+        self._position_index.setdefault(position_key, []).append(node.node_id)
+        self._event("search.node.anchored", {"node_id": node.node_id})
+        return node.node_id
+
     @property
     def stats(self) -> dict[str, int]:
         return {

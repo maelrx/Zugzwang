@@ -24,15 +24,42 @@ from .sqlite_policy import WalPolicy, effective_version, wal_reason, wal_safe
 class Database:
     """Owns the engine lifecycle for one workspace database."""
 
-    def __init__(self, path: Path, wal_policy: WalPolicy = "enforce") -> None:
+    def __init__(
+        self, path: Path, wal_policy: WalPolicy = "enforce", *, read_only: bool = False
+    ) -> None:
         self._path = path
         self._wal_policy: WalPolicy = wal_policy
+        self._read_only = read_only
         self._engine: Engine | None = None
 
     def open(self) -> Engine:
         if self._engine is not None:
             return self._engine
         self._assert_wal_policy()
+        if self._read_only:
+            # Exporters/inspectors: immutable query-only handle over the source
+            # file — no journal_mode/synchronous writes, no mkdir, and every
+            # connection is query_only (ZGW-0101; §22/§24 export contract).
+            engine = create_engine(
+                "sqlite://",
+                future=True,
+                creator=lambda: sqlite3.connect(
+                    f"file:{self._path}?mode=ro", uri=True, check_same_thread=False
+                ),
+            )
+
+            @event.listens_for(engine, "connect")
+            def _set_readonly(  # pyright: ignore[reportUnusedFunction]
+                dbapi_connection: sqlite3.Connection, connection_record: Any
+            ) -> None:
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA query_only=ON")
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.execute("PRAGMA busy_timeout=5000")
+                cursor.close()
+
+            self._engine = engine
+            return engine
         self._path.parent.mkdir(parents=True, exist_ok=True)
         engine = create_engine(
             f"sqlite:///{self._path}",

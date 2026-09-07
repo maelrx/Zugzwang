@@ -267,6 +267,8 @@ class DurableRunCoordinator:
         steps: StepRepository,
         checkpoints: CheckpointRepository,
         rate_limiter: RateLimiter,
+        cognitive_session_factory: Any | None = None,
+        artifacts: Any | None = None,
     ) -> None:
         self._registry = registry
         self._backend = backend
@@ -278,6 +280,8 @@ class DurableRunCoordinator:
         self._steps = steps
         self._checkpoints = checkpoints
         self._rate_limiter = rate_limiter
+        self._cognitive_session_factory = cognitive_session_factory
+        self._artifacts = artifacts
         self._run_assistance: dict[str, tuple[HClass, KClass]] = {}
         self._run_assistance_violated: dict[str, bool] = {}
 
@@ -557,6 +561,14 @@ class DurableRunCoordinator:
 
             ref = ArtifactRef.parse(last["transition_artifact_id"])
             payload = self._artifact_store.get(ref)
+            if payload.media_type == "application/octet-stream":
+                # Bare-digest refs parse without a media type, but the
+                # artifacts table records the true one (design §11.7:
+                # metadata lives in the database). Resume is the only
+                # reader of this path — fresh runs keep state in memory —
+                # which is why the octet-stream default survived until the
+                # real pilot (2026-09-06: "cannot restore chess state").
+                payload = self._retype_payload(ref)
             state = environment.restore(payload)
         else:
             for row in committed:
@@ -565,6 +577,27 @@ class DurableRunCoordinator:
                 if action is not None:
                     state = environment.transition(state, action).state
         return state, len(committed)
+
+    def _retype_payload(self, ref: Any) -> Any:
+        """Rehydrate a CAS payload with its database-recorded media type.
+
+        Falls back to the octet-stream payload (and lets ``restore`` raise
+        its honest error) when the artifacts row is absent — never invents
+        a type.
+        """
+        from zugzwang_core.domain.artifacts import ArtifactPayload
+
+        payload = self._artifact_store.get(ref)
+        get_row = getattr(self._artifacts, "get", None)
+        if get_row is None:
+            return payload
+        row: dict[str, Any] | None = cast("dict[str, Any] | None", get_row(ref.as_id()))
+        if not row:
+            return payload
+        media_type = row.get("media_type")
+        if not isinstance(media_type, str) or "/" not in media_type:
+            return payload
+        return ArtifactPayload(media_type=media_type, data=payload.data)
 
     async def _run_episode(
         self,
@@ -827,13 +860,13 @@ class DurableRunCoordinator:
                     max_transition_queries=int(search_config.get("max_transition_queries", 64)),
                     session_id=str(new_id("ses")),
                 )
-                initial_items = (
+                initial_items: tuple[Any, ...] = (
                     persistent_memory_items
                     if strategy.descriptor.declared_regime == "R7"
                     and _search_memory_mode(condition) == "persistent"
                     else ()
                 )
-                search_memory = SearchMemoryFabric(
+                search_memory: Any = SearchMemoryFabric(
                     search_workspace,
                     initial_items=initial_items,
                 )
@@ -887,6 +920,21 @@ class DurableRunCoordinator:
             illegal_retries = 0
             decision_attempt_index = 0
             max_strategy_calls = max(1, strategy.descriptor.max_model_calls)
+            decision_session: Any = None
+            if getattr(strategy, "requires_decision_session", False):
+                # The decision row references the step row: flush the queued
+                # step/episode writes before opening the session, or the FK
+                # fails against rows still sitting in the writer queue.
+                await self._writer.flush()
+                decision_session = self._open_cognitive_session(
+                    run_id=run_id,
+                    episode_id=episode_id,
+                    step_id=step_id,
+                    decision_ordinal=ordinal,
+                    state=state,
+                    strategy=strategy,
+                    condition=condition,
+                )
             while True:
                 decision_context = DecisionContext(
                     run_id=run_id,
@@ -904,6 +952,7 @@ class DurableRunCoordinator:
                     legality_gateway=bound_gateway,
                     search_workspace=search_workspace,
                     search_memory=search_memory,
+                    decision_session=decision_session,
                 )
                 async with ledger_lock:
                     try:
@@ -1933,6 +1982,42 @@ class DurableRunCoordinator:
             return StandardChessEnvironment()
         raise ValueError(f"no environment for task {condition.task.plugin!r}")
 
+    def _open_cognitive_session(
+        self,
+        *,
+        run_id: str,
+        episode_id: str,
+        step_id: str,
+        decision_ordinal: int,
+        state: Any,
+        strategy: DecisionStrategy,
+        condition: ResolvedCondition,
+    ) -> Any:
+        """Open one CognitiveBoard decision session for a step (§26.1).
+
+        The composition root injects the factory; the coordinator itself
+        stays free of SQL/CAS wiring. Without a factory, a cognitive strategy
+        cannot run — an explicit error instead of a silent degraded path.
+        """
+        if self._cognitive_session_factory is None:
+            raise ValueError(
+                f"strategy {getattr(strategy, 'strategy_id', '?')!r} requires a "
+                "cognitive session factory (DurableRunServices provides one)"
+            )
+        raw_mode = condition.task.config.get("cognitive_interaction_mode", "native_tools")
+        interaction_mode = (
+            str(raw_mode) if raw_mode in {"native_tools", "json_commands"} else "native_tools"
+        )
+        return self._cognitive_session_factory(
+            run_id=run_id,
+            episode_id=episode_id,
+            step_id=step_id,
+            decision_ordinal=decision_ordinal,
+            state=state,
+            strategy=strategy,
+            interaction_mode=interaction_mode,
+        )
+
     def _strategy_for(self, condition: ResolvedCondition) -> DecisionStrategy:
         for player in condition.players.values():
             if player.model is not None:
@@ -1971,6 +2056,10 @@ class DurableRunCoordinator:
                         initial_candidates=int(config.get("initial_candidates", 4)),
                         judges=int(config.get("judges", 3)),
                     )
+                if player.model.strategy == "chess.cognitive_navigation":
+                    from ..cognition.navigation import CognitiveNavigationStrategy
+
+                    return CognitiveNavigationStrategy()
                 if player.model.strategy == "chess.multi_agent_review":
                     from zugzwang_chess.strategies.multi_agent_review import (
                         MultiAgentReviewStrategy,
@@ -2237,6 +2326,11 @@ def _decision_config(
     search_config = condition.task.config.get("search")
     if isinstance(search_config, dict):
         config["search"] = dict(search_config)
+    cognitive_config = condition.task.config.get("cognitive")
+    if isinstance(cognitive_config, dict):
+        # Operator directive for the cognitive loop (directed pilot tests):
+        # journaled in the request artifact, never a scripted move sequence.
+        config["cognitive"] = dict(cognitive_config)
     if retry_feedback:
         config["retry_feedback"] = retry_feedback
     return config

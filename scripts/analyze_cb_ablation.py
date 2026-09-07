@@ -77,24 +77,52 @@ def analyze(pairs: list[tuple[dict[str, Any], dict[str, Any]]]) -> dict[str, Any
     ops_deltas: list[dict[str, Any]] = []
     complete = 0
     excluded = 0
+    total_off = 0.0
+    total_on = 0.0
+    unknowns = 0
     for off, on in pairs:
         if pair_key(off) != pair_key(on) or pair_key(off) is None:
             excluded += 1
             continue
+        try:
+            off_ops = _finite_ops(off.get("ops_charged"))
+            on_ops = _finite_ops(on.get("ops_charged"))
+        except ValueError:
+            # Missing/non-finite metric: the pair is rejected AND surfaced —
+            # never defaulted to zero (ZGW-0101; TEST-066 direction).
+            excluded += 1
+            unknowns += 1
+            continue
         complete += 1
         matches += 1 if off.get("selection") == on.get("selection") else 0
-        ops_deltas.append(
-            signed_delta(float(off.get("ops_charged", 0)), float(on.get("ops_charged", 0)))
-        )
+        total_off += off_ops
+        total_on += on_ops
+        ops_deltas.append(signed_delta(off_ops, on_ops))
         # Formal precomputed work enters the cost (TEST-074); money unknown.
     return {
         "pairs_complete": complete,
         "pairs_excluded": excluded,
+        "pairs_unknown_metric": unknowns,
         "match_rate": (matches / complete) if complete else None,
         "ops_deltas": ops_deltas,
+        "total_off": total_off,
+        "total_on": total_on,
+        "delta": total_on - total_off,
         "cost_money": "unknown",
-        "cost_formal_ops": sum(delta["delta"] for delta in ops_deltas),
+        "cost_formal_ops": total_on - total_off,
     }
+
+
+def _finite_ops(value: Any) -> float:
+    """A reported metric must be present and finite — never defaulted."""
+    import math
+
+    if value is None:
+        raise ValueError("ops_charged is missing (unknown, not zero)")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(f"ops_charged {value!r} is not finite")
+    return number
 
 
 def main(argv: list[str] | None = None) -> int:

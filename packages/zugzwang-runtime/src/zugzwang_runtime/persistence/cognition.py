@@ -16,6 +16,8 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.engine import Connection
 
+from zugzwang_core.domain.cognition import observation_id_v3
+
 from .database import Database
 
 _DECISION_TRANSITIONS: dict[str, frozenset[str]] = {
@@ -237,6 +239,211 @@ class CognitionJournal:
             )
             conn.commit()
 
+    def ensure_search_session(
+        self,
+        *,
+        search_session_id: str,
+        run_id: str,
+        episode_id: str | None,
+        step_id: str | None,
+        root_node_id: str,
+    ) -> None:
+        """Idempotently register the decision's search-graph session row.
+
+        ``cb_decisions.search_session_id`` references ``search_sessions``, so
+        the row must exist before the decision opens (§23.2 referential path).
+        """
+        with self._connect() as conn:
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_sessions (search_session_id, run_id, "
+                    "episode_id, step_id, algorithm, algorithm_version, namespace, "
+                    "root_node_id, budgets_json, stats_json, status, created_at) "
+                    "VALUES (:search_session_id, :run_id, :episode_id, :step_id, "
+                    "'cognitive-navigation', '0.2.0', 'search://', :root_node_id, "
+                    "'{}', '{}', 'RUNNING', :created_at)"
+                ),
+                {
+                    "search_session_id": search_session_id,
+                    "run_id": run_id,
+                    "episode_id": episode_id,
+                    "step_id": step_id,
+                    "root_node_id": root_node_id,
+                    "created_at": self._clock(),
+                },
+            )
+            conn.commit()
+
+    def ensure_search_node(
+        self,
+        *,
+        node_id: str,
+        search_session_id: str,
+        parent_id: str | None,
+        position_key: str,
+        trajectory_key: str,
+        state_ref: str,
+        action_from_parent: str | None,
+        root_action: str | None,
+        depth: int,
+        side_to_move: str | None,
+        terminal: bool,
+        created_by: str,
+        status: str,
+    ) -> None:
+        """Insert the ``search_nodes`` projection of one node (idempotent).
+
+        ``cb_node_bindings`` references ``search_nodes`` and its scope guard
+        compares session ids, so the projection row must exist before the
+        binding is written.
+        """
+        with self._connect() as conn:
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_nodes (node_id, search_session_id, "
+                    "parent_id, position_key, trajectory_key, state_ref, "
+                    "action_from_parent, root_action, depth, side_to_move, terminal, "
+                    "created_by, analysis_ref, status) "
+                    "VALUES (:node_id, :search_session_id, :parent_id, :position_key, "
+                    ":trajectory_key, :state_ref, :action_from_parent, :root_action, "
+                    ":depth, :side_to_move, :terminal, :created_by, NULL, :status)"
+                ),
+                {
+                    "node_id": node_id,
+                    "search_session_id": search_session_id,
+                    "parent_id": parent_id,
+                    "position_key": position_key,
+                    "trajectory_key": trajectory_key,
+                    "state_ref": state_ref,
+                    "action_from_parent": action_from_parent,
+                    "root_action": root_action,
+                    "depth": depth,
+                    "side_to_move": side_to_move,
+                    "terminal": int(terminal),
+                    "created_by": created_by,
+                    "status": status,
+                },
+            )
+            conn.commit()
+
+    def register_child_node(
+        self,
+        *,
+        decision_id: str,
+        node_id: str,
+        state_key: str,
+        position_key: str,
+        state_record_artifact_id: str,
+        variant: str,
+        history_completeness: str,
+        depth_plies: int,
+        created_sequence: int,
+        search_session_id: str,
+        parent_node_id: str,
+        trajectory_key: str,
+        state_ref: str,
+        action_from_parent: str,
+        root_action: str | None,
+        side_to_move: str | None,
+        terminal: bool,
+        edge_id: str,
+    ) -> bool:
+        """Durably register one expansion child (§9.1; FR-015 idempotence).
+
+        One transaction writes, in order: the ``search_nodes`` projection
+        (scope-guard prerequisite), the child state snapshot, the decision
+        node binding and the committed search edge. A crash leaves at most
+        the CAS artifact orphaned — never a binding without a snapshot nor a
+        half-registered child. Re-registering an already-bound child
+        (duplicate trajectory) returns ``False`` without rewriting immutable
+        rows; the edge insert stays idempotent.
+        """
+        with self._connect() as conn:
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_nodes (node_id, search_session_id, "
+                    "parent_id, position_key, trajectory_key, state_ref, "
+                    "action_from_parent, root_action, depth, side_to_move, terminal, "
+                    "created_by, analysis_ref, status) "
+                    "VALUES (:node_id, :search_session_id, :parent_node_id, :position_key, "
+                    ":trajectory_key, :state_ref, :action_from_parent, :root_action, "
+                    ":depth_plies, :side_to_move, :terminal, 'decision-loop', NULL, "
+                    ":node_status)"
+                ),
+                {
+                    "node_id": node_id,
+                    "search_session_id": search_session_id,
+                    "parent_node_id": parent_node_id,
+                    "position_key": position_key,
+                    "trajectory_key": trajectory_key,
+                    "state_ref": state_ref,
+                    "action_from_parent": action_from_parent,
+                    "root_action": root_action,
+                    "depth_plies": depth_plies,
+                    "side_to_move": side_to_move,
+                    "terminal": int(terminal),
+                    "node_status": "terminal" if terminal else "frontier",
+                },
+            )
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO cb_state_snapshots "
+                    "(state_key, state_schema_version, rules_version, variant, position_key, "
+                    "history_completeness, state_artifact_id, created_at) "
+                    "VALUES (:state_key, 'state/v2', 'standard/v1', :variant, "
+                    ":position_key, :history_completeness, :state_artifact_id, :created_at)"
+                ),
+                {
+                    "state_key": state_key,
+                    "variant": variant,
+                    "position_key": position_key,
+                    "history_completeness": history_completeness,
+                    "state_artifact_id": state_record_artifact_id,
+                    "created_at": self._clock(),
+                },
+            )
+            bound = conn.execute(
+                sa.text(
+                    "SELECT 1 FROM cb_node_bindings "
+                    "WHERE decision_id = :decision_id AND node_id = :node_id"
+                ),
+                {"decision_id": decision_id, "node_id": node_id},
+            ).fetchone()
+            if bound is None:
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_node_bindings (decision_id, node_id, state_key, "
+                        "depth_plies, created_sequence) "
+                        "VALUES (:decision_id, :node_id, :state_key, :depth_plies, "
+                        ":created_sequence)"
+                    ),
+                    {
+                        "decision_id": decision_id,
+                        "node_id": node_id,
+                        "state_key": state_key,
+                        "depth_plies": depth_plies,
+                        "created_sequence": created_sequence,
+                    },
+                )
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO search_edges (edge_id, search_session_id, "
+                    "parent_node_id, child_node_id, proposed_action, legal, "
+                    "rejection_reason, created_by) "
+                    "VALUES (:edge_id, :search_session_id, :parent_node_id, :node_id, "
+                    ":action_from_parent, 1, NULL, 'decision-loop')"
+                ),
+                {
+                    "edge_id": edge_id,
+                    "search_session_id": search_session_id,
+                    "parent_node_id": parent_node_id,
+                    "node_id": node_id,
+                    "action_from_parent": action_from_parent,
+                },
+            )
+            conn.commit()
+        return bound is None
+
     # -- rounds ---------------------------------------------------------------
 
     def add_round(
@@ -266,6 +473,15 @@ class CognitionJournal:
                 },
             )
             conn.commit()
+
+    def round_exists(self, round_id: str) -> bool:
+        """Whether a round row already exists (loop reuses session round 1)."""
+        with self._connect() as conn:
+            row = conn.execute(
+                sa.text("SELECT 1 FROM cb_rounds WHERE round_id = :round_id"),
+                {"round_id": round_id},
+            ).fetchone()
+        return row is not None
 
     def open_round(self, round_id: str, decision_id: str, status: str) -> None:
         """Move a round from PREPARED to an open boundary status (§12.2).
@@ -503,6 +719,113 @@ class CognitionJournal:
                     f"operation {operation_id!r} is not open for settlement",
                 )
             conn.commit()
+
+    def settle_tool_operation_with_exposure(
+        self,
+        *,
+        operation_id: str,
+        decision_id: str,
+        status: str,
+        result_artifact_id: str | None,
+        error_code: str | None,
+        elapsed_us: int | None = None,
+        observation: dict[str, Any] | None = None,
+        budget_entry: dict[str, Any] | None = None,
+    ) -> int:
+        """Settle ONE operation, expose its observation and debit the ledger
+        in a SINGLE transaction (§14.2; ZGW-0101).
+
+        There is no commit point at which ``COMMITTED`` exists without its
+        exposure row or without the budget entry: the three writes share one
+        transaction, and the exposure sequence is allocated inside it (no
+        MAX+1 race across connections). ``observation`` carries node_id,
+        round_id, kind, semantic_hash, policy_hash, round_ordinal and
+        available_before_selection; ``budget_entry`` carries reservation_id,
+        unit and delta_used (appended only when delta_used > 0).
+        """
+        if status not in {"COMMITTED", "REJECTED", "FAILED"}:
+            raise DecisionJournalError("INVALID_ARGUMENTS", f"cannot settle into {status!r}")
+        if status in {"COMMITTED", "REJECTED"} and result_artifact_id is None:
+            raise DecisionJournalError("INVALID_ARGUMENTS", f"{status} requires a result artifact")
+        with self._connect() as conn:
+            result = conn.execute(
+                sa.text(
+                    "UPDATE cb_tool_operations SET status = :status, result_artifact_id = "
+                    ":result_artifact_id, error_code = :error_code, elapsed_us = :elapsed_us, "
+                    "completed_at = :completed_at "
+                    "WHERE operation_id = :operation_id AND decision_id = :decision_id "
+                    "AND status = 'PREPARED'"
+                ),
+                {
+                    "status": status,
+                    "result_artifact_id": result_artifact_id,
+                    "error_code": error_code,
+                    "elapsed_us": elapsed_us,
+                    "completed_at": self._clock(),
+                    "operation_id": operation_id,
+                    "decision_id": decision_id,
+                },
+            )
+            if result.rowcount != 1:
+                raise DecisionJournalError(
+                    "STATE_REPLAY_MISMATCH",
+                    f"operation {operation_id!r} is not open for settlement",
+                )
+            exposure_sequence = 0
+            if observation is not None:
+                row = conn.execute(
+                    sa.text(
+                        "SELECT COALESCE(MAX(exposure_sequence), 0) FROM cb_observations "
+                        "WHERE decision_id = :decision_id"
+                    ),
+                    {"decision_id": decision_id},
+                ).fetchone()
+                exposure_sequence = int(row[0]) + 1 if row is not None else 1
+                observation_id = observation_id_v3(
+                    decision_id,
+                    str(observation["semantic_hash"]),
+                    int(observation["round_ordinal"]),
+                    exposure_sequence,
+                )
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO cb_observations (observation_id, decision_id, node_id, "
+                        "round_id, operation_id, kind, payload_artifact_id, semantic_hash, "
+                        "policy_hash, exposure_sequence, available_before_selection, created_at) "
+                        "VALUES (:observation_id, :decision_id, :node_id, :round_id, "
+                        ":operation_id, :kind, :payload_artifact_id, :semantic_hash, "
+                        ":policy_hash, :exposure_sequence, :available_before_selection, :created_at)"
+                    ),
+                    {
+                        "observation_id": observation_id,
+                        "decision_id": decision_id,
+                        "node_id": observation["node_id"],
+                        "round_id": observation["round_id"],
+                        "operation_id": operation_id,
+                        "kind": observation["kind"],
+                        "payload_artifact_id": result_artifact_id,
+                        "semantic_hash": observation["semantic_hash"],
+                        "policy_hash": observation["policy_hash"],
+                        "exposure_sequence": exposure_sequence,
+                        "available_before_selection": int(
+                            bool(observation.get("available_before_selection", True))
+                        ),
+                        "created_at": self._clock(),
+                    },
+                )
+            if budget_entry is not None and int(budget_entry.get("delta_used", 0)) > 0:
+                self._append_entry(
+                    conn,
+                    decision_id=decision_id,
+                    reservation_id=str(budget_entry["reservation_id"]),
+                    event_kind="adjustment",
+                    unit=str(budget_entry["unit"]),
+                    delta_reserved=0,
+                    delta_used=int(budget_entry["delta_used"]),
+                    evidence_artifact_id=result_artifact_id or "",
+                )
+            conn.commit()
+        return exposure_sequence
 
     def result_artifact_id(self, operation_id: str) -> str | None:
         with self._connect() as conn:

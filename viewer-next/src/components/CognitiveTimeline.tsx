@@ -7,6 +7,7 @@
  * detail. No fetch, no engine, no write-back — dead data only.
  */
 import { useCallback, useEffect, useState } from "react";
+import type * as React from "react";
 import type { CognitiveOperation, CognitiveSnapshot } from "../lib/cognitive";
 
 interface Props {
@@ -18,7 +19,7 @@ function opLabel(op: CognitiveOperation): string {
   return `${op.tool} · ${op.status}${tail}`;
 }
 
-export default function CognitiveTimeline({ snapshot }: Props): JSX.Element {
+export default function CognitiveTimeline({ snapshot }: Props): React.JSX.Element {
   const ops = snapshot.audit.operations;
   const [focus, setFocus] = useState(0);
   const [open, setOpen] = useState<Record<number, boolean>>({});

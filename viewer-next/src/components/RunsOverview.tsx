@@ -1,237 +1,60 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Run } from "@/lib/types";
-import { runStats, modelName } from "@/lib/types";
-import { fmtNum, fmtDur } from "@/lib/format";
-import { UPlotChart } from "./UPlotChart";
-import type { SeriesDef } from "./UPlotChart";
+import { activityAt, ageLabel, conditionLabel, experimentLabel, modelLabel, resultLabel, routeFor, runState, runTitle, shortId } from "@/lib/presentation";
+import type { StatusFilter } from "@/lib/presentation";
+import { fmtNum } from "@/lib/format";
+import { Icon } from "./Icon";
 
-const SERIES_PLIES: SeriesDef[] = [{ label: "plies", color: "#8eaae9", fill: true }];
-const SERIES_TOKENS: SeriesDef[] = [{ label: "tokens", color: "#e8a865", fill: true }];
-
-function StatusPill({ run }: { run: Run }) {
-  if (run.status === "RUNNING")
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-warn/15 px-2 py-0.5 font-mono text-[10px] text-warn">
-        <span className="size-1.5 animate-pulse rounded-full bg-warn" /> live
-      </span>
-    );
-  if (run.status === "COMPLETED")
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/15 px-2 py-0.5 font-mono text-[10px] text-ok">
-        <span className="size-1.5 rounded-full bg-ok" /> ok
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-err/15 px-2 py-0.5 font-mono text-[10px] text-err">
-      <span className="size-1.5 rounded-full bg-err" /> {run.status.toLowerCase()}
-    </span>
-  );
-}
-
-function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-line bg-panel px-4 py-3">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-faint">{label}</div>
-      <div className="mt-1 text-2xl font-semibold">{value}</div>
-      {sub && <div className="text-[11.5px] text-muted">{sub}</div>}
+export function RunsOverview({ runs, query, setQuery, status, setStatus, selected, onSelect, onCompare }: {
+  runs: Run[]; query: string; setQuery: (s: string) => void; status: StatusFilter; setStatus: (s: StatusFilter) => void;
+  selected: string[]; onSelect: (id: string) => void; onCompare: () => void;
+}) {
+  const [model, setModel] = useState("");
+  const [experiment, setExperiment] = useState("");
+  const [sort, setSort] = useState("recent");
+  const [page, setPage] = useState(0);
+  const models = useMemo(() => [...new Set(runs.map(modelLabel))].sort(), [runs]);
+  const experiments = useMemo(() => [...new Set(runs.map(r => r.experiment).filter(Boolean))].sort(), [runs]);
+  const counts = useMemo(() => ({ all: runs.length, running: runs.filter(r => runState(r).key === "running").length,
+    completed: runs.filter(r => runState(r).key === "completed").length, attention: runs.filter(r => runState(r).key === "attention").length }), [runs]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase();
+    return runs.filter(r => (status === "all" || runState(r).key === status)
+      && (!model || modelLabel(r) === model) && (!experiment || r.experiment === experiment)
+      && (!q || [r.id, r.experiment, r.conditionId, modelLabel(r), conditionLabel(r), ...(r.tags ?? [])].join(" ").toLocaleLowerCase().includes(q)))
+      .sort((a, b) => sort === "name" ? runTitle(a).localeCompare(runTitle(b)) : sort === "moves"
+        ? b.episodes.reduce((s, e) => s + (e.moves?.length ?? 0), 0) - a.episodes.reduce((s, e) => s + (e.moves?.length ?? 0), 0)
+        : (activityAt(b) ?? 0) - (activityAt(a) ?? 0));
+  }, [runs, query, status, model, experiment, sort]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / 12));
+  const safePage = Math.min(page, pageCount - 1);
+  const visible = filtered.slice(safePage * 12, safePage * 12 + 12);
+  const reset = () => { setQuery(""); setStatus("all"); setModel(""); setExperiment(""); setPage(0); };
+  return <>
+    <div className="page-heading"><div><p className="eyebrow">Biblioteca de pesquisa</p><h1>Partidas</h1><p className="lead">Encontre uma execução e acompanhe cada decisão.</p></div><span className="quiet-label">{runs.length} execuções registradas</span></div>
+    <div className="status-tabs" aria-label="Filtrar por estado">
+      {([["all", "Todas"], ["running", "Em execução"], ["completed", "Concluídas"], ["attention", "Precisam de atenção"]] as const).map(([id, label]) =>
+        <button key={id} aria-pressed={status === id} onClick={() => { setStatus(id); setPage(0); }} className={status === id ? "active" : ""}>{label}<span>{counts[id]}</span></button>)}
     </div>
-  );
-}
-
-export function RunsOverview({ runs, onOpen }: { runs: Run[]; onOpen: (id: string) => void }) {
-  const totals = useMemo(() => {
-    const acc = { plies: 0, calls: 0, in: 0, out: 0, live: 0, done: 0 };
-    for (const r of runs) {
-      const s = runStats(r);
-      acc.plies += s.plies;
-      acc.calls += s.calls;
-      acc.in += s.tokensIn;
-      acc.out += s.tokensOut;
-      if (r.status === "RUNNING") acc.live++;
-      if (r.status === "COMPLETED") acc.done++;
-    }
-    return acc;
-  }, [runs]);
-
-  const lastEp = (r: Run) => r.episodes?.[r.episodes.length - 1];
-
-  // bars: plies per experiment (top 8)
-  const byExp = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of runs) {
-      const k = (r.experiment || "?").slice(0, 24);
-      m.set(k, (m.get(k) ?? 0) + runStats(r).plies);
-    }
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [runs]);
-
-  const exp = useMemo(() => ({
-    x: byExp.map((_, i) => i),
-    ys: [byExp.map(([, v]) => v)] as [number[]],
-  }), [byExp]);
-
-  // bars: tokens per run (top 8)
-  const byTok = useMemo(
-    () =>
-      runs
-        .map((r) => ({ id: r.id, s: runStats(r) }))
-        .map(({ id, s }) => ({ id, v: s.tokensIn + s.tokensOut }))
-        .sort((a, b) => b.v - a.v)
-        .slice(0, 8),
-    [runs],
-  );
-  const tok = useMemo(() => ({
-    x: byTok.map((_, i) => i),
-    ys: [byTok.map((d) => d.v)] as [number[]],
-  }), [byTok]);
-
-  // stacked latency bands per run: p50/p95 max
-  const latBands = useMemo(
-    () =>
-      runs
-        .map((r) => {
-          const lat = runStats(r).latencies.slice().sort((a, b) => a - b);
-          return {
-            id: r.id.slice(4, 14),
-            p50: lat.length ? lat[Math.floor(lat.length * 0.5)] / 1000 : 0,
-            p95: lat.length ? lat[Math.floor(lat.length * 0.95)] / 1000 : 0,
-          };
-        })
-        .sort((a, b) => b.p95 - a.p95)
-        .slice(0, 8),
-    [runs],
-  );
-
-  return (
-    <div className="space-y-3.5">
-      <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <Kpi label="partidas" value={String(runs.length)} sub={`${totals.live} live · ${totals.done} completas`} />
-        <Kpi label="lances totais" value={fmtNum(totals.plies)} sub="todos os episódios" />
-        <Kpi label="calls ao modelo" value={fmtNum(totals.calls)} sub="1 por decisão" />
-        <Kpi label="tokens in/out" value={`${fmtNum(totals.in)}/${fmtNum(totals.out)}`} sub="soma sobre runs" />
+    <section className="library" aria-label="Biblioteca de execuções">
+      <div className="filter-toolbar">
+        <label className="search-field"><Icon name="search"/><span className="sr-only">Buscar execução</span><input type="search" value={query} placeholder="Buscar por nome, modelo ou ID" onChange={e => { setQuery(e.target.value); setPage(0); }}/></label>
+        <label className="filter-select"><span>Modelo</span><select aria-label="Filtrar por modelo" value={model} onChange={e => { setModel(e.target.value); setPage(0); }}><option value="">Todos os modelos</option>{models.map(m => <option key={m}>{m}</option>)}</select></label>
+        <label className="filter-select"><span>Experimento</span><select aria-label="Filtrar por experimento" value={experiment} onChange={e => { setExperiment(e.target.value); setPage(0); }}><option value="">Todos os experimentos</option>{experiments.map(e => <option value={e} key={e}>{experimentLabel(e)}</option>)}</select></label>
       </div>
-
-      <section className="overflow-hidden rounded-lg border border-line bg-panel">
-        <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">operador · tudo</p>
-            <h3 className="text-sm font-semibold">Partidas</h3>
-          </div>
-          <small className="font-mono text-[10.5px] text-faint">clique para abrir na camada Partida</small>
-        </div>
-        <table className="w-full text-[12.5px]">
-          <thead>
-            <tr className="border-b border-line text-left font-mono text-[10px] uppercase tracking-wider text-faint">
-              <th className="px-3 py-2 font-medium"></th>
-              <th className="px-3 py-2 font-medium">run / modelo</th>
-              <th className="px-3 py-2 font-medium">resultado</th>
-              <th className="px-3 py-2 text-right font-medium">plies</th>
-              <th className="px-3 py-2 text-right font-medium">calls</th>
-              <th className="px-3 py-2 text-right font-medium">tokens i/o</th>
-              <th className="px-3 py-2 text-right font-medium">duração</th>
-            </tr>
-          </thead>
-          <tbody>
-            {runs.map((r) => {
-              const s = runStats(r);
-              const ep = lastEp(r);
-              return (
-                <tr
-                  key={r.id}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`Abrir partida ${r.experiment}`}
-                  onClick={() => onOpen(r.id)}
-                  onKeyDown={(e) => e.key === "Enter" && onOpen(r.id)}
-                  className="cursor-pointer border-b border-line last:border-0 hover:bg-panel2"
-                >
-                  <td className="px-3 py-2"><StatusPill run={r} /></td>
-                  <td className="px-3 py-2">
-                    <div className="truncate">{r.experiment.slice(0, 36)}</div>
-                    <div className="font-mono text-[10.5px] text-faint">{r.id.slice(4, 14)} · {modelName(r)}</div>
-                  </td>
-                  <td className="px-3 py-2 font-mono text-[11px]">
-                    {ep ? (
-                      <span className={ep.result === "checkmate" ? "text-err" : ep.result === "capped" || ep.result === "in_progress" ? "text-warn" : "text-ok"}>
-                        {ep.result === "in_progress" ? "ao vivo" : ep.result}{ep.winner ? ` · ${ep.winner}` : ""}
-                      </span>
-                    ) : "—"}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-[11.5px]">{s.plies}</td>
-                  <td className="px-3 py-2 text-right font-mono text-[11.5px]">{s.calls}</td>
-                  <td className="px-3 py-2 text-right font-mono text-[11.5px]">{fmtNum(s.tokensIn)}/{fmtNum(s.tokensOut)}</td>
-                  <td className="px-3 py-2 text-right font-mono text-[11.5px] text-muted">{fmtDur(r.startedAt, r.finishedAt)}</td>
-                </tr>
-              );
-            })}
-            {runs.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-muted">nenhuma partida no recorte</td></tr>
-            )}
-          </tbody>
-        </table>
-      </section>
-
-      <div className="grid gap-3.5 lg:grid-cols-2">
-        <section className="rounded-lg border border-line bg-panel">
-          <div className="border-b border-line px-4 py-2.5">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">distribuição</p>
-            <h3 className="text-sm font-semibold">Lances por experimento</h3>
-          </div>
-          <div className="px-3 py-2">
-            {exp.x.length > 0 ? (
-              <UPlotChart x={exp.x} ys={exp.ys} series={SERIES_PLIES} yLabel="plies" />
-            ) : (
-              <div className="py-10 text-center text-muted">sem dados</div>
-            )}
-            <div className="px-1 pb-2 pt-1 font-mono text-[10px] text-faint">
-              {byExp.map(([k]) => k).join(" · ")}
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-line bg-panel">
-          <div className="border-b border-line px-4 py-2.5">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-faint">consumo</p>
-            <h3 className="text-sm font-semibold">Tokens por run (in+out)</h3>
-          </div>
-          <div className="px-3 py-2">
-            {tok.x.length > 0 ? (
-              <UPlotChart x={tok.x} ys={tok.ys} series={SERIES_TOKENS} yLabel="tokens" />
-            ) : (
-              <div className="py-10 text-center text-muted">sem dados</div>
-            )}
-            <div className="px-1 pb-2 pt-1 font-mono text-[10px] text-faint">
-              {byTok.map((d) => d.id).join(" · ")}
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <section className="rounded-lg border border-line bg-panel">
-        <div className="border-b border-line px-4 py-2.5">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-faint">ritmo</p>
-          <h3 className="text-sm font-semibold">Latência de decisão p50/p95 por run (s)</h3>
-        </div>
-        <table className="w-full text-[12px]">
-          <tbody>
-            {latBands.map((b) => (
-              <tr key={b.id} className="border-b border-line last:border-0">
-                <td className="w-28 px-4 py-1.5 font-mono text-[11px] text-muted">{b.id}</td>
-                <td className="px-3 py-1.5">
-                  <div className="relative h-3 w-full rounded bg-panel2">
-                    <div className="absolute inset-y-0 rounded bg-info/30" style={{ width: `${Math.min(100, (b.p95 / 150) * 100)}%` }} />
-                    <div className="absolute inset-y-0 rounded bg-info" style={{ width: `${Math.min(100, (b.p50 / 150) * 100)}%` }} />
-                  </div>
-                </td>
-                <td className="w-36 px-3 py-1.5 text-right font-mono text-[11px]">
-                  p50 {b.p50.toFixed(1)}s · p95 {b.p95.toFixed(1)}s
-                </td>
-              </tr>
-            ))}
-            {latBands.length === 0 && <tr><td className="px-4 py-8 text-center text-muted">sem dados de latência</td></tr>}
-          </tbody>
-        </table>
-      </section>
-    </div>
-  );
+      <div className="table-toolbar"><span>{filtered.length} {filtered.length === 1 ? "execução encontrada" : "execuções encontradas"}</span><label>Ordenar <select aria-label="Ordenar execuções" value={sort} onChange={e => { setSort(e.target.value); setPage(0); }}><option value="recent">Atividade recente</option><option value="name">Nome</option><option value="moves">Mais lances</option></select></label></div>
+      <div className="table-scroll"><table className="runs-table"><thead><tr><th className="select-column"><span className="sr-only">Selecionar para comparação</span></th><th>Execução / modelo</th><th>Estado / resultado</th><th className="numeric">Lances</th><th className="numeric secondary-column">Chamadas</th><th className="activity-column">Última atividade</th><th><span className="sr-only">Abrir</span></th></tr></thead><tbody>
+        {visible.map(r => { const st = runState(r); const plies = r.episodes.reduce((s, e) => s + (e.moves?.length ?? 0), 0); const last = activityAt(r); return <tr key={r.id} className={selected.includes(r.id) ? "row-selected" : ""}>
+          <td className="select-column"><input type="checkbox" aria-label={`Comparar ${shortId(r.id)}`} checked={selected.includes(r.id)} disabled={selected.length >= 3 && !selected.includes(r.id)} onChange={() => onSelect(r.id)}/></td>
+          <td className="identity-cell"><a className="run-link" href={routeFor(r.id)} title={r.experiment}>{runTitle(r)}</a><span className="model-name">{modelLabel(r)}</span><span className="run-condition" title={conditionLabel(r)}>{conditionLabel(r)}</span></td>
+          <td className="state-cell"><span className={`state-badge tone-${st.tone}`} title={st.detail}><i/>{st.label}</span><span className="result-label">{r.episodes.length > 1 ? `${r.episodes.length} episódios` : resultLabel(r.episodes[0])}</span></td>
+          <td className="numeric">{plies}<span className="cell-secondary">meios-lances</span></td><td className="numeric secondary-column">{typeof r.provider?.calls === "number" ? fmtNum(r.provider.calls) : "—"}<span className="cell-secondary">{r.provider?.failures ? `${r.provider.failures} falhas` : "concluídas"}</span></td>
+          <td className="activity-column"><span title={last ? new Date(last).toLocaleString("pt-BR") : undefined}>{ageLabel(last)}</span><span className="cell-secondary mono">{shortId(r.id)}</span></td><td><a className="icon-button" href={routeFor(r.id)} aria-label={`Abrir execução ${shortId(r.id)}`}><Icon name="chevron" size={16}/></a></td>
+        </tr>; })}
+      </tbody></table></div>
+      {!filtered.length && <div className="empty-state"><Icon name="search" size={28}/><h2>{runs.length ? "Nenhuma execução corresponde aos filtros" : "Sua biblioteca começa com a primeira execução"}</h2><p>{runs.length ? "Tente outro nome ou remova os filtros para ver todas as partidas." : "As execuções aparecerão aqui quando os dados do workspace estiverem disponíveis."}</p>{runs.length > 0 && <button className="button" onClick={reset}>Limpar filtros</button>}</div>}
+      <footer className="table-footer"><span>{filtered.length ? `${safePage * 12 + 1}–${Math.min((safePage + 1) * 12, filtered.length)} de ${filtered.length}` : "0 resultados"}</span><span className="compare-hint">Selecione até 3 execuções para comparar</span><div className="pagination"><button className="icon-button" disabled={safePage === 0} aria-label="Página anterior" onClick={() => setPage(safePage - 1)}><Icon name="back" size={16}/></button><span>{safePage + 1} / {pageCount}</span><button className="icon-button" disabled={safePage + 1 >= pageCount} aria-label="Próxima página" onClick={() => setPage(safePage + 1)}><Icon name="arrow" size={16}/></button></div></footer>
+    </section>
+    {selected.length > 0 && <div className="comparison-dock" role="region" aria-label="Seleção de comparação"><Icon name="compare"/><span>{selected.length} {selected.length === 1 ? "execução selecionada" : "execuções selecionadas"}</span><div className="dock-selection">{selected.map(id => <button key={id} className="selected-chip" onClick={() => onSelect(id)} aria-label={`Remover ${shortId(id)} da comparação`}>{shortId(id)}<Icon name="close" size={12}/></button>)}</div><button className="button primary" disabled={selected.length < 2} onClick={onCompare}>Comparar execuções <Icon name="arrow" size={16}/></button></div>}
+  </>;
 }

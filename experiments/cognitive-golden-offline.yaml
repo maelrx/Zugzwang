@@ -1,0 +1,59 @@
+# Golden offline: chess.cognitive_navigation over the productive path.
+# Fake backend only; no network, no secrets, no engines. The coordinator
+# opens a §26.1 decision session per step, the strategy drives the typed
+# loop against the fake backend, and the journal records every round,
+# operation, exposure and budget unit (ZGW-0101 T7).
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: cognitive-golden-offline
+  tags: [cb, golden, fake, offline]
+
+spec:
+  seed: 20260906
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: json_commands
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 2
+
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: scripted
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.random-legal
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 0
+      parse: 0
+      illegal: 0
+
+  budget:
+    max_calls: 20
+    max_concurrent_episodes: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

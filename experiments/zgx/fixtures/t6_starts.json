@@ -1,0 +1,38 @@
+[
+ {
+  "id": "p01-captura_boa",
+  "source": "cb-arena-d:D7",
+  "start_fen": "r1bqk1nr/pppn1pp1/4p2p/3p4/3P1b2/2N1PN2/PPP1BPPP/R2QK2R w KQkq - 0 7",
+  "max_model_decisions": 4
+ },
+ {
+  "id": "p03-captura_ruim",
+  "source": "cb-arena-k:K4",
+  "start_fen": "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",
+  "max_model_decisions": 4
+ },
+ {
+  "id": "p05-urgencia_rei",
+  "source": "cb-arena-h:H21",
+  "start_fen": "5knr/p3pp1p/6p1/7q/1n4N1/1Q1p1BP1/PP1PKP2/R1B5 w - - 0 21",
+  "max_model_decisions": 4
+ },
+ {
+  "id": "p07-linha_risco",
+  "source": "cb-arena-k:K9",
+  "start_fen": "r2qkbnr/ppp3pp/2np4/7b/3pP3/2N2N1P/PPP2PP1/R1BQ1RK1 w - - 1 9",
+  "max_model_decisions": 4
+ },
+ {
+  "id": "p09-quieto_sucesso",
+  "source": "cb-pilot-resume8:resume8@ply14",
+  "start_fen": "2r1kbnr/p1ppp1pp/1p6/5p2/4P3/5N2/PPP2PPP/RNBQKB1R w KQk - 0 8",
+  "max_model_decisions": 4
+ },
+ {
+  "id": "p11-final_conversao",
+  "source": "cb-arena-j:J37",
+  "start_fen": "5rk1/R5p1/4K3/3P4/8/1P3P1p/P2Q1P1P/3R4 w - - 5 37",
+  "max_model_decisions": 4
+ }
+]

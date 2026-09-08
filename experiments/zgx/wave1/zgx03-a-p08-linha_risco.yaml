@@ -1,0 +1,70 @@
+# ZGX-03 onda 1 — N1 | p08-linha_risco (linha_risco) | BA
+# Posição-fonte: cb-arena-l:L7. Par pareado; esforço LOW; rota muse congelada.
+# controle N1: expand devolve só referência do filho.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx03-a-p08-linha_risco
+  tags: [zgx, wave1, real, zgx03, linha_risco]
+
+spec:
+  seed: 202690007
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      move_prefix: [e2e4, e7e5, g1f3, d7d6, d2d4, e5d4, f3d4, a7a6, f1c4, b8d7, c1e3, c7c5]
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 420
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 4
+        preload_root: true
+        inline_child_packages: false
+
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 4
+      parse: 1
+      illegal: 4
+
+  budget:
+    max_calls: 60
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

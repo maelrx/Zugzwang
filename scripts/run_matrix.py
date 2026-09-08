@@ -20,8 +20,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import subprocess
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -29,6 +31,51 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 DEFAULT_MAX_CONCURRENT = 5
+
+
+def count_attempts(workspace_root: Path) -> int:
+    """Total provider attempts across all run workspaces under the root."""
+    total = 0
+    for db in workspace_root.glob("*/.zugzwang/state.db"):
+        try:
+            conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+            try:
+                total += int(conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0])
+            finally:
+                conn.close()
+        except sqlite3.Error:
+            continue
+    return total
+
+
+class CallLedger:
+    """Campaign call-budget gate (ZGX wave 1: teto 1.400 calls).
+
+    Checked before each launch against the CURRENT attempt rows on disk — a
+    hard stop for the queue, never a silent overrun. Counting is conservative
+    (attempts committed so far); a game already in flight is not interrupted.
+    """
+
+    def __init__(self, cap: int | None, workspace_root: Path) -> None:
+        self.cap = cap
+        self.workspace_root = workspace_root
+        self.lock = threading.Lock()
+        self.stopped = False
+
+    def allow(self) -> bool:
+        if self.cap is None:
+            return True
+        with self.lock:
+            if self.stopped:
+                return False
+            if count_attempts(self.workspace_root) >= self.cap:
+                self.stopped = True
+                print(
+                    f"[run_matrix] call ledger cap {self.cap} reached; no new launches",
+                    flush=True,
+                )
+                return False
+        return True
 
 
 @dataclass
@@ -57,9 +104,27 @@ def _experiment_name(manifest: Path) -> str:
     return manifest.stem
 
 
-def run_one(manifest: Path, workspace: Path, repo_root: Path, log_path: Path) -> GameOutcome:
+def run_one(
+    manifest: Path,
+    workspace: Path,
+    repo_root: Path,
+    log_path: Path,
+    ledger: CallLedger | None = None,
+) -> GameOutcome:
     started = time.monotonic()
     started_at = _now_iso()
+    if ledger is not None and not ledger.allow():
+        return GameOutcome(
+            manifest=manifest,
+            workspace=workspace,
+            returncode=None,
+            started_at=started_at,
+            finished_at=_now_iso(),
+            elapsed_s=0.0,
+            log_path=log_path,
+            status="skipped_call_budget",
+            notes=["campaign call ledger cap reached before launch"],
+        )
     workspace.mkdir(parents=True, exist_ok=True)
     cmd = [
         "uv",
@@ -110,9 +175,7 @@ def _finish(outcome: GameOutcome, started: float) -> GameOutcome:
 
 
 def _last_run_id(workspace: Path) -> str | None:
-    import sqlite3
-
-    db = workspace / "data" / "state.db"
+    db = workspace / ".zugzwang" / "state.db"
     if not db.exists():
         return None
     try:
@@ -149,6 +212,19 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="run logs directory (default: <workspace-root>/logs)",
     )
+    parser.add_argument(
+        "--max-total-attempts",
+        type=int,
+        default=None,
+        help="campaign call ledger: no new game launches once total provider "
+        "attempts under the root reach this cap (ZGX wave 1: 1400)",
+    )
+    parser.add_argument(
+        "--single-flight",
+        action="store_true",
+        help="export ZGZ_MUSE_SINGLE_FLIGHT_LOCK to children: ONE Muse "
+        "inference in flight across the whole shared quota (plano 28 §3.1)",
+    )
     args = parser.parse_args(argv)
 
     if args.max_concurrent < 1:
@@ -169,13 +245,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     outcomes: list[GameOutcome] = []
     started = time.monotonic()
+    ledger = CallLedger(args.max_total_attempts, workspace_root)
+    if args.single_flight:
+        lock_path = workspace_root / "muse.flight.lock"
+        lock_path.touch(exist_ok=True)
+        import os
+
+        os.environ["ZGZ_MUSE_SINGLE_FLIGHT_LOCK"] = str(lock_path)
+        print(f"[run_matrix] single-flight gate: {lock_path}", flush=True)
     with ThreadPoolExecutor(max_workers=args.max_concurrent) as pool:
         futures = {}
         for manifest in manifests:
             name = _experiment_name(manifest)
             workspace = workspace_root / name
             log_path = logs_dir / f"{name}.log"
-            futures[pool.submit(run_one, manifest, workspace, repo_root, log_path)] = name
+            futures[pool.submit(run_one, manifest, workspace, repo_root, log_path, ledger)] = name
         for future in as_completed(futures):
             outcome = future.result()
             outcomes.append(outcome)

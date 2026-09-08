@@ -604,6 +604,23 @@ class DurableRunServices:
                         else None
                     ),
                 )
+            if backend_id == "provider.antigravity_cli":
+                from zgw_provider_antigravity_cli.adapter import AntigravityCliBackend
+
+                return AntigravityCliBackend(
+                    model=str(backend_config.get("model", "gemini-3.8-flash-low")),
+                    executable=(
+                        str(backend_config["executable"])
+                        if backend_config.get("executable")
+                        else None
+                    ),
+                    timeout_seconds=float(backend_config.get("timeout_seconds", 120) or 120),
+                    reasoning_effort=(
+                        str(backend_config["reasoning_effort"])
+                        if backend_config.get("reasoning_effort")
+                        else None
+                    ),
+                )
         return DeterministicModelBackend(rules=_default_fake_rules())
 
     def _resolve(self, command: StartRunCommand) -> ResolvedManifest:

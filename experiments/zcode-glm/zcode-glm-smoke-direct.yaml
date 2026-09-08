@@ -1,0 +1,64 @@
+# ZGW-0104 G2 — smoke real de 1 chamada: zcode_glm (GLM-5.3-Flash), lance direto.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zcode-glm-smoke-direct
+  tags: [zcode-glm, smoke, real]
+
+spec:
+  seed: 20260908
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      backend_config:
+        base_url: http://127.0.0.1:8787/anthropic
+        api_key: env:ZGZ_ZCODE_API_KEY
+        timeout_seconds: 120
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 2
+        preload_root: false
+        inline_child_packages: false
+
+  players:
+    white:
+      model:
+        backend: provider.zcode_glm
+        provider: zcode-coding-plan
+        model: GLM-5.3-Flash
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 2
+      parse: 1
+      illegal: 2
+
+  budget:
+    max_calls: 30
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

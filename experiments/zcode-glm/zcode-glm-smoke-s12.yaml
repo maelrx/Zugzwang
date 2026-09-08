@@ -1,0 +1,65 @@
+# ZGW-0104 G3 — decisão S12 (captura_boa p01) com tool loop cognitive completo.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zcode-glm-smoke-s12
+  tags: [zcode-glm, smoke, real, s12]
+
+spec:
+  seed: 20260908
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      move_prefix: [g1f3, e7e6, d2d4, h7h6, b1c3, d7d5, c1f4, f8d6, e2e3, b8d7, f1e2, d6f4]
+      backend_config:
+        base_url: http://127.0.0.1:8787/anthropic
+        api_key: env:ZGZ_ZCODE_API_KEY
+        timeout_seconds: 420
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 4
+        preload_root: true
+        inline_child_packages: true
+
+  players:
+    white:
+      model:
+        backend: provider.zcode_glm
+        provider: zcode-coding-plan
+        model: GLM-5.3-Flash
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 3
+      parse: 1
+      illegal: 3
+
+  budget:
+    max_calls: 40
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

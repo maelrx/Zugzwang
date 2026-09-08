@@ -579,6 +579,35 @@ class DurableRunServices:
                     timeout_seconds=float(backend_config.get("timeout_seconds", 300) or 300),
                     image_input=bool(backend_config.get("image_input", False)),
                 )
+            if backend_id == "provider.zcode_glm":
+                from zgw_provider_zcode_glm.adapter import ZCodeGlmBackend
+
+                from ..security import resolve_secret
+
+                return ZCodeGlmBackend(
+                    base_url=str(
+                        backend_config.get("base_url", "http://127.0.0.1:8787/anthropic")
+                    ),
+                    api_key=resolve_secret(
+                        str(backend_config["api_key"]) if backend_config.get("api_key") else None
+                    ),
+                    timeout_seconds=float(backend_config.get("timeout_seconds", 120) or 120),
+                    reasoning_effort=(
+                        str(backend_config["reasoning_effort"])
+                        if backend_config.get("reasoning_effort")
+                        else None
+                    ),
+                    default_max_output_tokens=(
+                        int(backend_config["default_max_output_tokens"])
+                        if backend_config.get("default_max_output_tokens")
+                        else 8192
+                    ),
+                    single_flight_lock=(
+                        str(backend_config["single_flight_lock"])
+                        if backend_config.get("single_flight_lock")
+                        else None
+                    ),
+                )
             if backend_id == "provider.openai_compatible":
                 from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend
 
@@ -601,23 +630,6 @@ class DurableRunServices:
                     default_max_output_tokens=(
                         int(backend_config["default_max_output_tokens"])
                         if backend_config.get("default_max_output_tokens")
-                        else None
-                    ),
-                )
-            if backend_id == "provider.antigravity_cli":
-                from zgw_provider_antigravity_cli.adapter import AntigravityCliBackend
-
-                return AntigravityCliBackend(
-                    model=str(backend_config.get("model", "gemini-3.8-flash-low")),
-                    executable=(
-                        str(backend_config["executable"])
-                        if backend_config.get("executable")
-                        else None
-                    ),
-                    timeout_seconds=float(backend_config.get("timeout_seconds", 120) or 120),
-                    reasoning_effort=(
-                        str(backend_config["reasoning_effort"])
-                        if backend_config.get("reasoning_effort")
                         else None
                     ),
                 )

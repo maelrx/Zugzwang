@@ -1,0 +1,73 @@
+# ZGW-0104 G4 — smoke de partida (20 plies, SMOKE; não é partida completa)
+# GLM-5.3-Flash (brancas, cognitive) vs Stockfish elo 1320 real (pretas).
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zcode-glm-smoke-game
+  tags: [zcode-glm, smoke, real, fullgame]
+
+spec:
+  seed: 20260908
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 12
+      backend_config:
+        base_url: http://127.0.0.1:8787/anthropic
+        api_key: env:ZGZ_ZCODE_API_KEY
+        timeout_seconds: 420
+        reasoning_effort: low
+        default_max_output_tokens: 4096
+      cognitive:
+        max_rounds: 4
+        preload_root: true
+        inline_child_packages: true
+
+  players:
+    white:
+      model:
+        backend: provider.zcode_glm
+        provider: zcode-coding-plan
+        model: GLM-5.3-Flash
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 3
+      parse: 1
+      illegal: 3
+
+  budget:
+    max_calls: 400
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

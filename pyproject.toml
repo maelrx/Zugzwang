@@ -44,6 +44,7 @@ include = [
     "plugins/provider-openai-compatible/src",
     "plugins/provider-opencode/src",
     "plugins/provider-pydantic-ai/src",
+    "plugins/provider-zcode-glm/src",
     "plugins/evaluator-stockfish/src",
     "plugins/reporter-parquet/src",
 ]
@@ -59,6 +60,7 @@ extraPaths = [
     "plugins/provider-openai-compatible/src",
     "plugins/provider-opencode/src",
     "plugins/provider-pydantic-ai/src",
+    "plugins/provider-zcode-glm/src",
     "plugins/evaluator-stockfish/src",
     "plugins/reporter-parquet/src",
 ]

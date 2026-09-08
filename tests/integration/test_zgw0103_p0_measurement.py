@@ -96,7 +96,7 @@ def harness(tmp_path):
     return database, engine, cas
 
 
-def _open(harness, decision_id="dec-zgw0103-0001", remaining=32):
+def _open(harness, decision_id="dec-zgw0103-0001", remaining=32, **session_kwargs):
     database, engine, cas = harness
     journal = CognitionJournal(database)
     session = DecisionSession.open(
@@ -119,6 +119,7 @@ def _open(harness, decision_id="dec-zgw0103-0001", remaining=32):
         cas=cas,
         engine=engine,
         remaining_tool_operations=remaining,
+        **session_kwargs,
     )
     return session, journal
 
@@ -163,6 +164,63 @@ def json_loads(raw: str | bytes) -> Any:
     if isinstance(raw, bytes):
         raw = raw.decode("utf-8")
     return json.loads(raw)
+
+
+# ---------------------------------------------------------------------------
+# ZGX wave 1 mechanisms: inline toggle, harness preload (N0/N1/N2/RICH1)
+# ---------------------------------------------------------------------------
+
+
+def test_inline_child_packages_off_returns_references_only(harness) -> None:
+    session, _journal = _open(harness, inline_child_packages=False)
+    backend = FakeCognitiveBackend(
+        [
+            _propose_observe,
+            _propose_expand_first_action,
+            _propose_finalize,
+        ]
+    )
+    result = _run(_loop(session, backend))
+    assert result.status == "COMMITTED"
+    expansions = _results_named(list(backend.seen_requests[2].messages), "board_expand")
+    row = expansions[-1]["results"][0]
+    assert "package" not in row, "N1 control must NOT receive the inline child package"
+    assert row["child_node_id"]
+
+
+def test_preload_root_ships_real_results_in_first_request(harness) -> None:
+    """ZGX-02 treatment (N1) + ZGX-03 (N2): the FIRST model request already
+    carries the root packet — produced by a REAL journaled broker operation,
+    never a synthetic transcript entry."""
+    session, journal = _open(harness)
+    backend = FakeCognitiveBackend(
+        [
+            _propose_finalize,
+        ]
+    )
+    loop = _loop(session, backend, max_rounds=1, preload_root=True, preload_expand_actions=1)
+    result = _run(loop)
+    assert result.status == "COMMITTED", result.trace_record
+    # the model made exactly ONE call (RICH1-style) and it already saw BOTH
+    # the root observation and the expansion result
+    assert len(backend.seen_requests) == 1
+    first = list(backend.seen_requests[0].messages)
+    observes = _results_named(first, "board_observe")
+    expands = _results_named(first, "board_expand")
+    assert observes and observes[0]["packet"]["state"]["node_id"] == "node-root"
+    assert expands and expands[-1]["results"][0]["package"]
+    # the preload operations were journaled as REAL tool operations
+    with journal.connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT tool_name FROM cb_tool_operations WHERE decision_id = :id "
+                "ORDER BY command_ordinal"
+            ),
+            {"id": session.decision_id},
+        ).fetchall()
+    assert [r[0] for r in rows] == ["board_observe", "board_expand", "board_finalize"] or [
+        r[0] for r in rows
+    ] == ["board_observe", "board_expand"], rows
 
 
 # ---------------------------------------------------------------------------

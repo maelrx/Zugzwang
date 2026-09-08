@@ -204,6 +204,8 @@ class CognitiveLoop:
         model_reservation_id: str | None = None,
         context_sections: Callable[[int], str] | None = None,
         round_feedback: Callable[[int, list[dict[str, Any]]], None] | None = None,
+        preload_root: bool = False,
+        preload_expand_actions: int = 0,
     ) -> None:
         if max_rounds < 1:
             raise ValueError("max_rounds must be >= 1")
@@ -230,6 +232,11 @@ class CognitiveLoop:
         self._model_reservation_id = model_reservation_id
         self._context_sections = context_sections
         self._round_feedback = round_feedback
+        # ZGX-02/03 arms: a PRELOADED root is a real broker execution (journaled,
+        # exposed, budget-charged) injected into the transcript before the first
+        # model call — the model's first request already carries the package.
+        self._preload_root = preload_root
+        self._preload_expand_actions = max(0, preload_expand_actions)
 
     # -- productive entry point -------------------------------------------------
 
@@ -242,6 +249,13 @@ class CognitiveLoop:
         # Round 0001 is the decision opening record (session.open); the loop
         # drives bounded rounds starting at ordinal 2 (§12.2).
         self._journal.reopen_decision_for_retry(self.decision_id)
+        if self._preload_root:
+            # Harness preload (ZGX-02/03; RICH1) belongs to the decision
+            # OPENING: the operations run under the existing round-0001
+            # record through the real broker, and their results ride in the
+            # transcript of the very first model request.
+            opening_broker = self._broker_factory(f"{self.decision_id}:round-0001", 1)
+            self._preload_harness(result, opening_broker, 1)
         first_ordinal = 2
         last_ordinal = self._max_rounds + 1
         for ordinal in range(first_ordinal, last_ordinal + 1):
@@ -410,6 +424,60 @@ class CognitiveLoop:
 
     # -- wiring ------------------------------------------------------------------
 
+    def _preload_harness(
+        self,
+        result: LoopResult,
+        broker: CognitionToolBroker,
+        ordinal: int,
+    ) -> None:
+        """Execute the preloaded root observation (and optional root expansions)
+        through the REAL broker before the first model call (ZGX-02/03; RICH1).
+
+        Every preload goes through the same broker path as a model proposal:
+        journaled as a tool operation, exposed, and charged against the
+        decision's tool-operation budget. Nothing synthetic is invented.
+        """
+        root = self._root_node_id or broker.root_node_id or ""
+        if not root:
+            return
+        step = self._execute(
+            result,
+            broker,
+            _Proposal(
+                provider_tool_call_id="harness:preload-root",
+                tool="board_observe",
+                arguments={"node_id": root},
+            ),
+            ordinal,
+        )
+        if not step.ok or self._preload_expand_actions <= 0:
+            return
+        entry = result.transcript[-1]
+        payload: Any = entry.get("result")
+        if not isinstance(payload, dict):
+            return
+        packet: Any = payload.get("packet")
+        if not isinstance(packet, dict):
+            return
+        items: Any = (packet.get("legal_actions") or {}).get("items") or []
+        action_ids = [
+            item["action_id"]
+            for item in items[: self._preload_expand_actions]
+            if isinstance(item, dict) and isinstance(item.get("action_id"), str)
+        ]
+        if not action_ids:
+            return
+        self._execute(
+            result,
+            broker,
+            _Proposal(
+                provider_tool_call_id="harness:preload-expand",
+                tool="board_expand",
+                arguments={"node_id": root, "action_ids": action_ids},
+            ),
+            ordinal,
+        )
+
     def _broker_for_round(self, round_id: str, ordinal: int) -> CognitionToolBroker:
         return self._broker_factory(round_id, ordinal)
 
@@ -534,6 +602,13 @@ class CognitiveLoop:
                 "The final call accepts only board_finalize — exploration then "
                 "is refused, so finalize no later than the last call."
             )
+        preload_note = ""
+        if self._preload_root:
+            preload_note = (
+                " The root observation (and any preloaded root expansions with "
+                "their child packages) are ALREADY in this conversation as "
+                "harness tool results — do not re-observe the root."
+            )
         if self._interaction_mode == "native_tools":
             return (
                 "You are navigating one decision's hypothetical search graph. "
@@ -546,7 +621,7 @@ class CognitiveLoop:
                 "its result — you do not need to observe a child to know it, "
                 "and you may call board_expand on a child node to investigate "
                 "the adversary's reply (a grandchild) before finalizing."
-                f"{budget_note}"
+                f"{preload_note}{budget_note}"
             )
         return (
             "You are navigating one decision's hypothetical search graph. "
@@ -554,7 +629,7 @@ class CognitiveLoop:
             'Reply with ONE JSON command: {"command": <tool>, "arguments": {...}}. '
             f'To finish, use {{"command": "{FINALIZE_TOOL}", '
             '"arguments": {"node_id": <root>, "action_id": <id>}}}.'
-            f"{budget_note}"
+            f"{preload_note}{budget_note}"
         )
 
     # -- response parsing (native tools vs JSON commands, §12.1) ------------------

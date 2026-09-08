@@ -954,6 +954,7 @@ class DurableRunCoordinator:
                         condition,
                         retry_feedback=retry_feedback,
                         prior_reasoning=prior_reasoning_summary,
+                        state=state,
                     ),
                     artifact_store=self._artifact_store,
                     knowledge=knowledge,
@@ -2359,6 +2360,7 @@ def _decision_config(
     *,
     retry_feedback: str | None = None,
     prior_reasoning: str | None = None,
+    state: Any = None,
 ) -> dict[str, Any]:
     """Protocol prompt overrides become strategy context config (persona/few-shot)."""
     prompt_spec = condition.protocol.prompt
@@ -2384,16 +2386,50 @@ def _decision_config(
         config["cognitive"] = dict(cognitive_config)
     if retry_feedback:
         config["retry_feedback"] = retry_feedback
-    if (
-        prior_reasoning
-        and isinstance(cognitive_config, dict)
-        and cognitive_config.get("reasoning_memory")
-    ):
-        # Self-memory between moves: the model's OWN previous reasoning
-        # summary, manifest-gated (reasoning_memory). Never external
-        # knowledge — assistance class unchanged.
+    memory_mode = (
+        cognitive_config.get("reasoning_memory") if isinstance(cognitive_config, dict) else None
+    )
+    if not memory_mode:
+        return config
+    # Self-memory between moves: the model's OWN previous decision, manifest-
+    # gated. Never external knowledge — assistance class unchanged.
+    #   reasoning_memory: true      -> verbatim reasoning summary (ZGX-20 M1)
+    #   reasoning_memory: "factual" -> structured note (ZGX-20 M2): formal
+    #   facts of this game's own record + the model's own last summary.
+    if prior_reasoning and memory_mode is True:
         config["prior_reasoning"] = prior_reasoning
+    elif memory_mode == "factual":
+        config["prior_memory_note"] = _prior_memory_note(prior_reasoning, condition, state)
     return config
+
+
+def _prior_memory_note(
+    prior_reasoning: str | None, condition: ResolvedCondition, state: Any
+) -> dict[str, Any]:
+    """Structured M2 note from THIS game's own record (ZGX-20 M2)."""
+    stack = list(getattr(state, "move_stack", ()) or [])
+    model_color = str(condition.task.config.get("model_color", "white"))
+    my_move: str | None = None
+    opponent_reply: str | None = None
+    if model_color == "white":
+        # white moves at even indexes: a full pair ends [mine, theirs]
+        if len(stack) % 2 == 0 and stack:
+            my_move, opponent_reply = stack[-2], stack[-1]
+        elif stack:
+            my_move, opponent_reply = stack[-1], None
+    elif stack:
+        # black moves at odd indexes
+        if len(stack) % 2 == 1:
+            my_move = stack[-1]
+            opponent_reply = stack[-2] if len(stack) >= 2 else None
+        else:
+            my_move, opponent_reply = stack[-2], stack[-1]
+    return {
+        "my_last_move_uci": my_move,
+        "opponent_last_reply_uci": opponent_reply,
+        "current_position": getattr(state, "fen", None),
+        "hypothesis_from_your_last_thinking": (prior_reasoning or "")[:400],
+    }
 
 
 def _search_memory_mode(condition: ResolvedCondition) -> str:

@@ -48,6 +48,43 @@ from zugzwang_core.ports.model import (
 _RESPONSES_PROFILE = "openai-responses"
 
 
+def _single_flight_lock():
+    """Cross-process single-flight gate for ONE shared provider quota.
+
+    ZGX campaign contract (plano 28 §3.1): one Muse inference in flight per
+    shared quota domain, not one per workspace. When ZGZ_MUSE_SINGLE_FLIGHT_LOCK
+    names a lock file, every wire call holds an exclusive flock for its
+    duration; concurrent run processes serialize at the HTTP boundary (their
+    non-provider work — engine moves, persistence — stays parallel).
+    """
+    import contextlib
+    import fcntl
+    import os
+
+    lock_path = os.environ.get("ZGZ_MUSE_SINGLE_FLIGHT_LOCK", "")
+    if not lock_path:
+
+        @contextlib.contextmanager
+        def _noop():
+            yield
+
+        return _noop()
+
+    @contextlib.contextmanager
+    def _gate():
+        fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            yield
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
+
+    return _gate()
+
+
 def _retry_after_seconds(headers: Any) -> float | None:
     """Provider's Retry-After hint in seconds; None when absent or non-numeric
     (HTTP-date form is deliberately unsupported — no clock guessing)."""
@@ -176,7 +213,8 @@ class OpenAiCompatibleBackend:
         self._last_wire_request = payload
         endpoint = "/responses" if is_responses else "/chat/completions"
         try:
-            response = await self._client.post(endpoint, json=payload)
+            with _single_flight_lock():
+                response = await self._client.post(endpoint, json=payload)
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError(
                 "provider call timed out", technical_context=self._base_url

@@ -29,7 +29,22 @@ from zugzwang_core.ports.strategy import (
 from .loop import CognitiveLoop, LoopResult, ModelCallRecord
 
 STRATEGY_ID = "chess.cognitive_navigation"
-STRATEGY_VERSION = "0.2.0"
+STRATEGY_VERSION = "0.3.0"
+
+# ZGX wave 1: every declared cognitive key must have a real consumer. An
+# unknown key FAILS the decision — a silently ignored configuration is a
+# forbidden treatment (dossier §5; plano 28 §11).
+ALLOWED_COGNITIVE_KEYS = {
+    "directive",
+    "reasoning_memory",
+    "max_rounds",
+    "inline_child_packages",
+    "preload_root",
+    "preload_expand_actions",
+    "skill_id",
+    "skill_capabilities",
+    "plan_id",
+}
 
 
 class CognitiveNavigationStrategy:
@@ -78,10 +93,29 @@ class CognitiveNavigationStrategy:
         journal = session.journal
         raw_config: Any = context.config.get("cognitive") or {}
         config = cast("dict[str, Any]", raw_config) if isinstance(raw_config, dict) else {}
+        unknown = set(config) - ALLOWED_COGNITIVE_KEYS
+        if unknown:
+            raise ValueError(
+                f"unknown cognitive config keys (no silent ignoring): {sorted(unknown)}"
+            )
+        preload_root = config.get("preload_root") is True
+        preload_expand_raw = config.get("preload_expand_actions", 0)
+        preload_expand_actions = (
+            int(preload_expand_raw)
+            if isinstance(preload_expand_raw, int) and preload_expand_raw > 0
+            else 0
+        )
+        if preload_expand_actions and not preload_root:
+            raise ValueError("preload_expand_actions requires preload_root")
         retry_feedback = context.config.get("retry_feedback")
         prior_reasoning = context.config.get("prior_reasoning")
+        prior_memory_note = context.config.get("prior_memory_note")
         section_builder = self._section_builder(
-            session, config, retry_feedback=retry_feedback, prior_reasoning=prior_reasoning
+            session,
+            config,
+            retry_feedback=retry_feedback,
+            prior_reasoning=prior_reasoning,
+            prior_memory_note=prior_memory_note,
         )
         feedback = self._round_feedback(session, config)
         loop = CognitiveLoop(
@@ -98,6 +132,8 @@ class CognitiveNavigationStrategy:
             model_reservation_id=session.model_reservation_id,
             context_sections=section_builder,
             round_feedback=feedback,
+            preload_root=preload_root,
+            preload_expand_actions=preload_expand_actions,
         )
         result = await loop.run()
         return self._trace_from(result, context)
@@ -126,6 +162,7 @@ class CognitiveNavigationStrategy:
         config: dict[str, Any],
         retry_feedback: Any = None,
         prior_reasoning: Any = None,
+        prior_memory_note: Any = None,
     ):
         """Build the memory/skills context section from the REAL stores.
 
@@ -135,7 +172,9 @@ class CognitiveNavigationStrategy:
         must know the previous attempt ended without a finalize. A prior
         reasoning summary (manifest-gated self-memory) also always renders —
         it is the model's OWN last decision thinking, never external
-        knowledge.
+        knowledge. A structured prior-memory note (ZGX-20 M2) renders as
+        labeled fields: formal facts from this game's record + the model's
+        own last summary, never external knowledge.
         """
         memory_store = getattr(session, "memory_store", None)
         skill_registry = getattr(session, "skill_registry", None)
@@ -147,6 +186,18 @@ class CognitiveNavigationStrategy:
 
         def build(ordinal: int) -> str:
             sections: list[str] = []
+            if isinstance(prior_memory_note, dict) and prior_memory_note:
+                lines = [
+                    f"- {key}: {value}"
+                    for key, value in prior_memory_note.items()
+                    if value not in (None, "")
+                ]
+                if lines:
+                    sections.append(
+                        "PRIOR MOVE NOTE (structured; formal facts from this "
+                        "game's record plus your own last reasoning summary — "
+                        "a hypothesis, not an order; verify it still applies):\n" + "\n".join(lines)
+                    )
             if isinstance(prior_reasoning, str) and prior_reasoning.strip():
                 sections.append(
                     "PREVIOUS MOVE REASONING (your own thinking from your last "
@@ -201,6 +252,7 @@ class CognitiveNavigationStrategy:
             and not (isinstance(directive, str) and directive.strip())
             and not (isinstance(retry_feedback, str) and retry_feedback.strip())
             and not (isinstance(prior_reasoning, str) and prior_reasoning.strip())
+            and not (isinstance(prior_memory_note, dict) and prior_memory_note)
         ):
             return None
         return build

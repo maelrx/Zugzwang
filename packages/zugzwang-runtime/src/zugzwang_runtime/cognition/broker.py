@@ -137,6 +137,7 @@ class CognitionToolBroker:
         search_workspace: SearchWorkspace | None = None,
         search_session_id: str | None = None,
         budget_reservation_id: str | None = None,
+        inline_child_packages: bool = True,
     ) -> None:
         self.decision_id = decision_id
         self._round_id = round_id
@@ -154,6 +155,10 @@ class CognitionToolBroker:
         self._workspace = search_workspace
         self._search_session_id = search_session_id
         self._budget_reservation_id = budget_reservation_id
+        # ZGX-03 arm control (ZGW-0103 R7): N1 controls set this False so
+        # board_expand returns child REFERENCES only — the mechanism under
+        # test is the inline child package, and the control must not get it.
+        self._inline_child_packages = inline_child_packages
         # broker node id -> workspace node id. Children minted by expansion use
         # the workspace id directly; externally bound initial nodes are mapped
         # onto anchors of the same graph (§9.1: one graph per decision).
@@ -207,6 +212,7 @@ class CognitionToolBroker:
             search_workspace=self._workspace,
             search_session_id=self._search_session_id,
             budget_reservation_id=self._budget_reservation_id,
+            inline_child_packages=self._inline_child_packages,
         )
         # The ctor copies its states argument defensively; round brokers must
         # observe later registrations, so restore the shared identity here.
@@ -720,28 +726,28 @@ class CognitionToolBroker:
             )
             child = workspace.nodes[child_ws_id]
             child_state_key, _ = self._perception.identity_keys(self._states[child_node_id])
-            # ZGW-0103 R7 (dossier §6.3): the child's authorized L0 packet
-            # ships INLINE with the expansion result. Under a bounded round
-            # budget the separate observe-the-child call is what consumed the
-            # model's last investigation slot and made the grandchild cycle
-            # (candidato → filho → resposta adversária → neto) unreachable.
-            child_packet = self._build_packet(self._states[child_node_id], child_node_id)
-            results.append(
-                {
-                    "action_id": action_id,
-                    "uci": uci,
-                    "expanded": True,
-                    "parent_node_id": node_id,
-                    "child_node_id": child_node_id,
-                    "state_key": child_state_key,
-                    "depth": child.depth,
-                    "root_action": child.root_action,
-                    "terminal": child.terminal,
-                    "edge_id": self._last_edge_id(parent.node_id, uci),
-                    "package": child_packet.model_dump(mode="json"),
-                    "package_content_hash": child_packet.content_hash(),
-                }
-            )
+            row: dict[str, Any] = {
+                "action_id": action_id,
+                "uci": uci,
+                "expanded": True,
+                "parent_node_id": node_id,
+                "child_node_id": child_node_id,
+                "state_key": child_state_key,
+                "depth": child.depth,
+                "root_action": child.root_action,
+                "terminal": child.terminal,
+                "edge_id": self._last_edge_id(parent.node_id, uci),
+            }
+            if self._inline_child_packages:
+                # ZGW-0103 R7 / ZGX-03 (dossier §6.3): the child's authorized
+                # L0 packet ships INLINE with the expansion result. Under a
+                # bounded round budget the separate observe-the-child call is
+                # what consumed the model's last investigation slot and made
+                # the grandchild cycle unreachable.
+                child_packet = self._build_packet(self._states[child_node_id], child_node_id)
+                row["package"] = child_packet.model_dump(mode="json")
+                row["package_content_hash"] = child_packet.content_hash()
+            results.append(row)
         packet = self._build_packet(state, node_id)
         return {"results": results, "content_hash": packet.content_hash()}
 

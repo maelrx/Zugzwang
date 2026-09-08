@@ -140,6 +140,11 @@ class DurableRunServices:
         # declared observation policy falls back to the minimal exposure.
         holder = observation_holder if observation_holder is not None else {}
         exposure = PacketExposure.from_observation(holder.get("current"))
+        # ZGX arms: N1 controls run with inline_child_packages OFF — the
+        # mechanism under test is the inline child package, so the declared
+        # toggle must reach the broker, never be silently ignored.
+        cognitive_cfg = holder.get("cognitive") or {}
+        inline_packages = cognitive_cfg.get("inline_child_packages") is not False
 
         def factory(
             *,
@@ -212,6 +217,7 @@ class DurableRunServices:
                 ),
                 cas=self._cas,
                 engine=self._database.engine(),
+                inline_child_packages=inline_packages,
             )
 
         return factory
@@ -418,6 +424,7 @@ class DurableRunServices:
         last_run_id: str | None = None
         for condition in conditions:
             observation_holder["current"] = dict(condition.protocol.observation)
+            observation_holder["cognitive"] = dict(condition.task.config.get("cognitive") or {})
             exposure_ref = store_json_artifact(
                 cas=self._cas,
                 writer=writer,

@@ -64,6 +64,7 @@ class SessionComponents:
     max_argument_bytes: int
     search_session_id: str
     clock: Callable[[], str]
+    inline_child_packages: bool = True
 
 
 def _default_clock() -> str:
@@ -248,6 +249,7 @@ class DecisionSession:
         max_depth_plies: int = 6,
         max_nodes: int = 64,
         max_model_calls: int = 0,
+        inline_child_packages: bool = True,
     ) -> DecisionSession:
         """Open a decision: journal the opening, then expose the broker (§26.1)."""
         clock = clock or _default_clock
@@ -394,6 +396,7 @@ class DecisionSession:
             search_workspace=workspace,
             search_session_id=search_session_id,
             budget_reservation_id=tool_reservation_id,
+            inline_child_packages=inline_child_packages,
         )
         session = cls(decision_id=decision_id, broker=broker, journal=journal)
         session._model_reservation_id = model_reservation_id
@@ -412,6 +415,7 @@ class DecisionSession:
             max_argument_bytes=max_argument_bytes,
             search_session_id=search_session_id,
             clock=clock,
+            inline_child_packages=inline_child_packages,
         )
         return session
 

@@ -1,0 +1,90 @@
+# CB2 CAMPAIGN (ZGW-0103) — EXP-03 braço B
+# Dossiê 2026-09-08: checklist imperativo de captura (estilo E-L).
+# Condições congeladas: muse-spark-1.3-contributor (opencode-router), brancas,
+# Stockfish elo 1000 (piso UCI_Elo=1320, Skill 0, 20k nós), native_tools,
+# transport retries 2 (Retry-After honrado), ascii OFF (pacote fen+mapa).
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: cb2-exp03-imperative
+  tags: [cb2, campaign, real, full-game, cognitive-navigation, stockfish-opponent, exp03-capture]
+
+spec:
+  seed: 20261007
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      cognitive:
+        max_rounds: 6
+        directive: >-
+          Full game against a strong engine. TACTICAL RULES, in priority
+          order: (1) CAPTURE — before every move, list every capture you have
+          that does not lose material; if a safe capture exists, PLAY IT.
+          Winning a pawn is good. Do not play quiet moves while a winning
+          capture is available. (2) SURVIVAL — list every piece of yours that
+          the opponent attacks; if a piece is attacked and undefended or
+          under-defended, move or defend it NOW. Never ignore an attacked
+          piece. (3) FINALIZE — every decision MUST end with board_finalize
+          on the ROOT node using an action_id copied from the root
+          observation; the final call accepts only board_finalize, so
+          finalize by round 3. Page the observation (cursor) if the piece
+          you want is not on page 1. (4) DEVELOPMENT — castle early, develop
+          all pieces, control the center. You are playing for a WIN: take
+          space, take material, attack when your pieces are developed.
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 420
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: medium
+        default_max_output_tokens: 8192
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1000
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 2
+      parse: 1
+      illegal: 4
+
+  budget:
+    max_calls: 500
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

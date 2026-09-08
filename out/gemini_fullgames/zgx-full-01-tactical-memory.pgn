@@ -1,0 +1,9 @@
+[Event "zgx-full-01-tactical-memory"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "gemini-3.8-flash-low"]
+[Black "stockfish-1320"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 Nxe4 4. Qe2 Nf6 5. Nc6+ Qe7 6. Nxe7 Bxe7 7. d4 c6 8. Bg5 Ng8 9. Bxe7 b6 10. Bd6+ Kd8 11. Qe7+ Nxe7 12. Bxe7+ Kxe7 13. Be2 Ba6 14. Bxa6 Nxa6 15. O-O Rhd8 16. Re1+ Kf8 17. Nc3 Nc7 18. Rad1 g6 19. d5 Nxd5 20. Nxd5 Re8 21. Rxe8+ Rxe8 22. Nf6 Ra8 23. Rxd7 h6 24. Ng4 h5 25. Ne5 Ke8 26. Rxf7 a6 27. Rg7 Kf8 28. Rxg6 Re8 29. f4 a5 30. Rxc6 h4 31. Rxb6 Rd8 32. Rf6+ Kg7 33. Rf7+ Kg8 34. Rd7 Rxd7 35. Nxd7 Kg7 36. Kf2 Kh8 37. Ke3 Kg8 38. Ke4 Kh8 39. Kf5 h3 40. gxh3 Kg7 41. Ne5 Kf8 42. Kf6 Ke8 43. Nf7 Kd7 44. Ne5+ Kc8 45. f5 Kc7 46. Ke7 Kc8 47. f6 Kc7 48. f7 Kb7 49. f8=Q a4 50. Qd8 Ka6 51. Qa8+ Kb5 52. Qxa4+ Kxa4 53. Kd6 Ka5 54. Nc6+ Ka4 55. b3+ Kb5 56. Kd5 Kb6 57. Kd6 Kb5 58. Ne5 Kb4 59. Nc4 Kb5 60. b4 Kxc4 61. h4 Kc3 62. h5 Kc4 63. h6 Kxb4 64. h7 Ka3 65. h8=Q Ka4 66. Qd4+ Ka5 67. Kc6 Ka6 68. Qb6# *

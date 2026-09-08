@@ -1,0 +1,90 @@
+# Muse R2 #3 — SENTINEL-REPLY: decide se o micro-sinal ZGX-16 (mate-em-1 0×1)
+# converte em sobrevivência full quando o sentinela ganha o enforcement que
+# faltou no full-03: expansão OBRIGATÓRIA da resposta adversária antes de
+# finalizar. Controle de custo em low; o que se testa é o enforcement.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx-muse-r2-03-sentinel-reply
+  tags: [zgx, muse, r2, fullgame, real, stockfish1320]
+
+spec:
+  seed: 20260908
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 420
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: >-
+          KING SAFETY WITH ENFORCED VERIFICATION: Your first duty is that your
+          king is never the side that gets mated. Protocol per move, in order:
+          (1) BOARD CHECK: expand every adversary check and capture directed at
+          your king zone and your last-moved piece; (2) REPLY RULE: for your
+          chosen candidate, you MUST expand the adversary's strongest reply —
+          if it wins material or gives mate, discard the candidate and pick the
+          next; (3) PAWN SHIELD: never move the pawns in front of your king
+          unless forced by tactics; (4) TEMPO RULE: no king walks without a
+          concrete threat being answered. Maintain factual memory of your last
+          move. Finalize on ROOT via board_finalize only after rule 2 has been
+          executed at least once.
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

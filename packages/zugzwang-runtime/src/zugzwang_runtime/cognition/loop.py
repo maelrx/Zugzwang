@@ -452,16 +452,18 @@ class CognitiveLoop:
         )
         if not step.ok or self._preload_expand_actions <= 0:
             return
-        entry = result.transcript[-1]
-        payload: Any = entry.get("result")
+        entry = cast("dict[str, Any]", result.transcript[-1])
+        payload = entry.get("result")
         if not isinstance(payload, dict):
             return
-        packet: Any = payload.get("packet")
+        packet = cast("dict[str, Any]", payload).get("packet")
         if not isinstance(packet, dict):
             return
-        items: Any = (packet.get("legal_actions") or {}).get("items") or []
+        legal = cast("dict[str, Any]", packet).get("legal_actions")
+        legal_map = cast("dict[str, Any]", legal) if isinstance(legal, dict) else {}
+        items = cast("list[Any]", legal_map.get("items") or [])
         action_ids = [
-            item["action_id"]
+            str(item["action_id"])
             for item in items[: self._preload_expand_actions]
             if isinstance(item, dict) and isinstance(item.get("action_id"), str)
         ]

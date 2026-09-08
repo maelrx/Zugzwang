@@ -187,10 +187,9 @@ class CognitiveNavigationStrategy:
         def build(ordinal: int) -> str:
             sections: list[str] = []
             if isinstance(prior_memory_note, dict) and prior_memory_note:
+                note = cast("dict[str, Any]", prior_memory_note)
                 lines = [
-                    f"- {key}: {value}"
-                    for key, value in prior_memory_note.items()
-                    if value not in (None, "")
+                    f"- {key}: {value}" for key, value in note.items() if value not in (None, "")
                 ]
                 if lines:
                     sections.append(

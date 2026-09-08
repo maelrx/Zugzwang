@@ -424,7 +424,8 @@ class DurableRunServices:
         last_run_id: str | None = None
         for condition in conditions:
             observation_holder["current"] = dict(condition.protocol.observation)
-            observation_holder["cognitive"] = dict(condition.task.config.get("cognitive") or {})
+            cognitive_raw = cast("dict[str, Any] | None", condition.task.config.get("cognitive"))
+            observation_holder["cognitive"] = dict(cognitive_raw) if cognitive_raw else {}
             exposure_ref = store_json_artifact(
                 cas=self._cas,
                 writer=writer,

@@ -1,0 +1,7973 @@
+[
+ {
+  "zgx": "zgx",
+  "arm": "preflight",
+  "pid": null,
+  "workspace": "zgx-preflight",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2e4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 2,
+  "tokens": {
+   "input": 19658,
+   "output": 751,
+   "reasoning": 300
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx01-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 19075,
+   "output": 920,
+   "reasoning": 712
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 60,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 37,
+   "mate_after": false,
+   "regret_cp": 23,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx01-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1e2",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 38008,
+   "output": 3698,
+   "reasoning": 3360
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -148,
+   "mate_before": false,
+   "chosen": "d1e2",
+   "chosen_legal": true,
+   "cp_after": -255,
+   "mate_after": false,
+   "regret_cp": 107,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx01-a-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 16356,
+   "output": 915,
+   "reasoning": 763
+  },
+  "posthoc": {
+   "legal_root_best": "b1c3",
+   "cp_before": 43,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -332,
+   "mate_after": false,
+   "regret_cp": 375,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx01-a-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 48045,
+   "output": 2060,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -122,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -294,
+   "mate_after": false,
+   "regret_cp": 172,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx01-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2f1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 48340,
+   "output": 112,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 266,
+   "mate_before": false,
+   "chosen": "e2f1",
+   "chosen_legal": true,
+   "cp_after": 271,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx01-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 51115,
+   "output": 116,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -916,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx01-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g2g4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 52597,
+   "output": 5825,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -315,
+   "mate_before": false,
+   "chosen": "g2g4",
+   "chosen_legal": true,
+   "cp_after": -435,
+   "mate_after": false,
+   "regret_cp": 120,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx01-a-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 50650,
+   "output": 2851,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 56,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -229,
+   "mate_after": false,
+   "regret_cp": 285,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx01-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 47434,
+   "output": 119,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1276,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1217,
+   "mate_after": false,
+   "regret_cp": 59,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx01-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c8",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 45320,
+   "output": 118,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 812,
+   "mate_before": false,
+   "chosen": "c7c8",
+   "chosen_legal": true,
+   "cp_after": 507,
+   "mate_after": false,
+   "regret_cp": 305,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx01-a-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 41469,
+   "output": 756,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx01-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c8d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 45246,
+   "output": 115,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "c8d7",
+   "chosen_legal": true,
+   "cp_after": 1809,
+   "mate_after": false,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx01-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 12460,
+   "output": 2441,
+   "reasoning": 2062
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 42,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 34,
+   "mate_after": false,
+   "regret_cp": 8,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx01-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 83977,
+   "output": 6838,
+   "reasoning": 5374
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -151,
+   "mate_before": false,
+   "chosen": "c3d4",
+   "chosen_legal": true,
+   "cp_after": -136,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx01-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 33755,
+   "output": 118,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d2d4",
+   "cp_before": 49,
+   "mate_before": false,
+   "chosen": "d2d3",
+   "chosen_legal": true,
+   "cp_after": 0,
+   "mate_after": false,
+   "regret_cp": 49,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx01-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 144526,
+   "output": 2739,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -131,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -314,
+   "mate_after": false,
+   "regret_cp": 183,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx01-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "b3d3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 79048,
+   "output": 942,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 267,
+   "mate_before": false,
+   "chosen": "b3d3",
+   "chosen_legal": true,
+   "cp_after": -561,
+   "mate_after": false,
+   "regret_cp": 828,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx01-b-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d4d5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 61431,
+   "output": 4581,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -920,
+   "mate_before": false,
+   "chosen": "d4d5",
+   "chosen_legal": true,
+   "cp_after": -929,
+   "mate_after": false,
+   "regret_cp": 9,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx01-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g2g4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 111672,
+   "output": 1733,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -311,
+   "mate_before": false,
+   "chosen": "g2g4",
+   "chosen_legal": true,
+   "cp_after": -443,
+   "mate_after": false,
+   "regret_cp": 132,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx01-b-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d4e6",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 208249,
+   "output": 1658,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 61,
+   "mate_before": false,
+   "chosen": "d4e6",
+   "chosen_legal": true,
+   "cp_after": -266,
+   "mate_after": false,
+   "regret_cp": 327,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx01-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 81228,
+   "output": 298,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1280,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1212,
+   "mate_after": false,
+   "regret_cp": 68,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx01-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2a5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 33748,
+   "output": 122,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 797,
+   "mate_before": false,
+   "chosen": "d2a5",
+   "chosen_legal": true,
+   "cp_after": 0,
+   "mate_after": false,
+   "regret_cp": 797,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx01-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 112599,
+   "output": 995,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx01",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx01-b-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 68594,
+   "output": 1261,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx02-a-p01-captura_boa",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 29773,
+   "output": 2686,
+   "reasoning": 1664
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 24,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx02-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 71500,
+   "output": 7145,
+   "reasoning": 6030
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -148,
+   "mate_before": false,
+   "chosen": "c3d4",
+   "chosen_legal": true,
+   "cp_after": -144,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx02-a-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    6
+   ]
+  ],
+  "throttles": 6,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 70250,
+   "output": 4477,
+   "reasoning": 3339
+  },
+  "posthoc": {
+   "legal_root_best": "d2d4",
+   "cp_before": 56,
+   "mate_before": false,
+   "chosen": "d2d4",
+   "chosen_legal": true,
+   "cp_after": 45,
+   "mate_after": false,
+   "regret_cp": 11,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx02-a-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1h5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 46152,
+   "output": 4432,
+   "reasoning": 3505
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -121,
+   "mate_before": false,
+   "chosen": "d1h5",
+   "chosen_legal": true,
+   "cp_after": -125,
+   "mate_after": false,
+   "regret_cp": 4,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx02-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2d1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    6
+   ]
+  ],
+  "throttles": 6,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 44552,
+   "output": 6107,
+   "reasoning": 5158
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 259,
+   "mate_before": false,
+   "chosen": "e2d1",
+   "chosen_legal": true,
+   "cp_after": 8,
+   "mate_after": false,
+   "regret_cp": 251,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx02-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 18803,
+   "output": 2640,
+   "reasoning": 2058
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -925,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx02-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 32803,
+   "output": 2930,
+   "reasoning": 2215
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -304,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -542,
+   "mate_after": false,
+   "regret_cp": 238,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx02-a-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 32971,
+   "output": 3012,
+   "reasoning": 2310
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 86,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -242,
+   "mate_after": false,
+   "regret_cp": 328,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx02-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 46844,
+   "output": 4908,
+   "reasoning": 4047
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1276,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1219,
+   "mate_after": false,
+   "regret_cp": 57,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx02-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 34249,
+   "output": 3722,
+   "reasoning": 2875
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 815,
+   "mate_before": false,
+   "chosen": "c7c4",
+   "chosen_legal": true,
+   "cp_after": 761,
+   "mate_after": false,
+   "regret_cp": 54,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx02-a-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 32713,
+   "output": 3834,
+   "reasoning": 2932
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx02-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 19599,
+   "output": 1496,
+   "reasoning": 850
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx02-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 12425,
+   "output": 2245,
+   "reasoning": 1856
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 32,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 46,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx02-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1e2",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 119290,
+   "output": 8110,
+   "reasoning": 6734
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -144,
+   "mate_before": false,
+   "chosen": "d1e2",
+   "chosen_legal": true,
+   "cp_after": -285,
+   "mate_after": false,
+   "regret_cp": 141,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx02-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 21097,
+   "output": 2927,
+   "reasoning": 2334
+  },
+  "posthoc": {
+   "legal_root_best": "d2d4",
+   "cp_before": 35,
+   "mate_before": false,
+   "chosen": "d2d4",
+   "chosen_legal": true,
+   "cp_after": 35,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx02-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1h5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 61123,
+   "output": 4758,
+   "reasoning": 3777
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -64,
+   "mate_before": false,
+   "chosen": "d1h5",
+   "chosen_legal": true,
+   "cp_after": -148,
+   "mate_after": false,
+   "regret_cp": 84,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx02-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2f1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 54688,
+   "output": 5981,
+   "reasoning": 4716
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 313,
+   "mate_before": false,
+   "chosen": "e2f1",
+   "chosen_legal": true,
+   "cp_after": 303,
+   "mate_after": false,
+   "regret_cp": 10,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx02-b-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 35506,
+   "output": 4791,
+   "reasoning": 3913
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -934,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx02-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 46264,
+   "output": 4552,
+   "reasoning": 3740
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -289,
+   "mate_before": false,
+   "chosen": "c3d5",
+   "chosen_legal": true,
+   "cp_after": -282,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx02-b-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    7
+   ]
+  ],
+  "throttles": 7,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 46844,
+   "output": 4163,
+   "reasoning": 3309
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 78,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -225,
+   "mate_after": false,
+   "regret_cp": 303,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx02-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 19093,
+   "output": 3721,
+   "reasoning": 3174
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1276,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1210,
+   "mate_after": false,
+   "regret_cp": 66,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx02-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c8",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 74477,
+   "output": 6148,
+   "reasoning": 4966
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 817,
+   "mate_before": false,
+   "chosen": "c7c8",
+   "chosen_legal": true,
+   "cp_after": 504,
+   "mate_after": false,
+   "regret_cp": 313,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx02-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7a8",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 32710,
+   "output": 5268,
+   "reasoning": 4421
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7a8",
+   "chosen_legal": true,
+   "cp_after": 802,
+   "mate_after": false,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx02",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx02-b-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 13341,
+   "output": 2383,
+   "reasoning": 1934
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx03-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 12475,
+   "output": 2239,
+   "reasoning": 1863
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 50,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 45,
+   "mate_after": false,
+   "regret_cp": 5,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx03-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 91613,
+   "output": 10298,
+   "reasoning": 9282
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -143,
+   "mate_before": false,
+   "chosen": "c3d4",
+   "chosen_legal": true,
+   "cp_after": -160,
+   "mate_after": false,
+   "regret_cp": 17,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx03-a-p03-captura_ruim",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    8
+   ],
+   [
+    "failed",
+    7
+   ]
+  ],
+  "throttles": 7,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 99995,
+   "output": 10143,
+   "reasoning": 8313
+  },
+  "posthoc": {
+   "legal_root_best": "e1g1",
+   "cp_before": 37,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx03-a-p04-captura_ruim",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 85601,
+   "output": 4291,
+   "reasoning": 3236
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -89,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx03-a-p05-urgencia_rei",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 54950,
+   "output": 7694,
+   "reasoning": 6317
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 285,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx03-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 60023,
+   "output": 8567,
+   "reasoning": 7459
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -947,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx03-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 42634,
+   "output": 4833,
+   "reasoning": 4059
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -278,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -528,
+   "mate_after": false,
+   "regret_cp": 250,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx03-a-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 53368,
+   "output": 3285,
+   "reasoning": 2430
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 81,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -234,
+   "mate_after": false,
+   "regret_cp": 315,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx03-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 58974,
+   "output": 5748,
+   "reasoning": 4816
+  },
+  "posthoc": {
+   "legal_root_best": "f3e5",
+   "cp_before": 1278,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1218,
+   "mate_after": false,
+   "regret_cp": 60,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx03-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 87053,
+   "output": 5878,
+   "reasoning": 4625
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 802,
+   "mate_before": false,
+   "chosen": "c7f7",
+   "chosen_legal": true,
+   "cp_after": 491,
+   "mate_after": false,
+   "regret_cp": 311,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx03-a-p11-final_conversao",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    8
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 93822,
+   "output": 11445,
+   "reasoning": 9573
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx03-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 9908,
+   "output": 2390,
+   "reasoning": 2038
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx03-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 19599,
+   "output": 2077,
+   "reasoning": 1646
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 37,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 38,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx03-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 38013,
+   "output": 6952,
+   "reasoning": 6101
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -157,
+   "mate_before": false,
+   "chosen": "c3d4",
+   "chosen_legal": true,
+   "cp_after": -156,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx03-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 24646,
+   "output": 2222,
+   "reasoning": 1652
+  },
+  "posthoc": {
+   "legal_root_best": "c2c3",
+   "cp_before": 50,
+   "mate_before": false,
+   "chosen": "d2d4",
+   "chosen_legal": true,
+   "cp_after": 41,
+   "mate_after": false,
+   "regret_cp": 9,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx03-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 29149,
+   "output": 2883,
+   "reasoning": 2177
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -41,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -309,
+   "mate_after": false,
+   "regret_cp": 268,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx03-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2f1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 49762,
+   "output": 8657,
+   "reasoning": 7582
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 303,
+   "mate_before": false,
+   "chosen": "e2f1",
+   "chosen_legal": true,
+   "cp_after": 302,
+   "mate_after": false,
+   "regret_cp": 1,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx03-b-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 69079,
+   "output": 7182,
+   "reasoning": 5017
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -952,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx03-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g2g4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 47819,
+   "output": 5723,
+   "reasoning": 4943
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -292,
+   "mate_before": false,
+   "chosen": "g2g4",
+   "chosen_legal": true,
+   "cp_after": -422,
+   "mate_after": false,
+   "regret_cp": 130,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx03-b-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 52872,
+   "output": 2897,
+   "reasoning": 1972
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 86,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -242,
+   "mate_after": false,
+   "regret_cp": 328,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx03-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 19085,
+   "output": 3416,
+   "reasoning": 2879
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1271,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1235,
+   "mate_after": false,
+   "regret_cp": 36,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx03-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 44469,
+   "output": 4502,
+   "reasoning": 3515
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 815,
+   "mate_before": false,
+   "chosen": "c7f7",
+   "chosen_legal": true,
+   "cp_after": 505,
+   "mate_after": false,
+   "regret_cp": 310,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx03-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    7
+   ]
+  ],
+  "throttles": 7,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 49620,
+   "output": 6087,
+   "reasoning": 4934
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx03",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx03-b-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 10928,
+   "output": 2824,
+   "reasoning": 2401
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx12-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    1
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 33826,
+   "output": 815,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 27,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 31,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx12-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "b2b4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 169154,
+   "output": 1959,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -151,
+   "mate_before": false,
+   "chosen": "b2b4",
+   "chosen_legal": true,
+   "cp_after": -172,
+   "mate_after": false,
+   "regret_cp": 21,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx12-a-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 81843,
+   "output": 1573,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c2c3",
+   "cp_before": 45,
+   "mate_before": false,
+   "chosen": "d2d4",
+   "chosen_legal": true,
+   "cp_after": 37,
+   "mate_after": false,
+   "regret_cp": 8,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx12-a-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 100791,
+   "output": 811,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -122,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -285,
+   "mate_after": false,
+   "regret_cp": 163,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx12-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2f1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 138553,
+   "output": 5371,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 301,
+   "mate_before": false,
+   "chosen": "e2f1",
+   "chosen_legal": true,
+   "cp_after": 298,
+   "mate_after": false,
+   "regret_cp": 3,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx12-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 41311,
+   "output": 5374,
+   "reasoning": 4491
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -957,
+   "mate_before": false,
+   "chosen": "a1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx12-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g2g4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 50097,
+   "output": 3973,
+   "reasoning": 3186
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -282,
+   "mate_before": false,
+   "chosen": "g2g4",
+   "chosen_legal": true,
+   "cp_after": -435,
+   "mate_after": false,
+   "regret_cp": 153,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx12-a-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 53285,
+   "output": 4463,
+   "reasoning": 3641
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 82,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -227,
+   "mate_after": false,
+   "regret_cp": 309,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx12-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 33239,
+   "output": 2240,
+   "reasoning": 1547
+  },
+  "posthoc": {
+   "legal_root_best": "f3e5",
+   "cp_before": 1283,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1239,
+   "mate_after": false,
+   "regret_cp": 44,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx12-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "b2b3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    7
+   ]
+  ],
+  "throttles": 7,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 41131,
+   "output": 5824,
+   "reasoning": 5028
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 817,
+   "mate_before": false,
+   "chosen": "b2b3",
+   "chosen_legal": true,
+   "cp_after": 385,
+   "mate_after": false,
+   "regret_cp": 432,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx12-a-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 20750,
+   "output": 3147,
+   "reasoning": 2601
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx12-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 16004,
+   "output": 772,
+   "reasoning": 313
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx12-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 72136,
+   "output": 1313,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 34,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 31,
+   "mate_after": false,
+   "regret_cp": 3,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx12-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "b2b4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 174065,
+   "output": 4604,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -153,
+   "mate_before": false,
+   "chosen": "b2b4",
+   "chosen_legal": true,
+   "cp_after": -198,
+   "mate_after": false,
+   "regret_cp": 45,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx12-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 78430,
+   "output": 964,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "c2c3",
+   "cp_before": 45,
+   "mate_before": false,
+   "chosen": "d2d4",
+   "chosen_legal": true,
+   "cp_after": 45,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx12-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 122243,
+   "output": 1035,
+   "reasoning": 0
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -86,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -301,
+   "mate_after": false,
+   "regret_cp": 215,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx12-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2e3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 49607,
+   "output": 8423,
+   "reasoning": 7418
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 313,
+   "mate_before": false,
+   "chosen": "e2e3",
+   "chosen_legal": true,
+   "cp_after": -621,
+   "mate_after": false,
+   "regret_cp": 934,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx12-b-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 19395,
+   "output": 6625,
+   "reasoning": 6022
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -947,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx12-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 36106,
+   "output": 3872,
+   "reasoning": 3090
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -271,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -537,
+   "mate_after": false,
+   "regret_cp": 266,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx12-b-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 37727,
+   "output": 3434,
+   "reasoning": 2661
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 87,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -241,
+   "mate_after": false,
+   "regret_cp": 328,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx12-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 37318,
+   "output": 4290,
+   "reasoning": 3494
+  },
+  "posthoc": {
+   "legal_root_best": "f3e5",
+   "cp_before": 1273,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1287,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx12-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 44561,
+   "output": 3103,
+   "reasoning": 2364
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 820,
+   "mate_before": false,
+   "chosen": "c7c4",
+   "chosen_legal": true,
+   "cp_after": 763,
+   "mate_after": false,
+   "regret_cp": 57,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx12-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7a8",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 49453,
+   "output": 6017,
+   "reasoning": 5044
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7a8",
+   "chosen_legal": true,
+   "cp_after": 817,
+   "mate_after": false,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx12",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx12-b-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 11211,
+   "output": 1310,
+   "reasoning": 948
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx13-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 13642,
+   "output": 2451,
+   "reasoning": 1976
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 38,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 39,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx13-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    6
+   ]
+  ],
+  "throttles": 6,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 83921,
+   "output": 9252,
+   "reasoning": 7996
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -131,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -472,
+   "mate_after": false,
+   "regret_cp": 341,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx13-a-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 30175,
+   "output": 3155,
+   "reasoning": 2547
+  },
+  "posthoc": {
+   "legal_root_best": "c2c3",
+   "cp_before": 47,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -320,
+   "mate_after": false,
+   "regret_cp": 367,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx13-a-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    6
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 113671,
+   "output": 8541,
+   "reasoning": 7170
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -75,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -311,
+   "mate_after": false,
+   "regret_cp": 236,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx13-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "b3d3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 46235,
+   "output": 4626,
+   "reasoning": 3780
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 318,
+   "mate_before": false,
+   "chosen": "b3d3",
+   "chosen_legal": true,
+   "cp_after": -584,
+   "mate_after": false,
+   "regret_cp": 902,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx13-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g1h1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 40337,
+   "output": 4910,
+   "reasoning": 4136
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -952,
+   "mate_before": false,
+   "chosen": "g1h1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx13-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 20129,
+   "output": 2056,
+   "reasoning": 1578
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -295,
+   "mate_before": false,
+   "chosen": "c3d5",
+   "chosen_legal": true,
+   "cp_after": -285,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx13-a-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 47152,
+   "output": 3430,
+   "reasoning": 2629
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 67,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -226,
+   "mate_after": false,
+   "regret_cp": 293,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx13-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 32428,
+   "output": 3050,
+   "reasoning": 2406
+  },
+  "posthoc": {
+   "legal_root_best": "f3e5",
+   "cp_before": 1304,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1247,
+   "mate_after": false,
+   "regret_cp": 57,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx13-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 40949,
+   "output": 3944,
+   "reasoning": 3159
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 825,
+   "mate_before": false,
+   "chosen": "c7f7",
+   "chosen_legal": true,
+   "cp_after": 496,
+   "mate_after": false,
+   "regret_cp": 329,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx13-a-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    8
+   ]
+  ],
+  "throttles": 8,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 64910,
+   "output": 10326,
+   "reasoning": 9005
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx13-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 13474,
+   "output": 1484,
+   "reasoning": 1046
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx13-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 54045,
+   "output": 4342,
+   "reasoning": 3422
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 40,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 38,
+   "mate_after": false,
+   "regret_cp": 2,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx13-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2h6",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 28014,
+   "output": 5277,
+   "reasoning": 4483
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -148,
+   "mate_before": false,
+   "chosen": "d2h6",
+   "chosen_legal": true,
+   "cp_after": -285,
+   "mate_after": false,
+   "regret_cp": 137,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx13-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e1g1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 30491,
+   "output": 3056,
+   "reasoning": 2371
+  },
+  "posthoc": {
+   "legal_root_best": "d2d4",
+   "cp_before": 46,
+   "mate_before": false,
+   "chosen": "e1g1",
+   "chosen_legal": true,
+   "cp_after": 46,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx13-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d4g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 29808,
+   "output": 2852,
+   "reasoning": 2144
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -114,
+   "mate_before": false,
+   "chosen": "d4g7",
+   "chosen_legal": true,
+   "cp_after": -548,
+   "mate_after": false,
+   "regret_cp": 434,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx13-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2d1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 38655,
+   "output": 7733,
+   "reasoning": 6892
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 292,
+   "mate_before": false,
+   "chosen": "e2d1",
+   "chosen_legal": true,
+   "cp_after": 52,
+   "mate_after": false,
+   "regret_cp": 240,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx13-b-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 26398,
+   "output": 6839,
+   "reasoning": 6067
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -947,
+   "mate_before": false,
+   "chosen": "f1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx13-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g2g4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 51621,
+   "output": 5218,
+   "reasoning": 4409
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -277,
+   "mate_before": false,
+   "chosen": "g2g4",
+   "chosen_legal": true,
+   "cp_after": -415,
+   "mate_after": false,
+   "regret_cp": 138,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx13-b-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 27787,
+   "output": 3006,
+   "reasoning": 2358
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 81,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -231,
+   "mate_after": false,
+   "regret_cp": 312,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx13-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 33940,
+   "output": 2912,
+   "reasoning": 2192
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1283,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1221,
+   "mate_after": false,
+   "regret_cp": 62,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx13-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 33590,
+   "output": 4282,
+   "reasoning": 3586
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 825,
+   "mate_before": false,
+   "chosen": "c7c4",
+   "chosen_legal": true,
+   "cp_after": 780,
+   "mate_after": false,
+   "regret_cp": 45,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx13-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 36071,
+   "output": 2585,
+   "reasoning": 1858
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx13",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx13-b-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 16375,
+   "output": 1519,
+   "reasoning": 1030
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx15-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 16209,
+   "output": 1426,
+   "reasoning": 1025
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 32,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 35,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx15-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2e3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 126504,
+   "output": 9647,
+   "reasoning": 8113
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -131,
+   "mate_before": false,
+   "chosen": "d2e3",
+   "chosen_legal": true,
+   "cp_after": -607,
+   "mate_after": false,
+   "regret_cp": 476,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx15-a-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 47907,
+   "output": 4731,
+   "reasoning": 3882
+  },
+  "posthoc": {
+   "legal_root_best": "e1g1",
+   "cp_before": 48,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -337,
+   "mate_after": false,
+   "regret_cp": 385,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx15-a-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 60669,
+   "output": 5464,
+   "reasoning": 4533
+  },
+  "posthoc": {
+   "legal_root_best": "f1e1",
+   "cp_before": -94,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -337,
+   "mate_after": false,
+   "regret_cp": 243,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx15-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2f1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 59508,
+   "output": 7360,
+   "reasoning": 6126
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 289,
+   "mate_before": false,
+   "chosen": "e2f1",
+   "chosen_legal": true,
+   "cp_after": 288,
+   "mate_after": false,
+   "regret_cp": 1,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx15-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a1e1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 27356,
+   "output": 4831,
+   "reasoning": 3933
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -961,
+   "mate_before": false,
+   "chosen": "a1e1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx15-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 65832,
+   "output": 8853,
+   "reasoning": 7759
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -277,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -537,
+   "mate_after": false,
+   "regret_cp": 260,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx15-a-p08-linha_risco",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 61124,
+   "output": 5498,
+   "reasoning": 4611
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 77,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx15-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 18039,
+   "output": 1985,
+   "reasoning": 1421
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1285,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1249,
+   "mate_after": false,
+   "regret_cp": 36,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx15-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c8",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 38050,
+   "output": 3815,
+   "reasoning": 2877
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 829,
+   "mate_before": false,
+   "chosen": "c7c8",
+   "chosen_legal": true,
+   "cp_after": 534,
+   "mate_after": false,
+   "regret_cp": 295,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx15-a-p11-final_conversao",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 56552,
+   "output": 5163,
+   "reasoning": 4143
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx15-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    7
+   ]
+  ],
+  "throttles": 7,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 23522,
+   "output": 1717,
+   "reasoning": 1122
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx15-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 63467,
+   "output": 8104,
+   "reasoning": 6982
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 34,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 32,
+   "mate_after": false,
+   "regret_cp": 2,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx15-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 153537,
+   "output": 8141,
+   "reasoning": 6615
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -140,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -490,
+   "mate_after": false,
+   "regret_cp": 350,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx15-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 44627,
+   "output": 5177,
+   "reasoning": 4244
+  },
+  "posthoc": {
+   "legal_root_best": "e1g1",
+   "cp_before": 45,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -326,
+   "mate_after": false,
+   "regret_cp": 371,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx15-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 65190,
+   "output": 3184,
+   "reasoning": 2304
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -93,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -335,
+   "mate_after": false,
+   "regret_cp": 242,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx15-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2d1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 73712,
+   "output": 8565,
+   "reasoning": 7422
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 310,
+   "mate_before": false,
+   "chosen": "e2d1",
+   "chosen_legal": true,
+   "cp_after": 92,
+   "mate_after": false,
+   "regret_cp": 218,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx15-b-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d4d5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 52004,
+   "output": 8517,
+   "reasoning": 7498
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -957,
+   "mate_before": false,
+   "chosen": "d4d5",
+   "chosen_legal": true,
+   "cp_after": -961,
+   "mate_after": false,
+   "regret_cp": 4,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx15-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 59081,
+   "output": 5622,
+   "reasoning": 4545
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -281,
+   "mate_before": false,
+   "chosen": "d1d4",
+   "chosen_legal": true,
+   "cp_after": -574,
+   "mate_after": false,
+   "regret_cp": 293,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx15-b-p08-linha_risco",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    11
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 125995,
+   "output": 10296,
+   "reasoning": 8195
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 77,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx15-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 45884,
+   "output": 4475,
+   "reasoning": 3565
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1276,
+   "mate_before": false,
+   "chosen": "e4f5",
+   "chosen_legal": true,
+   "cp_after": 1242,
+   "mate_after": false,
+   "regret_cp": 34,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx15-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 83447,
+   "output": 7251,
+   "reasoning": 6181
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 829,
+   "mate_before": false,
+   "chosen": "c7c4",
+   "chosen_legal": true,
+   "cp_after": 783,
+   "mate_after": false,
+   "regret_cp": 46,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx15-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 33099,
+   "output": 3787,
+   "reasoning": 3075
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx15",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx15-b-p12-final_conversao",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 17451,
+   "output": 2976,
+   "reasoning": 2173
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx16-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 23330,
+   "output": 1630,
+   "reasoning": 1077
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 34,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 22,
+   "mate_after": false,
+   "regret_cp": 12,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p02",
+  "workspace": "zgx16-a-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ],
+   [
+    "failed",
+    11
+   ]
+  ],
+  "throttles": 11,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 121037,
+   "output": 8621,
+   "reasoning": 7485
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -128,
+   "mate_before": false,
+   "chosen": "c3d4",
+   "chosen_legal": true,
+   "cp_after": -124,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx16-a-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 47918,
+   "output": 4439,
+   "reasoning": 3645
+  },
+  "posthoc": {
+   "legal_root_best": "e1g1",
+   "cp_before": 42,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -349,
+   "mate_after": false,
+   "regret_cp": 391,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p04",
+  "workspace": "zgx16-a-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 50747,
+   "output": 4701,
+   "reasoning": 3843
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -109,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -318,
+   "mate_after": false,
+   "regret_cp": 209,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx16-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2e3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    5
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 108005,
+   "output": 12360,
+   "reasoning": 10626
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 303,
+   "mate_before": false,
+   "chosen": "e2e3",
+   "chosen_legal": true,
+   "cp_after": -650,
+   "mate_after": false,
+   "regret_cp": 953,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p06",
+  "workspace": "zgx16-a-p06-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "g1h1",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 40421,
+   "output": 5464,
+   "reasoning": 4681
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -957,
+   "mate_before": false,
+   "chosen": "g1h1",
+   "chosen_legal": true,
+   "cp_after": -99999,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": true
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx16-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 23707,
+   "output": 3173,
+   "reasoning": 2597
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -289,
+   "mate_before": false,
+   "chosen": "c3d5",
+   "chosen_legal": true,
+   "cp_after": -287,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p08",
+  "workspace": "zgx16-a-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 42773,
+   "output": 3069,
+   "reasoning": 2315
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 71,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -224,
+   "mate_after": false,
+   "regret_cp": 295,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx16-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1b5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 46848,
+   "output": 7815,
+   "reasoning": 6815
+  },
+  "posthoc": {
+   "legal_root_best": "c1g5",
+   "cp_before": 1278,
+   "mate_before": false,
+   "chosen": "f1b5",
+   "chosen_legal": true,
+   "cp_after": 1189,
+   "mate_after": false,
+   "regret_cp": 89,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p10",
+  "workspace": "zgx16-a-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    6
+   ]
+  ],
+  "throttles": 6,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 64631,
+   "output": 8872,
+   "reasoning": 7745
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 834,
+   "mate_before": false,
+   "chosen": "c7f7",
+   "chosen_legal": true,
+   "cp_after": 499,
+   "mate_after": false,
+   "regret_cp": 335,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx16-a-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 20640,
+   "output": 4339,
+   "reasoning": 3655
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "a",
+  "pid": "p12",
+  "workspace": "zgx16-a-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    1
+   ]
+  ],
+  "throttles": 1,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 11107,
+   "output": 1318,
+   "reasoning": 967
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx16-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 46637,
+   "output": 3849,
+   "reasoning": 3079
+  },
+  "posthoc": {
+   "legal_root_best": "e3f4",
+   "cp_before": 22,
+   "mate_before": false,
+   "chosen": "e3f4",
+   "chosen_legal": true,
+   "cp_after": 28,
+   "mate_after": false,
+   "regret_cp": 0,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p02",
+  "workspace": "zgx16-b-p02-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 22,
+  "tokens": {
+   "input": 66463,
+   "output": 7268,
+   "reasoning": 6157
+  },
+  "posthoc": {
+   "legal_root_best": "c3d4",
+   "cp_before": -122,
+   "mate_before": false,
+   "chosen": "c3d4",
+   "chosen_legal": true,
+   "cp_after": -133,
+   "mate_after": false,
+   "regret_cp": 11,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx16-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 33694,
+   "output": 3604,
+   "reasoning": 2893
+  },
+  "posthoc": {
+   "legal_root_best": "e1g1",
+   "cp_before": 42,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -335,
+   "mate_after": false,
+   "regret_cp": 377,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p04",
+  "workspace": "zgx16-b-p04-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d5f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 18,
+  "tokens": {
+   "input": 44374,
+   "output": 4079,
+   "reasoning": 3254
+  },
+  "posthoc": {
+   "legal_root_best": "d4a7",
+   "cp_before": -100,
+   "mate_before": false,
+   "chosen": "d5f7",
+   "chosen_legal": true,
+   "cp_after": -325,
+   "mate_after": false,
+   "regret_cp": 225,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx16-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "b3d3",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 40,
+  "tokens": {
+   "input": 47808,
+   "output": 3621,
+   "reasoning": 2770
+  },
+  "posthoc": {
+   "legal_root_best": "e2f1",
+   "cp_before": 303,
+   "mate_before": false,
+   "chosen": "b3d3",
+   "chosen_legal": true,
+   "cp_after": -570,
+   "mate_after": false,
+   "regret_cp": 873,
+   "blunder_300cp": true,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p06",
+  "workspace": "zgx16-b-p06-urgencia_rei",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "FAILED",
+  "selected_action": null,
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    12
+   ],
+   [
+    "failed",
+    6
+   ]
+  ],
+  "throttles": 6,
+  "nodes_depth_max": 38,
+  "tokens": {
+   "input": 130937,
+   "output": 23873,
+   "reasoning": 19872
+  },
+  "posthoc": {
+   "legal_root_best": "g2g3",
+   "cp_before": -952,
+   "mate_before": false,
+   "chosen": null,
+   "chosen_legal": false,
+   "cp_after": null,
+   "mate_after": null,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": null
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx16-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 16,
+  "tokens": {
+   "input": 62714,
+   "output": 6138,
+   "reasoning": 5085
+  },
+  "posthoc": {
+   "legal_root_best": "c3d5",
+   "cp_before": -278,
+   "mate_before": false,
+   "chosen": "f3d4",
+   "chosen_legal": true,
+   "cp_after": -539,
+   "mate_after": false,
+   "regret_cp": 261,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p08",
+  "workspace": "zgx16-b-p08-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 12,
+  "tokens": {
+   "input": 54498,
+   "output": 4935,
+   "reasoning": 3935
+  },
+  "posthoc": {
+   "legal_root_best": "d4f3",
+   "cp_before": 65,
+   "mate_before": false,
+   "chosen": "c4f7",
+   "chosen_legal": true,
+   "cp_after": -226,
+   "mate_after": false,
+   "regret_cp": 291,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx16-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f1b5",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    2
+   ],
+   [
+    "failed",
+    3
+   ]
+  ],
+  "throttles": 3,
+  "nodes_depth_max": 14,
+  "tokens": {
+   "input": 13413,
+   "output": 3415,
+   "reasoning": 2869
+  },
+  "posthoc": {
+   "legal_root_best": "f3e5",
+   "cp_before": 1280,
+   "mate_before": false,
+   "chosen": "f1b5",
+   "chosen_legal": true,
+   "cp_after": 1206,
+   "mate_after": false,
+   "regret_cp": 74,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p10",
+  "workspace": "zgx16-b-p10-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "c7c8",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 30,
+  "tokens": {
+   "input": 83925,
+   "output": 7360,
+   "reasoning": 6016
+  },
+  "posthoc": {
+   "legal_root_best": "d2b4",
+   "cp_before": 825,
+   "mate_before": false,
+   "chosen": "c7c8",
+   "chosen_legal": true,
+   "cp_after": 527,
+   "mate_after": false,
+   "regret_cp": 298,
+   "blunder_300cp": false,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx16-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    4
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 72,
+  "tokens": {
+   "input": 38105,
+   "output": 6196,
+   "reasoning": 5301
+  },
+  "posthoc": {
+   "legal_root_best": "a7g7",
+   "cp_before": 99996,
+   "mate_before": true,
+   "chosen": "a7g7",
+   "chosen_legal": true,
+   "cp_after": 99997,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx16",
+  "arm": "b",
+  "pid": "p12",
+  "workspace": "zgx16-b-p12-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d7",
+  "steps_committed": 1,
+  "attempts": [
+   [
+    "completed",
+    3
+   ],
+   [
+    "failed",
+    2
+   ]
+  ],
+  "throttles": 2,
+  "nodes_depth_max": 20,
+  "tokens": {
+   "input": 18889,
+   "output": 2947,
+   "reasoning": 2420
+  },
+  "posthoc": {
+   "legal_root_best": "d1d7",
+   "cp_before": 99999,
+   "mate_before": true,
+   "chosen": "d1d7",
+   "chosen_legal": true,
+   "cp_after": 100000,
+   "mate_after": true,
+   "regret_cp": null,
+   "blunder_300cp": null,
+   "allows_mate_in_1": false
+  },
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": false,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "a",
+  "pid": "p01",
+  "workspace": "zgx20-a-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    12
+   ],
+   [
+    "failed",
+    10
+   ]
+  ],
+  "throttles": 10,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 166102,
+   "output": 22464,
+   "reasoning": 19316
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "a",
+  "pid": "p03",
+  "workspace": "zgx20-a-p03-captura_ruim",
+  "run_status": "FAILED",
+  "episode": "FAILED",
+  "outcome": "provider_error",
+  "decision_status": "COMMITTED",
+  "selected_action": "c4f7",
+  "steps_committed": 13,
+  "attempts": [
+   [
+    "completed",
+    24
+   ],
+   [
+    "failed",
+    13
+   ]
+  ],
+  "throttles": 13,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 280124,
+   "output": 37713,
+   "reasoning": 31752
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "a",
+  "pid": "p05",
+  "workspace": "zgx20-a-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2d1",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    14
+   ],
+   [
+    "failed",
+    5
+   ]
+  ],
+  "throttles": 5,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 283811,
+   "output": 36242,
+   "reasoning": 31489
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "a",
+  "pid": "p07",
+  "workspace": "zgx20-a-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d1d4",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    12
+   ],
+   [
+    "failed",
+    4
+   ]
+  ],
+  "throttles": 4,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 134711,
+   "output": 19609,
+   "reasoning": 16528
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "a",
+  "pid": "p09",
+  "workspace": "zgx20-a-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    16
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 215244,
+   "output": 20923,
+   "reasoning": 16974
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "a",
+  "pid": "p11",
+  "workspace": "zgx20-a-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 3,
+  "attempts": [
+   [
+    "completed",
+    6
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 2,
+  "tokens": {
+   "input": 53278,
+   "output": 7968,
+   "reasoning": 6679
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": false
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "b",
+  "pid": "p01",
+  "workspace": "zgx20-b-p01-captura_boa",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e3f4",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    13
+   ],
+   [
+    "failed",
+    11
+   ]
+  ],
+  "throttles": 11,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 167603,
+   "output": 14021,
+   "reasoning": 11295
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": true
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "b",
+  "pid": "p03",
+  "workspace": "zgx20-b-p03-captura_ruim",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "d2d4",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    13
+   ],
+   [
+    "failed",
+    8
+   ]
+  ],
+  "throttles": 8,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 184648,
+   "output": 16202,
+   "reasoning": 12861
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": true
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "b",
+  "pid": "p05",
+  "workspace": "zgx20-b-p05-urgencia_rei",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e2d1",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    14
+   ],
+   [
+    "failed",
+    7
+   ]
+  ],
+  "throttles": 7,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 167253,
+   "output": 32044,
+   "reasoning": 28630
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": true
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "b",
+  "pid": "p07",
+  "workspace": "zgx20-b-p07-linha_risco",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "f3d4",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    13
+   ],
+   [
+    "failed",
+    6
+   ]
+  ],
+  "throttles": 6,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 160000,
+   "output": 25695,
+   "reasoning": 22615
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": true
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "b",
+  "pid": "p09",
+  "workspace": "zgx20-b-p09-quieto_sucesso",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "e4f5",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    14
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 189179,
+   "output": 17957,
+   "reasoning": 14632
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": true
+  }
+ },
+ {
+  "zgx": "zgx20",
+  "arm": "b",
+  "pid": "p11",
+  "workspace": "zgx20-b-p11-final_conversao",
+  "run_status": "COMPLETED",
+  "episode": "COMPLETED",
+  "outcome": "completed",
+  "decision_status": "COMMITTED",
+  "selected_action": "a7g7",
+  "steps_committed": 7,
+  "attempts": [
+   [
+    "completed",
+    15
+   ]
+  ],
+  "throttles": 0,
+  "nodes_depth_max": 6,
+  "tokens": {
+   "input": 166586,
+   "output": 20191,
+   "reasoning": 16324
+  },
+  "posthoc": null,
+  "probes": {
+   "preload_in_first_request": false,
+   "neto_consumed": true,
+   "memory_note": true
+  }
+ }
+]

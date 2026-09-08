@@ -1,0 +1,1968 @@
+[Event "zgx01-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx01-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. Qe2 *
+
+[Event "zgx01-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ *
+
+[Event "zgx01-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx01-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kf1 *
+
+[Event "zgx01-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx01-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. g4 *
+
+[Event "zgx01-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx01-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx01-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rc8+ *
+
+[Event "zgx01-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx01-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Bxd7+ *
+
+[Event "zgx01-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx01-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. cxd4 *
+
+[Event "zgx01-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d3 *
+
+[Event "zgx01-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx01-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Qxd3 *
+
+[Event "zgx01-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. d5 *
+
+[Event "zgx01-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. g4 *
+
+[Event "zgx01-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Ne6 *
+
+[Event "zgx01-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx01-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Qa5 *
+
+[Event "zgx01-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx01-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx02-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx02-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. cxd4 *
+
+[Event "zgx02-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 *
+
+[Event "zgx02-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Qh5 *
+
+[Event "zgx02-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kd1 *
+
+[Event "zgx02-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx02-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nxd4 *
+
+[Event "zgx02-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx02-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx02-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 *
+
+[Event "zgx02-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx02-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx02-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx02-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. Qe2 *
+
+[Event "zgx02-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 *
+
+[Event "zgx02-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Qh5 *
+
+[Event "zgx02-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kf1 *
+
+[Event "zgx02-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx02-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nd5 *
+
+[Event "zgx02-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx02-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx02-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rc8+ *
+
+[Event "zgx02-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Ra8 *
+
+[Event "zgx02-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx03-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx03-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. cxd4 *
+
+[Event "zgx03-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. O-O *
+
+[Event "zgx03-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx03-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Qxd3 *
+
+[Event "zgx03-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx03-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nxd4 *
+
+[Event "zgx03-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx03-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx03-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxf7+ *
+
+[Event "zgx03-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Ra8 *
+
+[Event "zgx03-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx03-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx03-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. cxd4 *
+
+[Event "zgx03-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 *
+
+[Event "zgx03-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx03-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kf1 *
+
+[Event "zgx03-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx03-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. g4 *
+
+[Event "zgx03-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx03-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx03-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxf7+ *
+
+[Event "zgx03-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx03-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx12-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx12-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. b4 *
+
+[Event "zgx12-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 *
+
+[Event "zgx12-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx12-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kf1 *
+
+[Event "zgx12-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rae1 *
+
+[Event "zgx12-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. g4 *
+
+[Event "zgx12-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx12-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx12-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. b3 *
+
+[Event "zgx12-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx12-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx12-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx12-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. b4 *
+
+[Event "zgx12-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 *
+
+[Event "zgx12-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx12-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Ke3 *
+
+[Event "zgx12-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx12-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nxd4 *
+
+[Event "zgx12-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx12-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx12-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 *
+
+[Event "zgx12-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Ra8 *
+
+[Event "zgx12-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx13-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx13-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. Nxd4 *
+
+[Event "zgx13-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ *
+
+[Event "zgx13-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx13-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Qxd3 *
+
+[Event "zgx13-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Kh1 *
+
+[Event "zgx13-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nd5 *
+
+[Event "zgx13-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx13-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx13-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxf7+ *
+
+[Event "zgx13-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx13-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx13-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx13-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. Bxh6 *
+
+[Event "zgx13-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. O-O *
+
+[Event "zgx13-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxg7 *
+
+[Event "zgx13-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kd1 *
+
+[Event "zgx13-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rfe1 *
+
+[Event "zgx13-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. g4 *
+
+[Event "zgx13-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx13-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx13-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 *
+
+[Event "zgx13-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx13-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx15-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx15-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. Be3 *
+
+[Event "zgx15-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ *
+
+[Event "zgx15-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx15-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kf1 *
+
+[Event "zgx15-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Rae1 *
+
+[Event "zgx15-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nxd4 *
+
+[Event "zgx15-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx15-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx15-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rc8+ *
+
+[Event "zgx15-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx15-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx15-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx15-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. Nxd4 *
+
+[Event "zgx15-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ *
+
+[Event "zgx15-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx15-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Kd1 *
+
+[Event "zgx15-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. d5 *
+
+[Event "zgx15-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Qxd4 *
+
+[Event "zgx15-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx15-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 *
+
+[Event "zgx15-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 *
+
+[Event "zgx15-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx15-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx16-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 a"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx16-a-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 a"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. cxd4 *
+
+[Event "zgx16-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ *
+
+[Event "zgx16-a-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx16-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Ke3 *
+
+[Event "zgx16-a-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 a"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Kh1 *
+
+[Event "zgx16-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 a"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nd5 *
+
+[Event "zgx16-a-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 a"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx16-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. Bb5 *
+
+[Event "zgx16-a-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxf7+ *
+
+[Event "zgx16-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 a"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx16-a-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 a"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx16-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p01 b"]
+
+1. Nf3 e6 2. d4 h6 3. Nc3 d5 4. Bf4 Bd6 5. e3 Nd7 6. Be2 Bxf4 7. exf4 *
+
+[Event "zgx16-b-p02-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p02 b"]
+
+1. e4 e6 2. d4 c5 3. Nf3 cxd4 4. Be2 Bb4+ 5. Bd2 Bc5 6. O-O Nc6 7. Bd3 d6 8. c3 Nf6 9. Re1 O-O 10. Na3 e5 11. Nc4 h6 12. cxd4 *
+
+[Event "zgx16-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p03 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ *
+
+[Event "zgx16-b-p04-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p04 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. O-O cxd4 8. Bxd4 b5 9. Bd5 Rb8 10. Bxf7+ *
+
+[Event "zgx16-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p05 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qe6+ 4. Be2 Qg6 5. g3 Nc6 6. Bh5 Qf6 7. Nd5 Qe6+ 8. Ne3 g6 9. Bg4 Qe4 10. Bxc8 Qxh1 11. Bxb7 Qxg1+ 12. Nf1 Nb4 13. Bxa8 Bg7 14. Ke2 Bd4 15. Ne3 Qxh2 16. Ng4 Qh5 17. Bf3 c5 18. c3 Kf8 19. cxd4 cxd4 20. Qb3 d3+ 21. Qxd3 *
+
+[Event "zgx16-b-p06-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p06 b"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nf3 Qe6+ 4. Be2 Nh6 5. O-O Qg6 6. Nh4 Qe6 7. Nc3 g5 8. Nf3 g4 9. Bc4 Qf5 10. Nd4 Qg6 11. d3 e6 12. Nxe6 fxe6 13. Bxh6 Qxh6 14. Qxg4 Nc6 15. Nd5 exd5 16. Bxd5 Bxg4 17. Bxc6+ Qxc6 18. c4 Be2 19. d4 Rg8 20. Kh1 *
+
+[Event "zgx16-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p07 b"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Bxf7+ Kxf7 5. O-O Ke8 6. Nc3 Bg4 7. d4 exd4 8. h3 Bh5 9. Nxd4 *
+
+[Event "zgx16-b-p08-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p08 b"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. Nxd4 a6 5. Bc4 Nd7 6. Be3 c5 7. Bxf7+ *
+
+[Event "zgx16-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p09 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. Bb5 *
+
+[Event "zgx16-b-p10-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p10 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rc8+ *
+
+[Event "zgx16-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Opening "p11 b"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Bb4+ 5. Nd2 Nc6 6. Nf3 Qe7+ 7. Be2 Bg4 8. cxd5 Bxd2+ 9. Qxd2 Bxf3 10. gxf3 Nb8 11. O-O Nf6 12. Bc4 Nbd7 13. Re1 Nb6 14. Rxe7+ Kf8 15. Rxc7 Nxc4 16. Rxc4 h5 17. d6 Rd8 18. Rc7 Ne8 19. Rxb7 Rxd6 20. Rxa7 Rg6+ 21. Kf1 Rd6 22. b3 Rhh6 23. Ba3 Kg8 24. Bxd6 Rxd6 25. d5 Kf8 26. Ke2 f6 27. Rd1 h4 28. Ke3 f5 29. Kf4 h3 30. Kxf5 Rh6 31. Ke5 Rh5+ 32. Ke6 Kg8 33. Ke7 Rf5 34. Kxe8 Rf8+ 35. Kd7 Rf7+ 36. Ke6 Rf8 37. Rxg7+ *
+
+[Event "zgx16-b-p12-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[Opening "p12 b"]
+
+1. e4 b6 2. d4 Nc6 3. d5 Bb7 4. dxc6 f6 5. cxb7 Qc8 6. bxc8=Q+ Rxc8 7. Nf3 f5 8. exf5 a6 9. Bxa6 h6 10. Bxc8 e6 11. Qxd7# 1-0
+
+[Event "zgx20-a-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-a-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-a-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+1. a3 *
+
+[Event "zgx20-a-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-a-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-a-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-b-p01-captura_boa"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-b-p03-captura_ruim"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+1. d4 Nf6 *
+
+[Event "zgx20-b-p05-urgencia_rei"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+1. a3 *
+
+[Event "zgx20-b-p07-linha_risco"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+1. c3 *
+
+[Event "zgx20-b-p09-quieto_sucesso"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+
+[Event "zgx20-b-p11-final_conversao"]
+[Site "ZGX wave1 (muse low, single-flight)"]
+[Date "2026.09.08"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+

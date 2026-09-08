@@ -629,6 +629,9 @@ class DurableRunCoordinator:
 
         task_kind = self._task_kind(condition)
         max_steps = self._max_steps_for(condition, task_kind)
+        # Self-memory across moves (manifest-gated reasoning_memory): the
+        # previous move's own reasoning summary, carried forward.
+        prior_reasoning_summary: str | None = None
         episode_config = dict(condition.task.config)
         if work.get("start_fen"):
             episode_config["start_fen"] = work["start_fen"]
@@ -917,6 +920,7 @@ class DurableRunCoordinator:
             )
 
             retry_feedback: str | None = None
+            prior_reasoning_summary = prior_reasoning_summary
             illegal_retries = 0
             decision_attempt_index = 0
             max_strategy_calls = max(1, strategy.descriptor.max_model_calls)
@@ -944,7 +948,11 @@ class DurableRunCoordinator:
                     backend=recording_backend,
                     tools={},
                     seed=seed,
-                    config=_decision_config(condition, retry_feedback=retry_feedback),
+                    config=_decision_config(
+                        condition,
+                        retry_feedback=retry_feedback,
+                        prior_reasoning=prior_reasoning_summary,
+                    ),
                     artifact_store=self._artifact_store,
                     knowledge=knowledge,
                     state=state,
@@ -1312,6 +1320,9 @@ class DurableRunCoordinator:
                         ):
                             retry_workspace.reset_query_budgets()
                     continue
+                prior_reasoning_summary = getattr(
+                    recording_backend, "last_reasoning_summary", None
+                )
                 break
 
             search_graph_ref: str | None = None
@@ -2325,7 +2336,10 @@ def _coerce_action(action: Any, legal_actions: Any) -> Any:
 
 
 def _decision_config(
-    condition: ResolvedCondition, *, retry_feedback: str | None = None
+    condition: ResolvedCondition,
+    *,
+    retry_feedback: str | None = None,
+    prior_reasoning: str | None = None,
 ) -> dict[str, Any]:
     """Protocol prompt overrides become strategy context config (persona/few-shot)."""
     prompt_spec = condition.protocol.prompt
@@ -2351,6 +2365,13 @@ def _decision_config(
         config["cognitive"] = dict(cognitive_config)
     if retry_feedback:
         config["retry_feedback"] = retry_feedback
+    if prior_reasoning and isinstance(cognitive_config, dict) and cognitive_config.get(
+        "reasoning_memory"
+    ):
+        # Self-memory between moves: the model's OWN previous reasoning
+        # summary, manifest-gated (reasoning_memory). Never external
+        # knowledge — assistance class unchanged.
+        config["prior_reasoning"] = prior_reasoning
     return config
 
 

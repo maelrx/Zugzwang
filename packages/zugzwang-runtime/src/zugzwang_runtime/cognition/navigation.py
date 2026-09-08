@@ -79,7 +79,10 @@ class CognitiveNavigationStrategy:
         raw_config: Any = context.config.get("cognitive") or {}
         config = cast("dict[str, Any]", raw_config) if isinstance(raw_config, dict) else {}
         retry_feedback = context.config.get("retry_feedback")
-        section_builder = self._section_builder(session, config, retry_feedback=retry_feedback)
+        prior_reasoning = context.config.get("prior_reasoning")
+        section_builder = self._section_builder(
+            session, config, retry_feedback=retry_feedback, prior_reasoning=prior_reasoning
+        )
         feedback = self._round_feedback(session, config)
         loop = CognitiveLoop(
             decision_id=session.decision_id,
@@ -122,13 +125,17 @@ class CognitiveNavigationStrategy:
         session: Any,
         config: dict[str, Any],
         retry_feedback: Any = None,
+        prior_reasoning: Any = None,
     ):
         """Build the memory/skills context section from the REAL stores.
 
         Returns None when neither store is bound — memory OFF is observably
         absent from the request, never an empty placeholder (§16; HY-04).
         A step-level retry notice, when present, always renders: the model
-        must know the previous attempt ended without a finalize.
+        must know the previous attempt ended without a finalize. A prior
+        reasoning summary (manifest-gated self-memory) also always renders —
+        it is the model's OWN last decision thinking, never external
+        knowledge.
         """
         memory_store = getattr(session, "memory_store", None)
         skill_registry = getattr(session, "skill_registry", None)
@@ -140,6 +147,11 @@ class CognitiveNavigationStrategy:
 
         def build(ordinal: int) -> str:
             sections: list[str] = []
+            if isinstance(prior_reasoning, str) and prior_reasoning.strip():
+                sections.append(
+                    "PREVIOUS MOVE REASONING (your own thinking from your last "
+                    f"decision, verbatim): {prior_reasoning.strip()}"
+                )
             if isinstance(retry_feedback, str) and retry_feedback.strip():
                 # Step-level retry: journaled protocol feedback about the
                 # PREVIOUS attempt's outcome (no move hints, no ranking).
@@ -188,6 +200,7 @@ class CognitiveNavigationStrategy:
             and not (skill_registry is not None and skill_set_id and skill_id)
             and not (isinstance(directive, str) and directive.strip())
             and not (isinstance(retry_feedback, str) and retry_feedback.strip())
+            and not (isinstance(prior_reasoning, str) and prior_reasoning.strip())
         ):
             return None
         return build

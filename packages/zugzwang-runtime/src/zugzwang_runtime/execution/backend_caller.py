@@ -66,6 +66,9 @@ class RecordingBackend:
         self._capture_responses = capture_raw_responses
         self._evidence_by_attempt: dict[str, dict[str, str | None]] = {}
         self._decision_attempt_ids: list[str] = []
+        # Operator directive 2026-09-08: the last decision's own reasoning
+        # summary, replayed as self-memory between moves (manifest-gated).
+        self.last_reasoning_summary: str | None = None
 
     def begin_decision(self) -> None:
         """Start a local correlation window for one strategy decision."""
@@ -235,6 +238,7 @@ class RecordingBackend:
                     )
                     evidence_refs.append(wire_response_ref)
                 if result.reasoning_telemetry is not None:
+                    self.last_reasoning_summary = result.reasoning_telemetry.reasoning_summary
                     reasoning_ref = self._capture_json(
                         result.reasoning_telemetry.model_dump(mode="json"),
                         "application/vnd.zugzwang.reasoning-telemetry+json",

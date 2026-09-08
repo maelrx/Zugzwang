@@ -585,3 +585,48 @@ def test_retry_notice_renders_without_memory_or_directive(harness) -> None:
 
     # No feedback, no memory, no skills, no directive -> observably absent.
     assert strategy._section_builder(session, {}, retry_feedback=None) is None
+
+
+def test_prior_reasoning_self_memory_renders(harness) -> None:
+    """Operator directive 2026-09-08: reasoning_memory manifest flag replays
+    the model's OWN previous reasoning summary as a prompt section (self
+    memory between moves). Must render standalone (no memory/skills) and be
+    verbatim; absent config renders nothing."""
+    from zugzwang_runtime.cognition.navigation import CognitiveNavigationStrategy
+
+    session, _journal = _open(harness)
+    strategy = CognitiveNavigationStrategy()
+    summary = "Analyzed Petrov structure; exd5 wins a pawn; finalized d4-d5."
+    builder = strategy._section_builder(session, {}, prior_reasoning=summary)
+    assert builder is not None
+    rendered = builder(2)
+    assert "PREVIOUS MOVE REASONING" in rendered
+    assert summary in rendered
+    assert strategy._section_builder(session, {}, prior_reasoning=None) is None
+
+
+def test_decision_config_gates_prior_reasoning_on_reasoning_memory() -> None:
+    """prior_reasoning only enters the decision config when the manifest
+    declares cognitive.reasoning_memory — old manifests are unaffected."""
+    from types import SimpleNamespace
+
+    from zugzwang_runtime.execution.durable_coordinator import _decision_config
+
+    def _condition(reasoning_memory):
+        cognitive = {"reasoning_memory": True} if reasoning_memory else {}
+        return SimpleNamespace(
+            protocol=SimpleNamespace(
+                retry_profile="binary_legality",
+                prompt=SimpleNamespace(system_instructions="", examples=[]),
+                observation={"legal_actions": {"encoding": "uci"}},
+                retries=SimpleNamespace(
+                    retry_profile="binary_legality", transport=0, parse=0, illegal=0
+                ),
+            ),
+            task=SimpleNamespace(config={"cognitive": cognitive}),
+        )
+
+    cfg_on = _decision_config(_condition(True), prior_reasoning="my last thinking")
+    assert cfg_on["prior_reasoning"] == "my last thinking"
+    cfg_off = _decision_config(_condition(False), prior_reasoning="my last thinking")
+    assert "prior_reasoning" not in cfg_off

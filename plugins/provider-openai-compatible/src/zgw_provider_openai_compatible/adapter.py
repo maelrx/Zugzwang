@@ -449,7 +449,10 @@ class OpenAiCompatibleBackend:
         if request.inference.stop:
             payload["stop"] = list(request.inference.stop)
         if self._reasoning_effort:
-            payload["reasoning"] = {"effort": self._reasoning_effort}
+            # Operator directive 2026-09-08: request readable reasoning
+            # summaries — the telemetry contract already carries
+            # reasoning_summary; the encrypted items stay as raw evidence.
+            payload["reasoning"] = {"effort": self._reasoning_effort, "summary": "auto"}
         if request.tools:
             payload["tools"] = [
                 {

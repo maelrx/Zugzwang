@@ -78,7 +78,8 @@ class CognitiveNavigationStrategy:
         journal = session.journal
         raw_config: Any = context.config.get("cognitive") or {}
         config = cast("dict[str, Any]", raw_config) if isinstance(raw_config, dict) else {}
-        section_builder = self._section_builder(session, config)
+        retry_feedback = context.config.get("retry_feedback")
+        section_builder = self._section_builder(session, config, retry_feedback=retry_feedback)
         feedback = self._round_feedback(session, config)
         loop = CognitiveLoop(
             decision_id=session.decision_id,
@@ -116,11 +117,18 @@ class CognitiveNavigationStrategy:
             "skill_set_id": row[1] if row else None,
         }
 
-    def _section_builder(self, session: Any, config: dict[str, Any]):
+    def _section_builder(
+        self,
+        session: Any,
+        config: dict[str, Any],
+        retry_feedback: Any = None,
+    ):
         """Build the memory/skills context section from the REAL stores.
 
         Returns None when neither store is bound — memory OFF is observably
         absent from the request, never an empty placeholder (§16; HY-04).
+        A step-level retry notice, when present, always renders: the model
+        must know the previous attempt ended without a finalize.
         """
         memory_store = getattr(session, "memory_store", None)
         skill_registry = getattr(session, "skill_registry", None)
@@ -132,6 +140,13 @@ class CognitiveNavigationStrategy:
 
         def build(ordinal: int) -> str:
             sections: list[str] = []
+            if isinstance(retry_feedback, str) and retry_feedback.strip():
+                # Step-level retry: journaled protocol feedback about the
+                # PREVIOUS attempt's outcome (no move hints, no ranking).
+                sections.append(
+                    "RETRY NOTICE (your previous attempt at this position): "
+                    f"{retry_feedback.strip()}"
+                )
             if isinstance(directive, str) and directive.strip():
                 # Operator instruction for a DIRECTED test (pilot §5): it may
                 # ask the model to exercise a tool, never dictates the move
@@ -172,6 +187,7 @@ class CognitiveNavigationStrategy:
             (memory_store is None or not snapshot_id)
             and not (skill_registry is not None and skill_set_id and skill_id)
             and not (isinstance(directive, str) and directive.strip())
+            and not (isinstance(retry_feedback, str) and retry_feedback.strip())
         ):
             return None
         return build

@@ -1208,7 +1208,18 @@ class DurableRunCoordinator:
                         profile=_retry_profile(condition),
                         reason=reason,
                         legal_actions=legal_actions.actions,
+                        cognitive=getattr(strategy, "requires_decision_session", False),
                     )
+                    if decision_session is not None:
+                        retry_workspace = getattr(decision_session, "workspace", None)
+                        if retry_workspace is not None and hasattr(
+                            retry_workspace, "reset_query_budgets"
+                        ):
+                            # New attempt, fresh query counters: the failed
+                            # attempt's validation/transition spend must not
+                            # starve this one (35+ legal moves tripped the
+                            # transition pre-check on attempt 2).
+                            retry_workspace.reset_query_budgets()
                     continue
 
                 final_action = trace.final_action
@@ -1292,7 +1303,14 @@ class DurableRunCoordinator:
                         profile=retry_profile,
                         reason="illegal_action",
                         legal_actions=legal_actions.actions,
+                        cognitive=getattr(strategy, "requires_decision_session", False),
                     )
+                    if decision_session is not None:
+                        retry_workspace = getattr(decision_session, "workspace", None)
+                        if retry_workspace is not None and hasattr(
+                            retry_workspace, "reset_query_budgets"
+                        ):
+                            retry_workspace.reset_query_budgets()
                     continue
                 break
 
@@ -2375,8 +2393,31 @@ def _illegal_retry_feedback(
     profile: str,
     reason: str,
     legal_actions: tuple[Any, ...],
+    cognitive: bool = False,
 ) -> str:
-    """Project formal failure into the explicitly selected retry profile."""
+    """Project formal failure into the explicitly selected retry profile.
+
+    Cognitive (tools) retries get tools-native feedback: "(sem lance)" means
+    the decision ended WITHOUT a board_finalize call — the direct-mode text
+    ("your move was illegal / reply with one move") is false for that mode
+    and reached the model as dead config until the arena autopsies
+    (2026-09-07) traced five identical no-finalize retries to it."""
+    if cognitive:
+        if action and action != "(sem lance)":
+            return (
+                f"Your previous board_finalize action {action[:80]!r} was rejected "
+                "as illegal at the ROOT node. Finalize again with a DIFFERENT "
+                "action_id copied from the root observation's legal_actions, no "
+                "later than the final call, which accepts only board_finalize."
+            )
+        return (
+            "Your previous decision for this same position ended WITHOUT a move: "
+            "it never called board_finalize (explore/observe calls do not commit a "
+            "move, and the final call accepts ONLY board_finalize). In this attempt "
+            "you must commit board_finalize on the ROOT node using an action_id "
+            "copied from the root observation's legal_actions no later than the "
+            "final call."
+        )
     prefix = (
         f"Your previous move {action[:80]!r} was rejected as illegal. "
         "Choose another move for the same position. "

@@ -532,3 +532,56 @@ def test_step_retry_reopens_failed_decision_and_rounds(harness) -> None:
             {"id": session.decision_id},
         ).fetchone()
     assert row[0] == "COMMITTED" and row[2] == "model"
+
+
+def test_cognitive_retry_feedback_is_tools_native() -> None:
+    """Arena autopsies 2026-09-07: a no-finalize decision death was fed back
+    as "your move '(sem lance)' was illegal... reply with one move" — a
+    direct-mode message that is false for the tools mode and never reached
+    the model anyway. The cognitive branch must describe the REAL failure
+    (no board_finalize) and the finalize-only reserve contract."""
+    from zugzwang_runtime.execution.durable_coordinator import _illegal_retry_feedback
+
+    text = _illegal_retry_feedback(
+        "(sem lance)",
+        profile="binary_legality",
+        reason="failed",
+        legal_actions=(),
+        cognitive=True,
+    )
+    assert "never called board_finalize" in text
+    assert "reply with one move" not in text
+
+    illegal = _illegal_retry_feedback(
+        "e2e4",
+        profile="binary_legality",
+        reason="illegal_action",
+        legal_actions=(),
+        cognitive=True,
+    )
+    assert "rejected" in illegal and "DIFFERENT" in illegal
+
+
+def test_retry_notice_renders_without_memory_or_directive(harness) -> None:
+    """The retry notice must render on its own: runs with no memory store,
+    no skills and no directive previously produced NO section builder at
+    all, so step-retry feedback silently never reached the model."""
+    from zugzwang_runtime.cognition.navigation import CognitiveNavigationStrategy
+
+    session, _journal = _open(harness)
+    strategy = CognitiveNavigationStrategy()
+    builder = strategy._section_builder(
+        session,
+        {},
+        retry_feedback=(
+            "Your previous decision for this same position ended WITHOUT a move: "
+            "it never called board_finalize."
+        ),
+    )
+    assert builder is not None, "retry notice alone must produce a section"
+    rendered = builder(2)
+    assert "RETRY NOTICE" in rendered
+    assert "never called board_finalize" in rendered
+
+    # No feedback, no memory, no skills, no directive -> observably absent.
+    assert strategy._section_builder(session, {}, retry_feedback=None) is None

@@ -144,6 +144,18 @@ class SearchWorkspace:
         self._event("search.node.anchored", {"node_id": node.node_id})
         return node.node_id
 
+    def reset_query_budgets(self) -> None:
+        """Zero the per-attempt query counters (validation/transition).
+
+        A step-level retry re-drives the SAME decision on a fresh attempt;
+        without this reset the counters accumulated by the failed attempt
+        deterministically starve the retry (35+ legal moves trip the
+        transition pre-check on attempt 2: 35+35 > 64, arena 2026-09-07).
+        Deliberately NOT called between rounds of one attempt — the
+        within-attempt budget is the enforced contract (TEST-031)."""
+        self._validation_queries = 0
+        self._transition_queries = 0
+
     @property
     def stats(self) -> dict[str, int]:
         return {

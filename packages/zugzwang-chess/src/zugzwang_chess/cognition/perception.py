@@ -112,7 +112,12 @@ class ChessPerception:
                 ordering=legal_set.ordering_policy,
                 items=tuple(items),
                 next_cursor=next_cursor,
-                complete=next_cursor is None and start == 0,
+                # A page with no next cursor IS the terminal page of the
+                # legal set — even when reached via cursor pagination
+                # (arena full games 2026-09-07: "complete": false on the
+                # last page read as "more moves exist" and multiplied
+                # redundant observe calls).
+                complete=next_cursor is None,
             ),
             relations=PacketRelations(
                 semantics_version=RELATIONS_SEMANTICS_VERSION,

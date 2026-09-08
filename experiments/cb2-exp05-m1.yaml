@@ -68,7 +68,7 @@ spec:
       move_number: true
       history: {mode: last_n, plies: 6, notation: uci}
     retries:
-      transport: 2
+      transport: 4
       parse: 1
       illegal: 4
 

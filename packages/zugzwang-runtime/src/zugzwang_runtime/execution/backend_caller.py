@@ -244,6 +244,12 @@ class RecordingBackend:
                         # own pacing hint, bounded so a hostile header cannot
                         # stall a campaign slot.
                         time.sleep(min(float(retry_after), 120.0))
+                    elif exc.retryability is Retryability.THROTTLING:
+                        # No hint advertised (the opencode router's case):
+                        # exponential pacing instead of hammering the quota
+                        # back-to-back — instant triple-429 killed the first
+                        # cb2 launch wave (campaign 2026-09-08).
+                        time.sleep(min(2.0 * (2**ordinal), 30.0))
                     ordinal += 1
                     continue
                 self._attempt_counter[key] = ordinal + 1

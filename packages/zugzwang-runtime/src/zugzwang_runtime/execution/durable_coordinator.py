@@ -643,10 +643,14 @@ class DurableRunCoordinator:
             episode_config["move_prefix"] = work["move_prefix"]
         spec = EpisodeSpec(task_type=condition.task.plugin, seed=seed, config=episode_config)
         state = environment.initial_state(spec)
-        if task_kind == "state-reconstruction" and work.get("move_prefix"):
+        if work.get("move_prefix"):
             apply_moves = getattr(environment, "state_from_moves", None)
             if callable(apply_moves):
-                state = apply_moves(list(work["move_prefix"]))
+                start_fen = work.get("start_fen") or episode_config.get("start_fen")
+                state = apply_moves(
+                    list(work["move_prefix"]),
+                    start_fen=str(start_fen) if start_fen else None,
+                )
         observation_policy = ObservationPolicy(settings=dict(condition.protocol.observation))
         start_ordinal = 0
 
@@ -698,7 +702,7 @@ class DurableRunCoordinator:
             persistent_memory_items = self._load_persistent_search_memory(episode_id)
 
         single_player = self._single_player(condition)
-        model_color = self._model_color(condition)
+        model_color = str(work.get("model_color") or self._model_color(condition))
         opponent = self._opponent_for(condition)
         if opponent is None and not single_player:
             opponent = self._model_opponent_for(

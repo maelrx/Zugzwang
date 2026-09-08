@@ -159,6 +159,9 @@ class CognitionToolBroker:
         # onto anchors of the same graph (§9.1: one graph per decision).
         self._node_map: dict[str, str] = {}
         self._packet_query_count = 0
+        # ZGW-0103 R6: new graph nodes minted by the CURRENT operation,
+        # persisted at settle time (expand accounting, dossier §14).
+        self._op_new_nodes = 0
         self._active_provider_tool_call_id: str | None = None
         bound = self._journal.bound_node_ids(decision_id)
         self._bound_sequence = len(bound)
@@ -342,6 +345,7 @@ class CognitionToolBroker:
 
         rules_before = self._ws_rules_queries()
         self._packet_query_count = 0
+        self._op_new_nodes = 0
         try:
             payload = self._execute_tool(tool, arguments)
             self._validate_payload(tool, payload)
@@ -352,6 +356,7 @@ class CognitionToolBroker:
                 arguments,
                 ToolError.build(exc.code, exc.message),
                 physical_rules_queries=self._physical_rules_spent(rules_before),
+                new_nodes=self._op_new_nodes,
             )
         except Exception as exc:
             return self._settle_failure(
@@ -360,6 +365,7 @@ class CognitionToolBroker:
                 arguments,
                 ToolError.build("OUTPUT_CONTRACT_VIOLATION", f"tool failed internally: {exc}"),
                 physical_rules_queries=self._physical_rules_spent(rules_before),
+                new_nodes=self._op_new_nodes,
             )
 
         result_bytes = canonical_json_bytes(payload)
@@ -381,6 +387,9 @@ class CognitionToolBroker:
                 "available_before_selection": True,
             },
             budget_entry=self._budget_entry(charged),
+            physical_rules_queries=self._physical_rules_spent(rules_before),
+            logical_ops=charged,
+            new_nodes=self._op_new_nodes,
         )
         return ToolEnvelope(
             ok=True,
@@ -711,6 +720,12 @@ class CognitionToolBroker:
             )
             child = workspace.nodes[child_ws_id]
             child_state_key, _ = self._perception.identity_keys(self._states[child_node_id])
+            # ZGW-0103 R7 (dossier §6.3): the child's authorized L0 packet
+            # ships INLINE with the expansion result. Under a bounded round
+            # budget the separate observe-the-child call is what consumed the
+            # model's last investigation slot and made the grandchild cycle
+            # (candidato → filho → resposta adversária → neto) unreachable.
+            child_packet = self._build_packet(self._states[child_node_id], child_node_id)
             results.append(
                 {
                     "action_id": action_id,
@@ -723,6 +738,8 @@ class CognitionToolBroker:
                     "root_action": child.root_action,
                     "terminal": child.terminal,
                     "edge_id": self._last_edge_id(parent.node_id, uci),
+                    "package": child_packet.model_dump(mode="json"),
+                    "package_content_hash": child_packet.content_hash(),
                 }
             )
         packet = self._build_packet(state, node_id)
@@ -793,6 +810,7 @@ class CognitionToolBroker:
         )
         self._states[ws_child_id] = child_state
         self._node_map[ws_child_id] = ws_child_id
+        self._op_new_nodes += 1
         return ws_child_id
 
     def _compare(self, node_id: str, other_node_id: str) -> dict[str, Any]:
@@ -843,6 +861,7 @@ class CognitionToolBroker:
         error: ToolError,
         *,
         physical_rules_queries: int = 0,
+        new_nodes: int = 0,
     ) -> ToolEnvelope:
         status = "REJECTED" if error.code in _REJECTED_CODES else "FAILED"
         # Scope probes and budget refusals never charge: authorization itself
@@ -870,6 +889,9 @@ class CognitionToolBroker:
             status=status,
             result_artifact_id=error_artifact_id,
             error_code=error.code,
+            physical_rules_queries=physical_rules_queries,
+            logical_ops=charged,
+            new_nodes=new_nodes,
             observation={
                 "node_id": node_id_for_timeline,
                 "round_id": self._round_id,

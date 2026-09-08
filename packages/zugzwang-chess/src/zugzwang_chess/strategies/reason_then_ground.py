@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 from typing import Any, cast
 
+from zugzwang_chess.strategies._calls import new_call_attempt_id
 from zugzwang_core.domain.assistance import AssistanceImpact, HClass
 from zugzwang_core.domain.errors import OutputParseError
 from zugzwang_core.domain.events import JsonValue
@@ -199,6 +200,7 @@ class ReasonThenGroundStrategy:
             },
         )
         call_context = CallContext(
+            attempt_id=new_call_attempt_id(),
             run_id=context.run_id,
             episode_id=context.episode_id,
             step_id=context.step_id,
@@ -254,6 +256,7 @@ class ReasonThenGroundStrategy:
             extensions={"chess.strategy": "reason_then_ground", "chess.phase": "ground"},
         )
         call_context = CallContext(
+            attempt_id=new_call_attempt_id(),
             run_id=context.run_id,
             episode_id=context.episode_id,
             step_id=context.step_id,

@@ -250,6 +250,13 @@ class CognitiveNavigationStrategy:
             )
             for step in result.steps
         ]
+        failure_code = ""
+        if result.failure_class is not None:
+            # ZGW-0103 R2: provider unavailability surfaces as its own verdict
+            # class. The message IS the stable code — the coordinator copies it
+            # into the step/episode failure classification verbatim.
+            failure_code = str(result.trace_record.get("failure_code") or result.failure_class)
+            verdicts.append(Verdict(kind="provider_error", message=failure_code))
         candidates: tuple[Candidate, ...] = ()
         if result.selected_action is not None:
             candidates = (Candidate(action=result.selected_action, origin="model"),)
@@ -268,9 +275,16 @@ class CognitiveNavigationStrategy:
                 "protocol_errors": result.protocol_errors,
                 "rounds_executed": len(result.calls),
                 "focus": result.decision_id,
+                **(
+                    {"failure_class": result.failure_class, "failure_code": failure_code}
+                    if result.failure_class
+                    else {}
+                ),
             },
             final_action=result.selected_action,
-            termination_reason="selected" if result.status == "COMMITTED" else "failed",
+            termination_reason=(
+                "selected" if result.status == "COMMITTED" else (result.failure_class or "failed")
+            ),
         )
 
     def _call_records(self, records: list[ModelCallRecord]) -> list[CallRecord]:

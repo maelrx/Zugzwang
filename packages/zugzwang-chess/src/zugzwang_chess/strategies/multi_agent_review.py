@@ -13,6 +13,7 @@ import re
 from collections.abc import Mapping
 from typing import Any, cast
 
+from zugzwang_chess.strategies._calls import new_call_attempt_id
 from zugzwang_core.domain.assistance import AssistanceImpact, HClass, KClass
 from zugzwang_core.domain.events import JsonValue
 from zugzwang_core.domain.money import TokenUsage
@@ -204,6 +205,7 @@ class MultiAgentReviewStrategy:
         )
         before = _recorded_attempt_ids(context.backend)
         call_context = CallContext(
+            attempt_id=new_call_attempt_id(),
             run_id=context.run_id,
             episode_id=context.episode_id,
             step_id=context.step_id,

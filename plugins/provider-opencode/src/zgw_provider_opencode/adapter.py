@@ -41,6 +41,18 @@ from zugzwang_core.ports.model import (
 )
 
 
+def _retry_after_seconds(headers: Any) -> float | None:
+    """Provider's Retry-After hint in seconds; None when absent or non-numeric
+    (HTTP-date form is deliberately unsupported — no clock guessing)."""
+    raw: Any = headers.get("retry-after") if headers is not None else None
+    if raw is None:
+        return None
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):
+        return None
+
+
 class OpenCodeBackend:
     """One inference call -> one opencode session message."""
 
@@ -193,7 +205,9 @@ class OpenCodeBackend:
             self._last_wire_response = {}
         if response.status_code == 429:
             raise ProviderThrottlingError(
-                "opencode rate limited (429)", technical_context=self._base_url
+                "opencode rate limited (429)",
+                technical_context=self._base_url,
+                retry_after=_retry_after_seconds(response.headers),
             )
         if response.status_code >= 400:
             raise ProviderServerError(
@@ -209,7 +223,9 @@ class OpenCodeBackend:
             message = str(error_payload.get("message") or error_data.get("name"))
             if error_payload.get("statusCode") == 429:
                 raise ProviderThrottlingError(
-                    "opencode reported rate limiting", technical_context=message
+                    "opencode reported rate limiting",
+                    technical_context=message,
+                    retry_after=None,
                 )
             raise ProviderResponseError("opencode provider error", technical_context=message[:300])
         parts_raw = data.get("parts")

@@ -506,10 +506,7 @@ def test_step_retry_reopens_failed_decision_and_rounds(harness) -> None:
     assert first.status == "FAILED"
     with harness[1].connect() as conn:
         rows = conn.execute(
-            text(
-                "SELECT ordinal, status FROM cb_rounds WHERE decision_id = :id "
-                "ORDER BY ordinal"
-            ),
+            text("SELECT ordinal, status FROM cb_rounds WHERE decision_id = :id ORDER BY ordinal"),
             {"id": session.decision_id},
         ).fetchall()
     assert dict(rows) == {1: "PREPARED", 2: "TOOLS_COMMITTED", 3: "FAILED"}
@@ -527,8 +524,10 @@ def test_step_retry_reopens_failed_decision_and_rounds(harness) -> None:
     assert retry.selected_action is not None
     with harness[1].connect() as conn:
         row = conn.execute(
-            text("SELECT status, selected_action, selection_source FROM cb_decisions "
-                 "WHERE decision_id = :id"),
+            text(
+                "SELECT status, selected_action, selection_source FROM cb_decisions "
+                "WHERE decision_id = :id"
+            ),
             {"id": session.decision_id},
         ).fetchone()
     assert row[0] == "COMMITTED" and row[2] == "model"

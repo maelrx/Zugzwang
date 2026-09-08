@@ -230,7 +230,8 @@ class TestOpenAiCompatibleAdapter:
             assert payload["model"] == "muse-spark-1.3-contributor-free"
             assert payload["input"][0]["content"][0]["type"] == "output_text"
             assert payload["input"][1]["content"][0]["type"] == "input_text"
-            assert payload["reasoning"] == {"effort": "low"}
+            # ZGW-0101 commit 7060200: reasoning summaries are requested by default
+            assert payload["reasoning"] == {"effort": "low", "summary": "auto"}
             assert payload["max_output_tokens"] == 1024
             assert "chess.strategy" not in payload
             assert payload["top_p"] == 0.1

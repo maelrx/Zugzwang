@@ -19,7 +19,7 @@ from zugzwang_core.domain.manifests import ResolvedCondition, ResolvedManifest
 
 from ..artifacts.cas import ContentAddressedStore
 from ..execution.durable_coordinator import DurableRunCoordinator
-from ..execution.evidence import store_artifact
+from ..execution.evidence import store_artifact, store_json_artifact
 from ..execution.rate_limiting import RateLimiter
 from ..execution.registry import PluginRegistry
 from ..fakes import DeterministicModelBackend
@@ -115,19 +115,31 @@ class DurableRunServices:
     def workspace(self) -> Workspace:
         return self._workspace
 
-    def _cognitive_session_factory(self):
+    def _cognitive_session_factory(
+        self, observation_holder: dict[str, dict[str, Any]] | None = None
+    ):
         """Factory opening one CognitiveBoard decision session per step (§26.1).
 
         Keeps the coordinator free of SQL/CAS wiring while the productive
         cognitive path runs through the same durable workspace: the journal,
         the CAS and the perception share this run's storage (ZGW-0101).
+
+        ``observation_holder["current"]`` is the RUNNING condition's declared
+        protocol.observation policy: ZGW-0103 R3 threads it into packet
+        building so ascii/history exposure declared in the manifest actually
+        reaches the model — never a silently ignored declaration (§5.1).
         """
-        from zugzwang_chess.cognition import ChessPerception
+        from zugzwang_chess.cognition import ChessPerception, PacketExposure
         from zugzwang_chess.environment.standard import StandardChessEnvironment
         from zugzwang_core.domain.canonical import hash_canonical
 
         from ..cognition.session import DecisionSession
         from ..persistence.cognition import CognitionJournal
+
+        # Direct coordinator construction (resume path, fault tests) without a
+        # declared observation policy falls back to the minimal exposure.
+        holder = observation_holder if observation_holder is not None else {}
+        exposure = PacketExposure.from_observation(holder.get("current"))
 
         def factory(
             *,
@@ -146,7 +158,7 @@ class DurableRunServices:
             policy_hash = hash_canonical(
                 {
                     "rules": "standard/v1",
-                    "perception": "chess-perception/v0.1",
+                    "perception": "chess-perception/v0.2",
                     "strategy": strategy.strategy_id,
                 }
             )
@@ -196,12 +208,105 @@ class DurableRunServices:
                     environment=StandardChessEnvironment(),
                     rules_version="standard/v1",
                     policy_hash=policy_hash,
+                    exposure=exposure,
                 ),
                 cas=self._cas,
                 engine=self._database.engine(),
             )
 
         return factory
+
+    def _reject_unsupported_observation(self, condition: ResolvedCondition) -> None:
+        """Fail closed on declared exposure the chosen strategy cannot deliver
+        (ZGW-0103 R3; dossier §5 acceptance: expose for real OR reject)."""
+        from zugzwang_core.domain.errors import ManifestValidationError
+
+        observation: dict[str, Any] = dict(condition.protocol.observation or {})
+        position_raw = observation.get("position")
+        position = cast("dict[str, Any]", position_raw) if isinstance(position_raw, dict) else {}
+        if not position.get("image"):
+            return
+        for player in condition.players.values():
+            if player.model is not None and player.model.strategy == "chess.cognitive_navigation":
+                raise ManifestValidationError(
+                    "protocol.observation.position.image is declared, but "
+                    "chess.cognitive_navigation delivers packets without image parts; "
+                    "remove the declaration or use a strategy that consumes "
+                    "environment.observe",
+                    technical_context=condition.condition_id,
+                )
+
+    def _code_pin(self) -> dict[str, Any]:
+        """Git attribution of the executing code (ZGW-0103 R4). Best effort:
+        an unavailable git context stays unknown, never an invented value."""
+        import subprocess
+
+        pin: dict[str, Any] = {"code_git_sha": None, "code_dirty": None}
+        try:
+            completed = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=True,
+            )
+            pin["code_git_sha"] = completed.stdout.strip() or None
+        except Exception:
+            return pin
+        try:
+            status = subprocess.run(
+                ["git", "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=True,
+            )
+            pin["code_dirty"] = 1 if status.stdout.strip() else 0
+        except Exception:
+            pin["code_dirty"] = None
+        return pin
+
+    def _exposure_manifest_payload(
+        self, condition: ResolvedCondition, code_pin: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Declared vs effective exposure for ONE run (ZGW-0103 R3/R4).
+
+        ``effective`` is what the wired path serializes — for the cognitive
+        strategy that is the L0 packet policy actually handed to perception —
+        so downstream analysis can verify the intervention reached the model.
+        """
+        from zugzwang_chess.cognition import PacketExposure
+
+        observation = dict(condition.protocol.observation or {})
+        strategy_ids = [p.model.strategy for p in condition.players.values() if p.model is not None]
+        if "chess.cognitive_navigation" in strategy_ids:
+            exposure = PacketExposure.from_observation(observation)
+            effective: dict[str, Any] = {
+                "path": "l0_packet",
+                "strategies": strategy_ids,
+                "fen": exposure.fen,
+                "piece_map": True,
+                "ascii": exposure.ascii,
+                "history_mode": exposure.history_mode,
+                "history_plies": exposure.history_plies,
+                "history_notation": exposure.history_notation,
+                "legal_actions": "paginated",
+                "relations": "minimal",
+            }
+        else:
+            effective = {
+                "path": "environment.observe",
+                "strategies": strategy_ids,
+                "declared": observation,
+            }
+        return {
+            "schema_version": "zgw.exposure-manifest/v1",
+            "condition_id": condition.condition_id,
+            "declared": {"observation": observation},
+            "effective": effective,
+            "unsupported": [],
+            "code": code_pin,
+        }
 
     def _store_root_state_artifact(self, state: Any) -> str:
         """CAS-store one integral chess state in the canonical record form."""
@@ -273,6 +378,7 @@ class DurableRunServices:
             else resolved.conditions[0]
         )
         backend = self._backend_for(condition_for_backend)
+        observation_holder: dict[str, dict[str, Any]] = {}
         coordinator = DurableRunCoordinator(
             registry=self._registry,
             backend=backend,
@@ -284,7 +390,7 @@ class DurableRunServices:
             steps=self._steps,
             checkpoints=self._checkpoints,
             rate_limiter=rate_limiter,
-            cognitive_session_factory=self._cognitive_session_factory(),
+            cognitive_session_factory=self._cognitive_session_factory(observation_holder),
             artifacts=self._artifacts_repo(),
         )
 
@@ -292,6 +398,11 @@ class DurableRunServices:
             conditions = (resolved.conditions[command.condition_index],)
         else:
             conditions = resolved.conditions
+
+        for condition in conditions:
+            # ZGW-0103 R3: a declared exposure the cognitive path cannot
+            # deliver is a configuration rejection, never a silent ignore.
+            self._reject_unsupported_observation(condition)
 
         resolved_artifact = store_artifact(
             cas=self._cas,
@@ -301,9 +412,27 @@ class DurableRunServices:
                 data=resolved.model_dump_json().encode("utf-8"),
             ),
         )
+        # ZGW-0103 R4: the run is attributable to the exact code that executes
+        # it (git SHA + dirty flag), pinned with the run row itself.
+        code_pin = self._code_pin()
         last_run_id: str | None = None
         for condition in conditions:
-            run_id = await coordinator.start_and_run(resolved, condition, stop_event)
+            observation_holder["current"] = dict(condition.protocol.observation)
+            exposure_ref = store_json_artifact(
+                cas=self._cas,
+                writer=writer,
+                payload=self._exposure_manifest_payload(condition, code_pin),
+                media_type="application/vnd.zugzwang.exposure-manifest+json",
+            )
+            run_id = await coordinator.start_and_run(
+                resolved,
+                condition,
+                stop_event,
+                run_extras={
+                    **code_pin,
+                    "exposure_manifest_artifact_id": exposure_ref.as_id(),
+                },
+            )
             self._runs.update_run(
                 run_id, {"resolved_manifest_artifact_id": resolved_artifact.as_id()}
             )
@@ -338,6 +467,9 @@ class DurableRunServices:
         if condition is None:
             raise ValueError(f"condition for run {run_id} not found in manifest")
         backend = self._backend_for(condition)
+        observation_holder: dict[str, dict[str, Any]] = {
+            "current": dict(condition.protocol.observation)
+        }
         coordinator = DurableRunCoordinator(
             registry=self._registry,
             backend=backend,
@@ -349,7 +481,7 @@ class DurableRunServices:
             steps=self._steps,
             checkpoints=self._checkpoints,
             rate_limiter=RateLimiter(),
-            cognitive_session_factory=self._cognitive_session_factory(),
+            cognitive_session_factory=self._cognitive_session_factory(observation_holder),
             artifacts=self._artifacts_repo(),
         )
         await coordinator.resume(run_id, resolved, stop_event)

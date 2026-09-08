@@ -8,14 +8,17 @@ a byte-identical packet content hash.
 
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, cast
 
 import chess
 
+from ..codecs.ascii_board import render_ascii
 from ..environment.standard import ChessGameState, StandardChessEnvironment
 from .packet import (
     CognitionError,
     LegalActionItem,
+    PacketHistoryItem,
     PacketLegalActions,
     PacketProvenance,
     PacketRelations,
@@ -26,7 +29,50 @@ from .packet import (
 )
 from .relations import RELATIONS_SEMANTICS_VERSION, absolute_pins, checkers
 
-PERCEPTION_VERSION = "chess-perception/v0.1"
+PERCEPTION_VERSION = "chess-perception/v0.2"
+
+
+@dataclass(frozen=True, slots=True)
+class PacketExposure:
+    """Declated L0 exposure policy for packet building (ZGW-0103 R3).
+
+    Mirrors the manifest's ``protocol.observation`` for the cognitive path:
+    ``position.ascii`` and ``history`` are delivered for real or the declared
+    combination is rejected upstream — never silently ignored (dossier §5.1).
+    """
+
+    fen: bool = True
+    ascii: bool = False
+    history_mode: str = "none"  # none | last_n | full
+    history_plies: int = 0
+    history_notation: str = "uci"  # uci | san
+
+    @classmethod
+    def from_observation(cls, observation: dict[str, Any] | None) -> PacketExposure:
+        policy: dict[str, Any] = dict(observation) if isinstance(observation, dict) else {}
+        position_raw = policy.get("position")
+        position = cast("dict[str, Any]", position_raw) if isinstance(position_raw, dict) else {}
+        history_raw = policy.get("history")
+        history = cast("dict[str, Any]", history_raw) if isinstance(history_raw, dict) else {}
+        mode = str(history.get("mode", "none"))
+        if mode not in {"none", "last_n", "full"}:
+            raise CognitionError("INVALID_ARGUMENTS", f"unknown history mode {mode!r}")
+        plies_raw = history.get("plies", 0)
+        plies = int(plies_raw) if isinstance(plies_raw, int) and plies_raw > 0 else 0
+        if mode == "last_n" and plies == 0:
+            raise CognitionError(
+                "INVALID_ARGUMENTS", "history mode last_n requires a positive plies value"
+            )
+        notation = str(history.get("notation", "uci"))
+        if notation not in {"uci", "san"}:
+            raise CognitionError("INVALID_ARGUMENTS", f"unknown history notation {notation!r}")
+        return cls(
+            fen=position.get("fen", True) is not False,
+            ascii=position.get("ascii", False) is True,
+            history_mode=mode,
+            history_plies=plies,
+            history_notation=notation,
+        )
 
 
 class ChessPerception:
@@ -38,6 +84,7 @@ class ChessPerception:
         rules_version: str,
         policy_hash: str,
         page_size: int = 32,
+        exposure: PacketExposure | None = None,
     ) -> None:
         self._environment = environment
         self._rules_version = rules_version
@@ -45,6 +92,7 @@ class ChessPerception:
         if page_size < 1:
             raise CognitionError("INVALID_ARGUMENTS", "page_size must be >= 1")
         self._page_size = page_size
+        self._exposure = exposure or PacketExposure()
 
     def build_packet(
         self,
@@ -96,6 +144,7 @@ class ChessPerception:
 
         relations = self._relations(board, requested_scope)
         representation = self._representation(state, board, include_representation)
+        history = self._history(state)
 
         packet = PositionPacket(
             state=PacketState(
@@ -131,6 +180,7 @@ class ChessPerception:
                 perception_version=PERCEPTION_VERSION,
                 policy_hash=self._policy_hash,
             ),
+            history=history,
         )
         return packet
 
@@ -162,7 +212,35 @@ class ChessPerception:
         piece_map = {
             chess.square_name(sq): piece.symbol() for sq, piece in board.piece_map().items()
         }
-        return PacketRepresentation(fen=state.fen, piece_map=piece_map)
+        return PacketRepresentation(
+            fen=state.fen if self._exposure.fen else None,
+            piece_map=piece_map,
+            ascii=render_ascii(state) if self._exposure.ascii else None,
+        )
+
+    def _history(self, state: ChessGameState) -> tuple[PacketHistoryItem, ...]:
+        """Formal trajectory window per the declared exposure (ZGW-0103 R3).
+
+        uci strings come straight from the committed move stack; san is derived
+        from the replaying board — formal notation, never commentary.
+        """
+        mode = self._exposure.history_mode
+        if mode == "none" or not state.move_stack:
+            return ()
+        stack = list(state.move_stack)
+        if mode == "last_n":
+            stack = stack[-self._exposure.history_plies :]
+        base_index = len(state.move_stack) - len(stack)
+        items: list[PacketHistoryItem] = []
+        replay = chess.Board()
+        if state.initial_fen and state.initial_fen != chess.STARTING_FEN:
+            replay = chess.Board(state.initial_fen)
+        for offset, uci in enumerate(stack):
+            move = chess.Move.from_uci(uci)
+            san = replay.san(move) if self._exposure.history_notation == "san" else None
+            replay.push(move)
+            items.append(PacketHistoryItem(ply_index=base_index + offset, uci=uci, san=san))
+        return tuple(items)
 
     def _relations(self, board: chess.Board, requested_scope: str) -> tuple[dict[str, Any], ...]:
         if requested_scope != "minimal":

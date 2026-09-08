@@ -738,6 +738,9 @@ class CognitionJournal:
         result_artifact_id: str | None,
         error_code: str | None,
         elapsed_us: int | None = None,
+        physical_rules_queries: int = 0,
+        logical_ops: int | None = None,
+        new_nodes: int = 0,
     ) -> None:
         """PREPARED -> COMMITTED/REJECTED/FAILED (result artifact mandatory for
         COMMITTED/REJECTED, enforced by the DDL check)."""
@@ -746,23 +749,39 @@ class CognitionJournal:
         if status in {"COMMITTED", "REJECTED"} and result_artifact_id is None:
             raise DecisionJournalError("INVALID_ARGUMENTS", f"{status} requires a result artifact")
         with self._connect() as conn:
+            sets = [
+                "status = :status",
+                "result_artifact_id = :result_artifact_id",
+                "error_code = :error_code",
+                "elapsed_us = :elapsed_us",
+                "completed_at = :completed_at",
+                "physical_rules_queries = :physical_rules_queries",
+                "new_nodes = :new_nodes",
+            ]
+            params: dict[str, Any] = {
+                "status": status,
+                "result_artifact_id": result_artifact_id,
+                "error_code": error_code,
+                "elapsed_us": elapsed_us,
+                "completed_at": self._clock(),
+                "physical_rules_queries": max(0, int(physical_rules_queries)),
+                "new_nodes": max(0, int(new_nodes)),
+                "operation_id": operation_id,
+                "decision_id": decision_id,
+            }
+            if logical_ops is not None:
+                # ZGW-0103 R6: a real count is persisted from the execution
+                # point; None keeps the row's existing/DDL default untouched.
+                sets.append("logical_ops = :logical_ops")
+                params["logical_ops"] = max(0, int(logical_ops))
             result = conn.execute(
                 sa.text(
-                    "UPDATE cb_tool_operations SET status = :status, result_artifact_id = "
-                    ":result_artifact_id, error_code = :error_code, elapsed_us = :elapsed_us, "
-                    "completed_at = :completed_at "
-                    "WHERE operation_id = :operation_id AND decision_id = :decision_id "
+                    "UPDATE cb_tool_operations SET "
+                    + ", ".join(sets)
+                    + " WHERE operation_id = :operation_id AND decision_id = :decision_id "
                     "AND status = 'PREPARED'"
                 ),
-                {
-                    "status": status,
-                    "result_artifact_id": result_artifact_id,
-                    "error_code": error_code,
-                    "elapsed_us": elapsed_us,
-                    "completed_at": self._clock(),
-                    "operation_id": operation_id,
-                    "decision_id": decision_id,
-                },
+                params,
             )
             if result.rowcount != 1:
                 raise DecisionJournalError(
@@ -782,6 +801,9 @@ class CognitionJournal:
         elapsed_us: int | None = None,
         observation: dict[str, Any] | None = None,
         budget_entry: dict[str, Any] | None = None,
+        physical_rules_queries: int = 0,
+        logical_ops: int | None = None,
+        new_nodes: int = 0,
     ) -> int:
         """Settle ONE operation, expose its observation and debit the ledger
         in a SINGLE transaction (§14.2; ZGW-0101).
@@ -793,29 +815,46 @@ class CognitionJournal:
         round_id, kind, semantic_hash, policy_hash, round_ordinal and
         available_before_selection; ``budget_entry`` carries reservation_id,
         unit and delta_used (appended only when delta_used > 0).
+        ZGW-0103 R6: the physical counters measured at the execution point
+        (physical_rules_queries, logical_ops, new_nodes) settle in the SAME
+        transaction — never a hardcoded zero.
         """
         if status not in {"COMMITTED", "REJECTED", "FAILED"}:
             raise DecisionJournalError("INVALID_ARGUMENTS", f"cannot settle into {status!r}")
         if status in {"COMMITTED", "REJECTED"} and result_artifact_id is None:
             raise DecisionJournalError("INVALID_ARGUMENTS", f"{status} requires a result artifact")
         with self._connect() as conn:
+            sets = [
+                "status = :status",
+                "result_artifact_id = :result_artifact_id",
+                "error_code = :error_code",
+                "elapsed_us = :elapsed_us",
+                "completed_at = :completed_at",
+                "physical_rules_queries = :physical_rules_queries",
+                "new_nodes = :new_nodes",
+            ]
+            params: dict[str, Any] = {
+                "status": status,
+                "result_artifact_id": result_artifact_id,
+                "error_code": error_code,
+                "elapsed_us": elapsed_us,
+                "completed_at": self._clock(),
+                "physical_rules_queries": max(0, int(physical_rules_queries)),
+                "new_nodes": max(0, int(new_nodes)),
+                "operation_id": operation_id,
+                "decision_id": decision_id,
+            }
+            if logical_ops is not None:
+                sets.append("logical_ops = :logical_ops")
+                params["logical_ops"] = max(0, int(logical_ops))
             result = conn.execute(
                 sa.text(
-                    "UPDATE cb_tool_operations SET status = :status, result_artifact_id = "
-                    ":result_artifact_id, error_code = :error_code, elapsed_us = :elapsed_us, "
-                    "completed_at = :completed_at "
-                    "WHERE operation_id = :operation_id AND decision_id = :decision_id "
+                    "UPDATE cb_tool_operations SET "
+                    + ", ".join(sets)
+                    + " WHERE operation_id = :operation_id AND decision_id = :decision_id "
                     "AND status = 'PREPARED'"
                 ),
-                {
-                    "status": status,
-                    "result_artifact_id": result_artifact_id,
-                    "error_code": error_code,
-                    "elapsed_us": elapsed_us,
-                    "completed_at": self._clock(),
-                    "operation_id": operation_id,
-                    "decision_id": decision_id,
-                },
+                params,
             )
             if result.rowcount != 1:
                 raise DecisionJournalError(

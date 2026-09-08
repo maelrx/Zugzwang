@@ -48,6 +48,18 @@ from zugzwang_core.ports.model import (
 _RESPONSES_PROFILE = "openai-responses"
 
 
+def _retry_after_seconds(headers: Any) -> float | None:
+    """Provider's Retry-After hint in seconds; None when absent or non-numeric
+    (HTTP-date form is deliberately unsupported — no clock guessing)."""
+    raw: Any = headers.get("retry-after") if headers is not None else None
+    if raw is None:
+        return None
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):
+        return None
+
+
 class OpenAiCompatibleBackend:
     """One-inference backend over an explicit OpenAI-compatible wire profile."""
 
@@ -182,7 +194,9 @@ class OpenAiCompatibleBackend:
 
         if response.status_code == 429:
             raise ProviderThrottlingError(
-                "provider rate limit (429)", technical_context=self._base_url
+                "provider rate limit (429)",
+                technical_context=self._base_url,
+                retry_after=_retry_after_seconds(response.headers),
             )
         if response.status_code >= 500:
             raise ProviderServerError(

@@ -290,23 +290,25 @@ class DurableRunCoordinator:
         resolved: ResolvedManifest,
         condition: ResolvedCondition,
         stop_event: asyncio.Event,
+        run_extras: dict[str, Any] | None = None,
     ) -> str:
         run_id = str(new_id("run"))
         protocol = condition.protocol
         now = to_iso_z(utc_now())
-        self._writer.enqueue(
-            UpsertRunCommand(
-                row={
-                    "run_id": run_id,
-                    "condition_id": condition.condition_id,
-                    "status": RunState.RUNNING.value,
-                    "protocol_hash": resolved.protocol_hash,
-                    "declared_assistance": protocol.declared_assistance,
-                    "started_at": now,
-                    "projection_version": 0,
-                }
-            )
-        )
+        row: dict[str, Any] = {
+            "run_id": run_id,
+            "condition_id": condition.condition_id,
+            "status": RunState.RUNNING.value,
+            "protocol_hash": resolved.protocol_hash,
+            "declared_assistance": protocol.declared_assistance,
+            "started_at": now,
+            "projection_version": 0,
+        }
+        if run_extras:
+            # ZGW-0103 R4: code pin + exposure manifest linkage land with the
+            # run row itself, never as a later best-effort patch.
+            row.update(run_extras)
+        self._writer.enqueue(UpsertRunCommand(row=row))
         self._emit_run_event(run_id, "run.started", {"experiment": resolved.experiment_name})
         try:
             await self._run_episodes(run_id, resolved, condition, stop_event)
@@ -1041,7 +1043,7 @@ class DurableRunCoordinator:
                         trace=trace,
                         attempt_index=decision_attempt_index,
                         gateway=bound_gateway,
-                        attempt_evidence=recording_backend.evidence_for_current_decision(),
+                        attempt_evidence=recording_backend.evidence_for_calls(),
                     ),
                     media_type="application/vnd.zugzwang.decision-trace+json",
                     redaction_policy="standard",
@@ -1104,16 +1106,25 @@ class DurableRunCoordinator:
                         # the provider through the illegal-action retry
                         # budget; transport-level retries stay inside the
                         # recording backend under its own policy.
+                        # ZGW-0103 R2: a provider verdict (throttling /
+                        # transport / timeout-unknown from the cognitive loop)
+                        # settles under outcome "provider_error", distinct
+                        # from a strategy decision_error — the campaign report
+                        # must never read provider throttling as illegal moves.
+                        provider_kind = any(
+                            verdict.kind == "provider_error" for verdict in trace.verdicts
+                        )
+                        outcome = "provider_error" if provider_kind else "decision_error"
                         stable_code = (
-                            str(getattr(decision_error, "stable_code", "decision_error"))
+                            str(getattr(decision_error, "stable_code", outcome))
                             if decision_error is not None
                             else next(
                                 (
-                                    str(verdict.message) or "decision_error"
+                                    str(verdict.message) or outcome
                                     for verdict in trace.verdicts
                                     if verdict.kind in {"provider_error", "decision_error"}
                                 ),
-                                "decision_error",
+                                outcome,
                             )
                         )[:128]
                         self._emit_step_event(
@@ -1121,7 +1132,7 @@ class DurableRunCoordinator:
                             episode_id,
                             step_id,
                             "step.decision_failed",
-                            {"stable_code": stable_code},
+                            {"stable_code": stable_code, "outcome": outcome},
                         )
                         self._persist_search_workspace(
                             workspace=search_workspace,
@@ -1132,19 +1143,19 @@ class DurableRunCoordinator:
                             status="FAILED",
                             algorithm=_search_algorithm(strategy),
                         )
-                        await self._fail_step(run_id, episode_id, step_id, "decision_error")
+                        await self._fail_step(run_id, episode_id, step_id, outcome)
                         self._writer.enqueue(
                             FinalizeEpisodeCommand(
                                 episode_id=episode_id,
                                 episode_values={
                                     "status": EpisodeState.FAILED.value,
-                                    "outcome": "decision_error",
+                                    "outcome": outcome,
                                 },
                                 envelope=self._episode_envelope(
                                     run_id,
                                     episode_id,
                                     "episode.failed",
-                                    {"reason": "decision_error", "stable_code": stable_code},
+                                    {"reason": outcome, "stable_code": stable_code},
                                 ),
                             )
                         )
@@ -1320,9 +1331,7 @@ class DurableRunCoordinator:
                         ):
                             retry_workspace.reset_query_budgets()
                     continue
-                prior_reasoning_summary = getattr(
-                    recording_backend, "last_reasoning_summary", None
-                )
+                prior_reasoning_summary = getattr(recording_backend, "last_reasoning_summary", None)
                 break
 
             search_graph_ref: str | None = None
@@ -2088,7 +2097,17 @@ class DurableRunCoordinator:
                 if player.model.strategy == "chess.cognitive_navigation":
                     from ..cognition.navigation import CognitiveNavigationStrategy
 
-                    return CognitiveNavigationStrategy()
+                    # ZGW-0103 R8: the round budget is a manifest decision
+                    # (task.config.cognitive.max_rounds), not a code constant —
+                    # EXP-02 varies investigation depth under equal conditions.
+                    nav_rounds = 4
+                    nav_cognitive = condition.task.config.get("cognitive")
+                    nav_rounds_raw = (
+                        nav_cognitive.get("max_rounds") if isinstance(nav_cognitive, dict) else None
+                    )
+                    if isinstance(nav_rounds_raw, int) and nav_rounds_raw >= 1:
+                        nav_rounds = nav_rounds_raw
+                    return CognitiveNavigationStrategy(max_rounds=nav_rounds)
                 if player.model.strategy == "chess.multi_agent_review":
                     from zugzwang_chess.strategies.multi_agent_review import (
                         MultiAgentReviewStrategy,
@@ -2365,8 +2384,10 @@ def _decision_config(
         config["cognitive"] = dict(cognitive_config)
     if retry_feedback:
         config["retry_feedback"] = retry_feedback
-    if prior_reasoning and isinstance(cognitive_config, dict) and cognitive_config.get(
-        "reasoning_memory"
+    if (
+        prior_reasoning
+        and isinstance(cognitive_config, dict)
+        and cognitive_config.get("reasoning_memory")
     ):
         # Self-memory between moves: the model's OWN previous reasoning
         # summary, manifest-gated (reasoning_memory). Never external

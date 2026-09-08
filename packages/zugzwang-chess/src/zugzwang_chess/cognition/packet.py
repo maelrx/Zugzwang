@@ -37,7 +37,21 @@ class PacketRepresentation(BaseModel):
 
     fen: str | None = None
     piece_map: dict[str, str] | None = None
+    # ZGW-0103 R3: the declared ASCII rendering actually ships in the packet
+    # when the manifest's observation policy asks for it (dossier §5.1: the
+    # arena's ascii ablation never reached the model through this path).
+    ascii: str | None = None
     image_ref: str | None = None
+
+
+class PacketHistoryItem(BaseModel):
+    """One committed trajectory move as declared by the history exposure."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    ply_index: int = Field(ge=0)
+    uci: str = Field(min_length=4)
+    san: str | None = None
 
 
 class CognitionError(Exception):
@@ -172,6 +186,9 @@ class PositionPacket(BaseModel):
     relations: PacketRelations
     terminal: PacketTerminal
     provenance: PacketProvenance
+    # ZGW-0103 R3: formal trajectory window (last_n/full) when the manifest's
+    # observation policy declares it; empty tuple means "not declared".
+    history: tuple[PacketHistoryItem, ...] = ()
 
     def content_hash(self) -> str:
         """Semantic content hash (packet_content_hash_v2, no telemetry)."""

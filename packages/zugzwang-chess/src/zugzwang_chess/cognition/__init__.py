@@ -10,6 +10,7 @@ from .packet import (
     ActionStateMismatch,
     CognitionError,
     LegalActionItem,
+    PacketHistoryItem,
     PacketLegalActions,
     PacketProvenance,
     PacketRelations,
@@ -19,7 +20,7 @@ from .packet import (
     PositionPacket,
     require_action_belongs,
 )
-from .perception import PERCEPTION_VERSION, ChessPerception
+from .perception import PERCEPTION_VERSION, ChessPerception, PacketExposure
 
 __all__ = [
     "PERCEPTION_VERSION",
@@ -27,6 +28,8 @@ __all__ = [
     "ChessPerception",
     "CognitionError",
     "LegalActionItem",
+    "PacketExposure",
+    "PacketHistoryItem",
     "PacketLegalActions",
     "PacketProvenance",
     "PacketRelations",

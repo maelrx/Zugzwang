@@ -66,6 +66,12 @@ class RecordingBackend:
         self._capture_responses = capture_raw_responses
         self._evidence_by_attempt: dict[str, dict[str, str | None]] = {}
         self._decision_attempt_ids: list[str] = []
+        # ZGW-0103 R1: caller-supplied attempt id (CallContext.attempt_id) ->
+        # merged evidence refs of every real attempt fired under it. Strategies
+        # stamp CallRecord.attempt_id with the caller id they chose; joining
+        # trace rows to their own response MUST use this identity, never a
+        # positional fallback.
+        self._caller_evidence: dict[str, dict[str, str | None]] = {}
         # Operator directive 2026-09-08: the last decision's own reasoning
         # summary, replayed as self-memory between moves (manifest-gated).
         self.last_reasoning_summary: str | None = None
@@ -73,6 +79,7 @@ class RecordingBackend:
     def begin_decision(self) -> None:
         """Start a local correlation window for one strategy decision."""
         self._decision_attempt_ids = []
+        self._caller_evidence = {}
 
     def evidence_for_attempt(self, attempt_id: str) -> dict[str, str | None]:
         return dict(self._evidence_by_attempt.get(attempt_id, {}))
@@ -86,6 +93,22 @@ class RecordingBackend:
             for attempt_id in self._decision_attempt_ids
             if attempt_id in self._evidence_by_attempt
         }
+
+    def evidence_for_calls(self) -> dict[str, dict[str, str | None]]:
+        """Evidence keyed by the CALLER's attempt id (CallContext.attempt_id).
+
+        This is the join key strategies actually put in ``CallRecord.attempt_id``
+        (ZGW-0103 R1). Transport retries under one caller id merge into one
+        entry: later attempts overwrite only the fields they really observed,
+        so an unknown field from the first try is never fabricated.
+        """
+        return {caller_id: dict(refs) for caller_id, refs in self._caller_evidence.items()}
+
+    def _merge_caller_evidence(self, caller_id: str, refs: dict[str, str | None]) -> None:
+        entry = self._caller_evidence.setdefault(caller_id, {})
+        for field, ref in refs.items():
+            if ref is not None or field not in entry:
+                entry[field] = ref
 
     @property
     def descriptor(self) -> BackendDescriptor:
@@ -118,6 +141,7 @@ class RecordingBackend:
         ordinal = self._attempt_counter.get(key, 0)
         while True:
             attempt_id = str(new_id("att"))
+            caller_id = context.attempt_id or attempt_id
             self._decision_attempt_ids.append(attempt_id)
             attempt_context = context.model_copy(update={"attempt_id": attempt_id})
             started = time.monotonic()
@@ -167,6 +191,16 @@ class RecordingBackend:
                 self._record_outcome(
                     attempt_id, "timeout_unknown", exc.stable_code, latency, unknown=True
                 )
+                self._merge_caller_evidence(
+                    caller_id,
+                    {
+                        "request_artifact_ref": request_ref,
+                        "wire_request_artifact_ref": failed_wire_ref,
+                        "wire_response_artifact_ref": failed_response_ref,
+                        "response_artifact_ref": None,
+                        "reasoning_telemetry_artifact_ref": None,
+                    },
+                )
                 self._emit(
                     event_context,
                     "provider.call.timeout_unknown",
@@ -182,6 +216,16 @@ class RecordingBackend:
                 failed_response_ref = self._capture_failed_wire_response(attempt_id)
                 latency = int((time.monotonic() - started) * 1000)
                 self._record_outcome(attempt_id, "failed", exc.stable_code, latency)
+                self._merge_caller_evidence(
+                    caller_id,
+                    {
+                        "request_artifact_ref": request_ref,
+                        "wire_request_artifact_ref": failed_wire_ref,
+                        "wire_response_artifact_ref": failed_response_ref,
+                        "response_artifact_ref": None,
+                        "reasoning_telemetry_artifact_ref": None,
+                    },
+                )
                 self._emit(
                     event_context,
                     "provider.call.failed",
@@ -194,6 +238,12 @@ class RecordingBackend:
                     Retryability.TRANSPORT,
                     Retryability.THROTTLING,
                 ):
+                    retry_after = getattr(exc, "retry_after", None)
+                    if retry_after is not None:
+                        # ZGW-0103 R5: a throttling retry honors the provider's
+                        # own pacing hint, bounded so a hostile header cannot
+                        # stall a campaign slot.
+                        time.sleep(min(float(retry_after), 120.0))
                     ordinal += 1
                     continue
                 self._attempt_counter[key] = ordinal + 1
@@ -204,6 +254,16 @@ class RecordingBackend:
                 latency = int((time.monotonic() - started) * 1000)
                 code = getattr(exc, "stable_code", "ZGZ-PROVIDER_RESPONSE-000")
                 self._record_outcome(attempt_id, "failed", code, latency)
+                self._merge_caller_evidence(
+                    caller_id,
+                    {
+                        "request_artifact_ref": request_ref,
+                        "wire_request_artifact_ref": failed_wire_ref,
+                        "wire_response_artifact_ref": failed_response_ref,
+                        "response_artifact_ref": None,
+                        "reasoning_telemetry_artifact_ref": None,
+                    },
+                )
                 self._emit(
                     event_context,
                     "provider.call.failed",
@@ -251,6 +311,10 @@ class RecordingBackend:
                 "response_artifact_ref": normalized_ref,
                 "reasoning_telemetry_artifact_ref": reasoning_ref,
             }
+            self._merge_caller_evidence(
+                caller_id,
+                self._evidence_by_attempt[attempt_id],
+            )
             usage_json: dict[str, Any] = {
                 "input_tokens": response.usage.input_tokens,
                 "output_tokens": response.usage.output_tokens,

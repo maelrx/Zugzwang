@@ -31,6 +31,11 @@ from dataclasses import dataclass, field
 from typing import Any, cast
 
 from zugzwang_core.domain.cognition import ToolError
+from zugzwang_core.domain.errors import (
+    ProviderThrottlingError,
+    ProviderTimeoutError,
+    ProviderTransportError,
+)
 from zugzwang_core.ports.model import (
     CallContext,
     Message,
@@ -162,6 +167,10 @@ class LoopResult:
     selected_action: str | None = None
     transcript: list[dict[str, Any]] = field(default_factory=list["dict[str, Any]"])
     trace_record: dict[str, Any] = field(default_factory=dict["str", Any])
+    # ZGW-0103 R2: provider unavailability is its own failure class, never an
+    # illegal action. One of "provider_throttling", "provider_transport",
+    # "provider_timeout_unknown" — None when no provider failure occurred.
+    failure_class: str | None = None
 
 
 class CognitiveLoop:
@@ -275,6 +284,45 @@ class CognitiveLoop:
 
             try:
                 response = await self._backend.infer(request, self._call_context_for(ordinal))
+            except ProviderTimeoutError as exc:
+                # ZGW-0103 R2: provider unavailability fail-closes the decision
+                # under its OWN class — it never enters the protocol-error
+                # retry loop nor the coordinator's illegal-action budget.
+                return self._fail_provider(
+                    result,
+                    round_id,
+                    protocol_errors,
+                    trace,
+                    exc,
+                    failure_class="provider_timeout_unknown",
+                    ordinal=ordinal,
+                    request=request,
+                    request_artifact_id=request_artifact_id,
+                )
+            except ProviderThrottlingError as exc:
+                return self._fail_provider(
+                    result,
+                    round_id,
+                    protocol_errors,
+                    trace,
+                    exc,
+                    failure_class="provider_throttling",
+                    ordinal=ordinal,
+                    request=request,
+                    request_artifact_id=request_artifact_id,
+                )
+            except ProviderTransportError as exc:
+                return self._fail_provider(
+                    result,
+                    round_id,
+                    protocol_errors,
+                    trace,
+                    exc,
+                    failure_class="provider_transport",
+                    ordinal=ordinal,
+                    request=request,
+                    request_artifact_id=request_artifact_id,
+                )
             except Exception as exc:
                 self._record_call(
                     result,
@@ -492,8 +540,12 @@ class CognitiveLoop:
                 f"The root node id is {root!r}: use it as node_id to observe "
                 "the initial position. "
                 "Use the board tools to observe the root, expand legal actions "
-                f"(action ids come from observations), and when ready call "
-                f"{FINALIZE_TOOL} with the ROOT node and the chosen action_id."
+                "(action ids come from observations), and when ready call "
+                f"{FINALIZE_TOOL} with the ROOT node and the chosen action_id. "
+                "board_expand returns each child's position package INLINE in "
+                "its result — you do not need to observe a child to know it, "
+                "and you may call board_expand on a child node to investigate "
+                "the adversary's reply (a grandchild) before finalizing."
                 f"{budget_note}"
             )
         return (
@@ -748,6 +800,44 @@ class CognitiveLoop:
             )
         )
 
+    def _fail_provider(
+        self,
+        result: LoopResult,
+        round_id: str,
+        protocol_errors: int,
+        trace: DecisionTraceBuilder,
+        exc: Exception,
+        *,
+        failure_class: str,
+        ordinal: int,
+        request: ModelRequest,
+        request_artifact_id: str | None,
+    ) -> LoopResult:
+        """Record one provider-class failure and fail the decision closed.
+
+        The stable provider code travels in the trace record; the coordinator
+        turns the matching verdict into a ``provider_error`` episode outcome,
+        never into an illegal-action retry (ZGW-0103 R2, dossier §9.1).
+        """
+        code = str(getattr(exc, "stable_code", failure_class))
+        self._record_call(
+            result,
+            _RoundPlan(round_id=round_id, ordinal=ordinal),
+            request,
+            ok=False,
+            ordinal=ordinal,
+            request_artifact_id=request_artifact_id,
+            failure_code=code,
+        )
+        return self._fail_closed(
+            result,
+            round_id,
+            protocol_errors,
+            trace,
+            code=code,
+            failure_class=failure_class,
+        )
+
     def _fail_closed(
         self,
         result: LoopResult,
@@ -757,12 +847,16 @@ class CognitiveLoop:
         *,
         code: str = "PROTOCOL_ERROR",
         note: str | None = None,
+        failure_class: str | None = None,
     ) -> LoopResult:
         with contextlib.suppress(DecisionJournalError):
             self._journal.transition_decision(self.decision_id, "FAILED")
         result.status = "FAILED"
         result.protocol_errors = protocol_errors
+        result.failure_class = failure_class
         record: dict[str, Any] = {"rounds": trace.rounds, "failure_code": code}
+        if failure_class:
+            record["failure_class"] = failure_class
         if note:
             record["note"] = note
         result.trace_record = record

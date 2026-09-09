@@ -128,8 +128,8 @@ class ExperientialLabsBackend:
         timeout_seconds: float = 120.0,
         reasoning_effort: str | None = None,
         default_max_output_tokens: int | None = None,
-        server_retries: int = 2,
-        backoff_base: float = 0.5,
+        server_retries: int = 4,
+        backoff_base: float = 1.0,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")

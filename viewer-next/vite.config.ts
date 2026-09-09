@@ -10,6 +10,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // ZGW-0108 arena: interactive play backend (uv run python -m zugzwang_cli.arena.server).
+    proxy: {
+      "/play": { target: "http://127.0.0.1:4191", changeOrigin: false },
+    },
     // COOP/COEP so the multithreaded WASM flavor works in dev when the
     // browser reports crossOriginIsolated. Harmless for the single flavor.
     headers: {

@@ -22,7 +22,7 @@ spec:
       model_color: white
       max_plies: null
       backend_config:
-        model: gpt-6-astra
+        model: gpt-5.6-luna
         timeout_seconds: 420
         reasoning_effort: high
         max_output_tokens: 32768
@@ -50,7 +50,7 @@ spec:
       model:
         backend: provider.codex_cli
         provider: codex-cli
-        model: gpt-6-astra
+        model: gpt-5.6-luna
         strategy: chess.cognitive_navigation
     black:
       policy:

@@ -55,7 +55,7 @@ def _request(**overrides: object) -> ModelRequest:
         ToolDefinition(name="board_finalize", description="Commit a move", parameters={}),
     )
     fields: dict[str, object] = {
-        "model": ModelRef(backend="provider.codex_cli", provider="codex-cli", model="gpt-6-astra"),
+        "model": ModelRef(backend="provider.codex_cli", provider="codex-cli", model="gpt-5.6-luna"),
         "messages": messages,
         "tools": tools,
     }
@@ -84,7 +84,7 @@ async def test_flattens_prompt_with_tool_protocol(tmp_path: Path) -> None:
     assert "[AVAILABLE TOOLS]" in recorded
     assert "board_finalize" in recorded
     assert "model_reasoning_effort=high" in recorded
-    assert "-m" in recorded and "gpt-6-astra" in recorded
+    assert "-m" in recorded and "gpt-5.6-luna" in recorded
 
 
 async def test_parses_agent_message_usage_and_tool_calls(tmp_path: Path) -> None:
@@ -155,7 +155,7 @@ async def test_inspect_capabilities_missing_required_raises() -> None:
     backend = CodexCliBackend(executable="/unused")
     with pytest.raises(CapabilityMissingError):
         await backend.inspect_capabilities(
-            ModelRef(backend="provider.codex_cli", provider="codex-cli", model="gpt-6-astra"),
+            ModelRef(backend="provider.codex_cli", provider="codex-cli", model="gpt-5.6-luna"),
             required=frozenset({Capability.STREAMING}),
         )
 

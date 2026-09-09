@@ -1,0 +1,87 @@
+# Luna 03 — SENTINEL-REPLY (R2-03 verbatim): king-safety como primeiro dever com
+# REPLY RULE obrigatória (expandir a melhor resposta adversária e descartar
+# candidato que perde material/leva mate). Testa o único micro-sinal positivo da
+# onda 1 (ZGX-16) com o enforcement que faltou no full-03.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx-luna-03-sentinel-reply
+  tags: [zgx, luna, codex, fullgame, real, stockfish1320, high]
+
+spec:
+  seed: 20260911
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      backend_config:
+        model: gpt-6-astra
+        timeout_seconds: 420
+        reasoning_effort: high
+        max_output_tokens: 32768
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: >-
+          KING SAFETY WITH ENFORCED VERIFICATION: Your first duty is that your
+          king is never the side that gets mated. Protocol per move, in order:
+          (1) BOARD CHECK: expand every adversary check and capture directed at
+          your king zone and your last-moved piece; (2) REPLY RULE: for your
+          chosen candidate, you MUST expand the adversary's strongest reply —
+          if it wins material or gives mate, discard the candidate and pick the
+          next; (3) PAWN SHIELD: never move the pawns in front of your king
+          unless forced by tactics; (4) TEMPO RULE: no king walks without a
+          concrete threat being answered. Maintain factual memory of your last
+          move. Finalize on ROOT via board_finalize only after rule 2 has been
+          executed at least once.
+
+  players:
+    white:
+      model:
+        backend: provider.codex_cli
+        provider: codex-cli
+        model: gpt-6-astra
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

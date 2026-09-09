@@ -633,6 +633,50 @@ class DurableRunServices:
                         else None
                     ),
                 )
+            if backend_id == "provider.antigravity_cli":
+                from zgw_provider_antigravity_cli.adapter import AntigravityCliBackend
+
+                return AntigravityCliBackend(
+                    model=str(backend_config.get("model", "gemini-3.8-flash-low")),
+                    executable=(
+                        str(backend_config["executable"])
+                        if backend_config.get("executable")
+                        else None
+                    ),
+                    timeout_seconds=float(backend_config.get("timeout_seconds", 120) or 120),
+                    reasoning_effort=(
+                        str(backend_config["reasoning_effort"])
+                        if backend_config.get("reasoning_effort")
+                        else None
+                    ),
+                )
+            if backend_id == "provider.codex_cli":
+                from zgw_provider_codex_cli.adapter import CodexCliBackend
+
+                return CodexCliBackend(
+                    model=str(backend_config.get("model", "gpt-6-astra")),
+                    executable=(
+                        str(backend_config["executable"])
+                        if backend_config.get("executable")
+                        else None
+                    ),
+                    timeout_seconds=float(backend_config.get("timeout_seconds", 300) or 300),
+                    reasoning_effort=(
+                        str(backend_config["reasoning_effort"])
+                        if backend_config.get("reasoning_effort")
+                        else None
+                    ),
+                    max_output_tokens=(
+                        int(backend_config["max_output_tokens"])
+                        if backend_config.get("max_output_tokens")
+                        else None
+                    ),
+                    single_flight_lock=(
+                        str(backend_config["single_flight_lock"])
+                        if backend_config.get("single_flight_lock")
+                        else None
+                    ),
+                )
         return DeterministicModelBackend(rules=_default_fake_rules())
 
     def _resolve(self, command: StartRunCommand) -> ResolvedManifest:

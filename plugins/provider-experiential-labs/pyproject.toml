@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-provider-experiential-labs"
+version = "0.1.0.dev0"
+description = "Zugzwang provider adapter: Experiential Labs gateway (OpenAI chat completions wire) as an inference backend."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "zugzwang-core",
+    "httpx>=0.28",
+]
+
+[project.entry-points."zugzwang.providers"]
+experiential_labs = "zgw_provider_experiential_labs:plugin"
+
+[tool.uv.sources]
+zugzwang-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zgw_provider_experiential_labs"]

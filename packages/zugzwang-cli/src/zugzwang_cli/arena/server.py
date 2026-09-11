@@ -209,9 +209,11 @@ class ArenaService:
         game = self._game(game_id)
         with game.lock:
             game.apply_human_move(uci)
-            game.dump(self.arena_dir)
             if game.status == "model_thinking":
                 self._spawn_model_turn(game)
+            # Persist after spawning so the stored state already carries the
+            # model-turn progress (no window with a progress-less game.json).
+            game.dump(self.arena_dir)
             self._maybe_analyze(game)
         return game
 

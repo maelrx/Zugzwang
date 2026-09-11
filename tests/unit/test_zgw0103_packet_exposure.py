@@ -98,3 +98,61 @@ def test_history_never_fabricates_moves_without_a_stack() -> None:
     exposure = PacketExposure(history_mode="full")
     packet = _perception(exposure).build_packet(_state(START), NODE)
     assert packet.history == ()
+
+
+@pytest.mark.parametrize("notation", ["uci", "san"])
+@pytest.mark.parametrize("window", [1, 2, 3, 24])
+def test_truncated_history_replays_prefix_before_window(notation: str, window: int) -> None:
+    # Actual sequence that crashed the arena at ply 25 with a 24-ply window.
+    moves = [
+        "d2d4",
+        "g8f6",
+        "c2c4",
+        "e7e6",
+        "g1f3",
+        "f8b4",
+        "b1c3",
+        "e8g8",
+        "a2a3",
+        "b4c3",
+        "b2c3",
+        "d7d5",
+        "c1g5",
+        "h7h6",
+        "g5f4",
+        "f6h5",
+        "f4h6",
+        "g7h6",
+        "f3e5",
+        "f7f6",
+        "e5g6",
+        "f8f7",
+        "e2e3",
+        "g8g7",
+        "d1h5",
+    ]
+    state = StandardChessEnvironment().state_from_moves(moves)
+    before = state.to_board().fen()
+    full = _perception(PacketExposure(history_mode="full", history_notation=notation)).build_packet(
+        state, NODE
+    )
+    limited = _perception(
+        PacketExposure(history_mode="last_n", history_plies=window, history_notation=notation)
+    ).build_packet(state, NODE)
+    assert limited.history == full.history[-window:]
+    assert state.to_board().fen() == before
+    assert limited.history[-1].uci == "d1h5"
+    assert limited.history[-1].san == ("Qxh5" if notation == "san" else None)
+
+
+@pytest.mark.parametrize("notation", ["uci", "san"])
+def test_truncated_history_uses_custom_initial_position(notation: str) -> None:
+    state = StandardChessEnvironment().state_from_moves(
+        ["a7a8q", "g6h5", "a8h8"], start_fen="8/P7/6k1/8/8/8/8/6K1 w - - 0 1"
+    )
+    packet = _perception(
+        PacketExposure(history_mode="last_n", history_plies=1, history_notation=notation)
+    ).build_packet(state, NODE)
+    assert [(item.ply_index, item.uci, item.san) for item in packet.history] == [
+        (2, "a8h8", "Qh8+" if notation == "san" else None)
+    ]

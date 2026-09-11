@@ -235,6 +235,10 @@ class ChessPerception:
         replay = chess.Board()
         if state.initial_fen and state.initial_fen != chess.STARTING_FEN:
             replay = chess.Board(state.initial_fen)
+        # Reconstruct the omitted prefix before encoding the visible window.
+        # Replaying only the suffix from the initial board corrupts its context.
+        for uci in state.move_stack[:base_index]:
+            replay.push(chess.Move.from_uci(uci))
         for offset, uci in enumerate(stack):
             move = chess.Move.from_uci(uci)
             san = replay.san(move) if self._exposure.history_notation == "san" else None

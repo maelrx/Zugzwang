@@ -28,12 +28,12 @@ spec:
       backend_config:
         base_url: http://127.0.0.1:8788/v1
         provider_id: opencode-router
-        timeout_seconds: 180
+        timeout_seconds: 420
         profile: openai-responses
         allow_private_network: true
         model: deepseek-v4.1-flash
         reasoning_effort: low
-        default_max_output_tokens: 8192
+        default_max_output_tokens: 32768
       cognitive:
         max_rounds: 6
         preload_root: true

@@ -1,0 +1,72 @@
+# ZGW-0120 — deepseek-v4-flash low | move-selection | posição pareada p01
+# ZGW-0120: `deepseek-v4.1-flash` (provider opencode-go) com effort `low`.
+# O adapter openai-compatible loweriza as chamadas sintéticas do harness
+# (`harness:*`) para texto, satisfazendo o thinking-mode do Console Go.
+# Espelho do braço A da onda 1 (RICH1: raiz + 4 expansões pré-carregadas), 1 rodada.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: deepseek-v4-flash-low-move-selection-p01
+  tags: [deepseek, deepseek-v4.1-flash, low, move-selection, real, exploratory]
+
+spec:
+  seed: 20260922
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      move_prefix: [g1f3, e7e6, d2d4, h7h6, b1c3, d7d5, c1f4, f8d6, e2e3, b8d7, f1e2, d6f4]
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 180
+        profile: openai-responses
+        allow_private_network: true
+        model: deepseek-v4.1-flash
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 1
+        preload_root: true
+        preload_expand_actions: 4
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: deepseek-v4.1-flash
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 4
+      parse: 1
+      illegal: 4
+
+  budget:
+    max_calls: 40
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

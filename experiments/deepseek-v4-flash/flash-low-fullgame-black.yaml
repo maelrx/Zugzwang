@@ -1,0 +1,86 @@
+# ZGW-0120 — deepseek-v4-flash low | full game | modelo de pretas vs SF-1320
+# ZGW-0120: `deepseek-v4.1-flash` (provider opencode-go) com effort `low`.
+# O adapter openai-compatible loweriza as chamadas sintéticas do harness
+# (`harness:*`) para texto, satisfazendo o thinking-mode do Console Go.
+# Rota: opencode-router (127.0.0.1:8788, Responses API) — faixa local.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: deepseek-v4-flash-low-fullgame-black
+  tags: [deepseek, deepseek-v4.1-flash, low, fullgame, real, stockfish1320, exploratory]
+
+spec:
+  seed: 20260921
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: black
+      max_plies: 80
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 180
+        profile: openai-responses
+        allow_private_network: true
+        model: deepseek-v4.1-flash
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: >-
+          TACTICAL PRIORITIES & FACTUAL MEMORY: On every turn, examine all
+          forcing lines (checks, captures, immediate threats). Expand candidates
+          to verify tactical safety. Retain factual tactical memory across
+          rounds to avoid blunders. Finalize on ROOT via board_finalize once
+          your candidate survives verification.
+
+  players:
+    white:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+    black:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: deepseek-v4.1-flash
+        strategy: chess.cognitive_navigation
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 320
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

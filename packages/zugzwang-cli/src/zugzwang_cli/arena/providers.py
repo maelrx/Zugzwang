@@ -80,6 +80,22 @@ def _opencode_factory(**config: Any) -> Any:
     )
 
 
+def _deepseek_factory(**config: Any) -> Any:
+    """DeepSeek V4.1 Flash through the local opencode-go router (Responses)."""
+    from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend
+
+    return OpenAiCompatibleBackend(
+        base_url=str(config.get("base_url") or "http://127.0.0.1:8788/v1"),
+        profile=str(config.get("profile") or "openai-responses"),
+        allow_private_network=True,
+        timeout_seconds=float(config.get("timeout_seconds") or 300),
+        reasoning_effort=(
+            str(config["reasoning_effort"]) if config.get("reasoning_effort") else "low"
+        ),
+        default_max_output_tokens=int(config.get("default_max_output_tokens") or 8192),
+    )
+
+
 def _codex_factory(**config: Any) -> Any:
     from zgw_provider_codex_cli.adapter import CodexCliBackend
 
@@ -147,6 +163,24 @@ REGISTRY: dict[str, ProviderOption] = {
             efforts=[],
             factory=_opencode_factory,
             note="Exige o router opencode no ar (porta 8788) e header de sessão.",
+        ),
+        ProviderOption(
+            provider_id="opencode-go",
+            backend_id="provider.openai_compatible",
+            label="DeepSeek V4.1 Flash (opencode-go)",
+            validated=False,
+            models=[
+                {
+                    "id": "deepseek-v4.1-flash",
+                    "label": "deepseek-v4.1-flash",
+                    "validated": False,
+                    "default": True,
+                },
+            ],
+            default_effort="low",
+            efforts=["low", "high", "max"],
+            factory=_deepseek_factory,
+            note="Responses via router local 8788; thinking exige harness lowering (ZGW-0120).",
         ),
         ProviderOption(
             provider_id="codex-cli",

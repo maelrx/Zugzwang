@@ -1,0 +1,83 @@
+# ZGW-0124 — SOTA-A exploration: cognitive_navigation r8 + preload 6 + reasoning_memory full
+# + diretiva CONVERSION & KING SAFETY (nova; combina os padrões P1/P2 da correlacao:
+# 6/10 derrotas = mate em 1-2 permitido; conversao desperdicada 5/8). SF-1500.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: gemini-low-white-sota-conversion
+  tags: [gemini, gemini-3.8-flash-low, antigravity, low, fullgame, stockfish1500, sota-explore]
+
+spec:
+  seed: 20261001
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      backend_config:
+        timeout_seconds: 420
+        model: gemini-3.8-flash-low
+        reasoning_effort: low
+      cognitive:
+        max_rounds: 8
+        preload_root: true
+        preload_expand_actions: 6
+        inline_child_packages: true
+        reasoning_memory: true
+        directive: >-
+          CONVERSION & KING SAFETY: (1) MANDATORY anti-mate check: before
+          finalizing, verify that no legal opponent reply delivers immediate
+          checkmate. (2) When ahead in material, trade pieces, activate your
+          king and simplify toward a winning endgame; do not repeat moves.
+          (3) Convert winning positions with the most forcing continuation
+          (checks and captures first), then consolidate. (4) Keep factual
+          memory of the opponent's threats across rounds. Finalize on ROOT via
+          board_finalize once verified.
+
+  players:
+    white:
+      model:
+        backend: provider.antigravity_cli
+        provider: antigravity-cli
+        model: gemini-3.8-flash-low
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1500
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 1200
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

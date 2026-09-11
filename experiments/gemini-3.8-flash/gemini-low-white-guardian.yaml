@@ -1,0 +1,74 @@
+# ZGW-0122 — gemini-3.8-flash-low low | brancas | TACTICAL GUARDIAN (vitória isolada ZGW-0118)
+# Réplica exata da config vencedora (run-02, 1-0 em 81 plies) adaptada para o provider
+# openai-compatible (router 8788, Responses). Sem cap: até mate ou empate.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: gemini-3.8-flash-low-low-white-guardian
+  tags: [deepseek, gemini-3.8-flash-low, low, fullgame, real, stockfish1320, exploratory, guardian]
+
+spec:
+  seed: 20260930
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null  # ZGW-0120: sem cap — até mate ou empate
+      backend_config:
+        timeout_seconds: 420
+        model: gemini-3.8-flash-low
+        reasoning_effort: low
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: "TACTICAL GUARDIAN: (1) List every check, capture and threat available to you NOW. (2) For each candidate move, expand the position and check the adversary's BEST reply before trusting it — a move is safe only if the best reply does not win material or deliver checkmate. (3) ANTI-HANG CHECK, MANDATORY: before finalizing, verify your moved piece's destination square is adequately defended, and that no undefended friendly piece is left exposed to capture. (4) Keep king safety: do not expose your king to forced checks. (5) Maintain factual tactical memory across rounds to avoid blunders. Finalize on ROOT via board_finalize once verified."
+
+  players:
+    white:
+      model:
+        backend: provider.antigravity_cli
+        provider: antigravity-cli
+        model: gemini-3.8-flash-low
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 1200
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

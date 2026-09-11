@@ -453,6 +453,21 @@ class OpenAiCompatibleBackend:
                         }
                     )
                 elif isinstance(part, ToolCallPart):
+                    if part.tool_call_id.startswith("harness:"):
+                        # Synthetic harness calls carry no provider-issued
+                        # reasoning; DeepSeek thinking upstreams (Console Go)
+                        # reject them as function_call items that lack the
+                        # originating reasoning_text. Lower them to plain text.
+                        pending_content.append(
+                            {
+                                "type": text_type,
+                                "text": (
+                                    f"[harness tool call] {part.tool_name}"
+                                    f"({json.dumps(part.arguments, ensure_ascii=False, sort_keys=True)})"
+                                ),
+                            }
+                        )
+                        continue
                     if pending_content:
                         input_items.append({"role": message.role.value, "content": pending_content})
                         pending_content = []
@@ -467,6 +482,24 @@ class OpenAiCompatibleBackend:
                         }
                     )
                 elif isinstance(part, ToolResultPart):
+                    if part.tool_call_id.startswith("harness:"):
+                        if pending_content:
+                            input_items.append(
+                                {"role": message.role.value, "content": pending_content}
+                            )
+                            pending_content = []
+                        input_items.append(
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "input_text",
+                                        "text": f"[harness tool result] {part.content}",
+                                    }
+                                ],
+                            }
+                        )
+                        continue
                     if pending_content:
                         input_items.append({"role": message.role.value, "content": pending_content})
                         pending_content = []

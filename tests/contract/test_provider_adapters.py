@@ -8,6 +8,7 @@ protocol. No network, no secrets (ADR-031, M3 exit gate).
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import httpx
 import pytest
@@ -210,6 +211,104 @@ class TestOpenAiCompatibleAdapter:
         assert result.response.tool_calls[0].tool_name == "lookup"
         assert result.response.tool_calls[0].arguments == {"square": "e4"}
         await backend.close()
+
+    async def test_responses_profile_rewrites_harness_tool_calls_as_messages(self) -> None:
+        # DeepSeek thinking-mode upstreams (Console Go) reject assistant
+        # function_call items that have no originating reasoning; harness
+        # preload calls are synthesized locally and must be lowered to text.
+        from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend
+
+        from zugzwang_core.ports.model import (
+            CallContext,
+            Message,
+            MessageRole,
+            ModelRef,
+            ModelRequest,
+            TextPart,
+            ToolCallPart,
+            ToolResultPart,
+        )
+
+        captured: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured.update(json.loads(request.content))
+            return _responses_response("e2e4")
+
+        backend = OpenAiCompatibleBackend(
+            base_url="http://mock.local/v1",
+            transport=_mock_transport(handler),
+            profile="openai-responses",
+            reasoning_effort="low",
+        )
+        request = ModelRequest(
+            model=ModelRef(
+                backend="provider.openai_compatible",
+                provider="opencode-router",
+                model="deepseek-v4.1-flash",
+            ),
+            messages=(
+                Message(role=MessageRole.SYSTEM, parts=(TextPart(text="sys"),)),
+                Message(
+                    role=MessageRole.ASSISTANT,
+                    parts=(
+                        ToolCallPart(
+                            tool_call_id="harness:preload-root",
+                            tool_name="board_observe",
+                            arguments={"node_id": "n0"},
+                        ),
+                    ),
+                ),
+                Message(
+                    role=MessageRole.TOOL,
+                    parts=(
+                        ToolResultPart(
+                            tool_call_id="harness:preload-root",
+                            tool_name="board_observe",
+                            content='{"fen":"startpos"}',
+                        ),
+                    ),
+                ),
+                Message(
+                    role=MessageRole.ASSISTANT,
+                    parts=(
+                        ToolCallPart(
+                            tool_call_id="call_abc",
+                            tool_name="board_expand",
+                            arguments={"node_id": "n0"},
+                        ),
+                    ),
+                ),
+                Message(
+                    role=MessageRole.TOOL,
+                    parts=(
+                        ToolResultPart(
+                            tool_call_id="call_abc",
+                            tool_name="board_expand",
+                            content='{"ok":true}',
+                        ),
+                    ),
+                ),
+            ),
+        )
+        await backend.infer(request, CallContext(run_id="run_test"))
+        await backend.close()
+
+        items = captured["input"]
+        call_ids = [
+            item.get("call_id")
+            for item in items
+            if item.get("type")
+            in {
+                "function_call",
+                "function_call_output",
+            }
+        ]
+        assert "harness:preload-root" not in call_ids
+        assert "call_abc" in call_ids
+        flattened = json.dumps(items)
+        assert "[harness tool call]" in flattened
+        assert "[harness tool result]" in flattened
 
     async def test_responses_profile_lowers_and_normalizes_nested_message(self) -> None:
         from zgw_provider_openai_compatible.adapter import OpenAiCompatibleBackend

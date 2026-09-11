@@ -71,7 +71,14 @@ def test_progress_persists_and_new_turn_resets(tmp_path: Path) -> None:
         time.sleep(0.01)
     assert game.status == "human_turn"
     assert game.model_progress["status"] == "completed"
+    # The final dump happens right after the in-memory update; poll the file to
+    # avoid a scheduling race between memory and disk in slow CI workers.
     restored = load_game(tmp_path / f"{game.game_id}.json")
+    for _ in range(500):
+        if restored.model_progress == game.model_progress:
+            break
+        time.sleep(0.01)
+        restored = load_game(tmp_path / f"{game.game_id}.json")
     assert restored.model_progress == game.model_progress
     assert len(restored.moves) == 2
     assert (tmp_path / f"{game.game_id}-progress.jsonl").exists()

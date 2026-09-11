@@ -1,0 +1,77 @@
+# ZGW-0124 — SOTA-B exploration: chess.legal_tree_memory (R7 alternativo ao single_agent_tree)
+# com memoria persistente, arvore maior (512 nos, 6 ramos) e historico completo. SF-1500.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: gemini-low-white-sota-legaltree
+  tags: [gemini, gemini-3.8-flash-low, antigravity, low, fullgame, stockfish1500, sota-explore]
+
+spec:
+  seed: 20261002
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      search:
+        max_nodes: 512
+        max_depth_plies: 2
+        max_validation_queries: 1024
+        max_transition_queries: 512
+        max_root_branches: 6
+        memory_mode: persistent
+      backend_config:
+        timeout_seconds: 420
+        model: gemini-3.8-flash-low
+        reasoning_effort: low
+  players:
+    white:
+      model:
+        backend: provider.antigravity_cli
+        provider: antigravity-cli
+        model: gemini-3.8-flash-low
+        strategy: chess.legal_tree_memory
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1500
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K6
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: full, plies: 0, notation: uci}
+      legal_actions: {exposure: delayed, encoding: uci}
+    legality:
+      parse_feedback: true
+      validation: {enabled: true, feedback: enumerated}
+      enumerate: {enabled: false}
+      transition_sandbox: true
+      limits: {validations: 1024, transitions: 512, depth_plies: 2, branch_states: 512}
+    retry_profile: enumerate_after_failure
+    retries: {transport: 4, parse: 0, illegal: 3, feedback: enumerated}
+
+  budget:
+    max_calls: 1200
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

@@ -1,0 +1,12 @@
+{
+  "auth_mode": "chatgpt",
+  "api_key_present": false,
+  "credits_balance": "0",
+  "has_credits": false,
+  "weekly_remaining_percent": 51,
+  "reset_usage_authorized": false,
+  "automatic_purchase_authorized": false,
+  "launch_status": "blocked_by_review",
+  "review_reason": "12600-call ceiling; requested paid authorization evidence",
+  "operator_directive": "five concurrent Luna high Fast runs; 2026-09-09"
+}

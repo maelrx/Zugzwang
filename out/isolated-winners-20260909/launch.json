@@ -1,0 +1,62 @@
+[
+  {
+    "index": 1,
+    "source": "experiments/zgx/fullgames3/zgx-luna-05-tactical-memory.yaml",
+    "source_sha256": "25f935b9d9a204b847bad4f96408d20d06f544fcfb3eab782d34313dc71c38b0",
+    "manifest": "/home/maelrx/Documents/ChatGPT/Zugzwang/experiments/zgx/isolated-winners/isolated-luna-high-fast-01-tactical-memory-r6.yaml",
+    "workspace": "/home/maelrx/Documents/ChatGPT/Zugzwang/out/isolated-winners-20260909/run-01",
+    "max_calls": null,
+    "pid": 1254390,
+    "launched_at": 1788938160.9532425,
+    "manifest_sha256": "e43d8e233bd227a1af68bfc347a89d7e51e4987b2be968e66a866e9c7905d0de",
+    "isolation": "model-only/v1"
+  },
+  {
+    "index": 2,
+    "source": "experiments/zgx/fullgames5/zgx-gemini-03-tactical-guardian-v2.yaml",
+    "source_sha256": "e4bc69f02d1db01cd7969998373d8773365830adfa82db4bb3709088abdfa20f",
+    "manifest": "/home/maelrx/Documents/ChatGPT/Zugzwang/experiments/zgx/isolated-winners/isolated-luna-high-fast-02-tactical-guardian-r6.yaml",
+    "workspace": "/home/maelrx/Documents/ChatGPT/Zugzwang/out/isolated-winners-20260909/run-02",
+    "max_calls": null,
+    "pid": 1254394,
+    "launched_at": 1788938160.954002,
+    "manifest_sha256": "dc68d2e7adc55af09b74d8239682125298cec9c153ba1a926badb746d3978105",
+    "isolation": "model-only/v1"
+  },
+  {
+    "index": 3,
+    "source": "experiments/zgx/fullgames/zgx-full-01-tactical-memory.yaml",
+    "source_sha256": "ba7328608ea219461614c2d2633cb4097518433c6f26d99749af6f05185e07b2",
+    "manifest": "/home/maelrx/Documents/ChatGPT/Zugzwang/experiments/zgx/isolated-winners/isolated-luna-high-fast-03-tactical-memory-r4.yaml",
+    "workspace": "/home/maelrx/Documents/ChatGPT/Zugzwang/out/isolated-winners-20260909/run-03",
+    "max_calls": null,
+    "pid": 1254398,
+    "launched_at": 1788938160.9546404,
+    "manifest_sha256": "e0f09951dc0ba9f0e95f61045cc6101134018ced7382f53d5759a1051d24c607",
+    "isolation": "model-only/v1"
+  },
+  {
+    "index": 4,
+    "source": "experiments/zgx/fullgames/zgx-full-03-king-safety-history.yaml",
+    "source_sha256": "a71db8d0038e456e7613cee76bb78e18f4796488476e32161da3f1a7881ef347",
+    "manifest": "/home/maelrx/Documents/ChatGPT/Zugzwang/experiments/zgx/isolated-winners/isolated-luna-high-fast-04-king-safety-r4.yaml",
+    "workspace": "/home/maelrx/Documents/ChatGPT/Zugzwang/out/isolated-winners-20260909/run-04",
+    "max_calls": null,
+    "pid": 1254403,
+    "launched_at": 1788938160.9557066,
+    "manifest_sha256": "f268eb6919b856919250ead76676de65615ed0c37b8604a56a9f37a8a6aeaac3",
+    "isolation": "model-only/v1"
+  },
+  {
+    "index": 5,
+    "source": "experiments/local-musespark-1.3-go-single-agent-tree-h3-replication.yaml",
+    "source_sha256": "a2ee02f0a8d182e9f530f4893be7f50ac0b0eb288149dd7f8139eb86b7235bd7",
+    "manifest": "/home/maelrx/Documents/ChatGPT/Zugzwang/experiments/zgx/isolated-winners/isolated-luna-high-fast-05-h3-persistent-tree.yaml",
+    "workspace": "/home/maelrx/Documents/ChatGPT/Zugzwang/out/isolated-winners-20260909/run-05",
+    "max_calls": null,
+    "pid": 1254404,
+    "launched_at": 1788938160.9562702,
+    "manifest_sha256": "779c461c85d79dd4fd2cdee3863e8bcd53232b547082d36ae8e215669e82abdc",
+    "isolation": "model-only/v1"
+  }
+]

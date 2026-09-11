@@ -1,0 +1,14 @@
+[
+  {
+    "index": 5,
+    "source": "experiments/local-musespark-1.3-go-single-agent-tree-h3-replication.yaml",
+    "source_sha256": "a2ee02f0a8d182e9f530f4893be7f50ac0b0eb288149dd7f8139eb86b7235bd7",
+    "manifest": "/home/maelrx/Documents/ChatGPT/Zugzwang/experiments/zgx/isolated-winners/isolated-luna-high-fast-05-h3-persistent-tree.yaml",
+    "workspace": "/home/maelrx/Documents/ChatGPT/Zugzwang/out/isolated-winners-20260909/run-05-v3",
+    "max_calls": null,
+    "pid": 1284070,
+    "launched_at": 1788938651.0214276,
+    "manifest_sha256": "64da4633f2a1e467acc91bb67b7d8ae8de554f377ec05fe172ef20b67d5054ae",
+    "isolation": "model-only/v1"
+  }
+]

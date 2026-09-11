@@ -1,0 +1,5 @@
+experiment_name: isolated-luna-high-fast-04-king-safety-r4
+protocol_hash: 4c4f1613e0ef7053dfb4acb8f4c860aaa909efcb2937d9cb766d8f91aafa7b7f
+conditions: {'condition_id': 'cnd_ebe0b77055bb00de', 'index': 0, 'parameters': {}, 'episodes': 1, 'estimated_calls': 10, 'budget_ceiling': {'max_calls': 3000, 'max_usd': None, 'max_wall_time_seconds': None, 'max_concurrent_episodes': 1}, 'incompatibilities': ('H4 declared but observation exposes no legal action set (grounding requires legal_actions exposure)', 'K6 declared but no knowledge_packets are configured')}
+warnings: 
+total_estimated_calls: 10

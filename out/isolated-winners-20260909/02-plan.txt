@@ -1,0 +1,5 @@
+experiment_name: isolated-luna-high-fast-02-tactical-guardian-r6
+protocol_hash: e2ca5a2efed5454b996d1df4819b7c1724d606cd6ac019a868e73afae1a8b235
+conditions: {'condition_id': 'cnd_a810dcb809a35da8', 'index': 0, 'parameters': {}, 'episodes': 1, 'estimated_calls': 10, 'budget_ceiling': {'max_calls': 3000, 'max_usd': None, 'max_wall_time_seconds': None, 'max_concurrent_episodes': 1}, 'incompatibilities': ('H4 declared but observation exposes no legal action set (grounding requires legal_actions exposure)',)}
+warnings: 
+total_estimated_calls: 10

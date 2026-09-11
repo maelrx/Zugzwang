@@ -22,6 +22,7 @@ from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -248,6 +249,7 @@ class OpenAiCompatibleBackend:
             )
 
         body: dict[str, Any] = response.json()
+        reject_native_execution(body)
         normalized = (
             self._raise_responses_response(request, body, started, context)
             if is_responses

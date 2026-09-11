@@ -17,6 +17,7 @@ import os
 import re
 import shutil
 import tempfile
+from pathlib import Path
 from typing import Any, cast
 
 from zugzwang_core.domain.clocks import utc_now
@@ -27,6 +28,7 @@ from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import ISOLATION_VERSION, reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -46,6 +48,9 @@ from zugzwang_core.ports.model import (
     ToolResultPart,
     WireFidelity,
 )
+
+from .isolation import model_only_args
+from .progress import SummarySink, read_with_summaries, summary_sink
 
 
 def _single_flight_lock(lock_path: str | None):
@@ -111,7 +116,9 @@ def _extract_tool_calls(text: str) -> tuple[ToolCallPart, ...]:
             )
             if tool_name in known_tools:
                 raw_args: Any = item_dict.get("arguments") or item_dict.get("parameters") or {}
-                args: dict[str, Any] = dict(cast(dict[str, Any], raw_args)) if isinstance(raw_args, dict) else {}
+                args: dict[str, Any] = (
+                    dict(cast(dict[str, Any], raw_args)) if isinstance(raw_args, dict) else {}
+                )
                 reserved = {"command", "tool", "name", "arguments", "parameters"}
                 for k, v in item_dict.items():
                     if k not in reserved and k not in args:
@@ -197,7 +204,10 @@ class CodexCliBackend:
         reasoning_effort: str | None = None,
         max_output_tokens: int | None = None,
         single_flight_lock: str | None = None,
+        service_tier: str | None = None,
     ) -> None:
+        self._last_wire_request: dict[str, Any] | None = None
+        self._last_wire_response: dict[str, Any] | None = None
         self._model = model
         self._executable = executable or os.environ.get(
             "CODEX_CLI_EXE", shutil.which("codex") or "/home/maelrx/.local/bin/codex"
@@ -206,6 +216,7 @@ class CodexCliBackend:
         self._reasoning_effort = reasoning_effort
         self._max_output_tokens = max_output_tokens
         self._single_flight_lock = single_flight_lock
+        self._service_tier = service_tier
 
     @property
     def descriptor(self) -> BackendDescriptor:
@@ -216,6 +227,7 @@ class CodexCliBackend:
             default_capabilities=frozenset(
                 {
                     Capability.TEXT_INPUT,
+                    Capability.JSON_SCHEMA_OUTPUT,
                     Capability.TOOL_CALLING,
                     Capability.REASONING_CONTROL,
                     Capability.USAGE_REPORTING,
@@ -225,7 +237,7 @@ class CodexCliBackend:
             limitations=(
                 "Codex CLI headless (`codex exec`) local execution",
                 "uses the logged-in Codex session (no API key in manifests)",
-                "the CLI injects its own system context (~30k input tokens per call)",
+                "model-only/v1: user config, rules, MCP and native executors disabled",
                 "cost not claimed (GATE-009 pending)",
             ),
         )
@@ -251,6 +263,16 @@ class CodexCliBackend:
             missing_preferred=frozenset(c for c in preferred if c not in supported),
         )
 
+    async def infer_with_progress(
+        self, request: ModelRequest, context: CallContext, on_summary: SummarySink
+    ) -> ProviderResult:
+        """Observe provider summaries without changing the canonical infer contract."""
+        token = summary_sink.set(on_summary)
+        try:
+            return await self.infer(request, context)
+        finally:
+            summary_sink.reset(token)
+
     async def infer(self, request: ModelRequest, context: CallContext) -> ProviderResult:
         started = utc_now()
         prompt = _flatten_prompt(request)
@@ -274,10 +296,32 @@ class CodexCliBackend:
             "-m",
             effective_model,
         ]
+        if request.output_constraint and request.output_constraint.schema_ is not None:
+            schema_path = Path(scratch) / "response-schema.json"
+            schema_path.write_text(json.dumps(request.output_constraint.schema_), encoding="utf-8")
+            cmd.extend(["--output-schema", str(schema_path)])
+        cmd.extend(model_only_args())
         if self._reasoning_effort:
             cmd.extend(["-c", f"model_reasoning_effort={self._reasoning_effort}"])
+        if self._service_tier:
+            # Codex fast mode (service_tier=fast): latency lane, orthogonal to
+            # model_reasoning_effort. The CLI may downgrade to default — the
+            # effective tier rides in the wire response.
+            cmd.extend(["-c", f"service_tier={self._service_tier}"])
         if self._max_output_tokens:
             cmd.extend(["-c", f"model_max_output_tokens={int(self._max_output_tokens)}"])
+        if summary_sink.get() is not None:
+            # Never let a user's raw-reasoning display setting enter the UI feed.
+            cmd.extend(
+                [
+                    "-c",
+                    "show_raw_agent_reasoning=false",
+                    "-c",
+                    "hide_agent_reasoning=false",
+                    "-c",
+                    "model_reasoning_summary=auto",
+                ]
+            )
         cmd.append(prompt)
 
         wire_request: dict[str, Any] = {
@@ -285,7 +329,10 @@ class CodexCliBackend:
             "model": effective_model,
             "prompt_length": len(prompt),
             "attempt_id": context.attempt_id,
+            "execution_isolation": ISOLATION_VERSION,
         }
+        self._last_wire_request = wire_request
+        self._last_wire_response = None
 
         gate = _single_flight_lock(self._single_flight_lock)
 
@@ -295,7 +342,10 @@ class CodexCliBackend:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            out, err = await asyncio.wait_for(child.communicate(), timeout=self._timeout_seconds)
+            sink = summary_sink.get()
+            out, err = await read_with_summaries(
+                child, self._timeout_seconds, sink or (lambda _: None)
+            )
             return child, out, err
 
         try:
@@ -333,6 +383,8 @@ class CodexCliBackend:
             if isinstance(parsed, dict):
                 events.append(cast(dict[str, Any], parsed))
 
+        self._last_wire_response = {"events": events}
+        reject_native_execution(self._last_wire_response)
         response_text: str | None = None
         usage_raw: dict[str, Any] = {}
         error_items: list[str] = []

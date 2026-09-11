@@ -999,6 +999,7 @@ class DurableRunCoordinator:
                     decision_error = exc
                 else:
                     decision_error = None
+                recording_backend.assert_isolated()
                 logical_calls = max(1, len(trace.calls) if trace is not None else 0)
                 async with ledger_lock:
                     ledger.reconcile("calls", max_strategy_calls, logical_calls)
@@ -1834,6 +1835,7 @@ class DurableRunCoordinator:
             trace = await strategy.decide(observation, decision_context)
         except Exception:
             trace = None
+        recording_backend.assert_isolated()
         async with ledger_lock:
             ledger.reconcile("calls", 1, 1)
 

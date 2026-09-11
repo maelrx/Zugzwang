@@ -1,0 +1,74 @@
+status: complete
+scope: Guardrails, force-stop of old runs, launch of five natural-end Luna high Fast
+  games, live webapp; games remain in progress.
+changed_paths:
+- plugins/provider-antigravity-cli/src/zgw_provider_antigravity_cli/adapter.py
+- plugins/provider-zcode-glm/src/zgw_provider_zcode_glm/adapter.py
+- plugins/provider-codex-cli/src/zgw_provider_codex_cli/adapter.py
+- plugins/provider-codex-cli/src/zgw_provider_codex_cli/progress.py
+- plugins/provider-experiential-labs/src/zgw_provider_experiential_labs/adapter.py
+- plugins/provider-opencode/src/zgw_provider_opencode/adapter.py
+- plugins/provider-openai-compatible/src/zgw_provider_openai_compatible/adapter.py
+- packages/zugzwang-cli/src/zugzwang_cli/arena/providers.py
+- packages/zugzwang-cli/src/zugzwang_cli/arena/loop.py
+- packages/zugzwang-runtime/src/zugzwang_runtime/execution/backend_caller.py
+- packages/zugzwang-core/src/zugzwang_core/domain/provider_isolation.py
+- plugins/provider-codex-cli/src/zgw_provider_codex_cli/isolation.py
+- tests/contract/test_provider_isolation.py
+- tests/unit/test_arena_isolation.py
+- packages/zugzwang-runtime/src/zugzwang_runtime/execution/durable_coordinator.py
+- tests/contract/test_multimodal_adapters.py
+- docs/adr/ADR-063-provider-model-only-isolation.md
+- docs/requirements/FUNCTIONAL_REQUIREMENTS.md
+- docs/work-orders/ZGW-0117.md
+- docs/work-orders/ZGW-0118.md
+- experiments/zgx/isolated-winners/
+- out/isolated-winners-20260909/
+- /home/maelrx/Documents/ChatGPT/Zugzwang-webui-appearance/viewer-next/src/lib/arena.ts
+- /home/maelrx/Documents/ChatGPT/Zugzwang-webui-appearance/viewer-next/src/components/PlayView.tsx
+tests:
+  passed:
+  - 'pytest -m "not e2e" -q: 571 passed, 1 skipped, 8 deselected'
+  - ruff check changed security/runtime/provider/test paths
+  - 'pyright strict changed production files: 0 errors'
+  - viewer npm run build
+  - five manifests validate + plan
+  - five fake preflights complete
+  - 'real Codex adversarial test: tools=[] twice; exec_command rejected; high + priority
+    transmitted'
+  - 'H3 real CLI output-schema proof: tools=[]'
+  - 'five live process trees: high/Fast/strict, no native children'
+  - 'browser QA: five live games and incrementing committed plies'
+  skipped:
+  - 8 e2e tests deselected; no unrelated real providers invoked
+  - 1 existing test skipped
+  failed:
+  - 'validate_foundation.py --strict: existing viewer-next/public/engine/*.wasm scanned
+    as text (control characters); ADR validation passes'
+  - 'Initial launch: unsupported legacy max-output config, preserved and fixed'
+  - 'H3 v2 capability preflight: 0 provider calls, preserved and output-schema support
+    added'
+requirements_satisfied:
+- FR-014
+- FR-051
+- ZGW-0117 R1-R5
+- ZGW-0118 operator-authorized five-run battery
+invariants_checked:
+- native execution disabled at Codex launch
+- executed receipts blocked before commit; failure latched across strategy retries
+- failed evidence preserved
+- first-party unsafe CLI unavailable
+- posthoc engines not model tools
+- new manifests/workspaces for changed execution condition
+- no automatic credit purchase/reset
+decisions_needed: []
+risks:
+- Games still in progress; no outcome claim yet
+- Provider quota or infrastructure failure can stop a game despite no artificial call/ply
+  cap
+- Opaque remote-provider internals are not independently observable
+- Historic wins are selection candidates, not clean isolation baselines
+- Foundation validator currently flags existing generated WASM binaries
+follow_up:
+- Let the five games finish naturally; live publisher continues independently
+- Review outcomes only after actual terminal evidence

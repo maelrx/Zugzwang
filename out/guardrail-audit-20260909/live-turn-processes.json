@@ -1,0 +1,23 @@
+[
+  {
+    "ts": 1788936191.7938583,
+    "pid": 1162506,
+    "comm": "sh",
+    "cwd": "/tmp/zgw-codex-rp0tukze",
+    "cmd": "sh -c 'gcloud-mcp' "
+  },
+  {
+    "ts": 1788936191.7939944,
+    "pid": 1162516,
+    "comm": "sh",
+    "cwd": "/tmp/zgw-codex-rp0tukze",
+    "cmd": "sh -c 'ok' mcp "
+  },
+  {
+    "ts": 1788936191.7940917,
+    "pid": 1162518,
+    "comm": "sh",
+    "cwd": "/tmp/zgw-codex-rp0tukze",
+    "cmd": "sh -c 'firebase' mcp "
+  }
+]

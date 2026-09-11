@@ -63,6 +63,7 @@ from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -294,6 +295,7 @@ class ExperientialLabsBackend:
                 f"wire retried {wire_retries}x with backoff on server errors"
                 " (gateway-documented policy; Idempotency-Key made the retries replay)"
             )
+        reject_native_execution(wire_response)
         normalized = self._raise_response(
             request,
             wire_response,

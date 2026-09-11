@@ -81,7 +81,7 @@
 |---|---|---|
 | FR-049 | Secret references | segredos não entram no manifesto resolvido ou bundle |
 | FR-050 | Redaction | logs e raw artifacts passam por política explícita |
-| FR-051 | Tool allowlist | nenhuma execução arbitrária por padrão |
+| FR-051 | Tool allowlist | nenhuma execução arbitrária pelo modelo; providers first-party model-only, recibos externos rejeitados com evidência, sem commit/retry; provider sem isolamento verificável bloqueado (ADR-063) |
 | FR-052 | Auditoria de assistência | classe declarada, observada e violações registradas |
 | FR-053 | Auditoria de plugins | versão, distribuição, licença e hash do ambiente |
 | FR-054 | Base URL confiável | endpoints customizados exigem opt-in explícito |

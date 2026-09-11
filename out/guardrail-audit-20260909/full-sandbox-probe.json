@@ -1,0 +1,23 @@
+{
+  "policy": {
+    "type": "managed",
+    "file_system": {
+      "type": "restricted",
+      "entries": [
+        {
+          "path": {
+            "type": "special",
+            "value": {
+              "kind": "root"
+            }
+          },
+          "access": "read"
+        }
+      ]
+    },
+    "network": "restricted"
+  },
+  "exit_code": 0,
+  "stdout": "{\"write\": \"OSError\", \"engine_started\": true, \"has_bestmove\": true, \"output\": \"ption name nodestime type spin default 0 min 0 max 10000\\noption name UCI_Chess960 type check default false\\noption name UCI_AnalyseMode type check default false\\noption name UCI_LimitStrength type check default false\\noption name UCI_Elo type spin default 1320 min 1320 max 3190\\noption name UCI_ShowWDL type check default false\\noption name SyzygyPath type string default <empty>\\noption name SyzygyProbeDepth type spin default 1 min 1 max 100\\noption name Syzygy50MoveRule type check default true\\noption name SyzygyProbeLimit type spin default 7 min 0 max 7\\noption name Use NNUE type check default true\\noption name EvalFile type string default nn-5af11540bbfe.nnue\\nuciok\\nreadyok\\ninfo string NNUE evaluation using nn-5af11540bbfe.nnue enabled\\ninfo depth 1 seldepth 1 multipv 1 score cp 2 nodes 20 nps 20000 hashfull 0 tbhits 0 time 1 pv g1f3\\nbestmove g1f3\\n\"}\n",
+  "stderr": ""
+}

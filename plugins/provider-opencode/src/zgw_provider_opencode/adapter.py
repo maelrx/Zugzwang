@@ -22,6 +22,7 @@ from zugzwang_core.domain.errors import (
     ProviderThrottlingError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import ProviderIsolationError, reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -129,7 +130,10 @@ class OpenCodeBackend:
         try:
             response = await self._client.post(
                 "/session",
-                json={"title": "zugzwang-call"},
+                json={
+                    "title": "zugzwang-call",
+                    "permission": [{"permission": "*", "pattern": "*", "action": "deny"}],
+                },
             )
         except httpx.HTTPError as exc:
             raise ProviderConnectionError(
@@ -147,6 +151,13 @@ class OpenCodeBackend:
             raise ProviderResponseError(
                 "opencode session response has no id",
                 technical_context=str(data)[:200],
+            )
+        expected = [{"permission": "*", "pattern": "*", "action": "deny"}]
+        if data.get("permission") != expected:
+            await self._dispose_session(session_id)
+            raise ProviderIsolationError(
+                "OpenCode refused or omitted the deny-all session policy; inference blocked.",
+                wire_response=data,
             )
         return session_id
 
@@ -215,6 +226,7 @@ class OpenCodeBackend:
                 technical_context=response.text[:200],
             )
         data: dict[str, Any] = cast(dict[str, Any], response.json())
+        reject_native_execution(data)
         info: dict[str, Any] = cast(dict[str, Any], data.get("info") or {})
         error_raw = info.get("error")
         if isinstance(error_raw, dict):

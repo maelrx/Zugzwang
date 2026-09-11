@@ -1,0 +1,31 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_engine_assisted_native_execution_must_not_be_committed __________
+
+observed = (DecisionOutcome(status='COMMITTED', uci='e2e4', final_text='{"command": "board_finalize", "arguments": {"node_id": "n...protocol_errors=0, error=None), [{'game_id': 'audit-fake', 'round_ordinal': 2, 'latency_ms': 3, 'failure': None, ...}])
+
+    def test_engine_assisted_native_execution_must_not_be_committed(observed):
+     outcome,_=observed
+>    assert outcome.status != 'COMMITTED', 'Engine-assisted native execution was silently accepted as a legal model move'
+E    AssertionError: Engine-assisted native execution was silently accepted as a legal model move
+E    assert 'COMMITTED' != 'COMMITTED'
+E     +  where 'COMMITTED' = DecisionOutcome(status='COMMITTED', uci='e2e4', final_text='{"command": "board_finalize", "arguments": {"node_id": "n0...ok=True, latency_ms=3, input_tokens=10, output_tokens=10, failure=None)], rounds_used=1, protocol_errors=0, error=None).status
+
+/tmp/zgw-guardrail-audit/test_assistance_guardrail.py:25: AssertionError
+___________ test_native_execution_must_be_present_in_arena_evidence ____________
+
+observed = (DecisionOutcome(status='COMMITTED', uci='e2e4', final_text='{"command": "board_finalize", "arguments": {"node_id": "n...protocol_errors=0, error=None), [{'game_id': 'audit-fake', 'round_ordinal': 2, 'latency_ms': 2, 'failure': None, ...}])
+
+    def test_native_execution_must_be_present_in_arena_evidence(observed):
+     _,calls=observed
+>    assert 'command_execution' in json.dumps(calls), 'Arena evidence dropped native execution and its engine output'
+E    AssertionError: Arena evidence dropped native execution and its engine output
+E    assert 'command_execution' in '[{"game_id": "audit-fake", "round_ordinal": 2, "latency_ms": 2, "failure": null, "request": {"model": "provider.codex...e2e4"}}], "usage": {"input_tokens": 10, "output_tokens": 10, "source": "provider"}, "model_reported": "gpt-5.6-luna"}]'
+E     +  where '[{"game_id": "audit-fake", "round_ordinal": 2, "latency_ms": 2, "failure": null, "request": {"model": "provider.codex...e2e4"}}], "usage": {"input_tokens": 10, "output_tokens": 10, "source": "provider"}, "model_reported": "gpt-5.6-luna"}]' = <function dumps at 0x7c489e9c9b10>([{'game_id': 'audit-fake', 'round_ordinal': 2, 'latency_ms': 2, 'failure': None, ...}])
+E     +    where <function dumps at 0x7c489e9c9b10> = json.dumps
+
+/tmp/zgw-guardrail-audit/test_assistance_guardrail.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/zgw-guardrail-audit/test_assistance_guardrail.py::test_engine_assisted_native_execution_must_not_be_committed
+FAILED ../../../../../tmp/zgw-guardrail-audit/test_assistance_guardrail.py::test_native_execution_must_be_present_in_arena_evidence
+2 failed in 0.40s

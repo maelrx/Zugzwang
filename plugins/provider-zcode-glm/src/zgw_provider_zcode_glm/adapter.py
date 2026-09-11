@@ -31,6 +31,7 @@ from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -188,6 +189,7 @@ class ZCodeGlmBackend:
             raise ProviderResponseError(
                 "zcode gateway returned an error body", technical_context=detail[:300]
             )
+        reject_native_execution(body)
         normalized = self._normalize(request, body, started)
         return ProviderResult(
             response=normalized,

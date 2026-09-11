@@ -8,7 +8,7 @@ timeouts are recorded ``outcome_unknown`` and never blindly retried.
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
@@ -17,6 +17,7 @@ from zugzwang_core.domain.errors import (
 )
 from zugzwang_core.domain.events import EventContext, EventEnvelope
 from zugzwang_core.domain.ids import new_id
+from zugzwang_core.domain.provider_isolation import ProviderIsolationError, reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -56,6 +57,7 @@ class RecordingBackend:
         capture_raw_requests: bool = False,
         capture_raw_responses: bool = False,
     ) -> None:
+        self._isolation_error: ProviderIsolationError | None = None
         self._inner = inner
         self._writer = writer
         self._event_sink = event_sink
@@ -75,6 +77,11 @@ class RecordingBackend:
         # Operator directive 2026-09-08: the last decision's own reasoning
         # summary, replayed as self-memory between moves (manifest-gated).
         self.last_reasoning_summary: str | None = None
+
+    def assert_isolated(self) -> None:
+        """A strategy cannot swallow a security failure and commit a fallback."""
+        if self._isolation_error is not None:
+            raise self._isolation_error
 
     def begin_decision(self) -> None:
         """Start a local correlation window for one strategy decision."""
@@ -124,6 +131,7 @@ class RecordingBackend:
         return await self._inner.inspect_capabilities(model, required, preferred, on_unsupported)
 
     async def infer(self, request: ModelRequest, context: CallContext) -> ProviderResult:
+        self.assert_isolated()
         if request.required_capabilities:
             report = await self._inner.inspect_capabilities(
                 request.model,
@@ -184,6 +192,7 @@ class RecordingBackend:
             )
             try:
                 result = await self._inner.infer(request, attempt_context)
+                reject_native_execution(result.wire_response)
             except ProviderTimeoutError as exc:
                 failed_wire_ref = self._capture_failed_wire_request(attempt_id)
                 failed_response_ref = self._capture_failed_wire_response(attempt_id)
@@ -255,8 +264,12 @@ class RecordingBackend:
                 self._attempt_counter[key] = ordinal + 1
                 raise
             except Exception as exc:
+                if isinstance(exc, ProviderIsolationError):
+                    self._isolation_error = exc
                 failed_wire_ref = self._capture_failed_wire_request(attempt_id)
-                failed_response_ref = self._capture_failed_wire_response(attempt_id)
+                failed_response_ref = self._capture_failed_wire_response(
+                    attempt_id, fallback=getattr(exc, "wire_response", None)
+                )
                 latency = int((time.monotonic() - started) * 1000)
                 code = getattr(exc, "stable_code", "ZGZ-PROVIDER_RESPONSE-000")
                 self._record_outcome(attempt_id, "failed", code, latency)
@@ -420,10 +433,14 @@ class RecordingBackend:
         )
         return ref
 
-    def _capture_failed_wire_response(self, attempt_id: str) -> str | None:
+    def _capture_failed_wire_response(self, attempt_id: str, fallback: Any = None) -> str | None:
         if not self._capture_responses or self._artifact_store is None:
             return None
-        payload = getattr(self._inner, "_last_wire_response", None)
+        payload = (
+            cast("dict[str, Any]", fallback)
+            if isinstance(fallback, dict)
+            else getattr(self._inner, "_last_wire_response", None)
+        )
         if not isinstance(payload, dict):
             return None
         ref = self._capture_json(

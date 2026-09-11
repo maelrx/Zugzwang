@@ -1,0 +1,22 @@
+{
+  "plugins/provider-antigravity-cli/src/zgw_provider_antigravity_cli/adapter.py": "336bb73ea1ade1d937b96d1b5907376688eeb62f5186b9cdf630ae15d966a52a",
+  "plugins/provider-zcode-glm/src/zgw_provider_zcode_glm/adapter.py": "2ba864feb0006c1b75c9422829cff4a45bcc388ddffa276557b425cb3713b97a",
+  "plugins/provider-codex-cli/src/zgw_provider_codex_cli/adapter.py": "04901d75e7a60cb66d3006be4a884357b1b77c41de1d41a807cc3324ef61d49d",
+  "plugins/provider-codex-cli/src/zgw_provider_codex_cli/progress.py": "5fd0158ac6c1c3426cb930ad899b45f1fe218506fa2a2ec0231114ffb685141a",
+  "plugins/provider-experiential-labs/src/zgw_provider_experiential_labs/adapter.py": "c475ce1988c9ce002f84c92712a9844e2a77199b775beef564224a82289051ec",
+  "plugins/provider-opencode/src/zgw_provider_opencode/adapter.py": "7ed6aff60d0225414ecbd539839227ef1c646d3e6c0178a44c6627dd6caea43c",
+  "plugins/provider-openai-compatible/src/zgw_provider_openai_compatible/adapter.py": "fdaf4966b262e3381857e7868056d9a2bbc82f6093924303c1fc19eba8241586",
+  "packages/zugzwang-cli/src/zugzwang_cli/arena/providers.py": "b635222f2c1feba30fec9b66c71e36dfdc896be839f102b18408ae8d57a5f5d3",
+  "packages/zugzwang-cli/src/zugzwang_cli/arena/loop.py": "afaeea87033a6c37302d2134986b5b3ae9b0a29268957666a76c71e8c967769f",
+  "packages/zugzwang-runtime/src/zugzwang_runtime/execution/backend_caller.py": "17139c475acd85b4f6376c5bea92c0a5c145bbb3c097cf7e85eb4b760eb24210",
+  "packages/zugzwang-core/src/zugzwang_core/domain/provider_isolation.py": "f64862bc6a27835e83f341b5749d1095c0de59a16476cc4e9dc47468f29389e8",
+  "plugins/provider-codex-cli/src/zgw_provider_codex_cli/isolation.py": "f0b6b0ccda1b7d16805e0f9304d9e4314f7ff22b7653f64fbe5cb26fdb13fcfb",
+  "tests/contract/test_provider_isolation.py": "f93fd617f2c70a3c9dd010b205d3c399d094f84cd80223a0cecc8fe357a5ddb0",
+  "tests/unit/test_arena_isolation.py": "b6b1d8e663a06cdc2417830a5a1e20ab57bd7dca4832a9c395e0dda5f55c90fa",
+  "packages/zugzwang-runtime/src/zugzwang_runtime/execution/durable_coordinator.py": "883f651111e52947e6b494e3158bf4cbaa447d847edb150c5358afd807c3a002",
+  "tests/contract/test_multimodal_adapters.py": "abe2ef337a3a6a36ca17d2fe9aad2d8b6bfd74efaa0b8231743031a2a98e8386",
+  "docs/adr/ADR-063-provider-model-only-isolation.md": "f2f919f72584ca11af41fd297504b9d3674d84f697cc1ac01cc4f493e2f4dbe4",
+  "docs/requirements/FUNCTIONAL_REQUIREMENTS.md": "cc559d3db905086dfb7b6eba0183a4a7fc536c3568b8deca60b4533451b2e45a",
+  "docs/work-orders/ZGW-0117.md": "1aa33ed61d0d8c6ed4ab520f4b21c52e2ad9dcf127fce9c2496d65d98e634714",
+  "docs/work-orders/ZGW-0118.md": "9d3878a104002fafe5609c5b8a032940f10d43cb1c2b7cefb73b1026a7a92b86"
+}

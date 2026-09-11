@@ -18,6 +18,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from zugzwang_chess.replay import replay_positions
 
@@ -282,7 +283,9 @@ class ArenaGame:
             "board_moves": list(self.board.moves),
         }
         target = directory / f"{self.game_id}.json"
-        tmp = target.with_suffix(".json.tmp")
+        # Unique tmp per write: concurrent dumps (API thread + model thread)
+        # must not race on a shared ".tmp" name before os.replace.
+        tmp = directory / f"{self.game_id}.json.{uuid4().hex}.tmp"
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         os.replace(tmp, target)
         self.write_pgn(directory)
@@ -311,7 +314,7 @@ class ArenaGame:
 
     def write_pgn(self, directory: Path) -> None:
         target = directory / f"{self.game_id}.pgn"
-        tmp = target.with_suffix(".pgn.tmp")
+        tmp = directory / f"{self.game_id}.pgn.{uuid4().hex}.tmp"
         tmp.write_text(self.pgn_text(), encoding="utf-8")
         os.replace(tmp, target)
 

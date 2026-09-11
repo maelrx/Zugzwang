@@ -150,15 +150,27 @@ async def test_codex_profile_cannot_inherit_tools(tmp_path: Path):
     assert "service_tier=fast" in actual
 
 
-async def test_antigravity_never_spawns_without_verified_tool_isolation(monkeypatch):
+async def test_antigravity_spawns_only_in_sandbox_with_stream_audit(tmp_path):
+    # ZGW-0123: the agy adapter is enabled again, but every spawn must carry
+    # --sandbox and --output-format stream-json so risky tool calls are aborted.
     from zgw_provider_antigravity_cli.adapter import AntigravityCliBackend
 
-    async def forbidden(*a, **k):
-        raise AssertionError("unsafe process was started")
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", forbidden)
-    with pytest.raises(ProviderIsolationError, match="blocked"):
-        await AntigravityCliBackend().infer(_request(), _context())
+    args_file = tmp_path / "args.txt"
+    exe = tmp_path / "fake-agy"
+    exe.write_text(
+        "#!/usr/bin/env bash\nprintf '%s\\n' \"$@\" > " + str(args_file) + "\n"
+        "cat <<'JSONL'\n"
+        '{"event":"result","result":{"status":"SUCCESS","response":"","usage":{}}}\n'
+        "JSONL\n",
+        encoding="utf-8",
+    )
+    exe.chmod(0o755)
+    backend = AntigravityCliBackend(executable=str(exe))
+    await backend.infer(_request(), _context())
+    args = args_file.read_text(encoding="utf-8")
+    assert "--sandbox" in args
+    assert "stream-json" in args
+    await backend.close()
 
 
 async def test_opencode_requires_confirmed_deny_all_before_prompt():

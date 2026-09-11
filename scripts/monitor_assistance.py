@@ -11,7 +11,6 @@ Writes an audit line to /tmp/zgw-assist-monitor.log and exits on demand.
 from __future__ import annotations
 
 import datetime
-import json
 import pathlib
 import sqlite3
 import subprocess

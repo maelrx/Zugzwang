@@ -11,8 +11,8 @@ export interface Appearance {
 }
 
 export const THEMES: { id: ThemeId; label: string; bg: string; ac: string }[] = [
-  { id: "dark", label: "Escuro", bg: "#0b0e12", ac: "#e8a865" },
-  { id: "dark-deep", label: "Profundo", bg: "#080a0d", ac: "#ae7e4c" },
+  { id: "dark", label: "Escuro", bg: "#0b0b0b", ac: "#dbb87e" },
+  { id: "dark-deep", label: "Profundo", bg: "#050505", ac: "#dbb87e" },
   { id: "light", label: "Claro", bg: "#eef1f4", ac: "#a86a24" },
 ];
 

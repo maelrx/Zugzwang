@@ -6,36 +6,13 @@ import "chessground/assets/chessground.base.css";
 import "chessground/assets/chessground.brown.css";
 import "chessground/assets/chessground.cburnett.css";
 import { Icon } from "./Icon";
+import { ThinkingPanel } from "./ThinkingPanel";
+import { PlayerBar, MoveBook, PromotionPicker } from "./ChessDesk";
+import { modelName as displayModel, providerName, modelDetail } from "@/lib/arena";
 
-interface ProviderModel { id: string; label: string; validated: boolean; default: boolean }
-interface ProviderOption {
-  id: string; backend_id: string; label: string; validated: boolean;
-  models: ProviderModel[]; efforts: string[]; default_effort: string | null; note: string;
-}
-interface MoveRecord {
-  ply: number; side: string; actor: string; uci: string; san: string;
-  latency_ms?: number | null; tokens_out?: number | null; rounds?: number | null; error?: string | null;
-}
-interface ArenaGameState {
-  id: string; created_at: string; setup: Record<string, unknown>;
-  status: "human_turn" | "model_thinking" | "finished";
-  human_color: "white" | "black"; model_color: "white" | "black";
-  fen: string; turn: "white" | "black"; last_uci: string | null; check: boolean;
-  moves: MoveRecord[]; thinking: boolean; last_error: string | null;
-  result: { score: string; kind: string; winner: string | null } | null;
-  dests: Record<string, string[]> | null; promotable: string[] | null;
-}
-interface GameSummary { id: string; created_at: string; status: string; human_color: string; plies: number; result: { score: string; kind: string } | null; setup: Record<string, unknown> }
-
-const API = "/play/api";
+import { api } from "@/lib/arena";
+import type { ArenaGameState, ProviderOption } from "@/lib/arena";
 const POLL_MS = 2000;
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API}${path}`, init ? { headers: { "Content-Type": "application/json" }, ...init } : undefined);
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(String((body as { detail?: string }).detail ?? "falha na requisição")), { code: (body as { error?: string }).error });
-  return body as T;
-}
 
 /** Piece letter at one square from a FEN placement, or null. */
 function pieceAt(fen: string, square: string): string | null {
@@ -54,7 +31,9 @@ function pieceAt(fen: string, square: string): string | null {
 
 export function PlayView() {
   const [providers, setProviders] = useState<ProviderOption[]>([]);
-  const [games, setGames] = useState<GameSummary[]>([]);
+  const [setupOpen, setSetupOpen] = useState(true);
+  const [flipped, setFlipped] = useState(false);
+  const [resignConfirm, setResignConfirm] = useState(false);
   const [game, setGame] = useState<ArenaGameState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,37 +41,61 @@ export function PlayView() {
   const boardRef = useRef<HTMLDivElement>(null);
   const cgRef = useRef<Api | null>(null);
   const gameRef = useRef<ArenaGameState | null>(null);
-  useEffect(() => { gameRef.current = game; }, [game]);
+  const requestRef = useRef(0);
+  const acceptGame = useCallback((next: ArenaGameState) => {
+    setSetupOpen(false);
+    setResignConfirm(false);
+    gameRef.current = next;
+    setGame(next);
+    sessionStorage.setItem("arena-game", next.id);
+  }, []);
 
   const [form, setForm] = useState({
-    provider: "antigravity-cli", model: "gemini-3.8-flash-low", effort: "low",
+    provider: "antigravity-cli", model: "gemini-3.8-flash-low", effort: "low", service_tier: "",
     human_color: "white" as "white" | "black", max_rounds: 6, ascii: false, history_plies: 12, directive: "",
   });
 
-  const refreshGames = useCallback(() => { void api<{ games: GameSummary[] }>("/games").then(b => setGames(b.games)).catch(() => undefined); }, []);
-  const pollOnce = useCallback((id: string) => {
-    void api<ArenaGameState>(`/games/${id}`).then(next => { setGame(next); if (!next.thinking) refreshGames(); }).catch(() => undefined);
-  }, [refreshGames]);
+  const pollOnce = useCallback(async (id: string) => {
+    const request = ++requestRef.current;
+    try {
+      const next = await api<ArenaGameState>(`/games/${id}`);
+      if (request !== requestRef.current) return;
+      acceptGame(next);
+      setPromotion(null);
+      setError(null);
+
+    } catch {
+      if (request === requestRef.current) setError("Conexão interrompida. Tente atualizar a partida; seu progresso fica salvo.");
+    }
+  }, [acceptGame]);
 
   useEffect(() => {
     void api<{ providers: ProviderOption[] }>("/providers").then(b => {
       setProviders(b.providers);
-      const first = b.providers.find(p => p.validated) ?? b.providers[0];
+      const first = b.providers.find(p => p.id === "codex-cli" && p.available !== false) ?? b.providers.find(p => p.available !== false);
       if (!first) return;
       const model = first.models.find(m => m.default) ?? first.models[0];
       setForm(f => ({ ...f, provider: first.id, model: model?.id ?? "", effort: first.default_effort ?? "" }));
-    }).catch(e => setError(`Serviço da arena indisponível (inicie com: uv run python -m zugzwang_cli.arena.server): ${e.message}`));
-    refreshGames();
-  }, [refreshGames]);
+    }).catch(e => setError(`Não foi possível conectar à arena. Tente recarregar a página. ${e.message}`));
+    const saved = sessionStorage.getItem("arena-game");
+    if (saved) queueMicrotask(() => { void pollOnce(saved); });
+  }, [pollOnce]);
 
   // Poll while the model is thinking; stops on human turn / end of game.
   useEffect(() => {
     if (!game || game.status === "finished" || !game.thinking) return;
-    const timer = window.setTimeout(() => pollOnce(game.id), POLL_MS);
-    return () => window.clearTimeout(timer);
+    let stopped = false;
+    let timer: number;
+    const poll = async () => {
+      await pollOnce(game.id);
+      if (!stopped) timer = window.setTimeout(() => { void poll(); }, POLL_MS);
+    };
+    timer = window.setTimeout(() => { void poll(); }, POLL_MS);
+    return () => { stopped = true; window.clearTimeout(timer); };
   }, [game, pollOnce]);
 
-  const orientation: Color = (game ? game.human_color : form.human_color) as Color;
+  const humanColor = game?.human_color ?? form.human_color;
+  const orientation: Color = flipped ? (humanColor === "white" ? "black" : "white") : humanColor;
 
   // Interactive board lifecycle (create once; reconfigure on state change).
   useEffect(() => {
@@ -109,15 +112,16 @@ export function PlayView() {
   const sendMove = useCallback(async (uci: string) => {
     const current = gameRef.current;
     if (!current) return;
+    ++requestRef.current;
     setBusy(true); setError(null);
-    try { setGame(await api<ArenaGameState>(`/games/${current.id}/moves`, { method: "POST", body: JSON.stringify({ uci }) })); }
+    try { acceptGame(await api<ArenaGameState>(`/games/${current.id}/moves`, { method: "POST", body: JSON.stringify({ uci }) })); }
     catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
-  }, []);
+  }, [acceptGame]);
 
   const onBoardMove = useCallback((from: Key, to: Key) => {
     const current = gameRef.current;
-    if (!current || busy || current.thinking) return;
+    if (!current || busy || current.thinking || current.turn !== current.human_color) return;
     const piece = pieceAt(current.fen, from);
     if (current.promotable?.includes(to) && (piece === "P" || piece === "p")) { setPromotion({ from, to }); return; }
     void sendMove(`${from}${to}`);
@@ -139,109 +143,91 @@ export function PlayView() {
       lastMove: game.last_uci ? [game.last_uci.slice(0, 2) as Key, game.last_uci.slice(2, 4) as Key] : undefined,
       highlight: { lastMove: true, check: true },
       check: game.check ? turnColor : undefined,
-      movable: game.status === "human_turn" && !busy
+      movable: game.status === "human_turn" && game.turn === game.human_color && !busy && !promotion
         ? { free: false, color: orientation, showDests: true, dests, events: { after: (from: Key, to: Key) => onBoardMove(from, to) } }
         : { free: false, color: undefined, showDests: false, dests: new Map() },
-      selectable: { enabled: false },
+      selectable: { enabled: true },
     });
-  }, [game, orientation, busy, onBoardMove]);
+  }, [game, orientation, busy, promotion, onBoardMove]);
 
   const createGame = useCallback(async () => {
+    ++requestRef.current;
     setBusy(true); setError(null); setPromotion(null);
     try {
-      const created = await api<ArenaGameState>("/games", { method: "POST", body: JSON.stringify({ ...form, directive: form.directive || undefined }) });
-      setGame(created);
-      refreshGames();
-    } catch (e) { setError((e as Error).message); }
+      const created = await api<ArenaGameState>("/games", { method: "POST", body: JSON.stringify({ ...form, service_tier: form.provider === "codex-cli" && form.model === "gpt-5.6-luna" ? form.service_tier || undefined : undefined, directive: form.directive || undefined }) });
+      setFlipped(false);
+      acceptGame(created);
+      } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
-  }, [form, refreshGames]);
+  }, [form, acceptGame]);
 
   const act = useCallback(async (action: "retry" | "resign") => {
     const current = gameRef.current;
     if (!current) return;
+    ++requestRef.current;
     setBusy(true); setError(null);
-    try { setGame(await api<ArenaGameState>(`/games/${current.id}/${action}`, { method: "POST", body: "{}" })); }
+    try { acceptGame(await api<ArenaGameState>(`/games/${current.id}/${action}`, { method: "POST", body: "{}" })); }
     catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
-  }, []);
+  }, [acceptGame]);
 
   const selectedProvider = useMemo(() => providers.find(p => p.id === form.provider), [providers, form.provider]);
-  const pairs = useMemo(() => {
-    if (!game) return [] as { number: number; white?: MoveRecord; black?: MoveRecord }[];
-    const rows: { number: number; white?: MoveRecord; black?: MoveRecord }[] = [];
-    for (const move of game.moves) {
-      const number = Math.floor((move.ply - 1) / 2) + 1;
-      const row = rows[number - 1] ?? (rows[number - 1] = { number });
-      if (move.side === "white") row.white = move; else row.black = move;
-    }
-    return rows;
-  }, [game]);
-  const lastModel = useMemo(() => [...game?.moves ?? []].reverse().find(m => m.actor === "model"), [game]);
-  const modelName = String(game?.setup.model ?? "Modelo");
+  const supportsFast = selectedProvider?.models.find(m => m.id === form.model)?.service_tiers?.includes("fast") ?? false;
+  const canRetry = game && game.status !== "finished" && !game.thinking && game.turn !== game.human_color;
+  const currentModel = game?.setup.model ?? form.model;
+  const currentProvider = game?.setup.provider ?? form.provider;
+  const currentTier = game ? game.setup.service_tier : form.service_tier;
+  const currentModelLabel = `${displayModel(currentModel)}${currentTier === "fast" ? " · Fast" : ""}`;
+  const topColor = orientation === "white" ? "black" : "white";
+  const isFinished = game?.status === "finished";
+  const statusText = isFinished ? "Partida encerrada" : game?.thinking ? "O modelo está pensando" : canRetry ? "O modelo não concluiu o lance" : game?.check ? "Você está em xeque" : "Sua vez de jogar";
+  const resultText = game?.result ? game.result.score === "1/2-1/2" ? "Empate" : game.result.score === (game.human_color === "white" ? "1-0" : "0-1") ? "Você venceu" : "O modelo venceu" : "";
+  const setProvider = (id:string) => {
+    const provider = providers.find(p => p.id === id);
+    if (provider?.available === false) return;
+    const model = provider?.models.find(m => m.default) ?? provider?.models[0];
+    setForm(f => ({...f,provider:id,service_tier:"",model:model?.id ?? "",effort:provider?.default_effort ?? ""}));
+  };
 
-  if (providers.length === 0 && !error) return <div className="loading-state" role="status"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-row" /></div>;
-
-  return <div className="game-layout">
-    <section className="board-section surface" aria-label="Tabuleiro da arena">
-      <div className="player-strip"><span className={`piece-dot ${orientation === "white" ? "black" : "white"}`} /><div><span>{orientation === "white" ? "Pretas" : "Brancas"}</span><strong>{orientation === "white" ? modelName : "Você"}</strong></div><span className="quiet-label">{game?.thinking ? "pensando…" : ""}</span></div>
-      <div className="board-wrap" style={{ position: "relative" }}>
-        <div ref={boardRef} className="aspect-square w-full" style={{ borderRadius: 8, overflow: "hidden" }} role="img" aria-label="Tabuleiro interativo" />
-        {promotion && <div role="dialog" aria-label="Escolher peça da promoção" style={{ position: "absolute", inset: 0, display: "flex", gap: 8, alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)", zIndex: 10 }}>
-          {[["q", "Dama"], ["r", "Torre"], ["b", "Bispo"], ["n", "Cavalo"]].map(([piece, label]) => <button key={piece} className="button" onClick={() => { const move = promotion; setPromotion(null); void sendMove(`${move.from}${move.to}${piece}`); }}>{label}</button>)}
-        </div>}
-      </div>
-      <div className="player-strip bottom"><span className={`piece-dot ${orientation === "white" ? "white" : "black"}`} /><div><span>{orientation === "white" ? "Brancas" : "Pretas"}</span><strong>{orientation === "white" ? "Você" : modelName}</strong></div><span className="quiet-label">{game ? `${game.moves.length} meios-lances` : "—"}</span></div>
-      <div className="board-tools">
-        <button className="button compact" disabled={!game || game.status === "finished" || busy} onClick={() => void act("resign")}>Desistir</button>
-        <button className="button compact" disabled={!game || !game.thinking} onClick={() => game && pollOnce(game.id)}>Atualizar agora</button>
-        <button className="button compact" disabled={!game || busy || game.status === "finished"} onClick={() => void act("retry")}>Repetir turno do modelo</button>
-      </div>
-      {error && <div className="notice error" role="alert"><Icon name="alert" /><div><strong>Não foi possível completar a ação</strong><p>{error}</p></div></div>}
-      {game?.last_error && game.status !== "finished" && <div className="notice" role="status"><Icon name="alert" /><div><strong>Turno do modelo falhou</strong><p>{game.last_error}</p><p className="quiet-label">Seu lance permanece válido — use “Repetir turno do modelo”.</p></div></div>}
-      {game?.result && <div className="notice" role="status"><div><strong>Partida encerrada: {game.result.score} ({game.result.kind})</strong><p>Use “Nova partida” na configuração para jogar de novo.</p></div></div>}
-    </section>
-    <div className="game-right">
-      <section className="surface" aria-label="Configuração da partida">
-        <div className="section-heading"><div><h2>Configuração</h2><p>Todo o setup da partida via UI — cada chamada ao modelo é registrada em <code>out/arena/</code>.</p></div></div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <label>Provedor<select value={form.provider} onChange={e => {
-            const provider = providers.find(p => p.id === e.target.value);
-            const model = provider?.models.find(m => m.default) ?? provider?.models[0];
-            setForm(f => ({ ...f, provider: e.target.value, model: model?.id ?? "", effort: provider?.default_effort ?? "" }));
-          }}>{providers.map(p => <option key={p.id} value={p.id}>{p.label}{p.validated ? " ✓" : ""}</option>)}</select></label>
-          <label>Modelo<select value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))}>{(selectedProvider?.models ?? []).map(m => <option key={m.id} value={m.id}>{m.label}{m.validated ? " ✓ validado" : ""}</option>)}</select></label>
-          {(selectedProvider?.efforts.length ?? 0) > 0 && <label>Esforço<select value={form.effort} onChange={e => setForm(f => ({ ...f, effort: e.target.value }))}>{selectedProvider!.efforts.map(effort => <option key={effort} value={effort}>{effort}</option>)}</select></label>}
-          <label>Sua cor<select value={form.human_color} onChange={e => setForm(f => ({ ...f, human_color: e.target.value as "white" | "black" }))}><option value="white">Brancas</option><option value="black">Pretas</option></select></label>
-          <label>Rounds por lance<select value={form.max_rounds} onChange={e => setForm(f => ({ ...f, max_rounds: Number(e.target.value) }))}>{[2, 4, 6, 8].map(n => <option key={n} value={n}>{n}</option>)}</select></label>
-          <label>Histórico (plies)<select value={form.history_plies} onChange={e => setForm(f => ({ ...f, history_plies: Number(e.target.value) }))}>{[0, 6, 12, 24].map(n => <option key={n} value={n}>{n === 0 ? "sem histórico" : `últimos ${n}`}</option>)}</select></label>
-        </div>
-        <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}><input type="checkbox" checked={form.ascii} onChange={e => setForm(f => ({ ...f, ascii: e.target.checked }))} />Incluir tabuleiro ASCII no pacote L0</label>
-        <label style={{ display: "block", marginTop: 10 }}>Diretiva ao modelo (opcional)<textarea style={{ width: "100%" }} rows={3} value={form.directive} placeholder="Vazia = diretiva tática dos full games vencedores" onChange={e => setForm(f => ({ ...f, directive: e.target.value }))} /></label>
-        <div className="board-tools" style={{ marginTop: 10 }}>
-          <button className="button primary" disabled={busy} onClick={() => void createGame()}>{game ? "Nova partida" : "Iniciar partida"}</button>
-          {game && <span className="mono quiet-label">{game.id}</span>}
-        </div>
-        {selectedProvider?.note && <p className="helper-text">{selectedProvider.note}</p>}
+  return <div className="chess-desk play-desk">
+    <header className="desk-heading"><div><h1>Jogar</h1><span>Você contra os modelos</span></div><a className="desk-text-link" href="#historico"><Icon name="clock" size={15}/>Suas partidas<Icon name="chevron" size={13}/></a></header>
+    <div className="desk-layout">
+      <section className="desk-board-column" aria-label="Tabuleiro da arena">
+        <PlayerBar name={topColor === humanColor ? "Você" : currentModelLabel} provider={currentProvider} human={topColor === humanColor} color={topColor} active={!!game && !isFinished && game.turn === topColor} status={game?.thinking && topColor !== humanColor ? "Pensando…" : undefined}/>
+        <div className="desk-board-frame"><div ref={boardRef} className="desk-chessboard" aria-label="Tabuleiro interativo"/></div>
+        <PlayerBar name={orientation === humanColor ? "Você" : currentModelLabel} provider={currentProvider} human={orientation === humanColor} color={orientation} active={!!game && !isFinished && game.turn === orientation} status={game && !isFinished && !game.thinking && game.turn === orientation ? "Sua vez" : undefined}/>
+        <div className="desk-board-tools"><span>{!game ? "Escolha o oponente para começar." : isFinished ? "Partida salva no histórico." : game.thinking ? "Aguarde a resposta do modelo." : "Clique na peça e no destino, ou arraste."}</span><button className="desk-icon-button" aria-label="Virar tabuleiro" title="Virar tabuleiro" onClick={()=>setFlipped(f=>!f)}><Icon name="flip" size={17}/></button></div>
       </section>
-      <section className="moves-section surface" aria-label="Lances da partida">
-        <div className="section-heading"><div><h2>Lances</h2><p>{lastModel ? `Último lance do modelo: ${lastModel.san}` : "Faça seu lance no tabuleiro."}</p></div></div>
-        <div className="moves-header"><span>#</span><span>Brancas</span><span>Pretas</span></div>
-        <div className="move-list">
-          {pairs.map(row => <div className="move-pair" key={row.number}><span className="move-number">{row.number}.</span>{(["white", "black"] as const).map(side => {
-            const move = side === "white" ? row.white : row.black;
-            return move ? <button key={side} title={move.actor === "model" && move.latency_ms ? `${(move.latency_ms / 1000).toFixed(1)}s · ${move.rounds ?? "?"} chamada(s)${move.tokens_out ? ` · ${move.tokens_out} tokens` : ""}` : "Seu lance"}><strong>{move.san}</strong>{move.actor === "model" && move.latency_ms != null && <span>{(move.latency_ms / 1000).toFixed(1)}s</span>}</button> : <span key={side} className="missing-move">—</span>;
-          })}</div>)}
-          {(!game || game.moves.length === 0) && <p className="empty-inline">Aguardando o primeiro lance.</p>}
+      {setupOpen ? <aside className="desk-side desk-setup-side" aria-label="Configurar nova partida">
+        <div className="desk-side-heading"><div><span className="desk-overline">NOVA PARTIDA</span><h2>Escolha seu oponente</h2></div>{game && <button className="desk-icon-button" aria-label="Voltar à partida atual" onClick={()=>setSetupOpen(false)}><Icon name="close" size={16}/></button>}</div>
+        <form className="desk-setup" onSubmit={e=>{e.preventDefault();void createGame();}}>
+          <fieldset className="desk-provider-picker"><legend>Provedor</legend>{providers.length ? providers.map(p=><label key={p.id} data-selected={form.provider === p.id} title={p.unavailable_reason}><input type="radio" name="provider" value={p.id} disabled={p.available === false} checked={form.provider===p.id} onChange={()=>setProvider(p.id)}/><span className="desk-provider-letter" aria-hidden="true">{providerName(p.id).slice(0,1)}</span><strong>{providerName(p.id)}{p.available === false ? " · indisponível" : ""}</strong>{form.provider===p.id && <Icon name="check" size={12}/>}</label>) : <div className="desk-loading-inline" role="status">Carregando modelos…</div>}</fieldset>
+          <label className="desk-field">Modelo<select name="model" value={form.model} disabled={!providers.length} onChange={e=>setForm(f=>({...f,model:e.target.value,service_tier:""}))}>{(selectedProvider?.models ?? []).map(m=><option key={m.id} value={m.id}>{displayModel(m.id)}{modelDetail(m.id)!==m.id ? ` · ${modelDetail(m.id)}` : ""}</option>)}</select></label>
+          {supportsFast && <fieldset className="desk-speed"><legend>Velocidade do Luna</legend><div>{[["", "Padrão"], ["fast", "Fast"]].map(([tier,label]) => <label key={tier} data-selected={form.service_tier === tier}><input type="radio" name="service-tier" value={tier} checked={form.service_tier === tier} onChange={()=>setForm(f=>({...f,service_tier:tier}))}/><span>{label}</span>{form.service_tier===tier && <Icon name="check" size={13}/>}</label>)}</div></fieldset>}
+          <fieldset className="desk-color-picker"><legend>Você joga de</legend>{(["white","black"] as const).map(color=><label key={color} data-selected={form.human_color===color}><input type="radio" name="human_color" checked={form.human_color===color} onChange={()=>setForm(f=>({...f,human_color:color}))}/><i className={`desk-side-piece ${color}`}/><span><strong>{color === "white" ? "Brancas" : "Pretas"}</strong><small>{color === "white" ? "Você começa" : "Modelo começa"}</small></span>{form.human_color===color && <Icon name="check" size={13}/>}</label>)}</fieldset>
+          <details className="desk-advanced"><summary><Icon name="sliders" size={15}/>Ajustar setup<Icon name="chevron" size={13}/></summary><div>
+            {!!selectedProvider?.efforts.length && <label className="desk-field">Esforço do modelo<select name="effort" value={form.effort} onChange={e=>setForm(f=>({...f,effort:e.target.value}))}>{selectedProvider.efforts.map(e=><option key={e} value={e}>{e}</option>)}</select></label>}
+            <div className="desk-field-pair"><label className="desk-field">Chamadas por lance<select name="max_rounds" value={form.max_rounds} onChange={e=>setForm(f=>({...f,max_rounds:Number(e.target.value)}))}>{[2,4,6,8].map(n=><option key={n}>{n}</option>)}</select></label><label className="desk-field">Histórico enviado<select name="history_plies" value={form.history_plies} onChange={e=>setForm(f=>({...f,history_plies:Number(e.target.value)}))}>{[0,6,12,24].map(n=><option key={n} value={n}>{n ? `${n} meios-lances` : "Nenhum"}</option>)}</select></label></div>
+            <label className="desk-check"><input type="checkbox" checked={form.ascii} onChange={e=>setForm(f=>({...f,ascii:e.target.checked}))}/>Enviar o tabuleiro também em texto</label>
+            <label className="desk-field">Instrução adicional<textarea name="directive" autoComplete="off" rows={3} placeholder="Ex.: priorize a segurança do rei…" value={form.directive} onChange={e=>setForm(f=>({...f,directive:e.target.value}))}/></label>
+          </div></details>
+          {error && <div className="desk-error" role="alert"><Icon name="alert" size={15}/><p>{error}</p></div>}
+          <div className="desk-start"><button className="desk-button primary" type="submit" disabled={busy || !providers.length || game?.thinking}><Icon name="play" size={16}/>{busy ? "Iniciando…" : `Jogar de ${form.human_color === "white" ? "brancas" : "pretas"}`}</button><p><Icon name="check" size={13}/>{game ? "A partida atual continua no histórico." : "Seu progresso é salvo a cada lance."}</p></div>
+        </form>
+      </aside> : <aside className="desk-side desk-game-side" aria-label="Partida em andamento">
+        <div className="desk-game-status" role="status"><span className={`desk-status-orb ${game?.thinking ? "thinking" : ""}`}><Icon name={isFinished ? "check" : canRetry ? "alert" : game?.thinking ? "clock" : "play"} size={19}/></span><div><h2>{busy ? "Salvando lance…" : statusText}</h2><p>{isFinished ? `${resultText} · ${game?.result?.score}` : game?.thinking ? `${currentModelLabel} está escolhendo o lance.` : canRetry ? "Seu último lance está salvo." : "Encontre sua melhor continuação."}</p></div></div>
+        {error && <div className="desk-error" role="alert"><Icon name="alert" size={15}/><p>{error}</p></div>}
+        <ThinkingPanel key={game?.model_progress?.turn_id ?? game?.id} progress={game?.model_progress} thinking={!!game?.thinking}/>
+        {canRetry && <div className="desk-retry"><button className="desk-button" disabled={busy} onClick={()=>void act("retry")}><Icon name="refresh" size={15}/>Tentar turno novamente</button>{game?.last_error && <details><summary>Detalhes do erro</summary><p>{game.last_error}</p></details>}</div>}
+        <div className="desk-book-title"><h3>Lances</h3><span>{game?.moves.length ?? 0} meios-lances</span></div>
+        <MoveBook moves={game?.moves ?? []} positions={game?.positions} humanColor={humanColor} selected={game?.moves.length}/>
+        <div className="desk-game-footer">
+          {isFinished && <a className="desk-button primary" href={`#historico/${game?.id}`}><Icon name="chart" size={16}/>Rever partida e análise</a>}
+          {resignConfirm ? <div className="desk-resign-confirm"><p>Encerrar esta partida?</p><button className="desk-button quiet" onClick={()=>setResignConfirm(false)}>Voltar</button><button className="desk-button danger" disabled={busy} onClick={()=>void act("resign")}>Confirmar desistência</button></div> : <div className="desk-game-actions"><button className="desk-button" disabled={busy || game?.thinking} onClick={()=>setSetupOpen(true)}><Icon name="play" size={14}/>Nova partida</button>{!isFinished && <button className="desk-button quiet" disabled={busy || game?.thinking} onClick={()=>setResignConfirm(true)}>Desistir</button>}</div>}
+          <div className="desk-saved"><span><Icon name="check" size={12}/>Partida salva</span><button className="desk-icon-button" title="Atualizar partida" aria-label="Atualizar partida" disabled={busy} onClick={()=>game && void pollOnce(game.id)}><Icon name="refresh" size={14}/></button></div>
         </div>
-      </section>
-      {games.length > 0 && <section className="surface" aria-label="Jogos anteriores">
-        <div className="section-heading"><div><h2>Jogos anteriores</h2><p>Evidência bruta por chamada em <code>out/arena/</code> (JSONL + PGN).</p></div></div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {games.slice(0, 8).map(summary => <button key={summary.id} className="button compact" aria-pressed={game?.id === summary.id} onClick={() => pollOnce(summary.id)}>
-            <strong>{String(summary.setup.model ?? summary.id)}</strong><span className="quiet-label"> {summary.plies} plies · {summary.status === "finished" ? `fim (${summary.result?.score ?? "?"})` : summary.status === "model_thinking" ? "pensando" : "em andamento"}</span>
-          </button>)}
-        </div>
-      </section>}
+      </aside>}
     </div>
+    {promotion && <PromotionPicker onCancel={()=>setPromotion(null)} onSelect={piece=>{const move=promotion;setPromotion(null);void sendMove(`${move.from}${move.to}${piece}`);}}/>}
   </div>;
 }

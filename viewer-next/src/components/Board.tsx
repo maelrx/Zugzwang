@@ -12,10 +12,11 @@ interface Props {
   /** interactive mode: legal-ish move dests shown */
   viewOnly?: boolean;
   orientation?: "white" | "black";
+  animated?: boolean;
 }
 
 /** Chessground replay board driven by FEN snapshots (no game logic state). */
-export function Board({ fen, lastUci, viewOnly = true, orientation = "white" }: Props) {
+export function Board({ fen, lastUci, viewOnly = true, orientation = "white", animated = true }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const api = useRef<Api | null>(null);
 
@@ -44,6 +45,7 @@ export function Board({ fen, lastUci, viewOnly = true, orientation = "white" }: 
     // needed (a previous manual map was dead code with a missing file
     // increment — removed rather than fixed).
     api.current.set({
+      animation: { enabled: animated && !window.matchMedia("(prefers-reduced-motion: reduce)").matches, duration: 180 },
       fen: board,
       orientation,
       turnColor: turn as Color,
@@ -53,7 +55,7 @@ export function Board({ fen, lastUci, viewOnly = true, orientation = "white" }: 
       movable: { free: false, color: undefined, showDests: false, dests: undefined },
       selectable: { enabled: !viewOnly },
     });
-  }, [fen, lastUci, viewOnly, orientation]);
+  }, [fen, lastUci, viewOnly, orientation, animated]);
 
   return <div ref={ref} className="aspect-square w-full overflow-hidden rounded-md" role="img" aria-label="Tabuleiro de xadrez" />;
 }

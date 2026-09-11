@@ -43,15 +43,35 @@ class ArenaService:
         *,
         backend_factory: Any = None,
         analysis: ArenaAnalysisService | None = None,
+        engine_move: Any = None,
     ) -> None:
         self.arena_dir = arena_dir
         self.analysis = analysis
         self._backend_factory = backend_factory or build_backend
+        self._engine_move = engine_move or self._stockfish_move
         self.games: dict[str, ArenaGame] = {}
         self._load_existing()
         self._migrate_finished_threads()
         for game in self.games.values():
             self._maybe_analyze(game)
+
+    def _stockfish_move(self, board: Any) -> str:
+        """Stockfish opponent for spectator games (ZGW-0121)."""
+        import os
+
+        import chess.engine
+
+        path = os.environ.get("ZGW_STOCKFISH_PATH", "stockfish")
+        elo = int(os.environ.get("ZGW_ARENA_ENGINE_ELO", "1320"))
+        nodes = int(os.environ.get("ZGW_ARENA_ENGINE_NODES", "20000"))
+        engine = chess.engine.SimpleEngine.popen_uci(path)
+        try:
+            engine.configure({"UCI_LimitStrength": True, "UCI_Elo": elo, "Threads": 1, "Hash": 16})
+            result = engine.play(board.board, chess.engine.Limit(nodes=nodes))
+            assert result.move is not None
+            return result.move.uci()
+        finally:
+            engine.quit()
 
     # -- store ------------------------------------------------------------------
 
@@ -67,8 +87,41 @@ class ArenaService:
 
     def _migrate_finished_threads(self) -> None:
         for game in self.games.values():
-            if game.status == "model_thinking":
+            if game.status == "model_thinking" and game.opponent == "human":
                 game.status = "human_turn"
+            elif game.status in {"model_thinking", "engine_thinking"}:
+                # Spectator games resume their turn after a service restart.
+                self._advance(game)
+
+    def _advance(self, game: ArenaGame) -> None:
+        """Start whichever turn the game is waiting on (model or engine)."""
+        if game.status == "engine_thinking":
+            self._spawn_engine_turn(game)
+        elif game.status == "model_thinking":
+            self._spawn_model_turn(game)
+
+    def _spawn_engine_turn(self, game: ArenaGame) -> None:
+        thread = threading.Thread(target=self._run_engine_turn, args=(game,), daemon=True)
+        thread.start()
+
+    def _run_engine_turn(self, game: ArenaGame) -> None:
+        started = time.monotonic()
+        try:
+            # No lock while the engine thinks: the API stays responsive and the
+            # UI keeps polling the live board.
+            uci = self._engine_move(game.board)
+        except Exception as exc:  # pragma: no cover - real engine failures
+            with game.lock:
+                game.last_error = f"ENGINE_ERROR: {type(exc).__name__}: {exc}"
+                game.dump(self.arena_dir)
+            return
+        latency_ms = int((time.monotonic() - started) * 1000)
+        with game.lock:
+            played = game.record_engine_move(uci, latency_ms=latency_ms)
+            game.dump(self.arena_dir)
+            self._maybe_analyze(game)
+            if played:
+                self._advance(game)
 
     def _call_sink_for(self, game_id: str):  # type: ignore[no-untyped-def]
         log_path = self.arena_dir / f"{game_id}-calls.jsonl"
@@ -94,6 +147,7 @@ class ArenaService:
                 f"provider unavailable: {provider_id} has no verifiable tools-off isolation"
             )
         tier = validate_service_tier(provider_id, setup.get("model"), setup.get("service_tier"))
+        opponent = "stockfish" if setup.get("opponent") == "stockfish" else "human"
         board = BoardFacade(
             start_fen=setup.get("start_fen") or None,
             ascii_enabled=bool(setup.get("ascii", False)),
@@ -105,6 +159,7 @@ class ArenaService:
             setup={
                 "provider": provider_id,
                 "service_tier": tier,
+                "opponent": opponent,
                 "model": setup.get("model"),
                 "effort": setup.get("effort"),
                 "human_color": "black" if setup.get("human_color") == "black" else "white",
@@ -121,6 +176,9 @@ class ArenaService:
             if game.model_color == "white":
                 game.status = "model_thinking"
                 self._spawn_model_turn(game)
+            elif opponent == "stockfish":
+                game.status = "engine_thinking"
+                self._spawn_engine_turn(game)
             else:
                 game.status = "human_turn"
             game.dump(self.arena_dir)
@@ -275,6 +333,7 @@ class ArenaService:
                     )
             game.dump(self.arena_dir)
             self._maybe_analyze(game)
+            self._advance(game)
 
 
 def _thread_failure(exc: Exception):  # type: ignore[no-untyped-def]

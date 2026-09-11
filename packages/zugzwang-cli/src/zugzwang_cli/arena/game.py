@@ -68,6 +68,14 @@ class ArenaGame:
     def model_label(self) -> str:
         return f"{self.setup.get('model', 'model')} ({self.setup.get('provider', 'provider')})"
 
+    @property
+    def opponent(self) -> str:
+        return str(self.setup.get("opponent", "human"))
+
+    @property
+    def engine_color(self) -> str:
+        return self.human_color
+
     # -- serialization -------------------------------------------------------------
 
     def to_state(self, *, include_dests: bool = True) -> dict[str, Any]:
@@ -75,6 +83,7 @@ class ArenaGame:
         promotable: list[str] | None = None
         if (
             include_dests
+            and self.opponent == "human"
             and self.status == "human_turn"
             and self.board.turn == self.human_color
             and not self.board.terminal
@@ -85,6 +94,7 @@ class ArenaGame:
             "created_at": self.created_at,
             "setup": dict(self.setup),
             "status": self.status,
+            "opponent": self.opponent,
             "human_color": self.human_color,
             "model_color": self.model_color,
             "fen": self.board.board.fen(),
@@ -92,7 +102,7 @@ class ArenaGame:
             "check": self.board.board.is_check(),
             "last_uci": self.moves[-1].uci if self.moves else None,
             "moves": [asdict(record) for record in self.moves],
-            "thinking": self.status == "model_thinking",
+            "thinking": self.status in {"model_thinking", "engine_thinking"},
             "last_error": self.last_error,
             "model_progress": self.model_progress,
             "isolation_violation": self.isolation_violation,
@@ -119,6 +129,8 @@ class ArenaGame:
     # -- play ---------------------------------------------------------------------
 
     def apply_human_move(self, uci: str) -> None:
+        if self.opponent != "human":
+            raise ValueError("spectator game: the engine plays the other side (no human moves)")
         if self.status != "human_turn" or self.board.turn != self.human_color:
             raise ValueError(f"game is not awaiting a human move (status={self.status})")
         side = self.board.turn
@@ -134,7 +146,38 @@ class ArenaGame:
         if self.board.terminal:
             self._finish_from_board()
             return
+        if self.opponent != "human":
+            self.status = (
+                "model_thinking" if self.board.turn == self.model_color else "engine_thinking"
+            )
+            return
         self.status = "model_thinking" if model_next else "human_turn"
+
+    def record_engine_move(self, uci: str, *, latency_ms: int = 0) -> bool:
+        """Apply an engine-chosen move in a spectator game; returns True if applied."""
+        if self.status == "finished":
+            return False
+        if self.opponent == "human":
+            raise ValueError("engine move in a human game")
+        expected = "black" if self.model_color == "white" else "white"
+        if self.board.turn != expected:
+            raise ValueError("Engine move does not belong to this turn")
+        side = self.board.turn
+        san = self.board.san(uci)
+        self.board.apply(uci)
+        self.moves.append(
+            MoveRecord(
+                ply=len(self.board.moves),
+                side=side,
+                actor="engine",
+                uci=uci,
+                san=san,
+                latency_ms=latency_ms,
+            )
+        )
+        self.last_error = None
+        self._settle_or_continue(model_next=True)
+        return True
 
     def _finish_from_board(self) -> None:
         termination = self.board.termination
@@ -294,9 +337,10 @@ def load_game(path: Path, call_sink: Callable[[dict[str, Any]], None] | None = N
         call_sink=call_sink,
     )
     game.moves = [MoveRecord(**record) for record in payload.get("moves", [])]
-    # A game that was mid-model-turn when the service died returns to the
-    # human: no ghost "thinking" state survives a restart.
-    if game.status == "model_thinking":
+    # A human game that was mid-model-turn when the service died returns to the
+    # human: no ghost "thinking" state survives a restart. Spectator games keep
+    # their turn state so the service can re-advance the play.
+    if game.status == "model_thinking" and game.opponent == "human":
         game.status = "human_turn"
         if game.model_progress:
             game.model_progress["status"] = "interrupted"

@@ -10,6 +10,7 @@ non-COMMITTED step without repeating committed work.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 from typing import Any, cast
 
@@ -335,6 +336,10 @@ class DurableRunCoordinator:
         row = self._runs.get_run(run_id)
         if row is None:
             raise ValueError(f"run {run_id} not found in this workspace")
+        # Committed steps are skipped on resume, so their impacts are never
+        # recomputed: rehydrate the run-level assistance or finalization would
+        # downgrade it (and drop recorded violations) to the defaults.
+        self._rehydrate_assistance(run_id, row)
         if condition is None:
             condition = next(
                 (c for c in resolved.conditions if c.condition_id == row["condition_id"]),
@@ -351,6 +356,15 @@ class DurableRunCoordinator:
         )
         self._emit_run_event(run_id, "run.resumed", {})
         await self._run_episodes(run_id, resolved, condition, stop_event, resume=True)
+
+    def _rehydrate_assistance(self, run_id: str, row: dict[str, Any]) -> None:
+        effective = row.get("effective_assistance")
+        if isinstance(effective, str) and "/" in effective:
+            h_name, _, k_name = effective.partition("/")
+            with contextlib.suppress(KeyError):
+                self._run_assistance[run_id] = (HClass[h_name.strip()], KClass[k_name.strip()])
+        if row.get("assistance_violated"):
+            self._run_assistance_violated[run_id] = True
 
     async def _run_episodes(
         self,

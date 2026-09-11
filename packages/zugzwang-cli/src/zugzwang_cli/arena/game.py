@@ -50,6 +50,8 @@ class ArenaGame:
     last_error: str | None = None
     model_note: dict[str, Any] | None = None
     model_progress: dict[str, Any] | None = None
+    isolation_violation: bool = False
+    assistance_violations: list[dict[str, Any]] = field(default_factory=list["dict[str, Any]"])
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
     call_sink: Callable[[dict[str, Any]], None] | None = field(default=None, repr=False)
 
@@ -93,6 +95,8 @@ class ArenaGame:
             "thinking": self.status == "model_thinking",
             "last_error": self.last_error,
             "model_progress": self.model_progress,
+            "isolation_violation": self.isolation_violation,
+            "assistance_violations": list(self.assistance_violations),
             "result": self.result,
             "dests": dests,
             "promotable": promotable,
@@ -188,8 +192,19 @@ class ArenaGame:
             self._settle_or_continue(model_next=False)
             return True
         self.last_error = f"{outcome.status}: {outcome.error or 'sem detalhes'}"
+        if outcome.status == "PROVIDER_ISOLATION_VIOLATION":
+            # Security failures are permanent game-level taint: never cleared by
+            # a later clean turn, never retried, always kept in the game record.
+            self.isolation_violation = True
+            self.assistance_violations.append(
+                {
+                    "status": outcome.status,
+                    "error": outcome.error or "provider isolation violation",
+                    "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                }
+            )
         # The human moved; the model failed to answer. Play returns to the
-        # human, who can hit retry — a failed provider turn is never a move.
+        # human — a failed provider turn is never a move.
         self.status = "human_turn"
         return False
 
@@ -210,6 +225,8 @@ class ArenaGame:
             "last_error": self.last_error,
             "model_progress": self.model_progress,
             "model_note": self.model_note,
+            "isolation_violation": self.isolation_violation,
+            "assistance_violations": list(self.assistance_violations),
             "moves": [asdict(record) for record in self.moves],
             "start_fen": self.board.start_fen,
             "board_moves": list(self.board.moves),
@@ -272,6 +289,8 @@ def load_game(path: Path, call_sink: Callable[[dict[str, Any]], None] | None = N
         last_error=payload.get("last_error"),
         model_note=payload.get("model_note"),
         model_progress=payload.get("model_progress"),
+        isolation_violation=bool(payload.get("isolation_violation", False)),
+        assistance_violations=list(payload.get("assistance_violations", [])),
         call_sink=call_sink,
     )
     game.moves = [MoveRecord(**record) for record in payload.get("moves", [])]

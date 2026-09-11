@@ -32,6 +32,19 @@ NATIVE_EXECUTION_TYPES = frozenset(
         "server_tool_use",
         "web_search_tool_result",
         "code_execution_tool_result",
+        # Codex CLI serializes some native activity as top-level events instead
+        # of item.* envelopes; a covered envelope must not hide them.
+        "exec_command_begin",
+        "exec_command_end",
+        "custom_tool_call",
+        "dynamic_tool_call_request",
+        "dynamic_tool_call_response",
+        "hook_started",
+        "hook_completed",
+        "patch_apply_begin",
+        "patch_apply_end",
+        "unified_exec_startup",
+        "unified_exec_interaction",
     }
 )
 

@@ -132,152 +132,152 @@ NEUTRAL_DIRECTIVE = """        directive: >-
 
 ARM_CONFIGS = {
     # ZGX-02: N0 (no preload, no inline) vs N1 (preload, no inline)
-    "zgx02-a": dict(
-        rounds=4,
-        preload=False,
-        preload_expand=0,
-        inline=False,
-        max_tokens=8192,
-        comment="controle N0: raiz por board_observe, expand SEM pacote-filho.",
-    ),
-    "zgx02-b": dict(
-        rounds=4,
-        preload=True,
-        preload_expand=0,
-        inline=False,
-        max_tokens=8192,
-        comment="tratamento N1: raiz pré-carregada no request inicial.",
-    ),
+    "zgx02-a": {
+        "rounds": 4,
+        "preload": False,
+        "preload_expand": 0,
+        "inline": False,
+        "max_tokens": 8192,
+        "comment": "controle N0: raiz por board_observe, expand SEM pacote-filho.",
+    },
+    "zgx02-b": {
+        "rounds": 4,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": False,
+        "max_tokens": 8192,
+        "comment": "tratamento N1: raiz pré-carregada no request inicial.",
+    },
     # ZGX-03: N1 vs N2 (inline child package)
-    "zgx03-a": dict(
-        rounds=4,
-        preload=True,
-        preload_expand=0,
-        inline=False,
-        max_tokens=8192,
-        comment="controle N1: expand devolve só referência do filho.",
-    ),
-    "zgx03-b": dict(
-        rounds=4,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        comment="tratamento N2: expand devolve o pacote-filho inline.",
-    ),
+    "zgx03-a": {
+        "rounds": 4,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": False,
+        "max_tokens": 8192,
+        "comment": "controle N1: expand devolve só referência do filho.",
+    },
+    "zgx03-b": {
+        "rounds": 4,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "comment": "tratamento N2: expand devolve o pacote-filho inline.",
+    },
     # ZGX-01: RICH1 vs N6
-    "zgx01-a": dict(
-        rounds=1,
-        preload=True,
-        preload_expand=4,
-        inline=True,
-        max_tokens=32768,
-        comment="RICH1: UMA chamada (32k) com raiz + 4 expansões pré-carregadas.",
-    ),
-    "zgx01-b": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        comment="N6: até seis chamadas investigativas com pacote-filho inline.",
-    ),
+    "zgx01-a": {
+        "rounds": 1,
+        "preload": True,
+        "preload_expand": 4,
+        "inline": True,
+        "max_tokens": 32768,
+        "comment": "RICH1: UMA chamada (32k) com raiz + 4 expansões pré-carregadas.",
+    },
+    "zgx01-b": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "comment": "N6: até seis chamadas investigativas com pacote-filho inline.",
+    },
     # ZGX-12..16: N6 neutral vs N6 + procedure directive
-    "zgx12-a": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE,
-        comment="controle N6 prompt neutro.",
-    ),
-    "zgx12-b": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE
+    "zgx12-a": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE,
+        "comment": "controle N6 prompt neutro.",
+    },
+    "zgx12-b": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE
         + """          PROCEDURE (conditional priorities): before preferring castling,
           development or a capture, check whether a concrete urgency exists
           (check, mate threat, a capture against your piece). A capture is a
           candidate, never an absolute priority. A forcing reply must be
           examined, not automatically chosen.
 """,
-        comment="tratamento: prioridades condicionais em vez de slogans.",
-    ),
-    "zgx13-a": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE,
-        comment="controle N6 prompt neutro.",
-    ),
-    "zgx13-b": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE
+        "comment": "tratamento: prioridades condicionais em vez de slogans.",
+    },
+    "zgx13-a": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE,
+        "comment": "controle N6 prompt neutro.",
+    },
+    "zgx13-b": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE
         + """          PROCEDURE (capture verification): if a capture is among your
           finalists, expand it and examine ONE concrete adversary reply in the
           child state before keeping it as the choice. The obvious recapture
           is a hypothesis; also look for the strongest intermediate reply. Do
           not declare safety from the captured piece's value alone.
 """,
-        comment="tratamento: recaptura verificada antes de aceitar captura.",
-    ),
-    "zgx15-a": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE,
-        comment="controle N6 prompt neutro.",
-    ),
-    "zgx15-b": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE
+        "comment": "tratamento: recaptura verificada antes de aceitar captura.",
+    },
+    "zgx15-a": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE,
+        "comment": "controle N6 prompt neutro.",
+    },
+    "zgx15-b": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE
         + """          PROCEDURE (adversarial pass): reserve one investigation to examine
           the child position AS THE ADVERSARY: find a concrete reply that
           makes your previous choice bad. Do not confirm the plan out of
           politeness.
 """,
-        comment="tratamento: rodada explícita do ponto de vista adversário.",
-    ),
-    "zgx16-a": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE,
-        comment="controle N6 prompt neutro.",
-    ),
-    "zgx16-b": dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE
+        "comment": "tratamento: rodada explícita do ponto de vista adversário.",
+    },
+    "zgx16-a": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE,
+        "comment": "controle N6 prompt neutro.",
+    },
+    "zgx16-b": {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE
         + """          PROCEDURE (king safety): before finalizing, look for the most
           dangerous immediate objection AGAINST YOUR KING after the candidate
           move (a check or mate reply). If one is plausible, execute that line
           in the sandbox before deciding. Separate an already-lost position
           from an avoidable immediate mate.
 """,
-        comment="tratamento: checagem de segurança do rei antes de finalizar.",
-    ),
+        "comment": "tratamento: checagem de segurança do rei antes de finalizar.",
+    },
 }
 
 SF_OPPONENT = """        plugin: chess.stockfish
@@ -435,15 +435,15 @@ def main() -> None:
         ab = "AB" if idx % 2 == 0 else "BA"
         order = (("a", "M0"), ("b", "M2")) if ab == "AB" else (("b", "M2"), ("a", "M0"))
         for side, label in order:
-            arm = dict(
-                rounds=6,
-                preload=True,
-                preload_expand=0,
-                inline=True,
-                max_tokens=8192,
-                directive=NEUTRAL_DIRECTIVE,
-                comment=f"T6 {label}: episódio de 4 decisões do Muse vs SF congelado.",
-            )
+            arm = {
+                "rounds": 6,
+                "preload": True,
+                "preload_expand": 0,
+                "inline": True,
+                "max_tokens": 8192,
+                "directive": NEUTRAL_DIRECTIVE,
+                "comment": f"T6 {label}: episódio de 4 decisões do Muse vs SF congelado.",
+            }
             cognitive = cognitive_block(arm)
             if side == "a":
                 # M0: no reinjection at all
@@ -477,20 +477,20 @@ def main() -> None:
             queue.append(f"{name}.yaml")
 
     # preflight (<=16 calls): N2 config + grandchild directive on a tactical position
-    arm = dict(
-        rounds=6,
-        preload=True,
-        preload_expand=0,
-        inline=True,
-        max_tokens=8192,
-        directive=NEUTRAL_DIRECTIVE
+    arm = {
+        "rounds": 6,
+        "preload": True,
+        "preload_expand": 0,
+        "inline": True,
+        "max_tokens": 8192,
+        "directive": NEUTRAL_DIRECTIVE
         + """          DIRECTED PREFLIGHT: (1) expand your main candidate at the root;
           (2) from the child package, expand the adversary's strongest reply
           (a grandchild); (3) then finalize on the ROOT node. This is a
           mechanism check, not a game.
 """,
-        comment="preflight ≤16 calls: rota, tool, filho, neto, causal, finalize raiz.",
-    )
+        "comment": "preflight ≤16 calls: rota, tool, filho, neto, causal, finalize raiz.",
+    }
     pos = S12[2]  # K4: capture position
     task = s12_task(pos.pid, pos, arm)
     name = "zgx-preflight"

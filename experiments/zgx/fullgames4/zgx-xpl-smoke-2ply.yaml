@@ -1,0 +1,80 @@
+# ZGW-0106 G2 — smoke 2-ply: DeepSeek v4 Flash (Experiential) de brancas vs
+# Stockfish 1320 de pretas, max_plies 2. Prova o wiring provider.experiential_labs
+# de ponta a ponta antes das 3 full games.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx-xpl-smoke-2ply
+  tags: [zgx, xpl, smoke, real, stockfish1320]
+
+spec:
+  seed: 20260908
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 2
+      backend_config:
+        base_url: https://api.experientiallabs.ai/v1
+        api_key: env:ZGW_XPL_API_KEY
+        timeout_seconds: 180
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 4
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: >-
+          OPENING SMOKE: observe the root, expand one legal developing move
+          (e2e4, d2d4, g1f3 or c2c4 preferred), then finalize it on ROOT via
+          board_finalize. Do not explore deep lines; this is a connectivity
+          check, not a full game.
+
+  players:
+    white:
+      model:
+        backend: provider.experiential_labs
+        provider: experiential-cloud
+        model: deepseek-v4-flash
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 60
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

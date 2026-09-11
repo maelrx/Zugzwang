@@ -19,6 +19,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from zugzwang_chess.replay import replay_positions
+
 from .loop import DEFAULT_DIRECTIVE, DecisionOutcome
 from .positions import BoardFacade
 
@@ -47,6 +49,7 @@ class ArenaGame:
     result: dict[str, Any] | None = None
     last_error: str | None = None
     model_note: dict[str, Any] | None = None
+    model_progress: dict[str, Any] | None = None
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
     call_sink: Callable[[dict[str, Any]], None] | None = field(default=None, repr=False)
 
@@ -68,7 +71,12 @@ class ArenaGame:
     def to_state(self, *, include_dests: bool = True) -> dict[str, Any]:
         dests: dict[str, list[str]] | None = None
         promotable: list[str] | None = None
-        if include_dests and self.status == "human_turn" and not self.board.terminal:
+        if (
+            include_dests
+            and self.status == "human_turn"
+            and self.board.turn == self.human_color
+            and not self.board.terminal
+        ):
             dests, promotable = self.board.dests()
         return {
             "id": self.game_id,
@@ -84,10 +92,12 @@ class ArenaGame:
             "moves": [asdict(record) for record in self.moves],
             "thinking": self.status == "model_thinking",
             "last_error": self.last_error,
+            "model_progress": self.model_progress,
             "result": self.result,
             "dests": dests,
             "promotable": promotable,
             "directive_default": DEFAULT_DIRECTIVE,
+            "positions": replay_positions(self.board.start_fen, self.board.moves),
         }
 
     def summary(self) -> dict[str, Any]:
@@ -105,7 +115,7 @@ class ArenaGame:
     # -- play ---------------------------------------------------------------------
 
     def apply_human_move(self, uci: str) -> None:
-        if self.status != "human_turn":
+        if self.status != "human_turn" or self.board.turn != self.human_color:
             raise ValueError(f"game is not awaiting a human move (status={self.status})")
         side = self.board.turn
         san = self.board.san(uci)
@@ -144,6 +154,10 @@ class ArenaGame:
 
     def record_model_outcome(self, outcome: DecisionOutcome, *, model_color: str) -> bool:
         """Persist a finished model turn; returns True when a move was played."""
+        if self.status == "finished":
+            return False
+        if self.board.turn != model_color:
+            raise ValueError("Model result does not belong to this turn")
         if outcome.status == "COMMITTED" and outcome.uci:
             side = self.board.turn
             san = self.board.san(outcome.uci)
@@ -194,6 +208,7 @@ class ArenaGame:
             "status": self.status,
             "result": self.result,
             "last_error": self.last_error,
+            "model_progress": self.model_progress,
             "model_note": self.model_note,
             "moves": [asdict(record) for record in self.moves],
             "start_fen": self.board.start_fen,
@@ -205,10 +220,11 @@ class ArenaGame:
         os.replace(tmp, target)
         self.write_pgn(directory)
 
-    def write_pgn(self, directory: Path) -> None:
+    def pgn_text(self) -> str:
         import chess.pgn
 
         game = chess.pgn.Game()
+        game.setup(chess.Board(self.board.start_fen))
         game.headers["Event"] = "Arena ZGW-0108 (non-canonical)"
         game.headers["Site"] = "local"
         game.headers["Date"] = self.created_at[:10].replace("-", ".")
@@ -224,9 +240,12 @@ class ArenaGame:
                 raise ValueError(f"PGN export hit an illegal move {record.uci!r}")
             node = node.add_main_variation(move)
             board.push(move)
+        return str(game)
+
+    def write_pgn(self, directory: Path) -> None:
         target = directory / f"{self.game_id}.pgn"
         tmp = target.with_suffix(".pgn.tmp")
-        tmp.write_text(str(game), encoding="utf-8")
+        tmp.write_text(self.pgn_text(), encoding="utf-8")
         os.replace(tmp, target)
 
 
@@ -252,6 +271,7 @@ def load_game(path: Path, call_sink: Callable[[dict[str, Any]], None] | None = N
         result=payload.get("result"),
         last_error=payload.get("last_error"),
         model_note=payload.get("model_note"),
+        model_progress=payload.get("model_progress"),
         call_sink=call_sink,
     )
     game.moves = [MoveRecord(**record) for record in payload.get("moves", [])]
@@ -259,6 +279,9 @@ def load_game(path: Path, call_sink: Callable[[dict[str, Any]], None] | None = N
     # human: no ghost "thinking" state survives a restart.
     if game.status == "model_thinking":
         game.status = "human_turn"
+        if game.model_progress:
+            game.model_progress["status"] = "interrupted"
+            game.model_progress["finished_at"] = time.time()
     return game
 
 

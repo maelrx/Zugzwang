@@ -1,0 +1,524 @@
+{
+  "schema": "zugzwang.arena-game/v1",
+  "id": "arena-20260909-032432-3834",
+  "created_at": "2026-09-09T03:24:32",
+  "setup": {
+    "provider": "codex-cli",
+    "service_tier": "fast",
+    "model": "gpt-5.6-luna",
+    "effort": "high",
+    "human_color": "white",
+    "max_rounds": 8,
+    "ascii": false,
+    "history_plies": 12,
+    "directive": null,
+    "timeout_seconds": 180.0
+  },
+  "status": "model_thinking",
+  "result": null,
+  "last_error": null,
+  "model_progress": {
+    "turn_id": "7d50dbbdbd4a4a509b936511c6ac7a6a",
+    "started_at": 1788936208.45623,
+    "finished_at": 1788936429.2071524,
+    "status": "completed",
+    "phase": "completed",
+    "round": 2,
+    "max_rounds": 8,
+    "streaming": true,
+    "summaries": [
+      {
+        "id": "1:item_1",
+        "round": 1,
+        "text": "**Planning move selection and command formatting**\n**Analyzing position and candidate black moves**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_2",
+        "round": 1,
+        "text": "**Analyzing tactical possibility Nxe4**\n**Evaluating central pawn push d5**\n**Verifying legal candidate actions**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_3",
+        "round": 1,
+        "text": "**Planning board expansion with Nxe4**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_5",
+        "round": 1,
+        "text": "**Clarifying tool call execution method**\n**Confirming JSON command usage for tool calls**\n**Analyzing chess position and candidate moves**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_6",
+        "round": 1,
+        "text": "**Analyzing d5 zwischenzug tactic**\n**Evaluating central pawn break d5**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_7",
+        "round": 1,
+        "text": "**Analyzing tactical exchange in opening**\n**Planning engine analysis setup**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_9",
+        "round": 1,
+        "text": "**Planning Stockfish analysis with current FEN**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_11",
+        "round": 1,
+        "text": "**Testing Stockfish with depth 12**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_13",
+        "round": 1,
+        "text": "**Investigating missing Stockfish output**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_15",
+        "round": 1,
+        "text": "**Analyzing Python subprocess deadlock**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_17",
+        "round": 1,
+        "text": "**Analyzing material imbalance causing score disparity**\n**Evaluating best black moves after material loss**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "1:item_19",
+        "round": 1,
+        "text": "**Planning command output strategy**\n**Deciding to output final JSON command**\n**Preparing direct final command output**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_1",
+        "round": 2,
+        "text": "**Analyzing inconsistent FEN and moves**\n**Planning JSON tool call for move**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_3",
+        "round": 2,
+        "text": "**Evaluating knight capture tactics**\n**Analyzing black pawn d5 advance**\n**Confirming legal move retrieval method**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_4",
+        "round": 2,
+        "text": "**Testing assistant recipient for board_expand**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_5",
+        "round": 2,
+        "text": "**Planning JSON command execution**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_6",
+        "round": 2,
+        "text": "**Deciding tool call syntax for board_expand**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_7",
+        "round": 2,
+        "text": "**Planning direct JSON output**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_9",
+        "round": 2,
+        "text": "**Planning final board_finalize call**\n**Deciding correct JSON command output format**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_11",
+        "round": 2,
+        "text": "**Analyzing chess move choices deeply**\n**Reconstructing chess move history and material balance**\n**Assessing black's d5 pawn push potential**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_12",
+        "round": 2,
+        "text": "**Analyzing Italian Game pawn exchanges**\n**Evaluating material imbalance and tactical options**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_13",
+        "round": 2,
+        "text": "**Analyzing black's 11th move options**\n**Planning Stockfish evaluation integration**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_15",
+        "round": 2,
+        "text": "**Planning stockfish communication via shell pipe**\n**Confirming pipe usage without chaining separators**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_18",
+        "round": 2,
+        "text": "**Verifying Stockfish d5 variation**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_20",
+        "round": 2,
+        "text": "**Planning Stockfish move time usage**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_22",
+        "round": 2,
+        "text": "**Correcting board_expand action_ids usage**\n**Planning direct tool command formatting**",
+        "source": "codex-cli"
+      },
+      {
+        "id": "2:item_23",
+        "round": 2,
+        "text": "**Preparing final board finalization command**",
+        "source": "codex-cli"
+      }
+    ],
+    "steps": [
+      {
+        "kind": "preparing",
+        "round": 0,
+        "tool": null,
+        "ok": null
+      },
+      {
+        "kind": "waiting",
+        "round": 1,
+        "tool": null,
+        "ok": null
+      },
+      {
+        "kind": "received",
+        "round": 1,
+        "tool": null,
+        "ok": null
+      },
+      {
+        "kind": "tool",
+        "round": 1,
+        "tool": "board_expand",
+        "ok": false
+      },
+      {
+        "kind": "waiting",
+        "round": 2,
+        "tool": null,
+        "ok": null
+      },
+      {
+        "kind": "received",
+        "round": 2,
+        "tool": null,
+        "ok": null
+      },
+      {
+        "kind": "selected",
+        "round": 2,
+        "tool": null,
+        "ok": null
+      }
+    ]
+  },
+  "model_note": {
+    "fen": "r1bq1rk1/ppp2pp1/5n1p/3p4/2BNP3/2NP4/PPP3PP/R2Q1RK1 w - - 0 12",
+    "my_move": "d5",
+    "hypothesis": "{\"command\":\"board_finalize\",\"arguments\":{\"node_id\":\"n0\",\"action_id\":\"action_id:v2:82234a838c62b43f67e05439730871d20df8ed6ba770003851d1b59b2cda52c5\"}}"
+  },
+  "moves": [
+    {
+      "ply": 1,
+      "side": "white",
+      "actor": "human",
+      "uci": "e2e4",
+      "san": "e4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 2,
+      "side": "black",
+      "actor": "model",
+      "uci": "e7e5",
+      "san": "e5",
+      "latency_ms": 27622,
+      "tokens_out": 779,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 3,
+      "side": "white",
+      "actor": "human",
+      "uci": "g1f3",
+      "san": "Nf3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 4,
+      "side": "black",
+      "actor": "model",
+      "uci": "b8c6",
+      "san": "Nc6",
+      "latency_ms": 29040,
+      "tokens_out": 1028,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 5,
+      "side": "white",
+      "actor": "human",
+      "uci": "f1c4",
+      "san": "Bc4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 6,
+      "side": "black",
+      "actor": "model",
+      "uci": "g8f6",
+      "san": "Nf6",
+      "latency_ms": 24374,
+      "tokens_out": 1032,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 7,
+      "side": "white",
+      "actor": "human",
+      "uci": "b1c3",
+      "san": "Nc3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 8,
+      "side": "black",
+      "actor": "model",
+      "uci": "f8c5",
+      "san": "Bc5",
+      "latency_ms": 27753,
+      "tokens_out": 1055,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 9,
+      "side": "white",
+      "actor": "human",
+      "uci": "e1g1",
+      "san": "O-O",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 10,
+      "side": "black",
+      "actor": "model",
+      "uci": "d7d6",
+      "san": "d6",
+      "latency_ms": 159743,
+      "tokens_out": 6371,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 11,
+      "side": "white",
+      "actor": "human",
+      "uci": "d2d3",
+      "san": "d3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 12,
+      "side": "black",
+      "actor": "model",
+      "uci": "e8g8",
+      "san": "O-O",
+      "latency_ms": 36421,
+      "tokens_out": 1420,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 13,
+      "side": "white",
+      "actor": "human",
+      "uci": "c1g5",
+      "san": "Bg5",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 14,
+      "side": "black",
+      "actor": "model",
+      "uci": "h7h6",
+      "san": "h6",
+      "latency_ms": 34127,
+      "tokens_out": 1548,
+      "rounds": 3,
+      "error": null
+    },
+    {
+      "ply": 15,
+      "side": "white",
+      "actor": "human",
+      "uci": "g5e3",
+      "san": "Be3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 16,
+      "side": "black",
+      "actor": "model",
+      "uci": "c5e3",
+      "san": "Bxe3",
+      "latency_ms": 80489,
+      "tokens_out": 3916,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 17,
+      "side": "white",
+      "actor": "human",
+      "uci": "f2e3",
+      "san": "fxe3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 18,
+      "side": "black",
+      "actor": "model",
+      "uci": "c6d4",
+      "san": "Nd4",
+      "latency_ms": 87531,
+      "tokens_out": 4400,
+      "rounds": 2,
+      "error": null
+    },
+    {
+      "ply": 19,
+      "side": "white",
+      "actor": "human",
+      "uci": "e3d4",
+      "san": "exd4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 20,
+      "side": "black",
+      "actor": "model",
+      "uci": "e5d4",
+      "san": "exd4",
+      "latency_ms": 107626,
+      "tokens_out": 5335,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 21,
+      "side": "white",
+      "actor": "human",
+      "uci": "f3d4",
+      "san": "Nxd4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 22,
+      "side": "black",
+      "actor": "model",
+      "uci": "d6d5",
+      "san": "d5",
+      "latency_ms": 128356,
+      "tokens_out": 4061,
+      "rounds": 2,
+      "error": null
+    },
+    {
+      "ply": 23,
+      "side": "white",
+      "actor": "human",
+      "uci": "c3d5",
+      "san": "Nxd5",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    }
+  ],
+  "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "board_moves": [
+    "e2e4",
+    "e7e5",
+    "g1f3",
+    "b8c6",
+    "f1c4",
+    "g8f6",
+    "b1c3",
+    "f8c5",
+    "e1g1",
+    "d7d6",
+    "d2d3",
+    "e8g8",
+    "c1g5",
+    "h7h6",
+    "g5e3",
+    "c5e3",
+    "f2e3",
+    "c6d4",
+    "e3d4",
+    "e5d4",
+    "f3d4",
+    "d6d5",
+    "c3d5"
+  ]
+}

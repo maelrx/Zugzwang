@@ -1,0 +1,87 @@
+# ZGW-0106 G3 — full game 1/3: DeepSeek v4 Flash (Experiential) de brancas vs
+# Stockfish 1320, sem limite de plies, até o fim.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx-xpl-full-01
+  tags: [zgx, xpl, fullgame, real, stockfish1320]
+
+spec:
+  seed: 202609081
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      backend_config:
+        base_url: https://api.experientiallabs.ai/v1
+        api_key: env:ZGW_XPL_API_KEY
+        timeout_seconds: 180
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: >-
+          TACTICAL GUARDIAN: (1) List every check, capture and threat available
+          to you NOW. (2) For each candidate move, expand the position and find
+          the adversary's BEST reply before trusting it — a move is safe only if
+          the best reply does not win material or deliver checkmate.
+          (3) ANTI-HANG CHECK, MANDATORY: before finalizing, verify your moved
+          piece's destination square is not attacked by any lower-value or
+          equal adversary piece, and that no adversary check follows your move.
+          (4) Keep king safety: do not weaken pawns in front of your king and
+          do not walk the king without purpose. (5) Maintain the factual memory
+          of your previous move and its outcome. Finalize ONLY after steps 1-3
+          on ROOT via board_finalize. You have six rounds: use them to verify
+          the adversary's best reply before committing.
+
+  players:
+    white:
+      model:
+        backend: provider.experiential_labs
+        provider: experiential-cloud
+        model: deepseek-v4-flash
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

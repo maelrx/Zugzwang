@@ -87,6 +87,26 @@ async def test_flattens_prompt_with_tool_protocol(tmp_path: Path) -> None:
     assert "-m" in recorded and "gpt-5.6-luna" in recorded
 
 
+async def test_service_tier_flag_present_only_when_configured(tmp_path: Path) -> None:
+    args_file = tmp_path / "args.txt"
+    exe = _write_fake_codex(
+        tmp_path, f"printf '%s\\n' \"$@\" > \"{args_file}\"\ncat <<'JSONL'\n{CANNED_EVENTS}JSONL\n"
+    )
+    backend = CodexCliBackend(executable=exe, service_tier="fast")
+    await _infer(backend)
+    recorded = args_file.read_text(encoding="utf-8")
+    assert "-c" in recorded and "service_tier=fast" in recorded
+
+    args_default = tmp_path / "args-default.txt"
+    exe_default = _write_fake_codex(
+        tmp_path,
+        f"printf '%s\\n' \"$@\" > \"{args_default}\"\ncat <<'JSONL'\n{CANNED_EVENTS}JSONL\n",
+    )
+    backend_default = CodexCliBackend(executable=exe_default)
+    await _infer(backend_default)
+    assert "service_tier" not in args_default.read_text(encoding="utf-8")
+
+
 async def test_parses_agent_message_usage_and_tool_calls(tmp_path: Path) -> None:
     exe = _write_fake_codex(tmp_path, f"cat <<'JSONL'\n{CANNED_EVENTS}JSONL\n")
     backend = CodexCliBackend(executable=exe)

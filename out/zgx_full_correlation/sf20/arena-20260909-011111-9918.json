@@ -1,0 +1,150 @@
+{
+ "source_pgn": "../arena/arena-20260909-011111-9918.pgn",
+ "engine": "stockfish-16",
+ "depth": 20,
+ "games": [
+  {
+   "headers": {
+    "Event": "Arena ZGW-0108 (non-canonical)",
+    "Site": "local",
+    "Date": "2026.09.09",
+    "Round": "?",
+    "White": "Humano (Mael)",
+    "Black": "gpt-5.6-luna (codex-cli)",
+    "Result": "*"
+   },
+   "result": "*",
+   "plies": 8,
+   "white": {
+    "moves": 4,
+    "acpl": 23.8,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.75
+   },
+   "black": {
+    "moves": 4,
+    "acpl": 26.0,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.5
+   },
+   "records": [
+    {
+     "ply": 1,
+     "uci": "e2e4",
+     "san": "e4",
+     "side": "white",
+     "cp_before": 32,
+     "cp_after": 37,
+     "regret": -5,
+     "best_move": "e2e4",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 2,
+     "uci": "e7e5",
+     "san": "e5",
+     "side": "black",
+     "cp_before": -32,
+     "cp_after": -26,
+     "regret": -6,
+     "best_move": "e7e5",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 3,
+     "uci": "g1f3",
+     "san": "Nf3",
+     "side": "white",
+     "cp_before": 32,
+     "cp_after": 30,
+     "regret": 2,
+     "best_move": "g1f3",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 4,
+     "uci": "g8f6",
+     "san": "Nf6",
+     "side": "black",
+     "cp_before": -18,
+     "cp_after": -36,
+     "regret": 18,
+     "best_move": "b8c6",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 5,
+     "uci": "f1c4",
+     "san": "Bc4",
+     "side": "white",
+     "cp_before": 26,
+     "cp_after": -59,
+     "regret": 85,
+     "best_move": "f3e5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 6,
+     "uci": "f6e4",
+     "san": "Nxe4",
+     "side": "black",
+     "cp_before": 54,
+     "cp_after": 44,
+     "regret": 10,
+     "best_move": "f6e4",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 7,
+     "uci": "d2d3",
+     "san": "d3",
+     "side": "white",
+     "cp_before": -48,
+     "cp_after": -56,
+     "regret": 8,
+     "best_move": "d2d3",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 8,
+     "uci": "d7d5",
+     "san": "d5",
+     "side": "black",
+     "cp_before": 62,
+     "cp_after": -14,
+     "regret": 76,
+     "best_move": "e4c5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    }
+   ],
+   "eval_trajectory_white_pov": [
+    37,
+    26,
+    30,
+    36,
+    -59,
+    -44,
+    -56,
+    14
+   ]
+  }
+ ]
+}

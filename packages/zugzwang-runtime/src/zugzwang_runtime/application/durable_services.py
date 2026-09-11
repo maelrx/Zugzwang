@@ -585,9 +585,7 @@ class DurableRunServices:
                 from ..security import resolve_secret
 
                 return ZCodeGlmBackend(
-                    base_url=str(
-                        backend_config.get("base_url", "http://127.0.0.1:8787/anthropic")
-                    ),
+                    base_url=str(backend_config.get("base_url", "http://127.0.0.1:8787/anthropic")),
                     api_key=resolve_secret(
                         str(backend_config["api_key"]) if backend_config.get("api_key") else None
                     ),
@@ -666,6 +664,11 @@ class DurableRunServices:
                         if backend_config.get("reasoning_effort")
                         else None
                     ),
+                    service_tier=(
+                        str(backend_config["service_tier"])
+                        if backend_config.get("service_tier")
+                        else None
+                    ),
                     max_output_tokens=(
                         int(backend_config["max_output_tokens"])
                         if backend_config.get("max_output_tokens")
@@ -674,6 +677,30 @@ class DurableRunServices:
                     single_flight_lock=(
                         str(backend_config["single_flight_lock"])
                         if backend_config.get("single_flight_lock")
+                        else None
+                    ),
+                )
+            if backend_id == "provider.experiential_labs":
+                from zgw_provider_experiential_labs.adapter import ExperientialLabsBackend
+
+                from ..security import resolve_secret
+
+                return ExperientialLabsBackend(
+                    base_url=str(
+                        backend_config.get("base_url", "https://api.experientiallabs.ai/v1")
+                    ),
+                    api_key=resolve_secret(
+                        str(backend_config["api_key"]) if backend_config.get("api_key") else None
+                    ),
+                    timeout_seconds=float(backend_config.get("timeout_seconds", 120) or 120),
+                    reasoning_effort=(
+                        str(backend_config["reasoning_effort"])
+                        if backend_config.get("reasoning_effort")
+                        else None
+                    ),
+                    default_max_output_tokens=(
+                        int(backend_config["default_max_output_tokens"])
+                        if backend_config.get("default_max_output_tokens")
                         else None
                     ),
                 )

@@ -40,6 +40,10 @@ class ProviderOption:
     def catalog(self) -> dict[str, Any]:
         return {
             "id": self.provider_id,
+            "available": self.provider_id != "antigravity-cli",
+            "unavailable_reason": "Bloqueado: o CLI não oferece isolamento de ferramentas verificável."
+            if self.provider_id == "antigravity-cli"
+            else None,
             "backend_id": self.backend_id,
             "label": self.label,
             "validated": self.validated,
@@ -79,6 +83,7 @@ def _codex_factory(**config: Any) -> Any:
 
     return CodexCliBackend(
         model=str(config.get("model") or "gpt-6-astra"),
+        service_tier=config.get("service_tier"),
         executable=str(config["executable"]) if config.get("executable") else None,
         timeout_seconds=float(config.get("timeout_seconds") or 300),
         reasoning_effort=str(config["reasoning_effort"])
@@ -149,6 +154,7 @@ REGISTRY: dict[str, ProviderOption] = {
                 {
                     "id": "gpt-5.6-luna",
                     "label": "gpt-5.6-luna",
+                    "service_tiers": ["fast"],
                     "validated": False,
                     "default": False,
                 },
@@ -166,16 +172,32 @@ def providers_catalog() -> list[dict[str, Any]]:
     return [entry.catalog() for entry in REGISTRY.values()]
 
 
+def validate_service_tier(provider_id: str, model: str | None, tier: Any) -> str | None:
+    if tier is None or tier == "":
+        return None
+    if tier != "fast" or provider_id != "codex-cli" or model != "gpt-5.6-luna":
+        raise ValueError("O modo Fast está disponível apenas para o GPT-5.6 Luna.")
+    return "fast"
+
+
 def build_backend(
-    provider_id: str, *, model: str | None, effort: str | None, timeout_seconds: float | None = None
+    provider_id: str,
+    *,
+    model: str | None,
+    effort: str | None,
+    timeout_seconds: float | None = None,
+    service_tier: str | None = None,
 ) -> Any:
     option = REGISTRY.get(provider_id)
     if option is None:
         raise KeyError(f"unknown provider {provider_id!r}")
+    tier = validate_service_tier(provider_id, model, service_tier)
     config: dict[str, Any] = {
         "model": model or _default_model(option.models),
         "reasoning_effort": effort or option.default_effort,
     }
+    if tier:
+        config["service_tier"] = tier
     if timeout_seconds:
         config["timeout_seconds"] = timeout_seconds
     return option.factory(**config)

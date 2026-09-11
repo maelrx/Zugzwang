@@ -1,0 +1,9 @@
+[Event "zgx-gemini-01-tactical-memory-v2"]
+[Site "Zugzwang Local"]
+[Date "2026.09.08"]
+[Round "1"]
+[White "gemini-3.8-flash-low"]
+[Black "Stockfish 16 (1320)"]
+[Result "1-0"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 a6 5. Qg4 Ne7 6. Qxg7 Kd7 7. Qxf7 Rf8 8. Qxh7 Nc6 9. Bg5 Qe8 10. Ne2 Rf7 11. Qh3 Qg8 12. Bf6 Rh7 13. Qd3 Rb8 14. O-O-O Rf7 15. Nf4 Rxf6 16. exf6 Bxc3 17. Qxc3 Qf8 18. fxe7 Qf6 19. Nxd5 Qh4 20. e8=Q+ Kxe8 21. Nxc7+ Kd7 22. d5 Qh6+ 23. Kb1 Kxc7 24. d6+ Kd8 25. Bd3 Ra8 26. Qc5 Kd7 27. Qb6 Qf6 28. Qc7+ Ke8 29. d7+ Bxd7 30. Bb5 Qf7 31. Qxb7 Ra7 32. Rxd7 Qxd7 33. Bxc6 Kd8 34. Qb8+ Qc8 35. Rd1+ Ke7 36. Qxc8 Kf6 37. Qf8+ Kg5 38. Qg8+ Kf6 39. Qf8+ Kg6 40. Be8+ Kh7 41. Rd3 Rc7 42. Rh3# 1-0

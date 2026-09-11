@@ -1,0 +1,77 @@
+# Gemini smoke — 2-ply real game to validate provider.antigravity_cli with gemini-3.8-flash-low end-to-end
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx-gemini-smoke-2ply
+  tags: [zgx, gemini, agy, smoke, real, flash-low]
+
+spec:
+  seed: 20260914
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 2
+      backend_config:
+        provider_id: antigravity-cli
+        model: gemini-3.8-flash-low
+        timeout_seconds: 120
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: >-
+          TACTICAL GUARDIAN (smoke): choose the best opening move. List checks,
+          captures and threats, verify the adversary's best reply does not win
+          material, then finalize on ROOT via board_finalize.
+
+  players:
+    white:
+      model:
+        backend: provider.antigravity_cli
+        provider: antigravity-cli
+        model: gemini-3.8-flash-low
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 12, notation: uci}
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+
+  budget:
+    max_calls: 50
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

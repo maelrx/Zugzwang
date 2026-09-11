@@ -1,0 +1,9 @@
+[Event "zgx-luna-05-tactical-memory"]
+[Site "Zugzwang Local"]
+[Date "2026.09.08"]
+[Round "5"]
+[White "gpt-5.6-luna (high)"]
+[Black "Stockfish 16 (1320)"]
+[Result "1-0"]
+
+1. e4 Nf6 2. e5 Nd5 3. c4 Nb4 4. a3 d6 5. axb4 dxe5 6. d4 Nc6 7. dxe5 Qxd1+ 8. Kxd1 Bf5 9. b3 O-O-O+ 10. Nd2 g6 11. f3 Bg7 12. f4 Nxb4 13. Rxa7 f6 14. g3 Kb8 15. Ra4 Bg4+ 16. Ke1 Na6 17. Ngf3 Nc5 18. Ra2 fxe5 19. Bb2 Bxf3 20. Nxf3 Rd3 21. Bxd3 Rd8 22. Bc2 Na6 23. fxe5 e6 24. Bc3 Kc8 25. Ng5 Kd7 26. Rf1 h6 27. Rf7+ Kc6 28. Rxa6+ bxa6 29. Nxe6 Rd7 30. Be4+ Kb6 31. Rxd7 g5 32. Rxg7 c5 33. Rb7# 1-0

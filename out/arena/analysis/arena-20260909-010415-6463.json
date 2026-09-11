@@ -1,0 +1,169 @@
+{
+  "schema": "zugzwang.arena-analysis/v1",
+  "game_id": "arena-20260909-010415-6463",
+  "fingerprint": "a45e946d2f31613c6ccc9f4f6938fd380336274b60c02f18d4618ff7339353b0",
+  "source": {
+    "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "moves": [
+      "e2e4",
+      "e7e5",
+      "g1f3",
+      "b8c6"
+    ]
+  },
+  "profile": {
+    "evaluator": "arena.stockfish/1.0.0",
+    "depth": 20,
+    "options": {
+      "Threads": "2",
+      "Hash": "128",
+      "UCI_LimitStrength": "false",
+      "Skill Level": "20"
+    },
+    "multipv": 1,
+    "perspective": "white",
+    "executable_sha256": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+    "code_sha256": "d19d3a63ad8c07d390bb1e3a670eb13f7713d044cabb6566670ed23fccab1f89",
+    "regime": "post_game"
+  },
+  "depth": 20,
+  "total": 5,
+  "positions": [
+    {
+      "ply": 0,
+      "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      "engine": "Stockfish 16",
+      "requested_depth": 20,
+      "depth": 20,
+      "cp_white": 23,
+      "mate_white": null,
+      "best_uci": "d2d4",
+      "best_san": "d4",
+      "pv_san": [
+        "d4",
+        "Nf6",
+        "c4",
+        "e6",
+        "Nc3",
+        "Bb4",
+        "Nf3",
+        "c5",
+        "Bd2",
+        "d5",
+        "a3",
+        "Bxc3"
+      ]
+    },
+    {
+      "ply": 1,
+      "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      "engine": "Stockfish 16",
+      "requested_depth": 20,
+      "depth": 20,
+      "cp_white": 28,
+      "mate_white": null,
+      "best_uci": "e7e5",
+      "best_san": "e5",
+      "pv_san": [
+        "e5",
+        "Nf3",
+        "Nc6",
+        "Bb5",
+        "Nf6",
+        "O-O",
+        "Nxe4",
+        "Re1",
+        "Nd6",
+        "Nxe5",
+        "Be7",
+        "Bf1"
+      ]
+    },
+    {
+      "ply": 2,
+      "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "engine": "Stockfish 16",
+      "requested_depth": 20,
+      "depth": 20,
+      "cp_white": 26,
+      "mate_white": null,
+      "best_uci": "g1f3",
+      "best_san": "Nf3",
+      "pv_san": [
+        "Nf3",
+        "Nc6",
+        "Bb5",
+        "Nf6",
+        "O-O",
+        "Nxe4",
+        "Re1",
+        "Nd6",
+        "Bf1",
+        "Be7",
+        "Nxe5",
+        "Nxe5"
+      ]
+    },
+    {
+      "ply": 3,
+      "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+      "engine": "Stockfish 16",
+      "requested_depth": 20,
+      "depth": 20,
+      "cp_white": 26,
+      "mate_white": null,
+      "best_uci": "b8c6",
+      "best_san": "Nc6",
+      "pv_san": [
+        "Nc6",
+        "Bb5",
+        "Nf6",
+        "O-O",
+        "Nxe4",
+        "Re1",
+        "Nd6",
+        "Bf1",
+        "Be7",
+        "Nxe5",
+        "Nxe5",
+        "Rxe5"
+      ]
+    },
+    {
+      "ply": 4,
+      "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+      "engine": "Stockfish 16",
+      "requested_depth": 20,
+      "depth": 20,
+      "cp_white": 24,
+      "mate_white": null,
+      "best_uci": "f1b5",
+      "best_san": "Bb5",
+      "pv_san": [
+        "Bb5",
+        "Nf6",
+        "O-O",
+        "Nxe4",
+        "Re1",
+        "Nd6",
+        "Bf1",
+        "Be7",
+        "Nxe5",
+        "Nxe5",
+        "Rxe5",
+        "O-O"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "started_at": "2026-09-09T04:40:30.632645+00:00",
+      "status": "complete",
+      "finished_at": "2026-09-09T04:40:33.625789+00:00"
+    }
+  ],
+  "created_at": "2026-09-09T04:40:30.631340+00:00",
+  "status": "complete",
+  "error": null,
+  "updated_at": "2026-09-09T04:40:33.625776+00:00"
+}

@@ -1,0 +1,178 @@
+{
+ "source_pgn": "replay_pgn/zgx-opus-01-tactical-memory.pgn",
+ "engine": "stockfish-16",
+ "depth": 20,
+ "games": [
+  {
+   "headers": {
+    "Event": "replay zgx-opus-01-tactical-memory",
+    "Site": "?",
+    "Date": "????.??.??",
+    "Round": "?",
+    "White": "?",
+    "Black": "?",
+    "Result": "*"
+   },
+   "result": "*",
+   "plies": 10,
+   "white": {
+    "moves": 5,
+    "acpl": 0.4,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.6
+   },
+   "black": {
+    "moves": 5,
+    "acpl": 40.0,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.2
+   },
+   "records": [
+    {
+     "ply": 1,
+     "uci": "e2e4",
+     "san": "e4",
+     "side": "white",
+     "cp_before": 32,
+     "cp_after": 37,
+     "regret": -5,
+     "best_move": "e2e4",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 2,
+     "uci": "e7e6",
+     "san": "e6",
+     "side": "black",
+     "cp_before": -32,
+     "cp_after": -44,
+     "regret": 12,
+     "best_move": "e7e5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 3,
+     "uci": "d2d4",
+     "san": "d4",
+     "side": "white",
+     "cp_before": 34,
+     "cp_after": 38,
+     "regret": -4,
+     "best_move": "b1c3",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 4,
+     "uci": "g8f6",
+     "san": "Nf6",
+     "side": "black",
+     "cp_before": -43,
+     "cp_after": -112,
+     "regret": 69,
+     "best_move": "d7d5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 5,
+     "uci": "e4e5",
+     "san": "e5",
+     "side": "white",
+     "cp_before": 87,
+     "cp_after": 97,
+     "regret": -10,
+     "best_move": "e4e5",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 6,
+     "uci": "f6d5",
+     "san": "Nd5",
+     "side": "black",
+     "cp_before": -91,
+     "cp_after": -99,
+     "regret": 8,
+     "best_move": "f6d5",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 7,
+     "uci": "g1f3",
+     "san": "Nf3",
+     "side": "white",
+     "cp_before": 106,
+     "cp_after": 110,
+     "regret": -4,
+     "best_move": "c2c4",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 8,
+     "uci": "b8c6",
+     "san": "Nc6",
+     "side": "black",
+     "cp_before": -113,
+     "cp_after": -106,
+     "regret": -7,
+     "best_move": "d7d6",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 9,
+     "uci": "c2c4",
+     "san": "c4",
+     "side": "white",
+     "cp_before": 112,
+     "cp_after": 110,
+     "regret": 2,
+     "best_move": "c2c4",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 10,
+     "uci": "d5b4",
+     "san": "Ndb4",
+     "side": "black",
+     "cp_before": -114,
+     "cp_after": -225,
+     "regret": 111,
+     "best_move": "d5b6",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    }
+   ],
+   "eval_trajectory_white_pov": [
+    37,
+    44,
+    38,
+    112,
+    97,
+    99,
+    110,
+    106,
+    110,
+    225
+   ]
+  }
+ ]
+}

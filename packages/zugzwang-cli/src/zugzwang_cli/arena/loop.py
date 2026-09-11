@@ -13,6 +13,7 @@ from __future__ import annotations
 import contextlib
 import json
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any, cast
 
@@ -24,6 +25,7 @@ from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
     ProviderTransportError,
 )
+from zugzwang_core.domain.provider_isolation import ProviderIsolationError, reject_native_execution
 from zugzwang_core.ports.model import (
     CallContext,
     Message,
@@ -37,6 +39,7 @@ from zugzwang_core.ports.model import (
     ToolResultPart,
 )
 from zugzwang_runtime.cognition.loop import BOARD_TOOL_DEFINITIONS, FINALIZE_TOOL
+from zugzwang_runtime.execution.evidence import sanitize_wire_payload
 
 from .positions import BoardFacade
 
@@ -118,6 +121,7 @@ class ArenaDecisionLoop:
         directive: str | None = None,
         prior_note: dict[str, Any] | None = None,
         call_sink: Any = None,
+        progress_sink: Any = None,
     ) -> None:
         if max_rounds < 1:
             raise ValueError("max_rounds must be >= 1")
@@ -131,7 +135,13 @@ class ArenaDecisionLoop:
         )
         self._prior_note = prior_note if isinstance(prior_note, dict) and prior_note else None
         self._call_sink = call_sink
+        self._progress_sink = progress_sink
         self._nodes: dict[str, _Node] = {}
+
+    def _progress(self, kind: str, **details: Any) -> None:
+        if self._progress_sink is not None:
+            with contextlib.suppress(Exception):
+                self._progress_sink({"kind": kind, **details})
 
     # -- node bookkeeping ---------------------------------------------------------
 
@@ -444,6 +454,7 @@ class ArenaDecisionLoop:
         outcome = DecisionOutcome(status="RUNNING")
         protocol_errors = 0
         transcript: list[dict[str, Any]] = []
+        self._progress("preparing")
         root = self._register_root(self._board.state)
 
         # Root preload rides in the first request as a harness tool result.
@@ -468,10 +479,30 @@ class ArenaDecisionLoop:
             reserving = rounds_left <= 1
             request = self._request(ordinal, transcript)
 
+            self._progress("waiting", round=ordinal - 1)
             started = time.monotonic()
             try:
-                response: ProviderResult = await self._backend.infer(
-                    request, self._context(ordinal)
+                streamed = getattr(self._backend, "infer_with_progress", None)
+                if callable(streamed) and self._progress_sink is not None:
+                    observe = cast(
+                        "Callable[[ModelRequest, CallContext, Callable[[dict[str, Any]], None]], Awaitable[ProviderResult]]",
+                        streamed,
+                    )
+
+                    def on_summary(
+                        summary: dict[str, Any], round_number: int = ordinal - 1
+                    ) -> None:
+                        self._progress("summary", round=round_number, **summary)
+
+                    response: ProviderResult = await observe(
+                        request, self._context(ordinal), on_summary
+                    )
+                else:
+                    response = await self._backend.infer(request, self._context(ordinal))
+                reject_native_execution(response.wire_response)
+            except ProviderIsolationError as exc:
+                return self._provider_failure(
+                    outcome, ordinal, request, "provider_isolation_violation", exc, started
                 )
             except ProviderTimeoutError as exc:
                 return self._provider_failure(
@@ -487,6 +518,22 @@ class ArenaDecisionLoop:
                 )
             latency_ms = int((time.monotonic() - started) * 1000)
 
+            self._progress("received", round=ordinal - 1)
+            # Only explicitly labelled summaries; some adapters also keep raw
+            # reasoning in telemetry, so never forward the combined text field.
+            telemetry = response.reasoning_telemetry
+            if telemetry:
+                for index, item in enumerate(telemetry.reasoning_items):
+                    if item.get("type") == "reasoning_summary" and isinstance(
+                        item.get("text"), str
+                    ):
+                        self._progress(
+                            "summary",
+                            round=ordinal - 1,
+                            id=f"summary-{index}",
+                            text=item["text"],
+                            source=telemetry.provider,
+                        )
             normalized = response.response
             usage = normalized.usage
             outcome.calls.append(
@@ -512,6 +559,9 @@ class ArenaDecisionLoop:
                     if proposal is finalize:
                         break
                     executed = self._execute(proposal)
+                    self._progress(
+                        "tool", round=ordinal - 1, tool=proposal.tool, ok=bool(executed.get("ok"))
+                    )
                     transcript.append(_entry(proposal, executed, ordinal))
                     if not executed.get("ok"):
                         protocol_errors += 1
@@ -526,6 +576,7 @@ class ArenaDecisionLoop:
                         outcome.protocol_errors = protocol_errors
                         return outcome
                     continue
+                self._progress("selected", round=ordinal - 1)
                 outcome.status = "COMMITTED"
                 outcome.uci = uci
                 outcome.final_text = last_text
@@ -534,6 +585,9 @@ class ArenaDecisionLoop:
 
             for proposal in proposals:
                 executed = self._execute(proposal)
+                self._progress(
+                    "tool", round=ordinal - 1, tool=proposal.tool, ok=bool(executed.get("ok"))
+                )
                 transcript.append(_entry(proposal, executed, ordinal))
                 if not executed.get("ok"):
                     protocol_errors += 1
@@ -588,7 +642,14 @@ class ArenaDecisionLoop:
                 round_ordinal=ordinal - 1, ok=False, latency_ms=latency_ms, failure=failure_class
             )
         )
-        self._sink(ordinal, request, None, latency_ms, f"{failure_class}: {exc}")
+        self._sink(
+            ordinal,
+            request,
+            None,
+            latency_ms,
+            f"{failure_class}: {exc}",
+            failure_wire=getattr(exc, "wire_response", None),
+        )
         outcome.status = failure_class.upper()
         outcome.error = str(exc)[:300]
         return outcome
@@ -600,6 +661,7 @@ class ArenaDecisionLoop:
         response: ProviderResult | None,
         latency_ms: int,
         failure: str | None,
+        failure_wire: Any = None,
     ) -> None:
         if self._call_sink is None:
             return
@@ -624,6 +686,18 @@ class ArenaDecisionLoop:
                 else None
             ),
             "model_reported": response.response.model_reported if response is not None else None,
+            "wire_request": sanitize_wire_payload(
+                response.wire_request
+                if response is not None
+                else getattr(self._backend, "_last_wire_request", None)
+            ),
+            "wire_response": sanitize_wire_payload(
+                response.wire_response
+                if response is not None
+                else failure_wire
+                if failure_wire is not None
+                else getattr(self._backend, "_last_wire_response", None)
+            ),
         }
         # Evidence writing never breaks play.
         with contextlib.suppress(Exception):

@@ -397,6 +397,7 @@ async def test_system_only_request_gets_user_message() -> None:
 async def test_assistant_first_history_gets_user_opener() -> None:
     """Tool-loop continuations start at assistant tool_use; wire must open with user."""
     from zgw_provider_zcode_glm.adapter import ZCodeGlmBackend
+
     from zugzwang_core.ports.model import ToolCallPart, ToolResultPart
 
     captured: dict[str, object] = {}
@@ -418,17 +419,13 @@ async def test_assistant_first_history_gets_user_opener() -> None:
             Message(
                 role=MessageRole.ASSISTANT,
                 parts=(
-                    ToolCallPart(
-                        tool_call_id="call_1", tool_name="board_observe", arguments={}
-                    ),
+                    ToolCallPart(tool_call_id="call_1", tool_name="board_observe", arguments={}),
                 ),
             ),
             Message(
                 role=MessageRole.TOOL,
                 parts=(
-                    ToolResultPart(
-                        tool_call_id="call_1", tool_name="board_observe", content="fen"
-                    ),
+                    ToolResultPart(tool_call_id="call_1", tool_name="board_observe", content="fen"),
                 ),
             ),
         ),

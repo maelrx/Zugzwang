@@ -22,10 +22,13 @@ from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlparse
 
+from zugzwang_runtime.application.arena_analysis import ArenaAnalysisService
+
 from .game import ArenaGame, load_game, new_game_id
 from .loop import DEFAULT_DIRECTIVE, ArenaDecisionLoop
 from .positions import BoardFacade
-from .providers import REGISTRY, build_backend, providers_catalog
+from .progress import new_progress, project_event
+from .providers import REGISTRY, build_backend, providers_catalog, validate_service_tier
 
 DEFAULT_PORT = 4191
 DEFAULT_DIR = Path("out/arena")
@@ -39,12 +42,16 @@ class ArenaService:
         arena_dir: Path,
         *,
         backend_factory: Any = None,
+        analysis: ArenaAnalysisService | None = None,
     ) -> None:
         self.arena_dir = arena_dir
+        self.analysis = analysis
         self._backend_factory = backend_factory or build_backend
         self.games: dict[str, ArenaGame] = {}
         self._load_existing()
         self._migrate_finished_threads()
+        for game in self.games.values():
+            self._maybe_analyze(game)
 
     # -- store ------------------------------------------------------------------
 
@@ -82,6 +89,7 @@ class ArenaService:
         provider_id = str(setup.get("provider") or "antigravity-cli")
         if provider_id not in REGISTRY:
             raise KeyError(f"unknown provider {provider_id!r}")
+        tier = validate_service_tier(provider_id, setup.get("model"), setup.get("service_tier"))
         board = BoardFacade(
             start_fen=setup.get("start_fen") or None,
             ascii_enabled=bool(setup.get("ascii", False)),
@@ -92,6 +100,7 @@ class ArenaService:
             created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
             setup={
                 "provider": provider_id,
+                "service_tier": tier,
                 "model": setup.get("model"),
                 "effort": setup.get("effort"),
                 "human_color": "black" if setup.get("human_color") == "black" else "white",
@@ -116,7 +125,11 @@ class ArenaService:
     def retry_model_turn(self, game_id: str) -> ArenaGame:
         game = self._game(game_id)
         with game.lock:
-            if game.status != "human_turn" or game.board.terminal:
+            if (
+                game.status != "human_turn"
+                or game.board.terminal
+                or game.board.turn != game.model_color
+            ):
                 raise ValueError("game is not in a retryable state")
             game.status = "model_thinking"
             self._spawn_model_turn(game)
@@ -130,6 +143,7 @@ class ArenaService:
             game.dump(self.arena_dir)
             if game.status == "model_thinking":
                 self._spawn_model_turn(game)
+            self._maybe_analyze(game)
         return game
 
     def resign(self, game_id: str) -> ArenaGame:
@@ -137,6 +151,7 @@ class ArenaService:
         with game.lock:
             game.resign()
             game.dump(self.arena_dir)
+            self._maybe_analyze(game)
         return game
 
     def _game(self, game_id: str) -> ArenaGame:
@@ -145,37 +160,114 @@ class ArenaService:
             raise KeyError(game_id)
         return game
 
+    def _maybe_analyze(self, game: ArenaGame, *, retry: bool = False) -> dict[str, Any]:
+        if self.analysis is None:
+            return {"status": "unavailable", "positions": [], "depth": 20}
+        if game.status != "finished":
+            return {"status": "awaiting_finish", "positions": [], "depth": 20}
+        return self.analysis.enqueue(
+            game.game_id,
+            {"start_fen": game.board.start_fen, "moves": list(game.board.moves)},
+            len(game.board.moves) + 1,
+            retry=retry,
+        )
+
+    def analyze(self, game_id: str) -> dict[str, Any]:
+        game = self._game(game_id)
+        with game.lock:
+            if game.status != "finished":
+                raise ValueError("A análise fica disponível depois de encerrar a partida.")
+            return self._maybe_analyze(game, retry=True)
+
+    def analysis_state(self, game_id: str) -> dict[str, Any]:
+        game = self._game(game_id)
+        if game.status != "finished":
+            return {"status": "awaiting_finish", "positions": [], "depth": 20}
+        if self.analysis is None:
+            return {"status": "unavailable", "positions": [], "depth": 20}
+        return self.analysis.get(game_id)
+
+    def game_summary(self, game: ArenaGame) -> dict[str, Any]:
+        with game.lock:
+            summary = game.summary()
+        analysis = self.analysis_state(game.game_id)
+        summary["analysis"] = {
+            "status": analysis["status"],
+            "depth": analysis.get("depth", 20),
+            "completed": len(analysis.get("positions", [])),
+            "total": analysis.get("total"),
+        }
+        return summary
+
     # -- model turn ----------------------------------------------------------------
 
     def _spawn_model_turn(self, game: ArenaGame) -> None:
+        game.last_error = None
+        game.model_progress = new_progress(
+            int(game.setup["max_rounds"]), streaming=game.setup["provider"] == "codex-cli"
+        )
         thread = threading.Thread(target=self._run_model_turn, args=(game,), daemon=True)
         thread.start()
 
     def _run_model_turn(self, game: ArenaGame) -> None:
         sink = self._call_sink_for(game.game_id)
         game.call_sink = sink
-        loop = ArenaDecisionLoop(
-            game_id=game.game_id,
-            board=game.board,
-            backend=self._backend_factory(
-                str(game.setup["provider"]),
-                model=game.setup.get("model"),
-                effort=game.setup.get("effort"),
-                timeout_seconds=float(game.setup["timeout_seconds"]),
-            ),
-            model_ref=_model_ref(game),
-            max_rounds=int(game.setup["max_rounds"]),
-            directive=str(game.setup.get("directive") or DEFAULT_DIRECTIVE),
-            prior_note=game.model_note,
-            call_sink=sink,
-        )
+        progress = game.model_progress
+        assert progress is not None
+        turn_id = progress["turn_id"]
+
+        def on_progress(event: dict[str, Any]) -> None:
+            with game.lock:
+                if game.status != "model_thinking" or game.model_progress is not progress:
+                    return
+                record = {"ts": time.time(), "turn_id": turn_id, **event}
+                path = self.arena_dir / f"{game.game_id}-progress.jsonl"
+                with path.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+                project_event(progress, event)
+
         try:
+            loop = ArenaDecisionLoop(
+                game_id=game.game_id,
+                board=game.board,
+                backend=self._backend_factory(
+                    str(game.setup["provider"]),
+                    model=game.setup.get("model"),
+                    effort=game.setup.get("effort"),
+                    service_tier=game.setup.get("service_tier"),
+                    timeout_seconds=float(game.setup["timeout_seconds"]),
+                ),
+                model_ref=_model_ref(game),
+                max_rounds=int(game.setup["max_rounds"]),
+                directive=str(game.setup.get("directive") or DEFAULT_DIRECTIVE),
+                prior_note=game.model_note,
+                call_sink=sink,
+                progress_sink=on_progress,
+            )
             outcome = asyncio.run(loop.run())
         except Exception as exc:
             outcome = _thread_failure(exc)
         with game.lock:
-            game.record_model_outcome(outcome, model_color=game.model_color)
+            played = game.record_model_outcome(outcome, model_color=game.model_color)
+            progress["status"] = "completed" if played else "failed"
+            progress["phase"] = "completed" if played else "failed"
+            progress["finished_at"] = time.time()
+            with contextlib.suppress(OSError):
+                path = self.arena_dir / f"{game.game_id}-progress.jsonl"
+                with path.open("a", encoding="utf-8") as handle:
+                    handle.write(
+                        json.dumps(
+                            {
+                                "ts": progress["finished_at"],
+                                "turn_id": turn_id,
+                                "kind": progress["status"],
+                                "outcome": outcome.status,
+                            }
+                        )
+                        + "\n"
+                    )
             game.dump(self.arena_dir)
+            self._maybe_analyze(game)
 
 
 def _thread_failure(exc: Exception):  # type: ignore[no-untyped-def]
@@ -242,14 +334,35 @@ class ArenaRequestHandler(BaseHTTPRequestHandler):
             return
         if route == ["games"]:
             games = sorted(self.service.games.values(), key=lambda g: g.created_at, reverse=True)
-            self._json({"games": [game.summary() for game in games]})
+            self._json({"games": [self.service.game_summary(game) for game in games]})
             return
         if len(route) == 2 and route[0] == "games":
             game = self.service.games.get(route[1])
             if game is None:
                 self._json({"error": "unknown_game"}, 404)
                 return
-            self._json(game.to_state())
+            with game.lock:
+                self._json(game.to_state())
+            return
+        if len(route) == 3 and route[0] == "games" and route[2] == "pgn":
+            game = self.service.games.get(route[1])
+            if game is None:
+                self._json({"error": "unknown_game"}, 404)
+                return
+            with game.lock:
+                body = game.pgn_text().encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-chess-pgn; charset=utf-8")
+            self.send_header("Content-Disposition", f'attachment; filename="{game.game_id}.pgn"')
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if len(route) == 3 and route[0] == "games" and route[2] == "analysis":
+            try:
+                self._json(self.service.analysis_state(route[1]))
+            except KeyError:
+                self._json({"error": "unknown_game"}, 404)
             return
         self._json({"error": "not_found"}, 404)
 
@@ -266,6 +379,9 @@ class ArenaRequestHandler(BaseHTTPRequestHandler):
                 return
             if len(route) == 3 and route[0] == "games":
                 action = route[2]
+                if action == "analysis":
+                    self._json(self.service.analyze(route[1]))
+                    return
                 if action == "moves":
                     uci = str(self._read_json().get("uci", ""))
                     try:
@@ -284,13 +400,19 @@ class ArenaRequestHandler(BaseHTTPRequestHandler):
             self._json({"error": "not_found"}, 404)
         except KeyError:
             self._json({"error": "unknown_game"}, 404)
+        except (ValueError, TypeError) as exc:
+            self._json({"error": "invalid_action", "detail": str(exc)}, 400)
 
 
 def serve(
     *, host: str = "127.0.0.1", port: int = DEFAULT_PORT, arena_dir: Path | None = None
 ) -> None:
     directory = arena_dir or Path(os.environ.get("ZGW_ARENA_DIR", DEFAULT_DIR))
-    service = ArenaService(directory)
+    from zgw_eval_stockfish.arena_review import StockfishArenaReview
+
+    evaluator = StockfishArenaReview(os.environ.get("ZGW_STOCKFISH_PATH", "stockfish"))
+    analysis = ArenaAnalysisService(directory / "analysis", evaluator, evaluator.profile)
+    service = ArenaService(directory, analysis=analysis)
     handler = type("BoundArenaHandler", (ArenaRequestHandler,), {"service": service})
     httpd = ThreadingHTTPServer((host, port), handler)
     print(
@@ -298,6 +420,7 @@ def serve(
     )
     with contextlib.suppress(KeyboardInterrupt):
         httpd.serve_forever()
+    analysis.close()
 
 
 def main() -> None:

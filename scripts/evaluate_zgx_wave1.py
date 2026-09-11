@@ -99,7 +99,12 @@ def analyze_position(engine: chess.engine.SimpleEngine, board: chess.Board, chos
         mate_after = False
     result["cp_after"] = cp_after_mover
     result["mate_after"] = mate_after
-    if not mate_before and not mate_after and score_before is not None and cp_after_mover is not None:
+    if (
+        not mate_before
+        and not mate_after
+        and score_before is not None
+        and cp_after_mover is not None
+    ):
         result["regret_cp"] = max(0, score_before - cp_after_mover)
         result["blunder_300cp"] = result["regret_cp"] >= BLUNDER_CP
     return result
@@ -116,9 +121,7 @@ def run_record(ws: pathlib.Path) -> dict | None:
         ep = conn.execute("SELECT status, outcome FROM episodes LIMIT 1").fetchone()
         out["episode"] = ep[0] if ep else None
         out["outcome"] = ep[1] if ep else None
-        dec = conn.execute(
-            "SELECT status, selected_action FROM cb_decisions LIMIT 1"
-        ).fetchone()
+        dec = conn.execute("SELECT status, selected_action FROM cb_decisions LIMIT 1").fetchone()
         out["decision_status"] = dec[0] if dec else None
         out["selected_action"] = dec[1] if dec else None
         out["steps_committed"] = conn.execute(
@@ -165,7 +168,7 @@ def request_probes(ws: pathlib.Path) -> dict:
             "JOIN artifacts c ON c.artifact_id = cr.context_artifact_id ORDER BY cr.ordinal"
         ).fetchall()
         first_blob = None
-        for ordinal, rel in rows:
+        for _ordinal, rel in rows:
             p = ws / ".zugzwang" / "objects" / rel
             if not p.exists():
                 continue
@@ -185,16 +188,22 @@ def request_probes(ws: pathlib.Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=pathlib.Path, default=pathlib.Path("/tmp/zgx-wave1"))
-    parser.add_argument("--out", type=pathlib.Path, default=pathlib.Path("out/zgx_wave1_evaluation.json"))
-    parser.add_argument("--stockfish", type=pathlib.Path, default=pathlib.Path("/home/maelrx/.local/bin/stockfish"))
+    parser.add_argument(
+        "--out", type=pathlib.Path, default=pathlib.Path("out/zgx_wave1_evaluation.json")
+    )
+    parser.add_argument(
+        "--stockfish", type=pathlib.Path, default=pathlib.Path("/home/maelrx/.local/bin/stockfish")
+    )
     parser.add_argument("--only-completed", action="store_true")
     args = parser.parse_args()
 
-    fixtures = json.loads(
-        (args.root.parent / "zgx_fixtures_s12.json").read_text()
-    ) if (args.root.parent / "zgx_fixtures_s12.json").exists() else None
+    json.loads((args.root.parent / "zgx_fixtures_s12.json").read_text()) if (
+        args.root.parent / "zgx_fixtures_s12.json"
+    ).exists() else None
     s12_sources = json.loads(
-        (pathlib.Path(__file__).parent.parent / "experiments/zgx/fixtures/s12_sources.json").read_text()
+        (
+            pathlib.Path(__file__).parent.parent / "experiments/zgx/fixtures/s12_sources.json"
+        ).read_text()
     )
 
     engine = chess.engine.SimpleEngine.popen_uci(str(args.stockfish))

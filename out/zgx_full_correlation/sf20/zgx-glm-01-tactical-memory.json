@@ -1,0 +1,122 @@
+{
+ "source_pgn": "replay_pgn/zgx-glm-01-tactical-memory.pgn",
+ "engine": "stockfish-16",
+ "depth": 20,
+ "games": [
+  {
+   "headers": {
+    "Event": "replay zgx-glm-01-tactical-memory",
+    "Site": "?",
+    "Date": "????.??.??",
+    "Round": "?",
+    "White": "?",
+    "Black": "?",
+    "Result": "*"
+   },
+   "result": "*",
+   "plies": 6,
+   "white": {
+    "moves": 3,
+    "acpl": 6.3,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.333
+   },
+   "black": {
+    "moves": 3,
+    "acpl": 28.3,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.0
+   },
+   "records": [
+    {
+     "ply": 1,
+     "uci": "e2e4",
+     "san": "e4",
+     "side": "white",
+     "cp_before": 32,
+     "cp_after": 37,
+     "regret": -5,
+     "best_move": "e2e4",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 2,
+     "uci": "e7e6",
+     "san": "e6",
+     "side": "black",
+     "cp_before": -32,
+     "cp_after": -44,
+     "regret": 12,
+     "best_move": "e7e5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 3,
+     "uci": "d2d4",
+     "san": "d4",
+     "side": "white",
+     "cp_before": 34,
+     "cp_after": 38,
+     "regret": -4,
+     "best_move": "b1c3",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 4,
+     "uci": "c7c5",
+     "san": "c5",
+     "side": "black",
+     "cp_before": -43,
+     "cp_after": -68,
+     "regret": 25,
+     "best_move": "d7d5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 5,
+     "uci": "g1f3",
+     "san": "Nf3",
+     "side": "white",
+     "cp_before": 70,
+     "cp_after": 51,
+     "regret": 19,
+     "best_move": "d4d5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 6,
+     "uci": "d7d5",
+     "san": "d5",
+     "side": "black",
+     "cp_before": -32,
+     "cp_after": -80,
+     "regret": 48,
+     "best_move": "c5d4",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    }
+   ],
+   "eval_trajectory_white_pov": [
+    37,
+    44,
+    38,
+    68,
+    51,
+    80
+   ]
+  }
+ ]
+}

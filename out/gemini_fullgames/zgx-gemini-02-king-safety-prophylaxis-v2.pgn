@@ -1,0 +1,9 @@
+[Event "zgx-gemini-02-king-safety-prophylaxis-v2"]
+[Site "Zugzwang Local"]
+[Date "2026.09.08"]
+[Round "2"]
+[White "gemini-3.8-flash-low"]
+[Black "Stockfish 16 (1320)"]
+[Result "0-1"]
+
+1. e4 Nf6 2. e5 Nd5 3. d4 d6 4. Nf3 Bg4 5. Be2 Bxf3 6. Bxf3 e6 7. O-O Nc6 8. c4 Ndb4 9. a3 Na6 10. Bxc6+ bxc6 11. Qa4 Nb8 12. Nc3 Qd7 13. Rd1 d5 14. c5 h6 15. Be3 a5 16. b4 Be7 17. b5 cxb5 18. Nxb5 Nc6 19. Rab1 Rb8 20. Qxa5 Nxa5 21. Nd6+ Kf8 22. Rxb8+ Bd8 23. Rxd8+ Qxd8 24. Nxf7 Kxf7 25. Rb1 h5 26. Rb5 c6 27. Rxa5 g5 28. Ra7+ Ke8 29. h3 h4 30. Bxg5 Qxg5 31. Ra8+ Kf7 32. Rxh8 Qc1+ 33. Kh2 Qf4+ 34. Kg1 Kg7 35. Rxh4 Qxh4 36. g3 Qh6 37. Kg2 Kg8 38. f4 Kh8 39. Kh2 Kg8 40. Kg2 Qh8 41. h4 Qh6 42. Kh3 Qf8 43. Kg2 Qe7 44. Kf3 Qf8 45. Kg2 Qe7 46. Kh3 Qf8 47. Kg2 Qe7 48. h5 Qf7 49. h6 Qe7 50. Kg1 Qf7 51. Kg2 Qh5 52. Kf2 Qh2+ 53. Kf3 Qh5+ 54. Kg2 Qe2+ 55. Kh3 Qf1+ 56. Kh2 Qe2+ 57. Kg1 Qe1+ 58. Kh2 Qd2+ 59. Kh3 Qxd4 60. Kg2 Qa4 61. Kh3 Kh8 62. Kg2 Qe4+ 63. Kh2 Qc2+ 64. Kh3 Kh7 65. Kh4 Qf5 66. a4 Qg6 67. Kh3 Qf5+ 68. Kh2 Qb1 69. Kg2 Qc2+ 70. Kh3 Qf5+ 71. Kh4 Qg6 72. g4 Kh8 73. g5 d4 74. a5 Qe8 75. a6 d3 76. a7 d2 77. a8=Q Qxa8 78. g6 d1=Q 79. g7+ Kh7 80. g8=Q+ Qxg8 81. Kh3 Qf3+ 82. Kh4 Qgg4# 0-1

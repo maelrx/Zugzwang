@@ -12,9 +12,11 @@ from typing import Any
 
 import pytest
 
+from tests.unit.test_arena_history import fake_review, wait_analysis
 from tests.unit.test_arena_play import ScriptedBackend, _tool_call
 from zugzwang_cli.arena.loop import ROOT_NODE_ID
 from zugzwang_cli.arena.server import ArenaRequestHandler, ArenaService
+from zugzwang_runtime.application.arena_analysis import ArenaAnalysisService
 
 
 @pytest.fixture()
@@ -25,7 +27,10 @@ def arena(tmp_path):  # type: ignore[no-untyped-def]
             [_tool_call("board_finalize", {"node_id": ROOT_NODE_ID, "action_id": "g8f6"})],
         ]
     )
-    service = ArenaService(tmp_path / "arena", backend_factory=lambda *a, **k: shared)
+    analysis = ArenaAnalysisService(tmp_path / "reviews", fake_review, {"depth": 20})
+    service = ArenaService(
+        tmp_path / "arena", backend_factory=lambda *a, **k: shared, analysis=analysis
+    )
     httpd = ThreadingHTTPServer(
         ("127.0.0.1", 0), type("H", (ArenaRequestHandler,), {"service": service})
     )
@@ -33,6 +38,8 @@ def arena(tmp_path):  # type: ignore[no-untyped-def]
     thread.start()
     yield f"http://127.0.0.1:{httpd.server_address[1]}", service
     httpd.shutdown()
+    httpd.server_close()
+    analysis.close()
 
 
 def _request(url: str, payload: dict[str, Any] | None = None) -> tuple[int, dict[str, Any]]:
@@ -110,3 +117,30 @@ def test_unknown_provider_and_unknown_game(arena) -> None:
     assert code == 404
     code, payload = _request(f"{base}/play/api/games/missing")
     assert code == 404 and payload["error"] == "unknown_game"
+
+
+def test_history_analysis_and_pgn_routes(arena) -> None:
+    base, service = arena
+    _, game = _request(f"{base}/play/api/games", {"human_color": "white"})
+    game_id = game["id"]
+    assert len(game["positions"]) == 1
+    code, payload = _request(f"{base}/play/api/games/{game_id}/analysis", {})
+    assert code == 400
+    assert "encerrar" in payload["detail"]
+    code, _ = _request(f"{base}/play/api/games/{game_id}/retry", {})
+    assert code == 400  # cannot force model to play on human's turn
+    _request(f"{base}/play/api/games/{game_id}/moves", {"uci": "e2e4"})
+    _wait_idle(base, game_id)
+    code, finished = _request(f"{base}/play/api/games/{game_id}/resign", {})
+    assert code == 200 and finished["status"] == "finished"
+    assert len(finished["positions"]) == 3
+    assert service.analysis is not None
+    wait_analysis(service.analysis, game_id)
+    code, review = _request(f"{base}/play/api/games/{game_id}/analysis")
+    assert code == 200 and review["status"] == "complete"
+    assert len(review["positions"]) == 3
+    _, listing = _request(f"{base}/play/api/games")
+    assert listing["games"][0]["analysis"]["completed"] == 3
+    with urllib.request.urlopen(f"{base}/play/api/games/{game_id}/pgn") as response:
+        assert response.headers["Content-Type"].startswith("application/x-chess-pgn")
+        assert "1. e4 e5" in response.read().decode()

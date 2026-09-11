@@ -1,0 +1,23 @@
+{
+  "schema": "zugzwang.arena-game/v1",
+  "id": "arena-20260909-005648-1882",
+  "created_at": "2026-09-09T00:56:48",
+  "setup": {
+    "provider": "antigravity-cli",
+    "model": "gemini-3.8-flash-low",
+    "effort": "low",
+    "human_color": "white",
+    "max_rounds": 6,
+    "ascii": false,
+    "history_plies": 24,
+    "directive": null,
+    "timeout_seconds": 180.0
+  },
+  "status": "human_turn",
+  "result": null,
+  "last_error": null,
+  "model_note": null,
+  "moves": [],
+  "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "board_moves": []
+}

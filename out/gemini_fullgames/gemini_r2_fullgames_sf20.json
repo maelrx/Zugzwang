@@ -1,0 +1,65 @@
+{
+  "zgx-gemini-01-tactical-memory-v2": {
+    "run_id": "run_-i1nguVkaPoukL11hedb-A",
+    "result": "1-0",
+    "plies": 83,
+    "white_acpl": 39.9,
+    "black_acpl": 2475.1,
+    "white_blunders": [],
+    "black_blunders": [
+      66,
+      68,
+      72
+    ],
+    "evaluations_count": 83
+  },
+  "zgx-gemini-02-king-safety-prophylaxis-v2": {
+    "run_id": "run_D6_UzKXbK90ECeaRbKInCg",
+    "result": "0-1",
+    "plies": 164,
+    "white_acpl": 3678.7,
+    "black_acpl": 3747.0,
+    "white_blunders": [
+      39,
+      93,
+      131,
+      135,
+      137,
+      141,
+      153
+    ],
+    "black_blunders": [
+      38,
+      92,
+      126,
+      132,
+      134,
+      136,
+      138,
+      140,
+      142,
+      144,
+      148
+    ],
+    "evaluations_count": 164
+  },
+  "zgx-gemini-03-tactical-guardian-v2": {
+    "run_id": "run_mm-fIWgWea9AUC9UshKs7A",
+    "result": "1-0",
+    "plies": 67,
+    "white_acpl": 5867.9,
+    "black_acpl": 3161.3,
+    "white_blunders": [
+      15,
+      59,
+      61
+    ],
+    "black_blunders": [
+      14,
+      38,
+      54,
+      60
+    ],
+    "evaluations_count": 67
+  }
+}

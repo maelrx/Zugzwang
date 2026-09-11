@@ -100,3 +100,30 @@ def test_human_games_keep_previous_behavior(service: ArenaService) -> None:
     game = service.create_game({"provider": "codex-cli", "model": "gpt-6-astra"})
     assert game.status == "human_turn"
     assert game.setup.get("opponent", "human") == "human"
+
+
+def test_spectator_failure_keeps_turn_for_retry(tmp_path: Path) -> None:
+    # Regression: a failed model turn in a spectator game must not fall back to
+    # "human_turn" (there is no human); the turn stays with the side to retry.
+    backend = ScriptedBackend([])  # first infer raises: exhausted script
+    service = ArenaService(
+        tmp_path,
+        backend_factory=lambda *a, **k: backend,
+        engine_move=_first_legal,
+    )
+    game = service.create_game(
+        {
+            "provider": "codex-cli",
+            "model": "gpt-6-astra",
+            "opponent": "stockfish",
+            "human_color": "white",  # engine plays white, model black
+        }
+    )
+    _wait(game, lambda: game.last_error is not None and game.status != "engine_thinking")
+    assert game.status != "human_turn"
+    assert game.status == "model_thinking"
+    assert game.last_error
+    # The retry endpoint re-advances the spectator game instead of refusing.
+    service.retry_model_turn(game.game_id)
+    _wait(game, lambda: game.last_error is not None and game.status != "engine_thinking")
+    assert game.status == "model_thinking"

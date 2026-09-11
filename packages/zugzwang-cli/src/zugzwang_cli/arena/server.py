@@ -190,11 +190,15 @@ class ArenaService:
             if game.isolation_violation:
                 # ADR-063: no retry follows a security failure.
                 raise ValueError("security failure is not retryable")
-            if (
-                game.status != "human_turn"
-                or game.board.terminal
-                or game.board.turn != game.model_color
-            ):
+            if game.board.terminal:
+                raise ValueError("game is not in a retryable state")
+            if game.opponent != "human":
+                if game.status not in {"model_thinking", "engine_thinking"}:
+                    raise ValueError("game is not in a retryable state")
+                self._advance(game)
+                game.dump(self.arena_dir)
+                return game
+            if game.status != "human_turn" or game.board.turn != game.model_color:
                 raise ValueError("game is not in a retryable state")
             game.status = "model_thinking"
             self._spawn_model_turn(game)

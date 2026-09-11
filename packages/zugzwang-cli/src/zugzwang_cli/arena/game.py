@@ -246,6 +246,13 @@ class ArenaGame:
                     "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
                 }
             )
+        if self.opponent != "human":
+            # Spectator game: there is no human to hand the turn to. Keep the
+            # turn with the side that failed so the service can retry it.
+            self.status = (
+                "engine_thinking" if self.board.turn != self.model_color else "model_thinking"
+            )
+            return False
         # The human moved; the model failed to answer. Play returns to the
         # human — a failed provider turn is never a move.
         self.status = "human_turn"

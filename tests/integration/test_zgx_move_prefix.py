@@ -83,9 +83,7 @@ def test_move_selection_applies_move_prefix(tmp_path) -> None:
     workspace = Workspace.from_root(tmp_path / "ws", wal_policy="ephemeral")
     workspace.ensure_layout()
     services = DurableRunServices(workspace, PluginRegistry())
-    result = asyncio.run(
-        services.start(StartRunCommand(manifest_path=manifest), asyncio.Event())
-    )
+    result = asyncio.run(services.start(StartRunCommand(manifest_path=manifest), asyncio.Event()))
     assert result.status == "COMPLETED", result
 
     conn = sqlite3.connect(workspace.data_dir / "state.db")
@@ -96,9 +94,7 @@ def test_move_selection_applies_move_prefix(tmp_path) -> None:
         ).fetchone()
     finally:
         conn.close()
-    initial = json.loads(
-        (workspace.objects_dir() / relative_path).read_text(encoding="utf-8")
-    )
+    initial = json.loads((workspace.objects_dir() / relative_path).read_text(encoding="utf-8"))
     assert initial["fen"] == _expected_fen(), (
         "move-selection must replay the declared move_prefix into the episode "
         "initial state — the wave-1 bug played every paired position from the "

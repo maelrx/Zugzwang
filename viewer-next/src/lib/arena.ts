@@ -17,8 +17,7 @@ export interface ModelProgress {
 export interface ArenaGameState {
   model_progress?: ModelProgress | null;
   id: string; created_at: string; setup: Record<string, unknown>;
-  status: "human_turn" | "model_thinking" | "engine_thinking" | "finished";
-  opponent?: "human" | "stockfish";
+  status: "human_turn" | "model_thinking" | "finished";
   human_color: "white" | "black"; model_color: "white" | "black";
   fen: string; turn: "white" | "black"; last_uci: string | null; check: boolean;
   moves: MoveRecord[]; thinking: boolean; last_error: string | null;

@@ -52,8 +52,7 @@ export function PlayView() {
 
   const [form, setForm] = useState({
     provider: "antigravity-cli", model: "gemini-3.8-flash-low", effort: "low", service_tier: "",
-    human_color: "white" as "white" | "black", opponent: "human" as "human" | "stockfish",
-    max_rounds: 6, ascii: false, history_plies: 12, directive: "",
+    human_color: "white" as "white" | "black", max_rounds: 6, ascii: false, history_plies: 12, directive: "",
   });
 
   const pollOnce = useCallback(async (id: string) => {
@@ -174,21 +173,14 @@ export function PlayView() {
 
   const selectedProvider = useMemo(() => providers.find(p => p.id === form.provider), [providers, form.provider]);
   const supportsFast = selectedProvider?.models.find(m => m.id === form.model)?.service_tiers?.includes("fast") ?? false;
-  const engineThinking = game?.status === "engine_thinking";
-  const spectator = (game?.opponent ?? form.opponent) === "stockfish";
-  const engineColor = game?.human_color ?? form.human_color;
-  const sideName = (color: string) => spectator ? (color === engineColor ? "Stockfish 1320" : currentModelLabel) : (color === humanColor ? "Você" : currentModelLabel);
-  const sideProvider = (color: string) => spectator && color === engineColor ? "stockfish" : currentProvider;
-  const sideHuman = (color: string) => !spectator && color === humanColor;
-  const sideThinking = (color: string) => !!game?.thinking && ((color === engineColor) === engineThinking);
-  const canRetry = game && game.status !== "finished" && !game.thinking && game.turn !== game.human_color && !spectator;
+  const canRetry = game && game.status !== "finished" && !game.thinking && game.turn !== game.human_color;
   const currentModel = game?.setup.model ?? form.model;
   const currentProvider = game?.setup.provider ?? form.provider;
   const currentTier = game ? game.setup.service_tier : form.service_tier;
   const currentModelLabel = `${displayModel(currentModel)}${currentTier === "fast" ? " · Fast" : ""}`;
   const topColor = orientation === "white" ? "black" : "white";
   const isFinished = game?.status === "finished";
-  const statusText = isFinished ? "Partida encerrada" : engineThinking ? "Stockfish está pensando" : game?.thinking ? "O modelo está pensando" : spectator ? "Partida em andamento" : canRetry ? "O modelo não concluiu o lance" : game?.check ? "Você está em xeque" : "Sua vez de jogar";
+  const statusText = isFinished ? "Partida encerrada" : game?.thinking ? "O modelo está pensando" : canRetry ? "O modelo não concluiu o lance" : game?.check ? "Você está em xeque" : "Sua vez de jogar";
   const resultText = game?.result ? game.result.score === "1/2-1/2" ? "Empate" : game.result.score === (game.human_color === "white" ? "1-0" : "0-1") ? "Você venceu" : "O modelo venceu" : "";
   const setProvider = (id:string) => {
     const provider = providers.find(p => p.id === id);
@@ -201,10 +193,10 @@ export function PlayView() {
     <header className="desk-heading"><div><h1>Jogar</h1><span>Você contra os modelos</span></div><a className="desk-text-link" href="#historico"><Icon name="clock" size={15}/>Suas partidas<Icon name="chevron" size={13}/></a></header>
     <div className="desk-layout">
       <section className="desk-board-column" aria-label="Tabuleiro da arena">
-        <PlayerBar name={sideName(topColor)} provider={sideProvider(topColor)} human={sideHuman(topColor)} color={topColor} active={!!game && !isFinished && game.turn === topColor} status={sideThinking(topColor) ? "Pensando…" : undefined}/>
+        <PlayerBar name={topColor === humanColor ? "Você" : currentModelLabel} provider={currentProvider} human={topColor === humanColor} color={topColor} active={!!game && !isFinished && game.turn === topColor} status={game?.thinking && topColor !== humanColor ? "Pensando…" : undefined}/>
         <div className="desk-board-frame"><div ref={boardRef} className="desk-chessboard" aria-label="Tabuleiro interativo"/></div>
-        <PlayerBar name={sideName(orientation)} provider={sideProvider(orientation)} human={sideHuman(orientation)} color={orientation} active={!!game && !isFinished && game.turn === orientation} status={spectator ? (sideThinking(orientation) ? "Pensando…" : undefined) : game && !isFinished && !game.thinking && game.turn === orientation ? "Sua vez" : undefined}/>
-        <div className="desk-board-tools"><span>{!game ? "Escolha o oponente para começar." : isFinished ? "Partida salva no histórico." : spectator ? (engineThinking ? "O Stockfish está calculando o lance." : "Partida automática: o modelo joga contra o Stockfish 1320.") : game.thinking ? "Aguarde a resposta do modelo." : "Clique na peça e no destino, ou arraste."}</span><button className="desk-icon-button" aria-label="Virar tabuleiro" title="Virar tabuleiro" onClick={()=>setFlipped(f=>!f)}><Icon name="flip" size={17}/></button></div>
+        <PlayerBar name={orientation === humanColor ? "Você" : currentModelLabel} provider={currentProvider} human={orientation === humanColor} color={orientation} active={!!game && !isFinished && game.turn === orientation} status={game && !isFinished && !game.thinking && game.turn === orientation ? "Sua vez" : undefined}/>
+        <div className="desk-board-tools"><span>{!game ? "Escolha o oponente para começar." : isFinished ? "Partida salva no histórico." : game.thinking ? "Aguarde a resposta do modelo." : "Clique na peça e no destino, ou arraste."}</span><button className="desk-icon-button" aria-label="Virar tabuleiro" title="Virar tabuleiro" onClick={()=>setFlipped(f=>!f)}><Icon name="flip" size={17}/></button></div>
       </section>
       {setupOpen ? <aside className="desk-side desk-setup-side" aria-label="Configurar nova partida">
         <div className="desk-side-heading"><div><span className="desk-overline">NOVA PARTIDA</span><h2>Escolha seu oponente</h2></div>{game && <button className="desk-icon-button" aria-label="Voltar à partida atual" onClick={()=>setSetupOpen(false)}><Icon name="close" size={16}/></button>}</div>
@@ -212,8 +204,7 @@ export function PlayView() {
           <fieldset className="desk-provider-picker"><legend>Provedor</legend>{providers.length ? providers.map(p=><label key={p.id} data-selected={form.provider === p.id} title={p.unavailable_reason}><input type="radio" name="provider" value={p.id} disabled={p.available === false} checked={form.provider===p.id} onChange={()=>setProvider(p.id)}/><span className="desk-provider-letter" aria-hidden="true">{providerName(p.id).slice(0,1)}</span><strong>{providerName(p.id)}{p.available === false ? " · indisponível" : ""}</strong>{form.provider===p.id && <Icon name="check" size={12}/>}</label>) : <div className="desk-loading-inline" role="status">Carregando modelos…</div>}</fieldset>
           <label className="desk-field">Modelo<select name="model" value={form.model} disabled={!providers.length} onChange={e=>setForm(f=>({...f,model:e.target.value,service_tier:""}))}>{(selectedProvider?.models ?? []).map(m=><option key={m.id} value={m.id}>{displayModel(m.id)}{modelDetail(m.id)!==m.id ? ` · ${modelDetail(m.id)}` : ""}</option>)}</select></label>
           {supportsFast && <fieldset className="desk-speed"><legend>Velocidade do Luna</legend><div>{[["", "Padrão"], ["fast", "Fast"]].map(([tier,label]) => <label key={tier} data-selected={form.service_tier === tier}><input type="radio" name="service-tier" value={tier} checked={form.service_tier === tier} onChange={()=>setForm(f=>({...f,service_tier:tier}))}/><span>{label}</span>{form.service_tier===tier && <Icon name="check" size={13}/>}</label>)}</div></fieldset>}
-          <fieldset className="desk-color-picker"><legend>Oponente</legend>{(["human","stockfish"] as const).map(op=><label key={op} data-selected={form.opponent===op}><input type="radio" name="opponent" checked={form.opponent===op} onChange={()=>setForm(f=>({...f,opponent:op}))}/><span><strong>{op === "human" ? "Você mesmo" : "Stockfish 1320"}</strong><small>{op === "human" ? "Jogo interativo" : "Partida automática até mate ou empate"}</small></span>{form.opponent===op && <Icon name="check" size={13}/>}</label>)}</fieldset>
-          <fieldset className="desk-color-picker"><legend>{form.opponent === "stockfish" ? "Stockfish joga de" : "Você joga de"}</legend>{(["white","black"] as const).map(color=><label key={color} data-selected={form.human_color===color}><input type="radio" name="human_color" checked={form.human_color===color} onChange={()=>setForm(f=>({...f,human_color:color}))}/><i className={`desk-side-piece ${color}`}/><span><strong>{color === "white" ? "Brancas" : "Pretas"}</strong><small>{color === "white" ? "Você começa" : "Modelo começa"}</small></span>{form.human_color===color && <Icon name="check" size={13}/>}</label>)}</fieldset>
+          <fieldset className="desk-color-picker"><legend>Você joga de</legend>{(["white","black"] as const).map(color=><label key={color} data-selected={form.human_color===color}><input type="radio" name="human_color" checked={form.human_color===color} onChange={()=>setForm(f=>({...f,human_color:color}))}/><i className={`desk-side-piece ${color}`}/><span><strong>{color === "white" ? "Brancas" : "Pretas"}</strong><small>{color === "white" ? "Você começa" : "Modelo começa"}</small></span>{form.human_color===color && <Icon name="check" size={13}/>}</label>)}</fieldset>
           <details className="desk-advanced"><summary><Icon name="sliders" size={15}/>Ajustar setup<Icon name="chevron" size={13}/></summary><div>
             {!!selectedProvider?.efforts.length && <label className="desk-field">Esforço do modelo<select name="effort" value={form.effort} onChange={e=>setForm(f=>({...f,effort:e.target.value}))}>{selectedProvider.efforts.map(e=><option key={e} value={e}>{e}</option>)}</select></label>}
             <div className="desk-field-pair"><label className="desk-field">Chamadas por lance<select name="max_rounds" value={form.max_rounds} onChange={e=>setForm(f=>({...f,max_rounds:Number(e.target.value)}))}>{[2,4,6,8].map(n=><option key={n}>{n}</option>)}</select></label><label className="desk-field">Histórico enviado<select name="history_plies" value={form.history_plies} onChange={e=>setForm(f=>({...f,history_plies:Number(e.target.value)}))}>{[0,6,12,24].map(n=><option key={n} value={n}>{n ? `${n} meios-lances` : "Nenhum"}</option>)}</select></label></div>
@@ -221,7 +212,7 @@ export function PlayView() {
             <label className="desk-field">Instrução adicional<textarea name="directive" autoComplete="off" rows={3} placeholder="Ex.: priorize a segurança do rei…" value={form.directive} onChange={e=>setForm(f=>({...f,directive:e.target.value}))}/></label>
           </div></details>
           {error && <div className="desk-error" role="alert"><Icon name="alert" size={15}/><p>{error}</p></div>}
-          <div className="desk-start"><button className="desk-button primary" type="submit" disabled={busy || !providers.length || game?.thinking}><Icon name="play" size={16}/>{busy ? "Iniciando…" : form.opponent === "stockfish" ? "Assistir partida" : `Jogar de ${form.human_color === "white" ? "brancas" : "pretas"}`}</button><p><Icon name="check" size={13}/>{game ? "A partida atual continua no histórico." : "Seu progresso é salvo a cada lance."}</p></div>
+          <div className="desk-start"><button className="desk-button primary" type="submit" disabled={busy || !providers.length || game?.thinking}><Icon name="play" size={16}/>{busy ? "Iniciando…" : `Jogar de ${form.human_color === "white" ? "brancas" : "pretas"}`}</button><p><Icon name="check" size={13}/>{game ? "A partida atual continua no histórico." : "Seu progresso é salvo a cada lance."}</p></div>
         </form>
       </aside> : <aside className="desk-side desk-game-side" aria-label="Partida em andamento">
         <div className="desk-game-status" role="status"><span className={`desk-status-orb ${game?.thinking ? "thinking" : ""}`}><Icon name={isFinished ? "check" : canRetry ? "alert" : game?.thinking ? "clock" : "play"} size={19}/></span><div><h2>{busy ? "Salvando lance…" : statusText}</h2><p>{isFinished ? `${resultText} · ${game?.result?.score}` : game?.thinking ? `${currentModelLabel} está escolhendo o lance.` : canRetry ? "Seu último lance está salvo." : "Encontre sua melhor continuação."}</p></div></div>

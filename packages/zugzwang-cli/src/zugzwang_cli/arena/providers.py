@@ -26,6 +26,8 @@ class ProviderOption:
         efforts: list[str] | None,
         factory: BackendFactory,
         note: str = "",
+        available: bool = True,
+        unavailable_reason: str | None = None,
     ) -> None:
         self.provider_id = provider_id
         self.backend_id = backend_id
@@ -36,14 +38,14 @@ class ProviderOption:
         self.efforts = efforts or []
         self.factory = factory
         self.note = note
+        self.available = available
+        self.unavailable_reason = unavailable_reason
 
     def catalog(self) -> dict[str, Any]:
         return {
             "id": self.provider_id,
-            "available": self.provider_id != "antigravity-cli",
-            "unavailable_reason": "Bloqueado: o CLI não oferece isolamento de ferramentas verificável."
-            if self.provider_id == "antigravity-cli"
-            else None,
+            "available": self.available,
+            "unavailable_reason": self.unavailable_reason,
             "backend_id": self.backend_id,
             "label": self.label,
             "validated": self.validated,
@@ -125,6 +127,8 @@ REGISTRY: dict[str, ProviderOption] = {
             efforts=["low", "medium", "high"],
             factory=_antigravity_factory,
             note="Melhor resultado empírico (parity com SF-1320 nos full games R1).",
+            available=False,
+            unavailable_reason="Bloqueado (ADR-063): o CLI não oferece isolamento de ferramentas verificável.",
         ),
         ProviderOption(
             provider_id="opencode",

@@ -293,3 +293,33 @@ class TestArtifactCrashProtocol:
             if ref not in known
         ]
         assert dangling == [], "event refs point to missing artifacts: " + repr(dangling)
+
+
+@pytest.mark.fault
+class TestResumeAssistanceIntegrity:
+    @pytest.mark.asyncio
+    async def test_resume_preserves_effective_assistance_and_violation(
+        self, workspace: Workspace
+    ) -> None:
+        services = DurableRunServices(workspace, PluginRegistry())
+        first = await services.start(StartRunCommand(manifest_path=MANIFEST), asyncio.Event())
+        assert first.status == "COMPLETED"
+
+        connection = _db(workspace)
+        connection.execute(
+            "UPDATE runs SET status='INTERRUPTED', effective_assistance='H4/K6', "
+            "assistance_violated=1 WHERE run_id=?",
+            (first.run_id,),
+        )
+        connection.commit()
+        connection.close()
+
+        await services.resume(first.run_id, MANIFEST, asyncio.Event())
+
+        connection = _db(workspace)
+        row = connection.execute(
+            "SELECT effective_assistance, assistance_violated FROM runs WHERE run_id=?",
+            (first.run_id,),
+        ).fetchone()
+        connection.close()
+        assert row == ("H4/K6", 1), "resume downgraded recorded assistance or dropped the violation"

@@ -15,6 +15,8 @@ from typing import Any, cast
 
 from zugzwang_core.domain.provider_isolation import reject_native_execution
 
+from .isolation import reject_unknown_codex_event
+
 SummarySink = Callable[[dict[str, Any]], None]
 summary_sink: ContextVar[SummarySink | None] = ContextVar("codex_summary_sink", default=None)
 
@@ -47,6 +49,7 @@ async def read_with_summaries(
         except (ValueError, UnicodeError):
             return
         reject_native_execution(event)
+        reject_unknown_codex_event(event)
         summary = public_summary(cast("dict[str, Any]", event)) if isinstance(event, dict) else None
         if summary and seen.get(summary["id"]) != summary["text"]:
             seen[summary["id"]] = summary["text"]

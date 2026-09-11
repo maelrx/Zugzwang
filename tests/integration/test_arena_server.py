@@ -69,7 +69,10 @@ def test_providers_catalog_marks_gemini_validated(arena) -> None:
     assert status == 200
     gemini = next(p for p in payload["providers"] if p["id"] == "antigravity-cli")
     assert gemini["validated"] is True
+    assert gemini["available"] is False
+    assert gemini["unavailable_reason"]
     assert any(m["validated"] for m in gemini["models"])
+    assert any(p["available"] for p in payload["providers"])
 
 
 def test_full_game_roundtrip_over_http(arena, tmp_path) -> None:
@@ -77,8 +80,8 @@ def test_full_game_roundtrip_over_http(arena, tmp_path) -> None:
     _, created = _request(
         f"{base}/play/api/games",
         {
-            "provider": "antigravity-cli",
-            "model": "gemini-3.8-flash-low",
+            "provider": "codex-cli",
+            "model": "gpt-6-astra",
             "effort": "low",
             "human_color": "white",
         },
@@ -121,7 +124,7 @@ def test_unknown_provider_and_unknown_game(arena) -> None:
 
 def test_history_analysis_and_pgn_routes(arena) -> None:
     base, service = arena
-    _, game = _request(f"{base}/play/api/games", {"human_color": "white"})
+    _, game = _request(f"{base}/play/api/games", {"provider": "codex-cli", "human_color": "white"})
     game_id = game["id"]
     assert len(game["positions"]) == 1
     code, payload = _request(f"{base}/play/api/games/{game_id}/analysis", {})
@@ -144,3 +147,57 @@ def test_history_analysis_and_pgn_routes(arena) -> None:
     with urllib.request.urlopen(f"{base}/play/api/games/{game_id}/pgn") as response:
         assert response.headers["Content-Type"].startswith("application/x-chess-pgn")
         assert "1. e4 e5" in response.read().decode()
+
+
+def test_unavailable_provider_is_rejected_before_creation(arena) -> None:
+    base, service = arena
+    status, payload = _request(
+        f"{base}/play/api/games",
+        {"provider": "antigravity-cli", "model": "gemini-3.8-flash-low"},
+    )
+    assert status == 400
+    assert payload.get("error") == "invalid_action"
+    assert "unavailable" in payload.get("detail", "").lower()
+    assert service.games == {}
+
+
+def test_isolation_violation_taints_game_and_retry_is_blocked(tmp_path) -> None:
+    from zugzwang_core.domain.provider_isolation import ProviderIsolationError
+
+    violation = ProviderIsolationError(
+        "Provider isolation violation: native execution 'command_execution'; move rejected.",
+        wire_response={"type": "command_execution", "command": "stockfish"},
+    )
+    shared = ScriptedBackend([violation])
+    analysis = ArenaAnalysisService(tmp_path / "reviews", fake_review, {"depth": 20})
+    service = ArenaService(
+        tmp_path / "arena", backend_factory=lambda *a, **k: shared, analysis=analysis
+    )
+    httpd = ThreadingHTTPServer(
+        ("127.0.0.1", 0), type("H", (ArenaRequestHandler,), {"service": service})
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base = f"http://127.0.0.1:{httpd.server_address[1]}"
+        status, created = _request(
+            f"{base}/play/api/games",
+            {"provider": "codex-cli", "model": "gpt-5.6-luna", "human_color": "black"},
+        )
+        assert status == 200
+        state = _wait_idle(base, created["id"])
+        assert state["isolation_violation"] is True
+        assert state["last_error"] and "isolation" in state["last_error"].lower()
+        calls = (service.arena_dir / f"{created['id']}-calls.jsonl").read_text(encoding="utf-8")
+        assert "command_execution" in calls, "violating wire evidence must be persisted"
+        retry_status, retry_payload = _request(f"{base}/play/api/games/{created['id']}/retry", {})
+        assert retry_status == 400
+        assert "invalid_action" in retry_payload.get("error", "")
+        # The refusal must not clear the taint or advance the game.
+        _, after = _request(f"{base}/play/api/games/{created['id']}")
+        assert after["isolation_violation"] is True
+        assert after["moves"] == []
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        analysis.close()

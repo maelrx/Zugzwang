@@ -50,7 +50,6 @@ def test_selected_tier_survives_reload_and_reaches_factory(tmp_path, tier) -> No
 @pytest.mark.parametrize(
     "provider,model,tier",
     [
-        ("antigravity-cli", "gemini-3.8-flash-low", "fast"),
         ("opencode", "muse-spark-1.3-contributor", "fast"),
         ("codex-cli", "gpt-6-astra", "fast"),
         ("codex-cli", "gpt-5.6-luna", "invalid"),

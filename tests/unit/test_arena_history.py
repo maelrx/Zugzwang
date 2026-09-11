@@ -49,7 +49,7 @@ def test_auto_review_is_postgame_idempotent_and_survives_restart(tmp_path: Path)
     profile = {"depth": 20, "evaluator": "fake/1"}
     analysis = ArenaAnalysisService(tmp_path / "analysis", fake_review, profile)
     service = ArenaService(tmp_path / "games", analysis=analysis)
-    game = service.create_game({"human_color": "white"})
+    game = service.create_game({"provider": "codex-cli", "human_color": "white"})
     assert service.analysis_state(game.game_id)["status"] == "awaiting_finish"
     with pytest.raises(ValueError, match="encerrar"):
         service.analyze(game.game_id)

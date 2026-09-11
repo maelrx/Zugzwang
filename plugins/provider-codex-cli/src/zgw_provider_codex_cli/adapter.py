@@ -49,7 +49,7 @@ from zugzwang_core.ports.model import (
     WireFidelity,
 )
 
-from .isolation import model_only_args
+from .isolation import model_only_args, reject_unknown_codex_event
 from .progress import SummarySink, read_with_summaries, summary_sink
 
 
@@ -385,6 +385,8 @@ class CodexCliBackend:
 
         self._last_wire_response = {"events": events}
         reject_native_execution(self._last_wire_response)
+        for parsed_event in events:
+            reject_unknown_codex_event(parsed_event)
         response_text: str | None = None
         usage_raw: dict[str, Any] = {}
         error_items: list[str] = []

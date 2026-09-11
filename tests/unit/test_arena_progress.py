@@ -63,7 +63,7 @@ def test_progress_persists_and_new_turn_resets(tmp_path: Path) -> None:
         [[_tool_call("board_finalize", {"node_id": "n0", "action_id": "e7e5"})]]
     )
     service = ArenaService(tmp_path, backend_factory=lambda *a, **k: backend)
-    game = service.create_game({"human_color": "white"})
+    game = service.create_game({"provider": "codex-cli", "human_color": "white"})
     service.apply_move(game.game_id, "e2e4")
     for _ in range(300):
         if game.status != "model_thinking":
@@ -84,7 +84,7 @@ def test_failed_turn_keeps_progress_and_restart_marks_interrupted(tmp_path: Path
         tmp_path,
         backend_factory=lambda *a, **k: ScriptedBackend([ProviderTimeoutError("unknown outcome")]),
     )
-    game = service.create_game({})
+    game = service.create_game({"provider": "codex-cli"})
     service.apply_move(game.game_id, "e2e4")
     for _ in range(300):
         if game.status != "model_thinking":

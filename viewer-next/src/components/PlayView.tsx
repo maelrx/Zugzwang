@@ -10,6 +10,7 @@ import { Icon } from "./Icon";
 interface ProviderModel { id: string; label: string; validated: boolean; default: boolean }
 interface ProviderOption {
   id: string; backend_id: string; label: string; validated: boolean;
+  available: boolean; unavailable_reason: string | null;
   models: ProviderModel[]; efforts: string[]; default_effort: string | null; note: string;
 }
 interface MoveRecord {
@@ -22,6 +23,7 @@ interface ArenaGameState {
   human_color: "white" | "black"; model_color: "white" | "black";
   fen: string; turn: "white" | "black"; last_uci: string | null; check: boolean;
   moves: MoveRecord[]; thinking: boolean; last_error: string | null;
+  isolation_violation?: boolean; assistance_violations?: unknown[];
   result: { score: string; kind: string; winner: string | null } | null;
   dests: Record<string, string[]> | null; promotable: string[] | null;
 }
@@ -77,7 +79,9 @@ export function PlayView() {
   useEffect(() => {
     void api<{ providers: ProviderOption[] }>("/providers").then(b => {
       setProviders(b.providers);
-      const first = b.providers.find(p => p.validated) ?? b.providers[0];
+      const first = b.providers.find(p => p.validated && p.available)
+        ?? b.providers.find(p => p.available)
+        ?? b.providers[0];
       if (!first) return;
       const model = first.models.find(m => m.default) ?? first.models[0];
       setForm(f => ({ ...f, provider: first.id, model: model?.id ?? "", effort: first.default_effort ?? "" }));
@@ -194,10 +198,11 @@ export function PlayView() {
       <div className="board-tools">
         <button className="button compact" disabled={!game || game.status === "finished" || busy} onClick={() => void act("resign")}>Desistir</button>
         <button className="button compact" disabled={!game || !game.thinking} onClick={() => game && pollOnce(game.id)}>Atualizar agora</button>
-        <button className="button compact" disabled={!game || busy || game.status === "finished"} onClick={() => void act("retry")}>Repetir turno do modelo</button>
+        <button className="button compact" disabled={!game || busy || game.status === "finished" || game.isolation_violation} onClick={() => void act("retry")}>Repetir turno do modelo</button>
       </div>
       {error && <div className="notice error" role="alert"><Icon name="alert" /><div><strong>Não foi possível completar a ação</strong><p>{error}</p></div></div>}
-      {game?.last_error && game.status !== "finished" && <div className="notice" role="status"><Icon name="alert" /><div><strong>Turno do modelo falhou</strong><p>{game.last_error}</p><p className="quiet-label">Seu lance permanece válido — use “Repetir turno do modelo”.</p></div></div>}
+      {game?.isolation_violation && <div className="notice error" role="alert"><Icon name="alert" /><div><strong>Violação de isolamento registrada</strong><p>A partida está marcada como suspeita de assistência externa; o turno do modelo não pode ser repetido e o resultado não é evidência limpa (ADR-063).</p></div></div>}
+      {game?.last_error && game.status !== "finished" && !game.isolation_violation && <div className="notice" role="status"><Icon name="alert" /><div><strong>Turno do modelo falhou</strong><p>{game.last_error}</p><p className="quiet-label">Seu lance permanece válido — use “Repetir turno do modelo”.</p></div></div>}
       {game?.result && <div className="notice" role="status"><div><strong>Partida encerrada: {game.result.score} ({game.result.kind})</strong><p>Use “Nova partida” na configuração para jogar de novo.</p></div></div>}
     </section>
     <div className="game-right">
@@ -208,7 +213,7 @@ export function PlayView() {
             const provider = providers.find(p => p.id === e.target.value);
             const model = provider?.models.find(m => m.default) ?? provider?.models[0];
             setForm(f => ({ ...f, provider: e.target.value, model: model?.id ?? "", effort: provider?.default_effort ?? "" }));
-          }}>{providers.map(p => <option key={p.id} value={p.id}>{p.label}{p.validated ? " ✓" : ""}</option>)}</select></label>
+          }}>{providers.map(p => <option key={p.id} value={p.id} disabled={!p.available}>{p.label}{p.validated ? " ✓" : ""}{p.available ? "" : " (indisponível)"}</option>)}</select></label>
           <label>Modelo<select value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))}>{(selectedProvider?.models ?? []).map(m => <option key={m.id} value={m.id}>{m.label}{m.validated ? " ✓ validado" : ""}</option>)}</select></label>
           {(selectedProvider?.efforts.length ?? 0) > 0 && <label>Esforço<select value={form.effort} onChange={e => setForm(f => ({ ...f, effort: e.target.value }))}>{selectedProvider!.efforts.map(effort => <option key={effort} value={effort}>{effort}</option>)}</select></label>}
           <label>Sua cor<select value={form.human_color} onChange={e => setForm(f => ({ ...f, human_color: e.target.value as "white" | "black" }))}><option value="white">Brancas</option><option value="black">Pretas</option></select></label>

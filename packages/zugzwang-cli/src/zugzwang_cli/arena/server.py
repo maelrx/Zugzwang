@@ -89,6 +89,10 @@ class ArenaService:
         provider_id = str(setup.get("provider") or "antigravity-cli")
         if provider_id not in REGISTRY:
             raise KeyError(f"unknown provider {provider_id!r}")
+        if not REGISTRY[provider_id].available:
+            raise ValueError(
+                f"provider unavailable: {provider_id} has no verifiable tools-off isolation"
+            )
         tier = validate_service_tier(provider_id, setup.get("model"), setup.get("service_tier"))
         board = BoardFacade(
             start_fen=setup.get("start_fen") or None,
@@ -125,6 +129,9 @@ class ArenaService:
     def retry_model_turn(self, game_id: str) -> ArenaGame:
         game = self._game(game_id)
         with game.lock:
+            if game.isolation_violation:
+                # ADR-063: no retry follows a security failure.
+                raise ValueError("security failure is not retryable")
             if (
                 game.status != "human_turn"
                 or game.board.terminal

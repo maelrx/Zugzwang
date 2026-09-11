@@ -11,28 +11,58 @@ from zgw_provider_codex_cli.adapter import CodexCliBackend
 from zgw_provider_codex_cli.isolation import model_only_args
 
 from tests.contract.test_codex_cli_adapter import _context, _request, _write_fake_codex
-from zugzwang_core.domain.provider_isolation import ProviderIsolationError, reject_native_execution
-
-
-@pytest.mark.parametrize(
-    "kind",
-    [
-        "command_execution",
-        "mcp_tool_call",
-        "web_search_call",
-        "code_interpreter_call",
-        "computer_call",
-        "tool",
-        "server_tool_use",
-        "local_shell_call",
-    ],
+from zugzwang_core.domain.provider_isolation import (
+    NATIVE_EXECUTION_TYPES,
+    ProviderIsolationError,
+    reject_native_execution,
 )
-def test_native_execution_is_rejected(kind):
+
+
+@pytest.mark.parametrize("kind", sorted(NATIVE_EXECUTION_TYPES))
+def test_every_declared_native_type_is_rejected(kind):
     wire = {"output": [{"type": kind, "output": "bestmove e2e4"}]}
     with pytest.raises(ProviderIsolationError) as raised:
         reject_native_execution(wire)
     assert raised.value.wire_response is wire
     assert raised.value.retryability.value == "none"
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "exec_command_begin",
+        "exec_command_end",
+        "custom_tool_call",
+        "dynamic_tool_call_request",
+        "dynamic_tool_call_response",
+        "hook_started",
+        "hook_completed",
+        "patch_apply_begin",
+        "patch_apply_end",
+        "unified_exec_startup",
+        "unified_exec_interaction",
+    ],
+)
+def test_legacy_codex_execution_events_are_rejected_at_top_level(kind):
+    # Codex CLI serializes these outside the item.* envelope; a denylist that
+    # only covers the envelope shape silently lets them through.
+    with pytest.raises(ProviderIsolationError):
+        reject_native_execution({"type": kind, "command": "stockfish", "output": "bestmove e2e4"})
+
+
+@pytest.mark.parametrize(
+    "wire",
+    [
+        {"type": "message", "content": [{"type": "text", "text": "e4"}]},
+        {"object": "chat.completion", "choices": [{"message": {"content": "e4"}}]},
+        {"type": "thread.started", "thread_id": "t1"},
+        {"type": "turn.started"},
+        {"type": "turn.completed", "usage": {"input_tokens": 1, "output_tokens": 1}},
+        {"type": "error", "message": "rate limited"},
+    ],
+)
+def test_inert_provider_envelopes_are_not_rejected(wire):
+    reject_native_execution(wire)
 
 
 def test_normal_proposals_and_reasoning_keywords_are_not_execution():
@@ -56,6 +86,27 @@ def test_normal_proposals_and_reasoning_keywords_are_not_execution():
 def test_unknown_native_types_fail_closed(wire):
     with pytest.raises(ProviderIsolationError):
         reject_native_execution(wire)
+
+
+async def test_codex_unknown_stream_event_fails_closed(tmp_path: Path):
+    events = [
+        {"type": "brand_new_executor", "output": "bestmove e2e4"},
+        {
+            "type": "item.completed",
+            "item": {
+                "type": "agent_message",
+                "text": '{"command":"board_finalize","arguments":{"node_id":"n0","action_id":"e2e4"}}',
+            },
+        },
+        {"type": "turn.completed", "usage": {"input_tokens": 1, "output_tokens": 1}},
+    ]
+    exe = _write_fake_codex(
+        tmp_path,
+        "cat <<'JSONL'\n" + "\n".join(json.dumps(event) for event in events) + "\nJSONL\n",
+    )
+    backend = CodexCliBackend(executable=exe)
+    with pytest.raises(ProviderIsolationError):
+        await backend.infer(_request(), _context())
 
 
 async def test_codex_blocks_engine_receipt_before_final_move(tmp_path: Path):

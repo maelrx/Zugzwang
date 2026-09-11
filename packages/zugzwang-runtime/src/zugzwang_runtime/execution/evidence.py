@@ -140,18 +140,16 @@ def decision_trace_payload(
     call_rows = data.get("calls")
     if isinstance(call_rows, list):
         call_items = cast(list[Any], call_rows)
-        fallback = (
-            iter(reversed(tuple(attempt_evidence.values()))) if attempt_evidence else iter(())
-        )
-        empty_evidence: dict[str, str | None] = {}
+        # ZGW-0103 R1: join by call identity only. A call whose evidence is
+        # unknown keeps NO artifact refs — silently attaching another call's
+        # response (the old reversed-order fallback) produced the 2.068/2.273
+        # reference mismatches audited in the corpus dossier (§13).
         for call in call_items:
             if not isinstance(call, dict):
                 continue
             call_data = cast(dict[str, Any], call)
             call_id = call_data.get("attempt_id")
             evidence = attempt_evidence.get(str(call_id), {}) if attempt_evidence else {}
-            if not evidence and attempt_evidence:
-                evidence = next(fallback, empty_evidence)
             for field, ref in evidence.items():
                 if ref:
                     call_data[field] = ref

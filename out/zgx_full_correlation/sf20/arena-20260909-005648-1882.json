@@ -1,0 +1,24 @@
+{
+ "source_pgn": "../arena/arena-20260909-005648-1882.pgn",
+ "engine": "stockfish-16",
+ "depth": 20,
+ "games": [
+  {
+   "headers": {
+    "Event": "Arena ZGW-0108 (non-canonical)",
+    "Site": "local",
+    "Date": "2026.09.09",
+    "Round": "?",
+    "White": "Humano (Mael)",
+    "Black": "gemini-3.8-flash-low (antigravity-cli)",
+    "Result": "*"
+   },
+   "result": "*",
+   "plies": 0,
+   "white": {},
+   "black": {},
+   "records": [],
+   "eval_trajectory_white_pov": []
+  }
+ ]
+}

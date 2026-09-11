@@ -1,0 +1,306 @@
+{
+  "ts": 1788936866.5074112,
+  "roots": [
+    13805,
+    912155,
+    912156,
+    1065118
+  ],
+  "scratch": [
+    "/tmp/zgw-codex-xgacxw1o",
+    "/tmp/zgw-codex-t7hnaoqo"
+  ],
+  "paused": [
+    {
+      "pid": 1172799,
+      "start_ticks": "2731212",
+      "comm": "codex"
+    },
+    {
+      "pid": 1173092,
+      "start_ticks": "2731243",
+      "comm": "npm exec fireba"
+    },
+    {
+      "pid": 1173093,
+      "start_ticks": "2731243",
+      "comm": "npm exec @inkee"
+    },
+    {
+      "pid": 1173094,
+      "start_ticks": "2731243",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1173095,
+      "start_ticks": "2731243",
+      "comm": "node_repl"
+    },
+    {
+      "pid": 1173117,
+      "start_ticks": "2731243",
+      "comm": "npm exec @googl"
+    },
+    {
+      "pid": 1173179,
+      "start_ticks": "2731247",
+      "comm": "node_repl"
+    },
+    {
+      "pid": 1173352,
+      "start_ticks": "2731283",
+      "comm": "sh"
+    },
+    {
+      "pid": 1173353,
+      "start_ticks": "2731283",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1173359,
+      "start_ticks": "2731285",
+      "comm": "sh"
+    },
+    {
+      "pid": 1173360,
+      "start_ticks": "2731285",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1173368,
+      "start_ticks": "2731290",
+      "comm": "sh"
+    },
+    {
+      "pid": 1173369,
+      "start_ticks": "2731290",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1173396,
+      "start_ticks": "2731329",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1175778,
+      "start_ticks": "2732971",
+      "comm": "codex"
+    },
+    {
+      "pid": 1175779,
+      "start_ticks": "2732971",
+      "comm": "codex"
+    },
+    {
+      "pid": 1175819,
+      "start_ticks": "2732972",
+      "comm": "bwrap"
+    },
+    {
+      "pid": 1175820,
+      "start_ticks": "2732972",
+      "comm": "bwrap"
+    },
+    {
+      "pid": 1175829,
+      "start_ticks": "2732973",
+      "comm": "codex"
+    },
+    {
+      "pid": 1175830,
+      "start_ticks": "2732973",
+      "comm": "codex"
+    },
+    {
+      "pid": 1175831,
+      "start_ticks": "2732974",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1175832,
+      "start_ticks": "2732974",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1175847,
+      "start_ticks": "2732988",
+      "comm": "codex"
+    },
+    {
+      "pid": 1176561,
+      "start_ticks": "2733752",
+      "comm": "codex-code-mode"
+    },
+    {
+      "pid": 1179024,
+      "start_ticks": "2736018",
+      "comm": "bwrap"
+    },
+    {
+      "pid": 1179030,
+      "start_ticks": "2736020",
+      "comm": "codex"
+    },
+    {
+      "pid": 1179031,
+      "start_ticks": "2736021",
+      "comm": "bash"
+    },
+    {
+      "pid": 1179049,
+      "start_ticks": "2736022",
+      "comm": "python3"
+    },
+    {
+      "pid": 1179056,
+      "start_ticks": "2736029",
+      "comm": "stockfish"
+    },
+    {
+      "pid": 1181358,
+      "start_ticks": "2740330",
+      "comm": "bwrap"
+    },
+    {
+      "pid": 1181363,
+      "start_ticks": "2740331",
+      "comm": "codex"
+    },
+    {
+      "pid": 1181364,
+      "start_ticks": "2740332",
+      "comm": "bash"
+    },
+    {
+      "pid": 1181369,
+      "start_ticks": "2740333",
+      "comm": "python3"
+    },
+    {
+      "pid": 1181403,
+      "start_ticks": "2740340",
+      "comm": "stockfish"
+    },
+    {
+      "pid": 1184203,
+      "start_ticks": "2745120",
+      "comm": "bwrap"
+    },
+    {
+      "pid": 1184208,
+      "start_ticks": "2745122",
+      "comm": "codex"
+    },
+    {
+      "pid": 1184209,
+      "start_ticks": "2745122",
+      "comm": "bash"
+    },
+    {
+      "pid": 1184214,
+      "start_ticks": "2745124",
+      "comm": "python3"
+    },
+    {
+      "pid": 1184232,
+      "start_ticks": "2745130",
+      "comm": "stockfish"
+    },
+    {
+      "pid": 1186837,
+      "start_ticks": "2749208",
+      "comm": "codex"
+    },
+    {
+      "pid": 1188617,
+      "start_ticks": "2750318",
+      "comm": "codex"
+    },
+    {
+      "pid": 1188943,
+      "start_ticks": "2750351",
+      "comm": "npm exec @googl"
+    },
+    {
+      "pid": 1188944,
+      "start_ticks": "2750351",
+      "comm": "npm exec @inkee"
+    },
+    {
+      "pid": 1188947,
+      "start_ticks": "2750351",
+      "comm": "npm exec fireba"
+    },
+    {
+      "pid": 1188949,
+      "start_ticks": "2750351",
+      "comm": "node_repl"
+    },
+    {
+      "pid": 1188955,
+      "start_ticks": "2750351",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1189028,
+      "start_ticks": "2750355",
+      "comm": "node_repl"
+    },
+    {
+      "pid": 1189235,
+      "start_ticks": "2750392",
+      "comm": "sh"
+    },
+    {
+      "pid": 1189236,
+      "start_ticks": "2750393",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1189243,
+      "start_ticks": "2750395",
+      "comm": "sh"
+    },
+    {
+      "pid": 1189244,
+      "start_ticks": "2750395",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1189251,
+      "start_ticks": "2750400",
+      "comm": "sh"
+    },
+    {
+      "pid": 1189252,
+      "start_ticks": "2750400",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1189306,
+      "start_ticks": "2750445",
+      "comm": "MainThread"
+    },
+    {
+      "pid": 1191449,
+      "start_ticks": "2751848",
+      "comm": "codex-code-mode"
+    },
+    {
+      "pid": 1196880,
+      "start_ticks": "2759262",
+      "comm": "bwrap"
+    },
+    {
+      "pid": 1196886,
+      "start_ticks": "2759264",
+      "comm": "codex"
+    },
+    {
+      "pid": 1196888,
+      "start_ticks": "2759265",
+      "comm": "stockfish"
+    }
+  ],
+  "signal": "SIGSTOP only; reversible"
+}

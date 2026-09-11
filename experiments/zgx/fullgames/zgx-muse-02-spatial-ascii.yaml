@@ -1,0 +1,79 @@
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: zgx-muse-02-spatial-ascii
+  tags: [zgx, fullgame, real, stockfish1320, muse-spark-1.3-contributor, untildone]
+
+spec:
+  seed: 2026090802
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 180
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: low
+        default_max_output_tokens: 4096
+      cognitive:
+        max_rounds: 4
+        preload_root: true
+        directive: "SPATIAL AWARENESS: Analyze the 2D ASCII board carefully to spot diagonal, vertical, and horizontal threats across lines. Finalize by Round 2 using board_finalize(node_id='ROOT', action_id='<uci_action>') on ROOT."
+        reasoning_memory: factual
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit: {nodes: 20000}
+          options: {Threads: "1", Hash: "16"}
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K6
+    observation:
+      position: {fen: true, ascii: true}
+      history: {mode: last_n, plies: 6, notation: uci}
+    legality:
+      parse_feedback: true
+      validation: {enabled: true, feedback: enumerated}
+      enumerate: {enabled: false}
+      transition_sandbox: true
+      limits: {validations: 64, transitions: 32, depth_plies: 2, branch_states: 24}
+    retry_profile: enumerate_after_failure
+    retries:
+      transport: 3
+      parse: 2
+      illegal: 5
+      feedback: enumerated
+
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

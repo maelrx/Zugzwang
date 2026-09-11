@@ -1,0 +1,5 @@
+experiment_name: isolated-luna-high-fast-01-tactical-memory-r6-cli-fixed
+protocol_hash: 1440c1e55950fe80cb75eb8a9eefcc04896b0b1a5d09e60bc7c1ed78bbcafb32
+conditions: {'condition_id': 'cnd_d029acd7e7f6fb9d', 'index': 0, 'parameters': {}, 'episodes': 1, 'estimated_calls': 10, 'budget_ceiling': {'max_calls': None, 'max_usd': None, 'max_wall_time_seconds': None, 'max_concurrent_episodes': 1}, 'incompatibilities': ('H4 declared but observation exposes no legal action set (grounding requires legal_actions exposure)',)}
+warnings: 
+total_estimated_calls: 10

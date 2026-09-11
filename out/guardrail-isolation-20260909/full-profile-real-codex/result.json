@@ -1,0 +1,8 @@
+{
+  "exit_code": 1,
+  "requests": 0,
+  "toolsets": [],
+  "executed": [],
+  "stdout": "",
+  "stderr": "Error loading config.toml: unknown configuration field `model_max_output_tokens` in -c/--config override\n"
+}

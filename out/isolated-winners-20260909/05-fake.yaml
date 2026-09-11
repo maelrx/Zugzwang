@@ -1,0 +1,96 @@
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: isolated-luna-high-fast-05-h3-persistent-tree-fake-preflight
+  tags:
+  - isolated-winners
+  - model-only-v1
+  - luna
+  - high
+  - fast
+  - private
+  - exploratory
+spec:
+  seed: 20260909
+  task:
+    plugin: chess.tasks
+    version: '0.1'
+    config:
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 2
+      search:
+        hypothesis_id: h3-persistent-forced-replies
+        memory_mode: persistent
+        reply_scope: all
+        prompt_mode: forced_replies
+        max_root_branches: 4
+        max_affordance_roots: 256
+        max_variant_branches: 6
+        max_nodes: 256
+        max_depth_plies: 2
+        max_validation_queries: 512
+        max_transition_queries: 256
+      backend_config: {}
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: fake-deterministic
+        strategy: chess.single_agent_tree
+    black:
+      policy:
+        plugin: chess.random-legal
+        config: {}
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K6
+    observation:
+      position:
+        fen: true
+        ascii: false
+      side_to_move: true
+      move_number: true
+      history:
+        mode: full
+        plies: 0
+        notation: uci
+      legal_actions:
+        exposure: delayed
+        encoding: uci
+    legality:
+      parse_feedback: true
+      validation:
+        enabled: true
+        feedback: enumerated
+      enumerate:
+        enabled: false
+      transition_sandbox: true
+      limits:
+        validations: 512
+        transitions: 256
+        depth_plies: 2
+        branch_states: 256
+    retry_profile: enumerate_after_failure
+    retries:
+      transport: 2
+      parse: 0
+      illegal: 3
+      feedback: enumerated
+  budget:
+    max_calls: 600
+    max_input_tokens: null
+    max_output_tokens: null
+    max_total_tokens: null
+    max_usd: null
+    max_wall_time_seconds: null
+    max_failed_calls: null
+    max_concurrent_episodes: 1
+    max_attempts: 1
+  evaluation: []
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

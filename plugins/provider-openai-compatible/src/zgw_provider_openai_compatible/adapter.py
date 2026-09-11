@@ -22,6 +22,7 @@ from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -46,6 +47,55 @@ from zugzwang_core.ports.model import (
 )
 
 _RESPONSES_PROFILE = "openai-responses"
+
+
+def _single_flight_lock():
+    """Cross-process single-flight gate for ONE shared provider quota.
+
+    ZGX campaign contract (plano 28 §3.1): one Muse inference in flight per
+    shared quota domain, not one per workspace. When ZGZ_MUSE_SINGLE_FLIGHT_LOCK
+    names a lock file, every wire call holds an exclusive flock for its
+    duration; concurrent run processes serialize at the HTTP boundary (their
+    non-provider work — engine moves, persistence — stays parallel).
+    """
+    import contextlib
+    import fcntl
+    import os
+
+    lock_path = os.environ.get("ZGZ_MUSE_SINGLE_FLIGHT_LOCK", "")
+    if not lock_path:
+
+        @contextlib.contextmanager
+        def _noop():
+            yield
+
+        return _noop()
+
+    @contextlib.contextmanager
+    def _gate():
+        fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            yield
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
+
+    return _gate()
+
+
+def _retry_after_seconds(headers: Any) -> float | None:
+    """Provider's Retry-After hint in seconds; None when absent or non-numeric
+    (HTTP-date form is deliberately unsupported — no clock guessing)."""
+    raw: Any = headers.get("retry-after") if headers is not None else None
+    if raw is None:
+        return None
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):
+        return None
 
 
 class OpenAiCompatibleBackend:
@@ -164,7 +214,8 @@ class OpenAiCompatibleBackend:
         self._last_wire_request = payload
         endpoint = "/responses" if is_responses else "/chat/completions"
         try:
-            response = await self._client.post(endpoint, json=payload)
+            with _single_flight_lock():
+                response = await self._client.post(endpoint, json=payload)
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError(
                 "provider call timed out", technical_context=self._base_url
@@ -182,7 +233,9 @@ class OpenAiCompatibleBackend:
 
         if response.status_code == 429:
             raise ProviderThrottlingError(
-                "provider rate limit (429)", technical_context=self._base_url
+                "provider rate limit (429)",
+                technical_context=self._base_url,
+                retry_after=_retry_after_seconds(response.headers),
             )
         if response.status_code >= 500:
             raise ProviderServerError(
@@ -196,6 +249,7 @@ class OpenAiCompatibleBackend:
             )
 
         body: dict[str, Any] = response.json()
+        reject_native_execution(body)
         normalized = (
             self._raise_responses_response(request, body, started, context)
             if is_responses
@@ -449,7 +503,10 @@ class OpenAiCompatibleBackend:
         if request.inference.stop:
             payload["stop"] = list(request.inference.stop)
         if self._reasoning_effort:
-            payload["reasoning"] = {"effort": self._reasoning_effort}
+            # Operator directive 2026-09-08: request readable reasoning
+            # summaries — the telemetry contract already carries
+            # reasoning_summary; the encrypted items stay as raw evidence.
+            payload["reasoning"] = {"effort": self._reasoning_effort, "summary": "auto"}
         if request.tools:
             payload["tools"] = [
                 {

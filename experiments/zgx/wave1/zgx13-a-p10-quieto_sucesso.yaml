@@ -1,0 +1,76 @@
+# ZGX-13 onda 1 — N6-neutro | p10-quieto_sucesso (quieto_sucesso) | BA
+# Posição-fonte: cb-arena-j@ply30:J@ply30. Par pareado; esforço LOW; rota muse congelada.
+# controle N6 prompt neutro.
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+
+metadata:
+  name: zgx13-a-p10-quieto_sucesso
+  tags: [zgx, wave1, real, zgx13, quieto_sucesso]
+
+spec:
+  seed: 202690009
+
+  task:
+    plugin: chess.tasks
+    version: "0.1"
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: move-selection
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      move_prefix: [e2e4, e7e6, d2d4, d7d5, e4d5, e6d5, c2c4, f8b4, b1d2, b8c6, g1f3, d8e7, f1e2, c8g4, c4d5, b4d2, d1d2, g4f3, g2f3, c6b8, e1g1, g8f6, e2c4, b8d7, f1e1, d7b6, e1e7, e8f8, e7c7, b6c4]
+      backend_config:
+        base_url: http://127.0.0.1:8788/v1
+        provider_id: opencode-router
+        timeout_seconds: 420
+        profile: openai-responses
+        allow_private_network: true
+        reasoning_effort: low
+        default_max_output_tokens: 8192
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        directive: >-
+          Choose the best move for the side to move. Use board_observe on the
+          root, investigate with board_expand as needed — an expansion returns
+          the child's position package, and you may expand FROM a child to
+          examine the adversary's reply. Then finalize with board_finalize on
+          the ROOT node with the chosen action_id. The legal list order is not
+          a quality ranking.
+
+
+  players:
+    white:
+      model:
+        backend: provider.openai_compatible
+        provider: opencode-router
+        model: muse-spark-1.3-contributor
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: fake.stay
+
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position: {fen: true, ascii: false}
+      side_to_move: true
+      move_number: true
+      history: {mode: last_n, plies: 6, notation: uci}
+    retries:
+      transport: 4
+      parse: 1
+      illegal: 4
+
+  budget:
+    max_calls: 60
+    max_concurrent_episodes: 1
+    max_attempts: 1
+
+  evaluation: []
+
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

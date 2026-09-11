@@ -1,0 +1,65 @@
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: zgx-sonnet-01-tactical-uci
+  tags:
+  - zgx
+  - sonnet
+  - fullgame
+  - real
+  - stockfish1320
+  - claude-sonnet-4-6
+  - untildone
+spec:
+  seed: 202699900
+  task:
+    plugin: chess.tasks
+    version: '0.1'
+    config:
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: null
+      backend_config:
+        provider_id: antigravity-cli
+        model: claude-sonnet-4-6
+        timeout_seconds: 120
+  players:
+    white:
+      model:
+        backend: provider.antigravity_cli
+        provider: antigravity-cli
+        model: claude-sonnet-4-6
+        strategy: chess.direct
+    black:
+      policy:
+        plugin: chess.stockfish
+        config:
+          executable: /home/maelrx/.local/bin/stockfish
+          elo: 1320
+          allow_approximate: true
+          limit:
+            nodes: 20000
+          options:
+            Threads: '1'
+            Hash: '16'
+  protocol:
+    declared_assistance: H2
+    declared_knowledge: K0
+    observation:
+      position:
+        fen: true
+        ascii: false
+      history:
+        mode: last_n
+        plies: 6
+        notation: uci
+    retries:
+      transport: 3
+      parse: 2
+      illegal: 5
+      feedback: enumerated
+    retry_profile: enumerate_after_failure
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1

@@ -22,6 +22,7 @@ from zugzwang_core.domain.errors import (
     ProviderThrottlingError,
 )
 from zugzwang_core.domain.money import TokenUsage, UsageSource
+from zugzwang_core.domain.provider_isolation import ProviderIsolationError, reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -39,6 +40,18 @@ from zugzwang_core.ports.model import (
     TextPart,
     WireFidelity,
 )
+
+
+def _retry_after_seconds(headers: Any) -> float | None:
+    """Provider's Retry-After hint in seconds; None when absent or non-numeric
+    (HTTP-date form is deliberately unsupported — no clock guessing)."""
+    raw: Any = headers.get("retry-after") if headers is not None else None
+    if raw is None:
+        return None
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):
+        return None
 
 
 class OpenCodeBackend:
@@ -117,7 +130,10 @@ class OpenCodeBackend:
         try:
             response = await self._client.post(
                 "/session",
-                json={"title": "zugzwang-call"},
+                json={
+                    "title": "zugzwang-call",
+                    "permission": [{"permission": "*", "pattern": "*", "action": "deny"}],
+                },
             )
         except httpx.HTTPError as exc:
             raise ProviderConnectionError(
@@ -135,6 +151,13 @@ class OpenCodeBackend:
             raise ProviderResponseError(
                 "opencode session response has no id",
                 technical_context=str(data)[:200],
+            )
+        expected = [{"permission": "*", "pattern": "*", "action": "deny"}]
+        if data.get("permission") != expected:
+            await self._dispose_session(session_id)
+            raise ProviderIsolationError(
+                "OpenCode refused or omitted the deny-all session policy; inference blocked.",
+                wire_response=data,
             )
         return session_id
 
@@ -193,7 +216,9 @@ class OpenCodeBackend:
             self._last_wire_response = {}
         if response.status_code == 429:
             raise ProviderThrottlingError(
-                "opencode rate limited (429)", technical_context=self._base_url
+                "opencode rate limited (429)",
+                technical_context=self._base_url,
+                retry_after=_retry_after_seconds(response.headers),
             )
         if response.status_code >= 400:
             raise ProviderServerError(
@@ -201,6 +226,7 @@ class OpenCodeBackend:
                 technical_context=response.text[:200],
             )
         data: dict[str, Any] = cast(dict[str, Any], response.json())
+        reject_native_execution(data)
         info: dict[str, Any] = cast(dict[str, Any], data.get("info") or {})
         error_raw = info.get("error")
         if isinstance(error_raw, dict):
@@ -209,7 +235,9 @@ class OpenCodeBackend:
             message = str(error_payload.get("message") or error_data.get("name"))
             if error_payload.get("statusCode") == 429:
                 raise ProviderThrottlingError(
-                    "opencode reported rate limiting", technical_context=message
+                    "opencode reported rate limiting",
+                    technical_context=message,
+                    retry_after=None,
                 )
             raise ProviderResponseError("opencode provider error", technical_context=message[:300])
         parts_raw = data.get("parts")

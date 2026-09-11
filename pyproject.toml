@@ -27,6 +27,7 @@ dev = [
 target-version = "py313"
 line-length = 100
 src = ["packages/zugzwang-core/src", "packages/zugzwang-runtime/src", "packages/zugzwang-chess/src", "packages/zugzwang-cli/src", "plugins"]
+extend-exclude = ["out"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "C4"]
@@ -44,10 +45,14 @@ include = [
     "plugins/provider-openai-compatible/src",
     "plugins/provider-opencode/src",
     "plugins/provider-pydantic-ai/src",
+    "plugins/provider-zcode-glm/src",
+    "plugins/provider-codex-cli/src",
+    "plugins/provider-experiential-labs/src",
+    "plugins/provider-antigravity-cli/src",
     "plugins/evaluator-stockfish/src",
     "plugins/reporter-parquet/src",
 ]
-exclude = ["**/tests/**", "**/build/**", "**/.venv/**"]
+exclude = ["**/tests/**", "**/build/**", "**/.venv/**", "out/**"]
 typeCheckingMode = "strict"
 reportUnusedImport = "error"
 reportMissingTypeStubs = "none"
@@ -59,6 +64,10 @@ extraPaths = [
     "plugins/provider-openai-compatible/src",
     "plugins/provider-opencode/src",
     "plugins/provider-pydantic-ai/src",
+    "plugins/provider-zcode-glm/src",
+    "plugins/provider-codex-cli/src",
+    "plugins/provider-experiential-labs/src",
+    "plugins/provider-antigravity-cli/src",
     "plugins/evaluator-stockfish/src",
     "plugins/reporter-parquet/src",
 ]

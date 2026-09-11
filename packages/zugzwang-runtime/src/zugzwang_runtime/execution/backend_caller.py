@@ -8,7 +8,7 @@ timeouts are recorded ``outcome_unknown`` and never blindly retried.
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 from zugzwang_core.domain.errors import (
     ProviderTimeoutError,
@@ -17,6 +17,7 @@ from zugzwang_core.domain.errors import (
 )
 from zugzwang_core.domain.events import EventContext, EventEnvelope
 from zugzwang_core.domain.ids import new_id
+from zugzwang_core.domain.provider_isolation import ProviderIsolationError, reject_native_execution
 from zugzwang_core.ports.model import (
     BackendDescriptor,
     CallContext,
@@ -56,6 +57,7 @@ class RecordingBackend:
         capture_raw_requests: bool = False,
         capture_raw_responses: bool = False,
     ) -> None:
+        self._isolation_error: ProviderIsolationError | None = None
         self._inner = inner
         self._writer = writer
         self._event_sink = event_sink
@@ -66,10 +68,25 @@ class RecordingBackend:
         self._capture_responses = capture_raw_responses
         self._evidence_by_attempt: dict[str, dict[str, str | None]] = {}
         self._decision_attempt_ids: list[str] = []
+        # ZGW-0103 R1: caller-supplied attempt id (CallContext.attempt_id) ->
+        # merged evidence refs of every real attempt fired under it. Strategies
+        # stamp CallRecord.attempt_id with the caller id they chose; joining
+        # trace rows to their own response MUST use this identity, never a
+        # positional fallback.
+        self._caller_evidence: dict[str, dict[str, str | None]] = {}
+        # Operator directive 2026-09-08: the last decision's own reasoning
+        # summary, replayed as self-memory between moves (manifest-gated).
+        self.last_reasoning_summary: str | None = None
+
+    def assert_isolated(self) -> None:
+        """A strategy cannot swallow a security failure and commit a fallback."""
+        if self._isolation_error is not None:
+            raise self._isolation_error
 
     def begin_decision(self) -> None:
         """Start a local correlation window for one strategy decision."""
         self._decision_attempt_ids = []
+        self._caller_evidence = {}
 
     def evidence_for_attempt(self, attempt_id: str) -> dict[str, str | None]:
         return dict(self._evidence_by_attempt.get(attempt_id, {}))
@@ -83,6 +100,22 @@ class RecordingBackend:
             for attempt_id in self._decision_attempt_ids
             if attempt_id in self._evidence_by_attempt
         }
+
+    def evidence_for_calls(self) -> dict[str, dict[str, str | None]]:
+        """Evidence keyed by the CALLER's attempt id (CallContext.attempt_id).
+
+        This is the join key strategies actually put in ``CallRecord.attempt_id``
+        (ZGW-0103 R1). Transport retries under one caller id merge into one
+        entry: later attempts overwrite only the fields they really observed,
+        so an unknown field from the first try is never fabricated.
+        """
+        return {caller_id: dict(refs) for caller_id, refs in self._caller_evidence.items()}
+
+    def _merge_caller_evidence(self, caller_id: str, refs: dict[str, str | None]) -> None:
+        entry = self._caller_evidence.setdefault(caller_id, {})
+        for field, ref in refs.items():
+            if ref is not None or field not in entry:
+                entry[field] = ref
 
     @property
     def descriptor(self) -> BackendDescriptor:
@@ -98,6 +131,7 @@ class RecordingBackend:
         return await self._inner.inspect_capabilities(model, required, preferred, on_unsupported)
 
     async def infer(self, request: ModelRequest, context: CallContext) -> ProviderResult:
+        self.assert_isolated()
         if request.required_capabilities:
             report = await self._inner.inspect_capabilities(
                 request.model,
@@ -115,6 +149,7 @@ class RecordingBackend:
         ordinal = self._attempt_counter.get(key, 0)
         while True:
             attempt_id = str(new_id("att"))
+            caller_id = context.attempt_id or attempt_id
             self._decision_attempt_ids.append(attempt_id)
             attempt_context = context.model_copy(update={"attempt_id": attempt_id})
             started = time.monotonic()
@@ -157,12 +192,23 @@ class RecordingBackend:
             )
             try:
                 result = await self._inner.infer(request, attempt_context)
+                reject_native_execution(result.wire_response)
             except ProviderTimeoutError as exc:
                 failed_wire_ref = self._capture_failed_wire_request(attempt_id)
                 failed_response_ref = self._capture_failed_wire_response(attempt_id)
                 latency = int((time.monotonic() - started) * 1000)
                 self._record_outcome(
                     attempt_id, "timeout_unknown", exc.stable_code, latency, unknown=True
+                )
+                self._merge_caller_evidence(
+                    caller_id,
+                    {
+                        "request_artifact_ref": request_ref,
+                        "wire_request_artifact_ref": failed_wire_ref,
+                        "wire_response_artifact_ref": failed_response_ref,
+                        "response_artifact_ref": None,
+                        "reasoning_telemetry_artifact_ref": None,
+                    },
                 )
                 self._emit(
                     event_context,
@@ -179,6 +225,16 @@ class RecordingBackend:
                 failed_response_ref = self._capture_failed_wire_response(attempt_id)
                 latency = int((time.monotonic() - started) * 1000)
                 self._record_outcome(attempt_id, "failed", exc.stable_code, latency)
+                self._merge_caller_evidence(
+                    caller_id,
+                    {
+                        "request_artifact_ref": request_ref,
+                        "wire_request_artifact_ref": failed_wire_ref,
+                        "wire_response_artifact_ref": failed_response_ref,
+                        "response_artifact_ref": None,
+                        "reasoning_telemetry_artifact_ref": None,
+                    },
+                )
                 self._emit(
                     event_context,
                     "provider.call.failed",
@@ -191,16 +247,42 @@ class RecordingBackend:
                     Retryability.TRANSPORT,
                     Retryability.THROTTLING,
                 ):
+                    retry_after = getattr(exc, "retry_after", None)
+                    if retry_after is not None:
+                        # ZGW-0103 R5: a throttling retry honors the provider's
+                        # own pacing hint, bounded so a hostile header cannot
+                        # stall a campaign slot.
+                        time.sleep(min(float(retry_after), 120.0))
+                    elif exc.retryability is Retryability.THROTTLING:
+                        # No hint advertised (the opencode router's case):
+                        # exponential pacing instead of hammering the quota
+                        # back-to-back — instant triple-429 killed the first
+                        # cb2 launch wave (campaign 2026-09-08).
+                        time.sleep(min(2.0 * (2**ordinal), 30.0))
                     ordinal += 1
                     continue
                 self._attempt_counter[key] = ordinal + 1
                 raise
             except Exception as exc:
+                if isinstance(exc, ProviderIsolationError):
+                    self._isolation_error = exc
                 failed_wire_ref = self._capture_failed_wire_request(attempt_id)
-                failed_response_ref = self._capture_failed_wire_response(attempt_id)
+                failed_response_ref = self._capture_failed_wire_response(
+                    attempt_id, fallback=getattr(exc, "wire_response", None)
+                )
                 latency = int((time.monotonic() - started) * 1000)
                 code = getattr(exc, "stable_code", "ZGZ-PROVIDER_RESPONSE-000")
                 self._record_outcome(attempt_id, "failed", code, latency)
+                self._merge_caller_evidence(
+                    caller_id,
+                    {
+                        "request_artifact_ref": request_ref,
+                        "wire_request_artifact_ref": failed_wire_ref,
+                        "wire_response_artifact_ref": failed_response_ref,
+                        "response_artifact_ref": None,
+                        "reasoning_telemetry_artifact_ref": None,
+                    },
+                )
                 self._emit(
                     event_context,
                     "provider.call.failed",
@@ -235,6 +317,7 @@ class RecordingBackend:
                     )
                     evidence_refs.append(wire_response_ref)
                 if result.reasoning_telemetry is not None:
+                    self.last_reasoning_summary = result.reasoning_telemetry.reasoning_summary
                     reasoning_ref = self._capture_json(
                         result.reasoning_telemetry.model_dump(mode="json"),
                         "application/vnd.zugzwang.reasoning-telemetry+json",
@@ -247,6 +330,10 @@ class RecordingBackend:
                 "response_artifact_ref": normalized_ref,
                 "reasoning_telemetry_artifact_ref": reasoning_ref,
             }
+            self._merge_caller_evidence(
+                caller_id,
+                self._evidence_by_attempt[attempt_id],
+            )
             usage_json: dict[str, Any] = {
                 "input_tokens": response.usage.input_tokens,
                 "output_tokens": response.usage.output_tokens,
@@ -346,10 +433,14 @@ class RecordingBackend:
         )
         return ref
 
-    def _capture_failed_wire_response(self, attempt_id: str) -> str | None:
+    def _capture_failed_wire_response(self, attempt_id: str, fallback: Any = None) -> str | None:
         if not self._capture_responses or self._artifact_store is None:
             return None
-        payload = getattr(self._inner, "_last_wire_response", None)
+        payload = (
+            cast("dict[str, Any]", fallback)
+            if isinstance(fallback, dict)
+            else getattr(self._inner, "_last_wire_response", None)
+        )
         if not isinstance(payload, dict):
             return None
         ref = self._capture_json(

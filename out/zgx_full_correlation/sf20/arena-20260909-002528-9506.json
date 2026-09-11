@@ -1,0 +1,94 @@
+{
+ "source_pgn": "../arena/arena-20260909-002528-9506.pgn",
+ "engine": "stockfish-16",
+ "depth": 20,
+ "games": [
+  {
+   "headers": {
+    "Event": "Arena ZGW-0108 (non-canonical)",
+    "Site": "local",
+    "Date": "2026.09.09",
+    "Round": "?",
+    "White": "Humano (Mael)",
+    "Black": "gemini-3.8-flash-low (antigravity-cli)",
+    "Result": "*"
+   },
+   "result": "*",
+   "plies": 4,
+   "white": {
+    "moves": 2,
+    "acpl": 0.0,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 1.0
+   },
+   "black": {
+    "moves": 2,
+    "acpl": 10.5,
+    "blunders": 0,
+    "cliffs": 0,
+    "agreement": 0.0
+   },
+   "records": [
+    {
+     "ply": 1,
+     "uci": "e2e4",
+     "san": "e4",
+     "side": "white",
+     "cp_before": 32,
+     "cp_after": 37,
+     "regret": -5,
+     "best_move": "e2e4",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 2,
+     "uci": "c7c5",
+     "san": "c5",
+     "side": "black",
+     "cp_before": -32,
+     "cp_after": -41,
+     "regret": 9,
+     "best_move": "e7e5",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 3,
+     "uci": "g1f3",
+     "san": "Nf3",
+     "side": "white",
+     "cp_before": 35,
+     "cp_after": 41,
+     "regret": -6,
+     "best_move": "g1f3",
+     "agreement": true,
+     "blunder": false,
+     "mate": false
+    },
+    {
+     "ply": 4,
+     "uci": "d7d6",
+     "san": "d6",
+     "side": "black",
+     "cp_before": -44,
+     "cp_after": -56,
+     "regret": 12,
+     "best_move": "b8c6",
+     "agreement": false,
+     "blunder": false,
+     "mate": false
+    }
+   ],
+   "eval_trajectory_white_pov": [
+    37,
+    41,
+    41,
+    56
+   ]
+  }
+ ]
+}

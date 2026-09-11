@@ -1,0 +1,9 @@
+[Event "zgx-full-02-spatial-ascii"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "gemini-3.8-flash-low"]
+[Black "stockfish-1320"]
+[Result "*"]
+
+1. e4 e6 2. d4 c5 3. Nf3 Nf6 4. e5 Qa5+ 5. Bd2 Qd8 6. exf6 d5 7. fxg7 Bxg7 8. c3 Qb6 9. Qb3 cxd4 10. cxd4 Nc6 11. Qxb6 axb6 12. Bb5 Rg8 13. O-O Bxd4 14. Nxd4 Ke7 15. Nxc6+ Ke8 16. Na7+ Ke7 17. Nxc8+ Rgxc8 18. Bb4+ Kf6 19. Nc3 Rg8 20. Nxd5+ exd5 21. Bc3+ Ke7 22. Rfe1+ Kd6 23. Bb4+ Kc7 24. Re7+ Kd8 25. Rd7+ Kc8 26. Rc1+ Kb8 27. Bd6+ Ka7 28. Rc8 Rgxc8 29. Bc7 h6 30. Bxb6+ Kxb6 31. Bc4 dxc4 32. Rxf7 h5 33. Rf6+ Ka5 34. Rf5+ b5 35. Rxh5 Kb4 36. Rxb5+ Kxb5 37. Kf1 Rab8 38. Ke2 Ka5 39. b4+ cxb3 40. axb3 Rc2+ 41. Ke3 Rc3+ 42. Kd4 Rc7 43. Ke4 Re8+ 44. Kf3 Rf8+ 45. Kg3 Rg8+ 46. Kf4 Rf8+ 47. Kg3 Rg7+ 48. Kh4 Rh8# *

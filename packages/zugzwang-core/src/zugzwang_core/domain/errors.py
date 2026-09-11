@@ -106,6 +106,19 @@ class ProviderThrottlingError(ProviderTransportError):
     stable_code = "ZGZ-PROVIDER_TRANSPORT-001"
     retryability = Retryability.THROTTLING
 
+    def __init__(
+        self,
+        user_message: str,
+        *,
+        technical_context: str | None = None,
+        cause: BaseException | None = None,
+        retry_after: float | None = None,
+    ) -> None:
+        super().__init__(user_message, technical_context=technical_context, cause=cause)
+        # Seconds suggested by the provider's Retry-After header, if any
+        # (ZGW-0103 R5). None when the provider did not advertise pacing.
+        self.retry_after = retry_after
+
 
 class ProviderTimeoutError(ProviderTransportError):
     stable_code = "ZGZ-PROVIDER_TRANSPORT-002"

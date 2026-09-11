@@ -13,9 +13,13 @@ members = [
     "zugzwang-cli",
     "zugzwang-core",
     "zugzwang-evaluator-stockfish",
+    "zugzwang-provider-antigravity-cli",
+    "zugzwang-provider-codex-cli",
+    "zugzwang-provider-experiential-labs",
     "zugzwang-provider-openai-compatible",
     "zugzwang-provider-opencode",
     "zugzwang-provider-pydantic-ai",
+    "zugzwang-provider-zcode-glm",
     "zugzwang-reporter-parquet",
     "zugzwang-runtime",
 ]
@@ -2638,6 +2642,43 @@ requires-dist = [
 ]
 
 [[package]]
+name = "zugzwang-provider-antigravity-cli"
+version = "0.1.0.dev0"
+source = { editable = "plugins/provider-antigravity-cli" }
+dependencies = [
+    { name = "zugzwang-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "zugzwang-core", editable = "packages/zugzwang-core" }]
+
+[[package]]
+name = "zugzwang-provider-codex-cli"
+version = "0.1.0.dev0"
+source = { editable = "plugins/provider-codex-cli" }
+dependencies = [
+    { name = "zugzwang-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "zugzwang-core", editable = "packages/zugzwang-core" }]
+
+[[package]]
+name = "zugzwang-provider-experiential-labs"
+version = "0.1.0.dev0"
+source = { editable = "plugins/provider-experiential-labs" }
+dependencies = [
+    { name = "httpx" },
+    { name = "zugzwang-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "zugzwang-core", editable = "packages/zugzwang-core" },
+]
+
+[[package]]
 name = "zugzwang-provider-openai-compatible"
 version = "0.1.0.dev0"
 source = { editable = "plugins/provider-openai-compatible" }
@@ -2679,6 +2720,21 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "pydantic-ai", specifier = ">=0.0.50" },
+    { name = "zugzwang-core", editable = "packages/zugzwang-core" },
+]
+
+[[package]]
+name = "zugzwang-provider-zcode-glm"
+version = "0.1.0.dev0"
+source = { editable = "plugins/provider-zcode-glm" }
+dependencies = [
+    { name = "httpx" },
+    { name = "zugzwang-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28" },
     { name = "zugzwang-core", editable = "packages/zugzwang-core" },
 ]
 

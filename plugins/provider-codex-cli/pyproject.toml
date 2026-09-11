@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zugzwang-provider-codex-cli"
+version = "0.1.0.dev0"
+description = "Zugzwang provider adapter: Codex CLI (headless `codex exec`) as an inference backend."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "zugzwang-core",
+]
+
+[project.entry-points."zugzwang.providers"]
+codex_cli = "zgw_provider_codex_cli:plugin"
+
+[tool.uv.sources]
+zugzwang-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zgw_provider_codex_cli"]

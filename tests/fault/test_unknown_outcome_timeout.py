@@ -163,7 +163,10 @@ async def test_unknown_outcome_timeout_fails_closed_without_new_call(tmp_path: P
         episode = connection.execute(
             "SELECT status, outcome FROM episodes WHERE run_id=?", (run_id,)
         ).fetchone()
-        assert episode == ("FAILED", "decision_error")
+        # ZGW-0103 R2: a timeout with unknown outcome settles under the
+        # provider_error class — distinct from strategy decision errors, and
+        # still fail-closed with zero illegal-action retries.
+        assert episode == ("FAILED", "provider_error")
 
         step = connection.execute(
             "SELECT status FROM steps WHERE episode_id IN "

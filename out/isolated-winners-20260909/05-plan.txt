@@ -1,0 +1,5 @@
+experiment_name: isolated-luna-high-fast-05-h3-persistent-tree
+protocol_hash: 8b46b13a555af5e01494f82fc243374ff4b35a57377836d663a7ceb5a8115bf2
+conditions: {'condition_id': 'cnd_8ca610b380e8c03a', 'index': 0, 'parameters': {}, 'episodes': 1, 'estimated_calls': 10, 'budget_ceiling': {'max_calls': 600, 'max_usd': None, 'max_wall_time_seconds': None, 'max_concurrent_episodes': 1}, 'incompatibilities': ()}
+warnings: 
+total_estimated_calls: 10

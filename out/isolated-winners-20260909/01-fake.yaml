@@ -1,0 +1,71 @@
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: isolated-luna-high-fast-01-tactical-memory-r6-fake-preflight
+  tags:
+  - isolated-winners
+  - model-only-v1
+  - luna
+  - high
+  - fast
+  - private
+  - exploratory
+spec:
+  seed: 20260913
+  task:
+    plugin: chess.tasks
+    version: '0.1'
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 2
+      backend_config: {}
+      cognitive:
+        max_rounds: 6
+        preload_root: true
+        inline_child_packages: true
+        reasoning_memory: factual
+        directive: 'TACTICAL PRIORITIES & FACTUAL MEMORY: On every turn, examine all
+          forcing lines (checks, captures, immediate threats). Expand candidates to
+          verify tactical safety. Retain factual tactical memory across rounds to
+          avoid blunders. Finalize on ROOT via board_finalize once your candidate
+          survives verification.'
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: fake-deterministic
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.random-legal
+        config: {}
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K0
+    observation:
+      position:
+        fen: true
+        ascii: false
+      side_to_move: true
+      move_number: true
+      history:
+        mode: last_n
+        plies: 12
+        notation: uci
+    retries:
+      transport: 4
+      parse: 2
+      illegal: 5
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1
+    max_attempts: 1
+  evaluation: []
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

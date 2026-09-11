@@ -1,0 +1,77 @@
+{
+  "schema": "zugzwang.arena-game/v1",
+  "id": "arena-20260909-002528-9506",
+  "created_at": "2026-09-09T00:25:28",
+  "setup": {
+    "provider": "antigravity-cli",
+    "model": "gemini-3.8-flash-low",
+    "effort": "low",
+    "human_color": "white",
+    "max_rounds": 6,
+    "ascii": false,
+    "history_plies": 12,
+    "directive": null,
+    "timeout_seconds": 180.0
+  },
+  "status": "human_turn",
+  "result": null,
+  "last_error": null,
+  "model_note": {
+    "fen": "rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3",
+    "my_move": "d6",
+    "hypothesis": "We have evaluated the candidate responses to White's 2. Nf3 against the Sicilian Defense (1. e4 c5 2. Nf3). The primary standard continuations are 2...d6, 2...Nc6, and 2...e6. The classical, flexible line 2...d6 prepares ...Nf6 and controls e5 while keeping open options for the Najdorf or Dragon setups. The corresponding action ID from root `n0` for `d7d6`: `action_id:v2:c7ea731661fdc60efd9cd4b56a28c04d60f1f10ae4eda8c37b2ab46ed93e8553` ```json {\"command\": \"board_finalize\", \"arguments\": {\"node_id\": \"n0\", \"action_id\": \"action_id:v2:c7ea731661fdc60efd9cd4b56a28c04d60f1f10ae4eda8c37b2ab46ed93e8553"
+  },
+  "moves": [
+    {
+      "ply": 1,
+      "side": "white",
+      "actor": "human",
+      "uci": "e2e4",
+      "san": "e4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 2,
+      "side": "black",
+      "actor": "model",
+      "uci": "c7c5",
+      "san": "c5",
+      "latency_ms": 11272,
+      "tokens_out": 99,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 3,
+      "side": "white",
+      "actor": "human",
+      "uci": "g1f3",
+      "san": "Nf3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 4,
+      "side": "black",
+      "actor": "model",
+      "uci": "d7d6",
+      "san": "d6",
+      "latency_ms": 12653,
+      "tokens_out": 267,
+      "rounds": 2,
+      "error": null
+    }
+  ],
+  "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "board_moves": [
+    "e2e4",
+    "c7c5",
+    "g1f3",
+    "d7d6"
+  ]
+}

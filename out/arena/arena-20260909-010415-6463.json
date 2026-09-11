@@ -1,0 +1,81 @@
+{
+  "schema": "zugzwang.arena-game/v1",
+  "id": "arena-20260909-010415-6463",
+  "created_at": "2026-09-09T01:04:15",
+  "setup": {
+    "provider": "antigravity-cli",
+    "model": "gemini-3.8-flash-low",
+    "effort": "low",
+    "human_color": "white",
+    "max_rounds": 6,
+    "ascii": false,
+    "history_plies": 12,
+    "directive": null,
+    "timeout_seconds": 180.0
+  },
+  "status": "finished",
+  "result": {
+    "score": "0-1",
+    "kind": "resign",
+    "winner": "black"
+  },
+  "last_error": null,
+  "model_note": {
+    "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+    "my_move": "Nc6",
+    "hypothesis": "Analyse the root position: - FEN: `rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2` - White just played `2. Nf3`, attacking Black's pawn on `e5`. - Tactical check: e5 pawn is undefended and under attack by White's knight on f3. - The standard, most natural, active, and classical defense is `2... Nc6` (`b8c6`), developing a piece toward the center and defending e5. - Let's verify `b8c6` in the legal actions list: - `action_id:v2:a14776691e1b5aff089b81f3aded353c6bc38ad8d77cad2aa847df23c526d1f7` (`b8c6`) Let's double-check other moves: - `2... d6` (Philidor Defense) defends e5, but"
+  },
+  "moves": [
+    {
+      "ply": 1,
+      "side": "white",
+      "actor": "human",
+      "uci": "e2e4",
+      "san": "e4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 2,
+      "side": "black",
+      "actor": "model",
+      "uci": "e7e5",
+      "san": "e5",
+      "latency_ms": 8473,
+      "tokens_out": 333,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 3,
+      "side": "white",
+      "actor": "human",
+      "uci": "g1f3",
+      "san": "Nf3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 4,
+      "side": "black",
+      "actor": "model",
+      "uci": "b8c6",
+      "san": "Nc6",
+      "latency_ms": 5945,
+      "tokens_out": 415,
+      "rounds": 1,
+      "error": null
+    }
+  ],
+  "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "board_moves": [
+    "e2e4",
+    "e7e5",
+    "g1f3",
+    "b8c6"
+  ]
+}

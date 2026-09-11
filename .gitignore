@@ -33,3 +33,15 @@ viewer-next/public/data/
 # Generated local analysis is not portable source.
 .hypothesis/
 node_modules/
+
+# Local agent/plugin roots (host-specific, not portable source).
+.v2c/
+.video_agent/
+
+# Local run workspaces and databases are evidence, not portable source.
+out/**/*.db
+out/**/*.sqlite
+out/**/*.sqlite3
+out/**/*.log
+out/isolated-winners-20260909/run-*/
+out/isolated-winners-20260909/historical-snapshot.json

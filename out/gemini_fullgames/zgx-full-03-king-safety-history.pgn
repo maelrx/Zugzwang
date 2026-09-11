@@ -1,0 +1,9 @@
+[Event "zgx-full-03-king-safety-history"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "gemini-3.8-flash-low"]
+[Black "stockfish-1320"]
+[Result "*"]
+
+1. Nf3 e6 2. d4 d5 3. c4 Be7 4. Nc3 dxc4 5. e3 b5 6. Nxb5 Nf6 7. Bxc4 Bb4+ 8. Bd2 Bd6 9. O-O Ba6 10. Nxd6+ Qxd6 11. Qa4+ c6 12. Bxa6 Ng4 13. Bb7 Nxe3 14. Bxa8 Ng4 15. Bxc6+ Nd7 16. Bxd7+ Qxd7 17. Qxd7+ Kxd7 18. h3 Rb8 19. hxg4 Ke7 20. b3 f6 21. Rfe1 Kf7 22. Rac1 Re8 23. Rc7+ Kf8 24. Rxa7 Kg8 25. Bc3 Rc8 26. Bb4 Rb8 27. Rxe6 h5 28. Ree7 hxg4 29. Rxg7+ Kh8 30. Rh7+ Kg8 31. Rag7# *

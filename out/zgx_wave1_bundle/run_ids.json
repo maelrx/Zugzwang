@@ -1,0 +1,907 @@
+{
+ "zgx-preflight": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_GHK1EE6wtrdJrGKT5-tXJA",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_mqRsLNYOdj7gwmSFr7dX8Q",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_t5AdUgMB-AROJ-q7sCpyHg",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Z4zw6_dO6vG35diU72Ylzw",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p04-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_hfuZSi2-uZ0P_wKfxHe96Q",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p05-urgencia_rei": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_3kcLtXfQMf6N5ItFgtW8fA",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p06-urgencia_rei": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_ZNhdB-wHE0oAIhPkPTpIqA",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p07-linha_risco": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_ibRKk7gSsN3xllVqj_Mt7g",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p08-linha_risco": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_KGuHSQrOXjihvu3dVIs6LQ",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p09-quieto_sucesso": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_OtlqnH_J7uu3nbE8VZccCA",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p10-quieto_sucesso": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_sdnmBIu88vw-0AWzC2vxEA",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p11-final_conversao": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_NUI2nZzK59tiVGZOukg30Q",
+  "status": "COMPLETED"
+ },
+ "zgx01-a-p12-final_conversao": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_LDPOqxLquucebcbyJ2KvWA",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_IKz7Crujj38uOPxYXy9-Yw",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_um59Wp3-ZxeP_f7UXUT1Ww",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p03-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_wFF6kfKEpO_wMF-Lp1LHWQ",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p04-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_HQ3r-muakQluLk3JkWGzWQ",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p05-urgencia_rei": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_vgY6J2DGgxsFBllLnVy81A",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p06-urgencia_rei": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_XRXnE2vz4QnbVMN3RBItgg",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p07-linha_risco": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_s5ldEGt1hIA-RzePIXu2zQ",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p08-linha_risco": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_dWrsCyP5WFvVmCQvCcuFLw",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p09-quieto_sucesso": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_iF_JaZ0cqrut7ktLieDSaA",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p10-quieto_sucesso": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_rzzw52kKZKfg5SVAPIfLfw",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p11-final_conversao": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_odbg19kO2-oVZTeIO50xEw",
+  "status": "COMPLETED"
+ },
+ "zgx01-b-p12-final_conversao": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_eNQnrrSdpsq6HPQOqRxdDw",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_p32J1cPeo9tmHMX4CreaOw",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_h81efoQtebk7r9Tu8MCL1g",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_JvICbbu-WU-bwh0TSXNABg",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_gOq1Hov0jK1Tr8MY6pH1KA",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_e7ZluZuwpNtUOMtBdQbx6A",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_eKgF3QkkZ3UVu-b3eGdT4w",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_6zccIryIcgupUnTcngR3YA",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_mqCsuXg7PQcyebhx8pW8_A",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_hL4lUVAJxrCv4MjLYTs1Rg",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Ql7IeBOTclnOawE75QDM8Q",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_U-iWvM5q-SxqeqdmrUIDRw",
+  "status": "COMPLETED"
+ },
+ "zgx02-a-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_7Kro1dSv3kuKTNFzOOWCXA",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_3B7S1fNSdWFr75HRv_8JOg",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_g68l30AWdT_OSVGWyYqUOQ",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_2A_T_TnH1RaDVMuVD20S3A",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_W7-0c9Op1vI_6e5evrIkVA",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_0W_YWEEowwH38RDSkffk9Q",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Bb7KLp2WY1zZ85nnpZAoCA",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_TbFn4cQuISfxBeWR49WFqw",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_swjyHnMo_F6J28UD9ctycQ",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_3F_wo4nidjdypfB_F9Layw",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_ohTjUCkaw-B0v7bgNlao9A",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_ItFYIlz-dRmHeO4MqQ1tBA",
+  "status": "COMPLETED"
+ },
+ "zgx02-b-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_uefvAyhs8Yim1PNVGPGYPA",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_57oivhpFsuji6NfeeRsmjw",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_FJiXoMuLm8onYlKg9s_bzw",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Ee5vn5cyaU4VXXCjKM9RYA",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_f46QIAIHckm9cF55OUzTHA",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_N3OBSimt0vEDz-L2kDEcCA",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_RO9Cf4FMumSCUORfjK8phg",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_L3aG0P10HJOSaUG37wljXA",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_oIOxFUrIknoUdAwzdW8rrw",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_HD8aJe8c-8bT_M0mmySESQ",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_yPXtbEgKqpm-njaYimH6Dw",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_d6aTDJTxWcYXHLAaS4ANvQ",
+  "status": "COMPLETED"
+ },
+ "zgx03-a-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_nqpOFVoo6NTLsjWnH2B7wg",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Leiqp2kRM0iK16vpr5wGxA",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_hrKpbBqooZmM1ZYkPc7Lpg",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_95PPqJqfJqnERetAXSe8jQ",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_rHVF2FdUwRovNUXTi65D9w",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_LQME5QdbdUgrNEtK3VmJGA",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_30C-LRBaog6gjwGO0oQgaA",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_MWM6TanjvAXXYCcCaEAfqQ",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_FiBCMVKYx3SRxdU_J0So3g",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_KnaPRCZ91HGW9WYv4HdMng",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_IsZ62AkBE8xX6rRAAJS9Nw",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_9AeK11xhH77p1Pgj7k68IA",
+  "status": "COMPLETED"
+ },
+ "zgx03-b-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_WSSg1auvU3FXwpnxSEel9A",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p01-captura_boa": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_aJ6pr1f3ophj6HMarWk1kg",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p02-captura_boa": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_jrXqbg3r19Wcv-gAhlym6w",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p03-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_WpjsqnGCZcuBCSxwghWQcQ",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p04-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_DZul84qGxDSdULnszpwipA",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p05-urgencia_rei": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_iOdPLVqu98rHlCQDu88cnw",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_wehkU5_AvbgUatKD9TShcQ",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_PhhPCBWmNZsp2CMAC1kIEA",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_teQdiu6RJgeJ34ZEedKC9A",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_beqh6yO9JOVQrgfc29UEvw",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_zU1Jn1wjxgUb4l3nII3QyQ",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_DVaEvmPButILS070zZRw-g",
+  "status": "COMPLETED"
+ },
+ "zgx12-a-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_0Tljz9nAGYiXLlogVhD2KA",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p01-captura_boa": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_o62gUe-zryDuFykz6e-rKA",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p02-captura_boa": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_oWzEaSYLA2h8RvW9AeGr0Q",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p03-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_X3O4y8E7-Ej217Tew_CtjQ",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p04-captura_ruim": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_oUZvmHDrUVhYoo2kl3xVtg",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_QA-ztCynyRwpfhgUGyXWWA",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_axXZ3BeykE_4MnHcTRM19Q",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_8IDJ12LAaDsH0QoksSZeBA",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_kyWMRXhh0DNx0bOzQf8DWA",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_taCZ5KlkPiISSFwu8xatzQ",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_fLE2_brRWexQ7zi13yMo-Q",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_7cpwdnOpARJQlPmW9rcUlA",
+  "status": "COMPLETED"
+ },
+ "zgx12-b-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_dVj90i-xBMbnOiweVKPovw",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_IaAtOMXdjecr2z3dmRu7Mg",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_e0GTYmwffp3oCVR90oxFOA",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_PPlWvuclRpjnrc4rRjvA5Q",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_2rhCXXfnAx_l2ueZ_4UjVg",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_jlzPeTj-DuuKVKnsKp1SpA",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run__uVVuz7e2zSuiW5BOlyQPQ",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_H1APKaJRvu-V5qyrumMsXA",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_UF4j8N6JIagsLeFbtJEdzA",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_bbZad2jvST2F1m2mKfsIiQ",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_GFIqgclBJvAB19vcyBlNug",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_wRWLJRVSKwc8f_eNTfcFMA",
+  "status": "COMPLETED"
+ },
+ "zgx13-a-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_OSpqijmzwluodm_dGNBfxg",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_qkD4DvsH_XhcK4N0agtadg",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_zflIxRQi1t8ueH5YbV9u5g",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_d1mCaB00nctsfGaX8HCuEA",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_xXQ8z2Rq3NSksCKBCzP5JQ",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_VuFpuo3NpNWUhxVEufTgPg",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_ud8fR3MPlAaKTZEBCrq7Bw",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Mm_WqWVxYjiUL1Ziqcc4GA",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_AKiiLXyM2Dmvv8N0OAmKfg",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_GYKkDieKCE9OEGBY46z8ZQ",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_EJmr9gkl5x218E5qA6DmuA",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_q38uONocQoMCIQCiNyPJXQ",
+  "status": "COMPLETED"
+ },
+ "zgx13-b-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_jhpVtlbMBcJE_v75x_2J8w",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_RnepfHHoAOVIhg3IRmwwuw",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_SE4Ynyt6ynI8Ty-1mxf1Cw",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_x09JvGWU_3xeXVYlSwfr9Q",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_fOBPE_dV7AtBwiEiBiF_qQ",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_c4PmRv8No0cokBhyLR67WQ",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_lm0DWypx6FeQ7kJXWuMWGw",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_hFMkSgywgeGm8ZmOGo2IfA",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_cDhLlENLnNxkE2dbokC8Pw",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run__qky3U2PZTBc7hiau1gxWA",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_p3bVSA4FMHeFfZyWlMgQwA",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_KU8Cy3mXyrDe8srT2G0vdg",
+  "status": "COMPLETED"
+ },
+ "zgx15-a-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_x0Z_LbY8IzX2qX4ltt8TmQ",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_DX6No1JdqlR31UKt6Ymsgw",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_ENWfJLesSuUug3Jo3AXgVg",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_pf_8fxt6eKCuBMabdQ-UJQ",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_B2HJl5tHFQapfbJwFDn35Q",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_XwaVDVTufE-tqo-z6ANp1A",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_M4w5Amdv5M_Q9BMrbqHvew",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_SI281FzcHewAoBrwdVp0sw",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_apATTJGP8eQrSLTFZYpRDQ",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_0w0cF6ovNWI18sNCvDJx8w",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_U2Fc2R_ivU6dk8VXacgdnA",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_v1uU0Ed-FK738gc_exM-zA",
+  "status": "COMPLETED"
+ },
+ "zgx15-b-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_uB3FJJxJdcT-cGoUbon0vg",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_FiRQ_ASTOYGVdZHDNk9yYQ",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_wYjSS95JonkYSRKtG0o05w",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_-5iYABxyEuLNez3NJUNHNA",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Q30vNTYMf4RpKA74TioDVQ",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_LwRZTY_fNbG5vrE4M7pIfg",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_pEapn01M0ZbJ6AbF7psS5w",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_qXSH7wzCHf6Vz0H6LzkruQ",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Ta3O9fr6MI9o4JDFopVIeQ",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Nm5KI3BTe7BBgF92FScswg",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_3EfWEBQTMN-FXi7871AWAw",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_r00uuNjTA1kFrwDXyZt0Gw",
+  "status": "COMPLETED"
+ },
+ "zgx16-a-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_qWj5_pTfjIglueKwu5OedA",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p01-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_l9cbiPVA0QV9d4LaAiQNng",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p02-captura_boa": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_eHOYyo9Ulsx6TmOpMtwiTA",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_XxHLaxEmlaGQINDI9SnQMA",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p04-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_9pJuF5ygIF8bN35no8jU1A",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_X8qWWW28_4E4_fXeg64ErQ",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p06-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_JtP47tg8Y9pmL8yTRuG0NA",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_AHaEpUqq-OCxZJOmrhUgWg",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p08-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_NoH37vsft6pLbr9c8K9vZg",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_iLF_Rwn9TfargywkpGHIlg",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p10-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_kbemrl8x5SRjr3NXlwRZ-A",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_Yr3RkfXpyIAwDzig5KQNDg",
+  "status": "COMPLETED"
+ },
+ "zgx16-b-p12-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_hBvYlNj49rzhdw2WPiSEbQ",
+  "status": "COMPLETED"
+ },
+ "zgx20-a-p01-captura_boa": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_XKTR1BwvDDBa_FNXcQBmUg",
+  "status": "COMPLETED"
+ },
+ "zgx20-a-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_CshBJp9o1UIwL414cKfovA",
+  "status": "COMPLETED"
+ },
+ "zgx20-a-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_E904ipnIu4qDpc3INqKESQ",
+  "status": "COMPLETED"
+ },
+ "zgx20-a-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_VbiVXP_oUg59tUfT8uMydQ",
+  "status": "COMPLETED"
+ },
+ "zgx20-a-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_qtnKrfoJg1rzj-8KIstJ8A",
+  "status": "COMPLETED"
+ },
+ "zgx20-a-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_lMxUCVy2MzSFWqUYflGdRQ",
+  "status": "COMPLETED"
+ },
+ "zgx20-b-p01-captura_boa": {
+  "git_sha": "802278f5ecb298e1c99283353e2eb43cab0bbaba",
+  "run_id": "run_Uqo_94ehqeKI1vCV0_rH5A",
+  "status": "COMPLETED"
+ },
+ "zgx20-b-p03-captura_ruim": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_NI1IltzqIYsXpPdy7wlnSg",
+  "status": "COMPLETED"
+ },
+ "zgx20-b-p05-urgencia_rei": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_ydcwkbaOkb5lIctUv6ipSQ",
+  "status": "COMPLETED"
+ },
+ "zgx20-b-p07-linha_risco": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_HwAPjuK9K7WuoxG8kUlSKw",
+  "status": "COMPLETED"
+ },
+ "zgx20-b-p09-quieto_sucesso": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_tTeKKqCV-o_KS8ak17A2XQ",
+  "status": "COMPLETED"
+ },
+ "zgx20-b-p11-final_conversao": {
+  "git_sha": "38ebf8c1ee7366aabb55b7f338106387f3d4ca6c",
+  "run_id": "run_qRVYRaP3bONawzittaI5Lw",
+  "status": "COMPLETED"
+ }
+}

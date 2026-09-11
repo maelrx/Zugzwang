@@ -267,6 +267,8 @@ class DurableRunCoordinator:
         steps: StepRepository,
         checkpoints: CheckpointRepository,
         rate_limiter: RateLimiter,
+        cognitive_session_factory: Any | None = None,
+        artifacts: Any | None = None,
     ) -> None:
         self._registry = registry
         self._backend = backend
@@ -278,6 +280,8 @@ class DurableRunCoordinator:
         self._steps = steps
         self._checkpoints = checkpoints
         self._rate_limiter = rate_limiter
+        self._cognitive_session_factory = cognitive_session_factory
+        self._artifacts = artifacts
         self._run_assistance: dict[str, tuple[HClass, KClass]] = {}
         self._run_assistance_violated: dict[str, bool] = {}
 
@@ -286,23 +290,25 @@ class DurableRunCoordinator:
         resolved: ResolvedManifest,
         condition: ResolvedCondition,
         stop_event: asyncio.Event,
+        run_extras: dict[str, Any] | None = None,
     ) -> str:
         run_id = str(new_id("run"))
         protocol = condition.protocol
         now = to_iso_z(utc_now())
-        self._writer.enqueue(
-            UpsertRunCommand(
-                row={
-                    "run_id": run_id,
-                    "condition_id": condition.condition_id,
-                    "status": RunState.RUNNING.value,
-                    "protocol_hash": resolved.protocol_hash,
-                    "declared_assistance": protocol.declared_assistance,
-                    "started_at": now,
-                    "projection_version": 0,
-                }
-            )
-        )
+        row: dict[str, Any] = {
+            "run_id": run_id,
+            "condition_id": condition.condition_id,
+            "status": RunState.RUNNING.value,
+            "protocol_hash": resolved.protocol_hash,
+            "declared_assistance": protocol.declared_assistance,
+            "started_at": now,
+            "projection_version": 0,
+        }
+        if run_extras:
+            # ZGW-0103 R4: code pin + exposure manifest linkage land with the
+            # run row itself, never as a later best-effort patch.
+            row.update(run_extras)
+        self._writer.enqueue(UpsertRunCommand(row=row))
         self._emit_run_event(run_id, "run.started", {"experiment": resolved.experiment_name})
         try:
             await self._run_episodes(run_id, resolved, condition, stop_event)
@@ -557,6 +563,14 @@ class DurableRunCoordinator:
 
             ref = ArtifactRef.parse(last["transition_artifact_id"])
             payload = self._artifact_store.get(ref)
+            if payload.media_type == "application/octet-stream":
+                # Bare-digest refs parse without a media type, but the
+                # artifacts table records the true one (design §11.7:
+                # metadata lives in the database). Resume is the only
+                # reader of this path — fresh runs keep state in memory —
+                # which is why the octet-stream default survived until the
+                # real pilot (2026-09-06: "cannot restore chess state").
+                payload = self._retype_payload(ref)
             state = environment.restore(payload)
         else:
             for row in committed:
@@ -565,6 +579,27 @@ class DurableRunCoordinator:
                 if action is not None:
                     state = environment.transition(state, action).state
         return state, len(committed)
+
+    def _retype_payload(self, ref: Any) -> Any:
+        """Rehydrate a CAS payload with its database-recorded media type.
+
+        Falls back to the octet-stream payload (and lets ``restore`` raise
+        its honest error) when the artifacts row is absent — never invents
+        a type.
+        """
+        from zugzwang_core.domain.artifacts import ArtifactPayload
+
+        payload = self._artifact_store.get(ref)
+        get_row = getattr(self._artifacts, "get", None)
+        if get_row is None:
+            return payload
+        row: dict[str, Any] | None = cast("dict[str, Any] | None", get_row(ref.as_id()))
+        if not row:
+            return payload
+        media_type = row.get("media_type")
+        if not isinstance(media_type, str) or "/" not in media_type:
+            return payload
+        return ArtifactPayload(media_type=media_type, data=payload.data)
 
     async def _run_episode(
         self,
@@ -596,6 +631,9 @@ class DurableRunCoordinator:
 
         task_kind = self._task_kind(condition)
         max_steps = self._max_steps_for(condition, task_kind)
+        # Self-memory across moves (manifest-gated reasoning_memory): the
+        # previous move's own reasoning summary, carried forward.
+        prior_reasoning_summary: str | None = None
         episode_config = dict(condition.task.config)
         if work.get("start_fen"):
             episode_config["start_fen"] = work["start_fen"]
@@ -605,10 +643,14 @@ class DurableRunCoordinator:
             episode_config["move_prefix"] = work["move_prefix"]
         spec = EpisodeSpec(task_type=condition.task.plugin, seed=seed, config=episode_config)
         state = environment.initial_state(spec)
-        if task_kind == "state-reconstruction" and work.get("move_prefix"):
+        if work.get("move_prefix"):
             apply_moves = getattr(environment, "state_from_moves", None)
             if callable(apply_moves):
-                state = apply_moves(list(work["move_prefix"]))
+                start_fen = work.get("start_fen") or episode_config.get("start_fen")
+                state = apply_moves(
+                    list(work["move_prefix"]),
+                    start_fen=str(start_fen) if start_fen else None,
+                )
         observation_policy = ObservationPolicy(settings=dict(condition.protocol.observation))
         start_ordinal = 0
 
@@ -660,7 +702,7 @@ class DurableRunCoordinator:
             persistent_memory_items = self._load_persistent_search_memory(episode_id)
 
         single_player = self._single_player(condition)
-        model_color = self._model_color(condition)
+        model_color = str(work.get("model_color") or self._model_color(condition))
         opponent = self._opponent_for(condition)
         if opponent is None and not single_player:
             opponent = self._model_opponent_for(
@@ -827,13 +869,13 @@ class DurableRunCoordinator:
                     max_transition_queries=int(search_config.get("max_transition_queries", 64)),
                     session_id=str(new_id("ses")),
                 )
-                initial_items = (
+                initial_items: tuple[Any, ...] = (
                     persistent_memory_items
                     if strategy.descriptor.declared_regime == "R7"
                     and _search_memory_mode(condition) == "persistent"
                     else ()
                 )
-                search_memory = SearchMemoryFabric(
+                search_memory: Any = SearchMemoryFabric(
                     search_workspace,
                     initial_items=initial_items,
                 )
@@ -884,9 +926,25 @@ class DurableRunCoordinator:
             )
 
             retry_feedback: str | None = None
+            prior_reasoning_summary = prior_reasoning_summary
             illegal_retries = 0
             decision_attempt_index = 0
             max_strategy_calls = max(1, strategy.descriptor.max_model_calls)
+            decision_session: Any = None
+            if getattr(strategy, "requires_decision_session", False):
+                # The decision row references the step row: flush the queued
+                # step/episode writes before opening the session, or the FK
+                # fails against rows still sitting in the writer queue.
+                await self._writer.flush()
+                decision_session = self._open_cognitive_session(
+                    run_id=run_id,
+                    episode_id=episode_id,
+                    step_id=step_id,
+                    decision_ordinal=ordinal,
+                    state=state,
+                    strategy=strategy,
+                    condition=condition,
+                )
             while True:
                 decision_context = DecisionContext(
                     run_id=run_id,
@@ -896,7 +954,12 @@ class DurableRunCoordinator:
                     backend=recording_backend,
                     tools={},
                     seed=seed,
-                    config=_decision_config(condition, retry_feedback=retry_feedback),
+                    config=_decision_config(
+                        condition,
+                        retry_feedback=retry_feedback,
+                        prior_reasoning=prior_reasoning_summary,
+                        state=state,
+                    ),
                     artifact_store=self._artifact_store,
                     knowledge=knowledge,
                     state=state,
@@ -904,6 +967,7 @@ class DurableRunCoordinator:
                     legality_gateway=bound_gateway,
                     search_workspace=search_workspace,
                     search_memory=search_memory,
+                    decision_session=decision_session,
                 )
                 async with ledger_lock:
                     try:
@@ -935,6 +999,7 @@ class DurableRunCoordinator:
                     decision_error = exc
                 else:
                     decision_error = None
+                recording_backend.assert_isolated()
                 logical_calls = max(1, len(trace.calls) if trace is not None else 0)
                 async with ledger_lock:
                     ledger.reconcile("calls", max_strategy_calls, logical_calls)
@@ -984,7 +1049,7 @@ class DurableRunCoordinator:
                         trace=trace,
                         attempt_index=decision_attempt_index,
                         gateway=bound_gateway,
-                        attempt_evidence=recording_backend.evidence_for_current_decision(),
+                        attempt_evidence=recording_backend.evidence_for_calls(),
                     ),
                     media_type="application/vnd.zugzwang.decision-trace+json",
                     redaction_policy="standard",
@@ -1047,16 +1112,25 @@ class DurableRunCoordinator:
                         # the provider through the illegal-action retry
                         # budget; transport-level retries stay inside the
                         # recording backend under its own policy.
+                        # ZGW-0103 R2: a provider verdict (throttling /
+                        # transport / timeout-unknown from the cognitive loop)
+                        # settles under outcome "provider_error", distinct
+                        # from a strategy decision_error — the campaign report
+                        # must never read provider throttling as illegal moves.
+                        provider_kind = any(
+                            verdict.kind == "provider_error" for verdict in trace.verdicts
+                        )
+                        outcome = "provider_error" if provider_kind else "decision_error"
                         stable_code = (
-                            str(getattr(decision_error, "stable_code", "decision_error"))
+                            str(getattr(decision_error, "stable_code", outcome))
                             if decision_error is not None
                             else next(
                                 (
-                                    str(verdict.message) or "decision_error"
+                                    str(verdict.message) or outcome
                                     for verdict in trace.verdicts
                                     if verdict.kind in {"provider_error", "decision_error"}
                                 ),
-                                "decision_error",
+                                outcome,
                             )
                         )[:128]
                         self._emit_step_event(
@@ -1064,7 +1138,7 @@ class DurableRunCoordinator:
                             episode_id,
                             step_id,
                             "step.decision_failed",
-                            {"stable_code": stable_code},
+                            {"stable_code": stable_code, "outcome": outcome},
                         )
                         self._persist_search_workspace(
                             workspace=search_workspace,
@@ -1075,19 +1149,19 @@ class DurableRunCoordinator:
                             status="FAILED",
                             algorithm=_search_algorithm(strategy),
                         )
-                        await self._fail_step(run_id, episode_id, step_id, "decision_error")
+                        await self._fail_step(run_id, episode_id, step_id, outcome)
                         self._writer.enqueue(
                             FinalizeEpisodeCommand(
                                 episode_id=episode_id,
                                 episode_values={
                                     "status": EpisodeState.FAILED.value,
-                                    "outcome": "decision_error",
+                                    "outcome": outcome,
                                 },
                                 envelope=self._episode_envelope(
                                     run_id,
                                     episode_id,
                                     "episode.failed",
-                                    {"reason": "decision_error", "stable_code": stable_code},
+                                    {"reason": outcome, "stable_code": stable_code},
                                 ),
                             )
                         )
@@ -1159,7 +1233,18 @@ class DurableRunCoordinator:
                         profile=_retry_profile(condition),
                         reason=reason,
                         legal_actions=legal_actions.actions,
+                        cognitive=getattr(strategy, "requires_decision_session", False),
                     )
+                    if decision_session is not None:
+                        retry_workspace = getattr(decision_session, "workspace", None)
+                        if retry_workspace is not None and hasattr(
+                            retry_workspace, "reset_query_budgets"
+                        ):
+                            # New attempt, fresh query counters: the failed
+                            # attempt's validation/transition spend must not
+                            # starve this one (35+ legal moves tripped the
+                            # transition pre-check on attempt 2).
+                            retry_workspace.reset_query_budgets()
                     continue
 
                 final_action = trace.final_action
@@ -1243,8 +1328,16 @@ class DurableRunCoordinator:
                         profile=retry_profile,
                         reason="illegal_action",
                         legal_actions=legal_actions.actions,
+                        cognitive=getattr(strategy, "requires_decision_session", False),
                     )
+                    if decision_session is not None:
+                        retry_workspace = getattr(decision_session, "workspace", None)
+                        if retry_workspace is not None and hasattr(
+                            retry_workspace, "reset_query_budgets"
+                        ):
+                            retry_workspace.reset_query_budgets()
                     continue
+                prior_reasoning_summary = getattr(recording_backend, "last_reasoning_summary", None)
                 break
 
             search_graph_ref: str | None = None
@@ -1742,6 +1835,7 @@ class DurableRunCoordinator:
             trace = await strategy.decide(observation, decision_context)
         except Exception:
             trace = None
+        recording_backend.assert_isolated()
         async with ledger_lock:
             ledger.reconcile("calls", 1, 1)
 
@@ -1933,6 +2027,42 @@ class DurableRunCoordinator:
             return StandardChessEnvironment()
         raise ValueError(f"no environment for task {condition.task.plugin!r}")
 
+    def _open_cognitive_session(
+        self,
+        *,
+        run_id: str,
+        episode_id: str,
+        step_id: str,
+        decision_ordinal: int,
+        state: Any,
+        strategy: DecisionStrategy,
+        condition: ResolvedCondition,
+    ) -> Any:
+        """Open one CognitiveBoard decision session for a step (§26.1).
+
+        The composition root injects the factory; the coordinator itself
+        stays free of SQL/CAS wiring. Without a factory, a cognitive strategy
+        cannot run — an explicit error instead of a silent degraded path.
+        """
+        if self._cognitive_session_factory is None:
+            raise ValueError(
+                f"strategy {getattr(strategy, 'strategy_id', '?')!r} requires a "
+                "cognitive session factory (DurableRunServices provides one)"
+            )
+        raw_mode = condition.task.config.get("cognitive_interaction_mode", "native_tools")
+        interaction_mode = (
+            str(raw_mode) if raw_mode in {"native_tools", "json_commands"} else "native_tools"
+        )
+        return self._cognitive_session_factory(
+            run_id=run_id,
+            episode_id=episode_id,
+            step_id=step_id,
+            decision_ordinal=decision_ordinal,
+            state=state,
+            strategy=strategy,
+            interaction_mode=interaction_mode,
+        )
+
     def _strategy_for(self, condition: ResolvedCondition) -> DecisionStrategy:
         for player in condition.players.values():
             if player.model is not None:
@@ -1971,6 +2101,20 @@ class DurableRunCoordinator:
                         initial_candidates=int(config.get("initial_candidates", 4)),
                         judges=int(config.get("judges", 3)),
                     )
+                if player.model.strategy == "chess.cognitive_navigation":
+                    from ..cognition.navigation import CognitiveNavigationStrategy
+
+                    # ZGW-0103 R8: the round budget is a manifest decision
+                    # (task.config.cognitive.max_rounds), not a code constant —
+                    # EXP-02 varies investigation depth under equal conditions.
+                    nav_rounds = 4
+                    nav_cognitive = condition.task.config.get("cognitive")
+                    nav_rounds_raw = (
+                        nav_cognitive.get("max_rounds") if isinstance(nav_cognitive, dict) else None
+                    )
+                    if isinstance(nav_rounds_raw, int) and nav_rounds_raw >= 1:
+                        nav_rounds = nav_rounds_raw
+                    return CognitiveNavigationStrategy(max_rounds=nav_rounds)
                 if player.model.strategy == "chess.multi_agent_review":
                     from zugzwang_chess.strategies.multi_agent_review import (
                         MultiAgentReviewStrategy,
@@ -2218,7 +2362,11 @@ def _coerce_action(action: Any, legal_actions: Any) -> Any:
 
 
 def _decision_config(
-    condition: ResolvedCondition, *, retry_feedback: str | None = None
+    condition: ResolvedCondition,
+    *,
+    retry_feedback: str | None = None,
+    prior_reasoning: str | None = None,
+    state: Any = None,
 ) -> dict[str, Any]:
     """Protocol prompt overrides become strategy context config (persona/few-shot)."""
     prompt_spec = condition.protocol.prompt
@@ -2237,9 +2385,57 @@ def _decision_config(
     search_config = condition.task.config.get("search")
     if isinstance(search_config, dict):
         config["search"] = dict(search_config)
+    cognitive_config = condition.task.config.get("cognitive")
+    if isinstance(cognitive_config, dict):
+        # Operator directive for the cognitive loop (directed pilot tests):
+        # journaled in the request artifact, never a scripted move sequence.
+        config["cognitive"] = dict(cognitive_config)
     if retry_feedback:
         config["retry_feedback"] = retry_feedback
+    memory_mode = (
+        cognitive_config.get("reasoning_memory") if isinstance(cognitive_config, dict) else None
+    )
+    if not memory_mode:
+        return config
+    # Self-memory between moves: the model's OWN previous decision, manifest-
+    # gated. Never external knowledge — assistance class unchanged.
+    #   reasoning_memory: true      -> verbatim reasoning summary (ZGX-20 M1)
+    #   reasoning_memory: "factual" -> structured note (ZGX-20 M2): formal
+    #   facts of this game's own record + the model's own last summary.
+    if prior_reasoning and memory_mode is True:
+        config["prior_reasoning"] = prior_reasoning
+    elif memory_mode == "factual":
+        config["prior_memory_note"] = _prior_memory_note(prior_reasoning, condition, state)
     return config
+
+
+def _prior_memory_note(
+    prior_reasoning: str | None, condition: ResolvedCondition, state: Any
+) -> dict[str, Any]:
+    """Structured M2 note from THIS game's own record (ZGX-20 M2)."""
+    stack = list(getattr(state, "move_stack", ()) or [])
+    model_color = str(condition.task.config.get("model_color", "white"))
+    my_move: str | None = None
+    opponent_reply: str | None = None
+    if model_color == "white":
+        # white moves at even indexes: a full pair ends [mine, theirs]
+        if len(stack) % 2 == 0 and stack:
+            my_move, opponent_reply = stack[-2], stack[-1]
+        elif stack:
+            my_move, opponent_reply = stack[-1], None
+    elif stack:
+        # black moves at odd indexes
+        if len(stack) % 2 == 1:
+            my_move = stack[-1]
+            opponent_reply = stack[-2] if len(stack) >= 2 else None
+        else:
+            my_move, opponent_reply = stack[-2], stack[-1]
+    return {
+        "my_last_move_uci": my_move,
+        "opponent_last_reply_uci": opponent_reply,
+        "current_position": getattr(state, "fen", None),
+        "hypothesis_from_your_last_thinking": (prior_reasoning or "")[:400],
+    }
 
 
 def _search_memory_mode(condition: ResolvedCondition) -> str:
@@ -2281,8 +2477,31 @@ def _illegal_retry_feedback(
     profile: str,
     reason: str,
     legal_actions: tuple[Any, ...],
+    cognitive: bool = False,
 ) -> str:
-    """Project formal failure into the explicitly selected retry profile."""
+    """Project formal failure into the explicitly selected retry profile.
+
+    Cognitive (tools) retries get tools-native feedback: "(sem lance)" means
+    the decision ended WITHOUT a board_finalize call — the direct-mode text
+    ("your move was illegal / reply with one move") is false for that mode
+    and reached the model as dead config until the arena autopsies
+    (2026-09-07) traced five identical no-finalize retries to it."""
+    if cognitive:
+        if action and action != "(sem lance)":
+            return (
+                f"Your previous board_finalize action {action[:80]!r} was rejected "
+                "as illegal at the ROOT node. Finalize again with a DIFFERENT "
+                "action_id copied from the root observation's legal_actions, no "
+                "later than the final call, which accepts only board_finalize."
+            )
+        return (
+            "Your previous decision for this same position ended WITHOUT a move: "
+            "it never called board_finalize (explore/observe calls do not commit a "
+            "move, and the final call accepts ONLY board_finalize). In this attempt "
+            "you must commit board_finalize on the ROOT node using an action_id "
+            "copied from the root observation's legal_actions no later than the "
+            "final call."
+        )
     prefix = (
         f"Your previous move {action[:80]!r} was rejected as illegal. "
         "Choose another move for the same position. "

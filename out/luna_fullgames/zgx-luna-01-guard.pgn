@@ -1,0 +1,9 @@
+[Event "zgx-luna-01-guard"]
+[Site "Zugzwang Local"]
+[Date "2026.09.08"]
+[Round "1"]
+[White "gpt-5.6-luna (high)"]
+[Black "Stockfish 16 (1320)"]
+[Result "*"]
+
+1. e4 e6 2. d4 Nf6 3. Nc3 Bb4 4. e5 Bxc3+ 5. bxc3 Ng8 6. Nf3 d5 7. Bb5+ Nd7 8. O-O c6 9. Bd3 b6 10. Ng5 h6 11. Nf3 Bb7 12. Ne1 Rc8 13. Qg4 g6 14. Nf3 Ne7 15. Qh4 Nf5 16. Qg4 Rc7 17. Qh3 Qe7 18. g4 Ng7 19. a3 g5 20. a4 Kd8 21. Be3 Kc8 22. Rfb1 f5 23. exf6 Nxf6 24. Ne5 Nd7 25. Ng6 Qd8 26. Ne7+ Qxe7 27. f3 Qf6 *

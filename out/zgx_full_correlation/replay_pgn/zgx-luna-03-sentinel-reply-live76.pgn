@@ -1,0 +1,11 @@
+[Event "zgx-luna-03-sentinel-reply-live76 (from live watcher)"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "gpt-5.6-luna"]
+[Black "Stockfish 1320"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 Nf6 2. Nc3 d5 3. exd5 c6 4. dxc6 e6 5. Nf3 Nxc6 6. d4 h6 7. Bf4 a6 8. Bd2 Bd6 9. Be2 O-O 10. O-O b5 11. d5 Ne5 12. Nxe5 Bxe5 13. Bf3 exd5 14. Bf4 Bxc3 15. bxc3 Be6 16. a3 Re8 17. Qxd5 Nxd5 18. Bxd5 Bxd5 19. Rad1 g5 20. Bg3 Rc8 21. f3 Qd7 22. Rfe1 Rf8 23. Rxd5 Qxd5 24. Be5 Qc6 25. Bg7 Kxg7 26. Re2 Qc5+ 27. Kh1 Qxc3 28. h4 Qa1+ 29. Kh2 Rc4 30. Re4 Rxc2 31. Kh3 Qg1 32. g3 Qf2 33. a4 f6 34. Re7+ Kg6 35. Re8 Rxe8 36. h5+ Kf5 37. g4+ Ke6 38. axb5 Qh4# 0-1
+

@@ -1,0 +1,11 @@
+[Event "zgx-luna-02-deep-history-live58 (from live watcher)"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "gpt-5.6-luna"]
+[Black "Stockfish 1320"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 Nxe4 4. d3 Nf6 5. d4 Bb4+ 6. c3 Bf8 7. Bd3 Be7 8. O-O d6 9. Nf3 h6 10. Re1 a5 11. Qe2 Bg4 12. a3 a4 13. Bf4 Nc6 14. Qxe7+ Nxe7 15. Nbd2 Kf8 16. Bg3 Nfd5 17. c4 Bxf3 18. Nxf3 Nf6 19. Re2 g5 20. Rae1 Neg8 21. d5 Qb8 22. Nd4 Nd7 23. Bb1 h5 24. Nf5 Rh7 25. Nd4 Rg7 26. Bf5 Qd8 27. Re8+ Qxe8 28. Bxd6+ cxd6 29. Bxd7 Qxe1# 0-1
+

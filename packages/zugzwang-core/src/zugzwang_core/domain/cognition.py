@@ -106,8 +106,29 @@ def packet_content_hash_v2(packet: dict[str, Any]) -> str:
 
 
 def observation_id_v2(packet_content_hash: str, round_no: int, exposure: int) -> str:
-    """One concrete exposure of a packet to the model (causality/transcript)."""
+    """One concrete exposure of a packet to the model (causality/transcript).
+
+    LEGACY (pre-pilot): not decision-scoped, so two decisions settling the
+    same (bytes, round, exposure) triple — e.g. the same static error
+    envelope, or the same position observed at the same round/exposure —
+    collide on the PRIMARY KEY and the second settlement dies with
+    IntegrityError instead of journaling (real pilot 2026-09-06, step 12).
+    New writes must use :func:`observation_id_v3`.
+    """
     return _key("observation_id", 2, packet_content_hash, str(round_no), str(exposure))
+
+
+def observation_id_v3(
+    decision_id: str, packet_content_hash: str, round_no: int, exposure: int
+) -> str:
+    """Decision-scoped observation identity (pilot fix).
+
+    The exposure triple is only unique within its decision: the same result
+    or error bytes recur across decisions at the same round ordinal and
+    exposure sequence, so the decision id namespaced into the key is what
+    keeps cross-decision settlements from colliding on the PRIMARY KEY.
+    """
+    return _key("observation_id", 3, decision_id, packet_content_hash, str(round_no), str(exposure))
 
 
 def operation_id_v2(decision_id: str, round_no: int, call_id: str) -> str:

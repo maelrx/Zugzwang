@@ -209,3 +209,33 @@ async def test_r6_batched_tree_commits_a_model_only_move() -> None:
     assert trace.selection_rationale is not None
     assert workspace.stats["branch_nodes_created"] == 1
     assert memory.items
+
+
+def test_reset_query_budgets_clears_counters_but_not_budgets() -> None:
+    """Arena full games 2026-09-07: a step-level retry re-drives the same
+    decision on a workspace whose validation/transition counters had already
+    been spent by the failed attempt — 35+ legal moves tripped the transition
+    pre-check on attempt 2 (35+35 > 64). The retry resets the COUNTERS; the
+    caps themselves are untouched and within-attempt sharing (TEST-031)
+    is unchanged."""
+    from zugzwang_chess.environment.standard import ChessGameState, StandardChessRulesKernel
+    from zugzwang_runtime.search import SearchWorkspace
+
+    workspace = SearchWorkspace(
+        kernel=StandardChessRulesKernel(),
+        root_state=ChessGameState(),
+        max_nodes=16,
+        max_depth_plies=4,
+        max_validation_queries=10,
+        max_transition_queries=10,
+    )
+    root = workspace.root_id
+    workspace.validate_move(root, "e2e4")
+    workspace.validate_move(root, "d2d4")
+    assert workspace.stats["validation_queries"] >= 2
+
+    workspace.reset_query_budgets()
+    assert workspace.stats["validation_queries"] == 0
+    assert workspace.stats["transition_queries"] == 0
+    assert workspace.max_validation_queries == 10
+    assert workspace.max_transition_queries == 10

@@ -1,0 +1,125 @@
+{
+  "schema": "zugzwang.arena-game/v1",
+  "id": "arena-20260909-011111-9918",
+  "created_at": "2026-09-09T01:11:11",
+  "setup": {
+    "provider": "codex-cli",
+    "model": "gpt-5.6-luna",
+    "effort": "high",
+    "human_color": "white",
+    "max_rounds": 6,
+    "ascii": false,
+    "history_plies": 24,
+    "directive": null,
+    "timeout_seconds": 180.0
+  },
+  "status": "human_turn",
+  "result": null,
+  "last_error": null,
+  "model_note": {
+    "fen": "rnbqkb1r/ppp2ppp/8/3pp3/2B1n3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 5",
+    "my_move": "d5",
+    "hypothesis": "{\"command\":\"board_finalize\",\"arguments\":{\"node_id\":\"n0\",\"action_id\":\"action_id:v2:1f219008902f73000e407ab908e619f88131fba9642e2a8e4f13078888ba9b2a\"}}"
+  },
+  "moves": [
+    {
+      "ply": 1,
+      "side": "white",
+      "actor": "human",
+      "uci": "e2e4",
+      "san": "e4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 2,
+      "side": "black",
+      "actor": "model",
+      "uci": "e7e5",
+      "san": "e5",
+      "latency_ms": 15818,
+      "tokens_out": 410,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 3,
+      "side": "white",
+      "actor": "human",
+      "uci": "g1f3",
+      "san": "Nf3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 4,
+      "side": "black",
+      "actor": "model",
+      "uci": "g8f6",
+      "san": "Nf6",
+      "latency_ms": 40679,
+      "tokens_out": 1656,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 5,
+      "side": "white",
+      "actor": "human",
+      "uci": "f1c4",
+      "san": "Bc4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 6,
+      "side": "black",
+      "actor": "model",
+      "uci": "f6e4",
+      "san": "Nxe4",
+      "latency_ms": 39712,
+      "tokens_out": 1604,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 7,
+      "side": "white",
+      "actor": "human",
+      "uci": "d2d3",
+      "san": "d3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 8,
+      "side": "black",
+      "actor": "model",
+      "uci": "d7d5",
+      "san": "d5",
+      "latency_ms": 62933,
+      "tokens_out": 2851,
+      "rounds": 2,
+      "error": null
+    }
+  ],
+  "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "board_moves": [
+    "e2e4",
+    "e7e5",
+    "g1f3",
+    "g8f6",
+    "f1c4",
+    "f6e4",
+    "d2d3",
+    "d7d5"
+  ]
+}

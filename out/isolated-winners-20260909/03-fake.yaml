@@ -1,0 +1,82 @@
+api_version: zgw.dev/v1alpha1
+kind: Experiment
+metadata:
+  name: isolated-luna-high-fast-03-tactical-memory-r4-fake-preflight
+  tags:
+  - isolated-winners
+  - model-only-v1
+  - luna
+  - high
+  - fast
+  - private
+  - exploratory
+spec:
+  seed: 202699500
+  task:
+    plugin: chess.tasks
+    version: '0.1'
+    config:
+      cognitive_interaction_mode: native_tools
+      kind: full-game
+      start_fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      model_color: white
+      max_plies: 2
+      backend_config: {}
+      cognitive:
+        max_rounds: 4
+        preload_root: true
+        directive: 'TACTICAL PRIORITIES & FACTUAL MEMORY: On every turn, examine all
+          forcing lines (checks, captures, immediate threats). Expand candidates to
+          verify tactical safety. Retain factual tactical memory across rounds to
+          avoid blunders. Crucial: finalize your move by Round 2 using board_finalize(node_id=''ROOT'',
+          action_id=''<uci_action>'') on ROOT.'
+        reasoning_memory: factual
+  players:
+    white:
+      model:
+        backend: fake.backend
+        provider: fake
+        model: fake-deterministic
+        strategy: chess.cognitive_navigation
+    black:
+      policy:
+        plugin: chess.random-legal
+        config: {}
+  protocol:
+    declared_assistance: H4
+    declared_knowledge: K6
+    observation:
+      position:
+        fen: true
+        ascii: false
+      history:
+        mode: last_n
+        plies: 6
+        notation: uci
+    legality:
+      parse_feedback: true
+      validation:
+        enabled: true
+        feedback: enumerated
+      enumerate:
+        enabled: false
+      transition_sandbox: true
+      limits:
+        validations: 64
+        transitions: 32
+        depth_plies: 2
+        branch_states: 24
+    retry_profile: enumerate_after_failure
+    retries:
+      transport: 3
+      parse: 2
+      illegal: 5
+      feedback: enumerated
+  budget:
+    max_calls: 3000
+    max_concurrent_episodes: 1
+    max_attempts: 1
+  artifacts:
+    raw_requests: true
+    raw_responses: true
+    redact: standard

@@ -1,0 +1,185 @@
+{
+  "schema": "zugzwang.arena-game/v1",
+  "id": "arena-20260909-012310-2468",
+  "created_at": "2026-09-09T01:23:10",
+  "setup": {
+    "provider": "codex-cli",
+    "model": "gpt-5.6-luna",
+    "effort": "low",
+    "human_color": "white",
+    "max_rounds": 6,
+    "ascii": false,
+    "history_plies": 12,
+    "directive": null,
+    "timeout_seconds": 180.0
+  },
+  "status": "human_turn",
+  "result": null,
+  "last_error": "PROTOCOL_ERROR: AssertionError: push() expects move to be pseudo-legal, but got e4d5 in r1bqkb1r/ppp2ppp/2N2N2/3PP1n1/2b5/8/PPPPPPPP/RNBQK2R",
+  "model_note": {
+    "fen": "r1bqk2r/ppp1bppp/5n2/n2Pp1N1/2B5/8/PPPPQPPP/RNB1K2R w KQkq - 3 7",
+    "my_move": "Be7",
+    "hypothesis": "{\"command\":\"board_finalize\",\"arguments\":{\"node_id\":\"n0\",\"action_id\":\"action_id:v2:95b15b6c01b9e8f51e86d976a7e9f996cfccf7df144e217cec26d7705748fffd\"}}"
+  },
+  "moves": [
+    {
+      "ply": 1,
+      "side": "white",
+      "actor": "human",
+      "uci": "e2e4",
+      "san": "e4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 2,
+      "side": "black",
+      "actor": "model",
+      "uci": "e7e5",
+      "san": "e5",
+      "latency_ms": 12824,
+      "tokens_out": 268,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 3,
+      "side": "white",
+      "actor": "human",
+      "uci": "g1f3",
+      "san": "Nf3",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 4,
+      "side": "black",
+      "actor": "model",
+      "uci": "b8c6",
+      "san": "Nc6",
+      "latency_ms": 21347,
+      "tokens_out": 488,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 5,
+      "side": "white",
+      "actor": "human",
+      "uci": "f1c4",
+      "san": "Bc4",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 6,
+      "side": "black",
+      "actor": "model",
+      "uci": "g8f6",
+      "san": "Nf6",
+      "latency_ms": 19279,
+      "tokens_out": 461,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 7,
+      "side": "white",
+      "actor": "human",
+      "uci": "f3g5",
+      "san": "Ng5",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 8,
+      "side": "black",
+      "actor": "model",
+      "uci": "d7d5",
+      "san": "d5",
+      "latency_ms": 13016,
+      "tokens_out": 299,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 9,
+      "side": "white",
+      "actor": "human",
+      "uci": "e4d5",
+      "san": "exd5",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 10,
+      "side": "black",
+      "actor": "model",
+      "uci": "c6a5",
+      "san": "Na5",
+      "latency_ms": 26757,
+      "tokens_out": 834,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 11,
+      "side": "white",
+      "actor": "human",
+      "uci": "d1e2",
+      "san": "Qe2",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    },
+    {
+      "ply": 12,
+      "side": "black",
+      "actor": "model",
+      "uci": "f8e7",
+      "san": "Be7",
+      "latency_ms": 24197,
+      "tokens_out": 618,
+      "rounds": 1,
+      "error": null
+    },
+    {
+      "ply": 13,
+      "side": "white",
+      "actor": "human",
+      "uci": "d5d6",
+      "san": "d6",
+      "latency_ms": null,
+      "tokens_out": null,
+      "rounds": null,
+      "error": null
+    }
+  ],
+  "start_fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "board_moves": [
+    "e2e4",
+    "e7e5",
+    "g1f3",
+    "b8c6",
+    "f1c4",
+    "g8f6",
+    "f3g5",
+    "d7d5",
+    "e4d5",
+    "c6a5",
+    "d1e2",
+    "f8e7",
+    "d5d6"
+  ]
+}

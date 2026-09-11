@@ -1,0 +1,9 @@
+[Event "zgx-gemini-03-tactical-guardian-v2"]
+[Site "Zugzwang Local"]
+[Date "2026.09.08"]
+[Round "3"]
+[White "gemini-3.8-flash-low"]
+[Black "Stockfish 16 (1320)"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 d5 3. exd5 Qxd5 4. Nc3 Qc5 5. d4 Qa5 6. Bd2 exd4 7. Bb5+ Bd7 8. Bxd7+ Nxd7 9. Nxd4 Qe5+ 10. Be3 Bc5 11. O-O Bd6 12. Nf3 Qf5 13. Re1 Ne7 14. Nd4 Qg6 15. Ndb5 O-O 16. Nxd6 cxd6 17. Bf4 Nf5 18. Nd5 Ne5 19. Bxe5 Rfe8 20. Bf4 Rxe1+ 21. Qxe1 Nd4 22. Ne7+ Kh8 23. Nxg6+ hxg6 24. Qe4 Ne6 25. Qxb7 Rd8 26. Qxf7 Nxf4 27. Qxf4 Kh7 28. Qh4+ Kg8 29. Qxd8+ Kh7 30. Qxd6 Kh6 31. Qf4+ Kh5 32. g4+ Kh4 33. Kg2 g5 34. Qg3# 1-0

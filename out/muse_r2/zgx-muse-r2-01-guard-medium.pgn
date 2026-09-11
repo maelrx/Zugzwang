@@ -1,0 +1,9 @@
+[Event "zgx-muse-r2-01-guard-medium"]
+[Site "Zugzwang Local"]
+[Date "2026.09.08"]
+[Round "1"]
+[White "muse-spark-1.3-contributor"]
+[Black "Stockfish 16 (1320)"]
+[Result "*"]
+
+1. e4 Nf6 2. e5 d5 3. Nf3 Nfd7 4. d4 e6 5. Nc3 a6 6. Bd3 Be7 7. O-O Nf8 8. Qe2 Nc6 9. Be3 Ng6 10. Rfe1 Bd7 11. Rad1 O-O 12. Qd2 Nb4 13. Qe2 Nxd3 14. cxd3 a5 15. Qd2 h6 16. Qe2 Kh7 17. Rd2 a4 18. Rc2 Qe8 19. Qd2 Ra6 20. Re2 f5 21. Rc1 a3 22. Rc2 f4 23. Bxf4 Rxf4 24. Qe3 Ra8 25. bxa3 Rf8 26. Red2 Rf7 27. Nb1 Qd8 28. Nc3 b6 29. Rd1 Nh4 *

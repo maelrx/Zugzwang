@@ -1,0 +1,385 @@
+"""``chess.cognitive_navigation`` — the productive adaptive strategy (§12/§38.8).
+
+Moved from ``zugzwang_chess/strategies`` (ZGW-0101): the strategy drives the
+runtime ``CognitiveLoop`` over ``context.decision_session`` +
+``context.backend``, so a chess package can never import runtime internals
+(TEST-062) while the decision mechanics stay in the runtime where the
+journal, the broker and the budget authority live.
+
+Descriptor: the conservative default R7/H4/K0 mandated while the human gate
+G-CB-01 is pending (§48.3) — no regime bump is self-granted by code. Every
+``CallRecord`` in the trace comes from an effective ``infer`` call: usage,
+cost, latency and fingerprints are the execution's own; an unavailable datum
+stays unknown instead of an invented zero.
+"""
+
+from __future__ import annotations
+
+from typing import Any, cast
+
+from zugzwang_core.ports.strategy import (
+    CallRecord,
+    Candidate,
+    DecisionContext,
+    DecisionTrace,
+    StrategyDescriptor,
+    Verdict,
+)
+
+from .loop import CognitiveLoop, LoopResult, ModelCallRecord
+
+STRATEGY_ID = "chess.cognitive_navigation"
+STRATEGY_VERSION = "0.3.0"
+
+# ZGX wave 1: every declared cognitive key must have a real consumer. An
+# unknown key FAILS the decision — a silently ignored configuration is a
+# forbidden treatment (dossier §5; plano 28 §11).
+ALLOWED_COGNITIVE_KEYS = {
+    "directive",
+    "reasoning_memory",
+    "max_rounds",
+    "inline_child_packages",
+    "preload_root",
+    "preload_expand_actions",
+    "skill_id",
+    "skill_capabilities",
+    "plan_id",
+}
+
+
+class CognitiveNavigationStrategy:
+    """Adaptive L0 navigation driven by the typed ModelBackend (bounded)."""
+
+    strategy_id = STRATEGY_ID
+    strategy_version = STRATEGY_VERSION
+    plugin_api = "zgw.plugin/v1alpha1"
+    # The coordinator opens a §26.1 decision session for this strategy.
+    requires_decision_session = True
+
+    def __init__(self, *, max_rounds: int = 4) -> None:
+        if max_rounds < 1:
+            raise ValueError("max_rounds must be >= 1")
+        self._max_rounds = max_rounds
+
+    @property
+    def descriptor(self) -> StrategyDescriptor:
+        # R7/H4 while G-CB-01 is pending (§48.3 default). declared K stays K0:
+        # no knowledge exposure beyond the L0 packet until ratified otherwise.
+        return StrategyDescriptor(
+            strategy_id=self.strategy_id,
+            strategy_version=self.strategy_version,
+            plugin_api=self.plugin_api,
+            declared_regime="R7",
+            declared_assistance_h="H4",
+            declared_assistance_k="K0",
+            consumes_legal_actions=True,
+            produces_candidates=True,
+            max_model_calls=self._max_rounds,
+        )
+
+    async def decide(self, observation: Any, context: DecisionContext) -> DecisionTrace:
+        """Run the productive loop and translate its result into a trace.
+
+        ``context.decision_session`` is the authorized CognitiveBoard session
+        (opened by the coordinator's factory); ``context.backend`` is the
+        typed ModelBackend (RecordingBackend in production, the fake in
+        offline tests). No proposal is invented here.
+        """
+        session = context.decision_session
+        if session is None:
+            raise ValueError("chess.cognitive_navigation requires DecisionContext.decision_session")
+        if context.backend is None:
+            raise ValueError("chess.cognitive_navigation requires DecisionContext.backend")
+        journal = session.journal
+        raw_config: Any = context.config.get("cognitive") or {}
+        config = cast("dict[str, Any]", raw_config) if isinstance(raw_config, dict) else {}
+        unknown = set(config) - ALLOWED_COGNITIVE_KEYS
+        if unknown:
+            raise ValueError(
+                f"unknown cognitive config keys (no silent ignoring): {sorted(unknown)}"
+            )
+        preload_root = config.get("preload_root") is True
+        preload_expand_raw = config.get("preload_expand_actions", 0)
+        preload_expand_actions = (
+            int(preload_expand_raw)
+            if isinstance(preload_expand_raw, int) and preload_expand_raw > 0
+            else 0
+        )
+        if preload_expand_actions and not preload_root:
+            raise ValueError("preload_expand_actions requires preload_root")
+        retry_feedback = context.config.get("retry_feedback")
+        prior_reasoning = context.config.get("prior_reasoning")
+        prior_memory_note = context.config.get("prior_memory_note")
+        section_builder = self._section_builder(
+            session,
+            config,
+            retry_feedback=retry_feedback,
+            prior_reasoning=prior_reasoning,
+            prior_memory_note=prior_memory_note,
+        )
+        feedback = self._round_feedback(session, config)
+        loop = CognitiveLoop(
+            decision_id=session.decision_id,
+            journal=journal,
+            broker_factory=session.new_broker_for_round,
+            backend=context.backend,
+            context_artifact_id=session.round_context_artifact_id,
+            model=context.model,
+            max_rounds=self._max_rounds,
+            interaction_mode=session.interaction_mode,
+            root_node_id=session.root_node_id,
+            shared_budget=session.budget,
+            model_reservation_id=session.model_reservation_id,
+            context_sections=section_builder,
+            round_feedback=feedback,
+            preload_root=preload_root,
+            preload_expand_actions=preload_expand_actions,
+        )
+        result = await loop.run()
+        return self._trace_from(result, context)
+
+    # -- context wiring (§16/§18/§10: what the model actually receives) ---------
+
+    def _decision_bindings(self, session: Any) -> dict[str, Any]:
+        from sqlalchemy import text as _sql_text
+
+        with session.journal.connect() as conn:
+            row = conn.execute(
+                _sql_text(
+                    "SELECT memory_snapshot_id, skill_set_id FROM cb_decisions "
+                    "WHERE decision_id = :id"
+                ),
+                {"id": session.decision_id},
+            ).fetchone()
+        return {
+            "memory_snapshot_id": row[0] if row else None,
+            "skill_set_id": row[1] if row else None,
+        }
+
+    def _section_builder(
+        self,
+        session: Any,
+        config: dict[str, Any],
+        retry_feedback: Any = None,
+        prior_reasoning: Any = None,
+        prior_memory_note: Any = None,
+    ):
+        """Build the memory/skills context section from the REAL stores.
+
+        Returns None when neither store is bound — memory OFF is observably
+        absent from the request, never an empty placeholder (§16; HY-04).
+        A step-level retry notice, when present, always renders: the model
+        must know the previous attempt ended without a finalize. A prior
+        reasoning summary (manifest-gated self-memory) also always renders —
+        it is the model's OWN last decision thinking, never external
+        knowledge. A structured prior-memory note (ZGX-20 M2) renders as
+        labeled fields: formal facts from this game's record + the model's
+        own last summary, never external knowledge.
+        """
+        memory_store = getattr(session, "memory_store", None)
+        skill_registry = getattr(session, "skill_registry", None)
+        bindings = self._decision_bindings(session)
+        snapshot_id = bindings.get("memory_snapshot_id")
+        skill_set_id = bindings.get("skill_set_id")
+        skill_id = config.get("skill_id")
+        directive = config.get("directive")
+
+        def build(ordinal: int) -> str:
+            sections: list[str] = []
+            if isinstance(prior_memory_note, dict) and prior_memory_note:
+                note = cast("dict[str, Any]", prior_memory_note)
+                lines = [
+                    f"- {key}: {value}" for key, value in note.items() if value not in (None, "")
+                ]
+                if lines:
+                    sections.append(
+                        "PRIOR MOVE NOTE (structured; formal facts from this "
+                        "game's record plus your own last reasoning summary — "
+                        "a hypothesis, not an order; verify it still applies):\n" + "\n".join(lines)
+                    )
+            if isinstance(prior_reasoning, str) and prior_reasoning.strip():
+                sections.append(
+                    "PREVIOUS MOVE REASONING (your own thinking from your last "
+                    f"decision, verbatim): {prior_reasoning.strip()}"
+                )
+            if isinstance(retry_feedback, str) and retry_feedback.strip():
+                # Step-level retry: journaled protocol feedback about the
+                # PREVIOUS attempt's outcome (no move hints, no ranking).
+                sections.append(
+                    "RETRY NOTICE (your previous attempt at this position): "
+                    f"{retry_feedback.strip()}"
+                )
+            if isinstance(directive, str) and directive.strip():
+                # Operator instruction for a DIRECTED test (pilot §5): it may
+                # ask the model to exercise a tool, never dictates the move
+                # sequence — moves and calls remain the model's choice, and
+                # the directive is journaled verbatim in the request artifact.
+                sections.append(f"OPERATOR DIRECTIVE (directed test): {directive.strip()}")
+            if memory_store is not None and snapshot_id:
+                recalled = memory_store.recall(
+                    snapshot_id=str(snapshot_id),
+                    scope_kind="episode",
+                    scope_owner_id="",
+                    perspective="neutral",
+                )
+                lines = [
+                    f"- {item.kind}/{item.epistemic_status}: {item.logical_memory_id} "
+                    f"r{item.revision} [{item.eligibility_reason}]"
+                    for item in recalled.items
+                ]
+                if lines:
+                    sections.append(
+                        "ELIGIBLE MEMORY (snapshot "
+                        f"{snapshot_id}, frozen for this decision):\n" + "\n".join(lines)
+                    )
+            if skill_registry is not None and skill_set_id and skill_id:
+                activation = skill_registry.activate(
+                    skill_set_id=str(skill_set_id),
+                    skill_id=str(skill_id),
+                    requested=tuple(config.get("skill_capabilities", ())),
+                )
+                sections.append(
+                    f"ACTIVE SKILL {activation.skill_id} v{activation.version} "
+                    f"(set {skill_set_id}, frozen): "
+                    f"capabilities={list(activation.capabilities)}"
+                )
+            return "\n\n".join(sections)
+
+        if (
+            (memory_store is None or not snapshot_id)
+            and not (skill_registry is not None and skill_set_id and skill_id)
+            and not (isinstance(directive, str) and directive.strip())
+            and not (isinstance(retry_feedback, str) and retry_feedback.strip())
+            and not (isinstance(prior_reasoning, str) and prior_reasoning.strip())
+            and not (isinstance(prior_memory_note, dict) and prior_memory_note)
+        ):
+            return None
+        return build
+
+    def _round_feedback(self, session: Any, config: dict[str, Any]):
+        """Revise the episode's plan from the REAL tool results of a round.
+
+        The watched premise is the CB default: when a committed expansion
+        reaches a terminal child, the premise ``position_terminal`` flips to
+        true. A changed premise escalates the plan to needs_review via the
+        plan store's own delta logic — never a silent continuation (§10.3).
+        """
+        plan_store = getattr(session, "plan_store", None)
+        plan_id = config.get("plan_id")
+        if plan_store is None or not plan_id:
+            return None
+
+        def feedback(ordinal: int, executed: list[dict[str, Any]]) -> None:
+            view = plan_store.view_plan(str(plan_id))
+            premises = dict(view.premises)
+            changed = False
+            for entry in executed:
+                result: Any = entry.get("result")
+                if not isinstance(result, dict):
+                    continue
+                raw_rows: Any = cast("dict[str, Any]", result).get("results") or []
+                items: list[Any] = cast("list[Any]", raw_rows) if isinstance(raw_rows, list) else []
+                for item in list(items):
+                    row_data: Any = dict(cast(Any, item)) if isinstance(item, dict) else {}
+                    terminal: Any = row_data.get("terminal")
+                    if terminal is True and premises.get("position_terminal") != "true":
+                        premises["position_terminal"] = "true"
+                        changed = True
+            if changed:
+                plan_store.revise_plan(
+                    plan_id=str(plan_id), status="needs_review", premises=premises
+                )
+
+        return feedback
+
+    def _trace_from(self, result: LoopResult, context: DecisionContext) -> DecisionTrace:
+        verdicts = [
+            Verdict(
+                kind="tool_ok" if step.ok else "tool_failed",
+                message=f"r{step.round_ordinal} {step.operation.get('tool')}"
+                + (f" [{step.code}]" if step.code else ""),
+            )
+            for step in result.steps
+        ]
+        failure_code = ""
+        if result.failure_class is not None:
+            # ZGW-0103 R2: provider unavailability surfaces as its own verdict
+            # class. The message IS the stable code — the coordinator copies it
+            # into the step/episode failure classification verbatim.
+            failure_code = str(result.trace_record.get("failure_code") or result.failure_class)
+            verdicts.append(Verdict(kind="provider_error", message=failure_code))
+        candidates: tuple[Candidate, ...] = ()
+        if result.selected_action is not None:
+            candidates = (Candidate(action=result.selected_action, origin="model"),)
+        return DecisionTrace(
+            strategy_id=self.strategy_id,
+            strategy_version=self.strategy_version,
+            declared_regime=self.descriptor.declared_regime,
+            calls=tuple(self._call_records(result.calls)),
+            candidates=candidates,
+            tool_invocations=tuple(
+                f"{step.operation.get('tool')}@r{step.round_ordinal}" for step in result.steps
+            ),
+            verdicts=tuple(verdicts),
+            selection_rationale={
+                "status": result.status,
+                "protocol_errors": result.protocol_errors,
+                "rounds_executed": len(result.calls),
+                "focus": result.decision_id,
+                **(
+                    {"failure_class": result.failure_class, "failure_code": failure_code}
+                    if result.failure_class
+                    else {}
+                ),
+            },
+            final_action=result.selected_action,
+            termination_reason=(
+                "selected" if result.status == "COMMITTED" else (result.failure_class or "failed")
+            ),
+        )
+
+    def _call_records(self, records: list[ModelCallRecord]) -> list[CallRecord]:
+        from zugzwang_core.domain.money import TokenUsage
+
+        out: list[CallRecord] = []
+        for call in records:
+            # Unavailable usage stays UNKNOWN, never zero-invented (§22.2).
+            usage = call.usage if call.usage is not None else TokenUsage()
+            out.append(
+                CallRecord(
+                    attempt_id=call.attempt_id,
+                    request_fingerprint=call.request_fingerprint,
+                    response_ok=call.response_ok,
+                    usage=usage,
+                    cost=call.cost,
+                    latency_ms=call.latency_ms,
+                    request_artifact_ref=call.request_artifact_id,
+                    response_artifact_ref=call.response_artifact_id,
+                    failure_code=call.failure_code,
+                )
+            )
+        return out
+
+
+class CognitiveNavigationStrategyDefinition:
+    """Plugin entry exposing chess.cognitive_navigation (installed by runtime)."""
+
+    @property
+    def descriptor(self):  # type: ignore[no-untyped-def]
+        from zugzwang_core.ports.plugin import PluginDescriptor, PluginKind, TrustLevel
+
+        return PluginDescriptor(
+            plugin_id="chess.cognitive_navigation",
+            plugin_version="0.2.0",
+            kind=PluginKind.STRATEGY,
+            capabilities=("R7", "cognitive"),
+            license="GPL-3.0-or-later",
+            trust=TrustLevel.FIRST_PARTY,
+        )
+
+    def create(self, **kwargs: Any) -> CognitiveNavigationStrategy:
+        rounds: Any = kwargs.get("max_rounds", 4)
+        return CognitiveNavigationStrategy(max_rounds=int(rounds) if isinstance(rounds, int) else 4)
+
+
+COGNITIVE_NAVIGATION_STRATEGY_ENTRY = CognitiveNavigationStrategyDefinition()

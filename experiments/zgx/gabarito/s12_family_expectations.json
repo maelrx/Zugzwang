@@ -1,0 +1,8 @@
+{
+ "captura_boa": "posi\u00e7\u00e3o com captura ganhadora documentada (avaliador preferia a captura)",
+ "captura_ruim": "captura com sacrif\u00edcio/recaptura n\u00e3o justificados (avaliador preferia alternativa)",
+ "urgencia_rei": "urg\u00eancia concreta contra o rei; lance de seguran\u00e7a esperado",
+ "linha_risco": "captura que abre linha contra pe\u00e7a pr\u00f3pria; alternativa esperada",
+ "quieto_sucesso": "posi\u00e7\u00e3o do corpus em que o lance quieto/construtivo levou ao sucesso",
+ "final_conversao": "posi\u00e7\u00e3o favor\u00e1vel de convers\u00e3o; manter vantagem"
+}

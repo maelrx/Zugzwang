@@ -75,7 +75,13 @@ class TestOpenCodeImageLowering:
                         "parts": [{"type": "text", "text": "e2e4"}],
                     },
                 )
-            return httpx.Response(200, json={"id": "ses_1"})
+            return httpx.Response(
+                200,
+                json={
+                    "id": "ses_1",
+                    "permission": [{"permission": "*", "pattern": "*", "action": "deny"}],
+                },
+            )
 
         backend = OpenCodeBackend(
             base_url="http://mock.local",

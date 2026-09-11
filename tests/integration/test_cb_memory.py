@@ -193,6 +193,20 @@ def test_contaminated_source_refused(store) -> None:
             ]
         )
     assert exc2.value.code == "SOURCE_NOT_ALLOWED"
+    with pytest.raises(MemoryError, match="content_hash"):
+        memory.restore_notes(
+            [
+                {
+                    "memory_id": "mem-y-r1",
+                    "logical_memory_id": "mem-y",
+                    "payload_artifact_id": "art:cb-memory-seed",
+                    "source_manifest_artifact_id": "art:cb-memory-manifest",
+                    "origin_class": "human",
+                    "scope_owner_id": "ep-1",
+                }
+            ]
+        )
+    # ZGW-0101: a full-provenance record restores, with its own validity.
     restored = memory.restore_notes(
         [
             {
@@ -202,6 +216,13 @@ def test_contaminated_source_refused(store) -> None:
                 "source_manifest_artifact_id": "art:cb-memory-manifest",
                 "origin_class": "human",
                 "scope_owner_id": "ep-1",
+                "kind": "note",
+                "epistemic_status": "formal_fact",
+                "scope_kind": "episode",
+                "partition_name": "development",
+                "perspective": "neutral",
+                "content_hash": "c" * 64,
+                "validity_status": "needs_review",
             }
         ]
     )
@@ -311,3 +332,180 @@ def test_legacy_reader_marks_unknowns(store) -> None:
     assert out["origin"] == "human"
     out2 = memory.read_legacy_note({"memory_id": "y"})
     assert out2["origin"] == "unknown-unrecorded"
+
+
+def test_eligibility_matrix_no_early_return_for_test_partition(store) -> None:
+    """ZGW-0101/TEST-044/047: the test-partition branch is NOT an exemption —
+    quarantined/contradicted/model_assessment/perspective gates still apply,
+    and partition isolation is symmetric (test snapshot admits only test)."""
+    memory, _ = store
+
+    def seed(
+        memory_id: str, *, validity: str, epistemic: str, perspective: str, partition: str
+    ) -> None:
+        memory.write_note(
+            memory_id=f"{memory_id}-r1",
+            logical_memory_id=memory_id,
+            revision=1,
+            kind="note",
+            epistemic_status=epistemic,
+            origin_class="human",
+            scope_kind="episode",
+            scope_owner_id="ep-1",
+            partition_name=partition,
+            perspective=perspective,
+            payload_artifact_id="art:cb-memory-seed",
+            source_manifest_artifact_id="art:cb-memory-manifest",
+            content_hash="d" * 64,
+            validity_status=validity,
+        )
+
+    # Items inside a TEST snapshot.
+    seed(
+        "mem-t-ok",
+        validity="active",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-quar",
+        validity="quarantined",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-contra",
+        validity="contradicted",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-assess",
+        validity="active",
+        epistemic="model_assessment",
+        perspective="neutral",
+        partition="test",
+    )
+    seed(
+        "mem-t-white",
+        validity="active",
+        epistemic="formal_fact",
+        perspective="white",
+        partition="test",
+    )
+    # A development note that must never surface inside the test snapshot.
+    seed(
+        "mem-dev-ok",
+        validity="active",
+        epistemic="formal_fact",
+        perspective="neutral",
+        partition="development",
+    )
+
+    memory.open_snapshot(
+        snapshot_id="snap-t-matrix",
+        scope_kind="episode",
+        scope_owner_id="ep-1",
+        partition_name="test",
+        policy_hash="p" * 64,
+    )
+    for ordinal, mid in enumerate(
+        ("mem-t-ok", "mem-t-quar", "mem-t-contra", "mem-t-assess", "mem-t-white", "mem-dev-ok")
+    ):
+        memory.add_member(snapshot_id="snap-t-matrix", memory_id=f"{mid}-r1", ordinal=ordinal)
+
+    result = memory.recall(
+        snapshot_id="snap-t-matrix",
+        scope_kind="episode",
+        scope_owner_id="ep-1",
+        perspective="neutral",
+    )
+    surfaced = {item.logical_memory_id for item in result.items}
+    assert "mem-t-ok" in surfaced, "clean test note surfaces in a test snapshot"
+    assert "mem-t-quar" not in surfaced, "quarantined is ineligible even as test"
+    assert "mem-t-contra" not in surfaced, "contradicted is ineligible even as test"
+    assert "mem-dev-ok" not in surfaced, "dev note never surfaces in a test snapshot"
+    # Assessments remain EVALUATIONS even in the test partition (INV-07).
+    assert "mem-t-assess" not in surfaced
+    assert any(item.logical_memory_id == "mem-t-assess" for item in result.evaluative), (
+        "test-partition assessment lands in the evaluative section"
+    )
+    # Perspective gate on a positioned query inside test.
+    white = memory.recall(
+        snapshot_id="snap-t-matrix",
+        scope_kind="episode",
+        scope_owner_id="ep-1",
+        perspective="white",
+    )
+    white_ids = {item.logical_memory_id for item in white.items}
+    assert "mem-t-white" in white_ids
+    assert "mem-t-ok" in white_ids, "neutral notes also serve a positioned query"
+
+    # ...and a positioned note never surfaces to the OPPOSING perspective.
+    black = memory.recall(
+        snapshot_id="snap-t-matrix",
+        scope_kind="episode",
+        scope_owner_id="ep-1",
+        perspective="black",
+    )
+    black_ids = {item.logical_memory_id for item in black.items}
+    assert "mem-t-white" not in black_ids, "perspective mismatch is filtered by gate"
+
+
+def test_restore_preserves_quarantine_and_refuses_unknown_origin(store) -> None:
+    """TEST-045/ZGW-0101: restoration neither launders provenance nor
+    reactivates reviewed-out validity."""
+    memory, _ = store
+    memory.restore_notes(
+        [
+            {
+                "memory_id": "mem-q-r1",
+                "logical_memory_id": "mem-q",
+                "payload_artifact_id": "art:cb-memory-seed",
+                "source_manifest_artifact_id": "art:cb-memory-manifest",
+                "origin_class": "human",
+                "scope_owner_id": "ep-1",
+                "kind": "note",
+                "epistemic_status": "formal_fact",
+                "scope_kind": "episode",
+                "partition_name": "development",
+                "perspective": "neutral",
+                "content_hash": "e" * 64,
+                "validity_status": "quarantined",
+            }
+        ]
+    )
+    memory.open_snapshot(
+        snapshot_id="snap-q",
+        scope_kind="episode",
+        scope_owner_id="ep-1",
+        partition_name="development",
+        policy_hash="p" * 64,
+    )
+    memory.add_member(snapshot_id="snap-q", memory_id="mem-q-r1", ordinal=0)
+    result = memory.recall(snapshot_id="snap-q", scope_kind="episode", scope_owner_id="ep-1")
+    assert all(item.logical_memory_id != "mem-q" for item in result.items), (
+        "restoration must not reactivate a quarantined note"
+    )
+    with pytest.raises(MemoryError, match="unknown"):
+        memory.restore_notes(
+            [
+                {
+                    "memory_id": "mem-u-r1",
+                    "logical_memory_id": "mem-u",
+                    "payload_artifact_id": "art:cb-memory-seed",
+                    "source_manifest_artifact_id": "art:cb-memory-manifest",
+                    "origin_class": "scraped-from-nowhere",
+                    "scope_owner_id": "ep-1",
+                    "kind": "note",
+                    "epistemic_status": "formal_fact",
+                    "scope_kind": "episode",
+                    "partition_name": "development",
+                    "perspective": "neutral",
+                    "content_hash": "f" * 64,
+                }
+            ]
+        )

@@ -1,0 +1,10 @@
+[Event "zgx-luna-fast-01-tactical-memory (TAINTED - engine self-assistance)"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "gpt-5.6-luna fast"]
+[Black "Stockfish 1320"]
+[Result "1-0"]
+
+1. e4 d5 2. exd5 e6 3. dxe6 fxe6 4. Nf3 Nc6 5. d4 Bd6 6. d5 Nb4 7. Ba6 Nxa6 8. O-O exd5 9. Qxd5 Bxh2+ 10. Kxh2 Qxd5 11. Nc3 Qf5 12. g4 Qxg4 13. Re1+ Kf7 14. Ne5+ Ke8 15. Nxg4+ Ne7 16. Bg5 Kf7 17. Rxe7+ Kg6 18. Ne5+ Kxg5 19. Nf7+ Kf6 20. Nd5+ Kf5 21. Rg1 Rf8 22. Rg5# 1-0
+
